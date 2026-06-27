@@ -8,8 +8,8 @@ def test_validate_session_id_rejects_empty():
         validate_session_id("")
 
 
-def test_validate_session_id_rejects_invalid_chars():
-    with pytest.raises(ValueError, match="invalid characters"):
+def test_validate_session_id_rejects_invalid_format():
+    with pytest.raises(ValueError, match="invalid format"):
         validate_session_id("2026-06-27 hello world")
 
 
