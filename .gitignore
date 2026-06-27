@@ -6,8 +6,7 @@ recordings/*
 interviews/*
 !interviews/.gitkeep
 
-# OpenSpec changes are workspace artifacts, generated per change
-openspec/changes/*
+# OpenSpec changes are committed for review and CI validation.
 
 # Context state files
 .context/
@@ -21,6 +20,10 @@ docs/knowledge/.obsidian/graph.json
 
 # macOS
 .DS_Store
+
+# Python virtual environments
+.venv/
+venv/
 
 # Common build artifacts
 node_modules/
