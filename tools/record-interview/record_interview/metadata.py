@@ -6,8 +6,11 @@ from pathlib import Path
 from typing import Any
 
 
+ISO_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
+
+
 def now_iso() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(timezone.utc).strftime(ISO_FORMAT)
 
 
 def _metadata_path(workspace_root: Path, session_id: str) -> Path:
@@ -19,6 +22,7 @@ def build_metadata(
     design_id: str | None,
     topic: str | None,
     branch: str | None,
+    started_at: str | None = None,
 ) -> dict[str, Any]:
     return {
         "session_id": session_id,
@@ -26,7 +30,7 @@ def build_metadata(
         "topic": topic,
         "branch": branch,
         "recording_file": f"recordings/{session_id}.m4a",
-        "started_at": now_iso(),
+        "started_at": started_at or now_iso(),
         "ended_at": None,
         "duration_seconds": None,
         "source": "lincoln-record-interview-cli",
@@ -38,13 +42,24 @@ def read_metadata(workspace_root: Path, session_id: str) -> dict[str, Any] | Non
     path = _metadata_path(workspace_root, session_id)
     if not path.exists():
         return None
-    return json.loads(path.read_text(encoding="utf-8"))
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as e:
+        raise ValueError(f"corrupted metadata for {session_id}: {e}") from e
 
 
-def write_metadata(workspace_root: Path, session_id: str, metadata: dict[str, Any]) -> None:
+def write_metadata(workspace_root: Path, session_id: str, data: dict[str, Any]) -> None:
     path = _metadata_path(workspace_root, session_id)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def mark_recording_complete(
+    metadata: dict[str, Any],
+    duration_seconds: int,
+    ended_at: str | None = None,
+) -> dict[str, Any]:
+    return {**metadata, "ended_at": ended_at or now_iso(), "duration_seconds": duration_seconds}
 
 
 def update_recording_complete(
@@ -55,6 +70,6 @@ def update_recording_complete(
     metadata = read_metadata(workspace_root, session_id)
     if metadata is None:
         raise FileNotFoundError(f"metadata not found for {session_id}")
-    updated = {**metadata, "ended_at": now_iso(), "duration_seconds": duration_seconds}
+    updated = mark_recording_complete(metadata, duration_seconds)
     write_metadata(workspace_root, session_id, updated)
     return updated
