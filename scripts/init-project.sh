@@ -19,14 +19,17 @@ if ! git rev-parse --git-dir > /dev/null 2>&1; then
   exit 1
 fi
 
+INITIAL_STATUS="$(git status --porcelain)"
+
 # ---------------------------------------------------------------------------
 # 2. Ensure placeholder files exist for empty tracked directories
 # ---------------------------------------------------------------------------
-mkdir -p recordings interviews requirements openspec/changes .context docs/knowledge/assets
+mkdir -p recordings interviews requirements designs openspec/changes .context docs/knowledge/assets
 
 touch recordings/.gitkeep
 [ -f interviews/.gitkeep ] || touch interviews/.gitkeep
 [ -f requirements/.gitkeep ] || touch requirements/.gitkeep
+[ -f designs/.gitkeep ] || touch designs/.gitkeep
 [ -f openspec/changes/.gitkeep ] || touch openspec/changes/.gitkeep
 [ -f docs/knowledge/assets/.gitkeep ] || touch docs/knowledge/assets/.gitkeep
 
@@ -81,6 +84,15 @@ if ! grep -qE "^repository:" "$CONFIG_FILE" || \
   exit 1
 fi
 
+REPO_OWNER="$(sed -nE 's/^[[:space:]]*owner:[[:space:]]*"?([^"#]+)"?.*/\1/p' "$CONFIG_FILE" | head -1 | xargs)"
+REPO_NAME="$(sed -nE 's/^[[:space:]]*name:[[:space:]]*"?([^"#]+)"?.*/\1/p' "$CONFIG_FILE" | head -1 | xargs)"
+
+if [ "$REPO_OWNER" = "your-org" ] || [ "$REPO_NAME" = "your-product-repo" ]; then
+  echo "❌ Error: $CONFIG_FILE still contains the default placeholder repository."
+  echo "   Set repository.owner and repository.name to the real target repository before initialization."
+  exit 1
+fi
+
 echo "✅ OpenSpec config valid"
 
 # ---------------------------------------------------------------------------
@@ -102,14 +114,28 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 7. Initial commit
+# 7. Initial commit for files created by this script
 # ---------------------------------------------------------------------------
 if [ -z "$(git status --porcelain)" ]; then
   echo "ℹ️  No changes to commit"
+elif [ -n "$INITIAL_STATUS" ]; then
+  echo "⚠️  Existing local changes detected before initialization; skipping automatic commit."
+  echo "   Review and commit the changes manually when ready."
 else
-  git add -A
-  git commit -m "chore: init project with Lincoln workflow" || true
-  echo "✅ Initial commit created"
+  git add \
+    recordings/.gitkeep \
+    interviews/.gitkeep \
+    requirements/.gitkeep \
+    designs/.gitkeep \
+    openspec/changes/.gitkeep \
+    docs/knowledge/assets/.gitkeep \
+    "$VALIDATOR"
+  if git diff --cached --quiet; then
+    echo "ℹ️  No tracked initialization changes to commit"
+  else
+    git commit -m "chore: init project with Lincoln workflow"
+    echo "✅ Initial commit created"
+  fi
 fi
 
 echo ""

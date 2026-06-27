@@ -15,6 +15,7 @@ Re-read the current workflow state, detect what changed, and continue from the a
 5. Re-run the entry/exit validators for the current step.
 6. If validation passes, continue to the next step.
 7. If validation fails, report the failures and pause again.
+8. If resuming after a merged PR, read `.github/lincoln-sync-queue/pr-<pr_number>.yaml` to get the pending `issue_number` and `pr_number`.
 
 ## Rules
 

@@ -15,18 +15,19 @@ Produce a clear, agreed-upon `requirements/<session-id>/requirements.md` that se
 1. Read `interviews/<session-id>/transcript.md`, `summary.md`, and `raw-insights.md`.
 2. Create `requirements/<session-id>/` if it does not exist.
 3. Draft an initial `requirements.md` using the template:
-   - Background
-   - Problem
-   - Users / Personas
-   - Proposed Solution
-   - Acceptance Criteria
-   - Out of Scope
-   - Open Questions
+   - `背景`
+   - `问题`
+   - `用户`
+   - `方案`
+   - `验收标准`
+   - `非目标`
+   - `开放问题`
 4. Identify 1-3 ambiguities or missing details.
 5. Ask the human PM these questions one batch at a time in the terminal.
 6. Update `requirements.md` based on the answers.
 7. Repeat until the PM confirms the requirements are clear.
 8. Also generate `user-stories.md` and `prd.md` from the finalized requirements.
+9. When the PM confirms, add an approval marker to `requirements.md`: `<!-- status: approved -->`.
 
 ## Human Interaction Rules
 

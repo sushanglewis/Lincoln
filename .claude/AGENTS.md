@@ -9,6 +9,7 @@
 3. **产物可追溯**：每个需求、每个功能都必须能关联回原始访谈时间戳、OpenSpec 变更、GitHub Issue/PR。
 4. **知识库双轨维护**：每个合并的 issue 必须同时沉淀业务知识和技术知识到 Obsidian vault。
 5. **不修改原始录音**：`recordings/` 目录中的文件只读，永远不在原地修改。
+6. **Pencil 原型受控处理**：`.pen` 文件只能通过 Pencil 应用或 Pencil 工具处理，不用普通文件读取或编辑其内容。
 
 ## 工作流步骤
 
@@ -28,14 +29,36 @@
 - 人类可直接编辑 requirements.md，编辑后运行 `workflow-continue`
 - 只有人类输入 `confirm` 或通过文件修改触发继续时，才能进入下一步
 
-### 3. propose-with-openspec
+### 3. draft-product-design
+
+- 只在 requirements 已确认后执行
+- 生成 `designs/<design_id>/` 下的简洁设计评审包
+- 必须覆盖场景、功能清单、数据结构、流程图/序列图/架构图、业务可行性、技术可行性、开源项目和技术框架建议
+- 技术框架和开源项目建议必须查当前官方文档或主仓库
+- 人类 PM 确认后，才能进入原型阶段
+
+### 4. build-product-prototype
+
+- 基于已确认设计文档生成 `fields.md`、`ui-spec.md` 和 `prototype.pen`
+- 创建或修改 `.pen` 前必须通过 Pencil 工具读取 editor state/schema
+- 人类 PM 可以直接在 Pencil 应用中修改并保存 `.pen`
+- PM 确认后的 `.pen` 是最终开发参照
+
+### 5. plan-tdd-development
+
+- 基于已确认设计文档、字段规格、UI 规格和 `prototype.pen` 生成 `tdd-plan.md`
+- TDD plan 必须包含验收映射、测试场景、红/绿/重构步骤、任务切片和回归范围
+- 不在该步骤生成 OpenSpec artifact
+
+### 6. propose-with-openspec
 
 - 调用 `openspec propose <change-name>` CLI 直接生成 artifact
-- 读取 `requirements/<session>/requirements.md` 作为输入
+- 读取 `designs/<design_id>/tdd-plan.md` 作为输入
+- OpenSpec artifact 必须引用 TDD plan、Pencil 原型和核心设计文档
 - 校验生成的 artifact 完整（proposal.md、specs/、design.md、tasks.md）
 - 不绕过 OpenSpec CLI 手动生成 artifact
 
-### 4. split-to-github
+### 7. split-to-github
 
 - 读取 `openspec/changes/<change>/tasks.md`
 - 按任务拆分 GitHub Issues
@@ -43,7 +66,7 @@
 - 每个 Issue 必须包含：标题、用户故事、验收标准、来源访谈、时间戳、需求链接、OpenSpec 变更链接
 - Issue 创建后，更新 requirements.md 记录 issue 编号
 
-### 5. sync-to-knowledge
+### 8. sync-to-knowledge
 
 - 在 PR 合并后触发
 - 读取代码 diff、对应 issue、需求文档、OpenSpec design
@@ -58,13 +81,15 @@
 - 每次修改需求文档后，保留修改历史或变更说明
 - 所有 JSON/YAML 文件必须格式正确
 - Markdown 文件使用统一的 frontmatter 格式
+- 不使用普通文本工具读取或修改 `.pen` 文件；需要检查原型时使用 Pencil 应用或 Pencil 工具。
 
 ## 校验规则
 
-每个步骤执行前后必须调用对应 validator：
+每个步骤执行前后必须调用统一 validator runner：
 
-- entry checks：`.claude/skills/interview-workflow/validators/entry-checks/`
-- exit checks：`.claude/skills/interview-workflow/validators/exit-checks/`
+- runner：`.claude/skills/interview-workflow/validators/validate.py`
+- entry check：`python .claude/skills/interview-workflow/validators/validate.py --phase entry --check <name> --args <comma-separated-args>`
+- exit check：`python .claude/skills/interview-workflow/validators/validate.py --phase exit --check <name> --args <comma-separated-args>`
 
 校验失败时：
 1. 立即停止当前 loop
@@ -83,5 +108,6 @@
 - 禁止在没有人类确认的情况下创建 GitHub Issues
 - 禁止删除 `recordings/` 中的原始文件
 - 禁止在 requirements 未确认时直接生成 OpenSpec artifact
+- 禁止在产品设计文档或 Pencil 原型未确认时生成 TDD plan 或 OpenSpec artifact
 - 禁止绕过校验继续工作流
 - 禁止在 knowledge vault 中创建没有来源链接的功能文档

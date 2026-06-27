@@ -5,7 +5,7 @@
 每个从该模板创建的项目都拥有：
 - 独立的文件空间
 - 独立的 Obsidian Wiki Vault（项目知识库）
-- 标准的访谈 → 需求 → OpenSpec → GitHub Issues → 知识库沉淀 工作流
+- 标准的访谈 → 需求 → 产品设计 → Pencil 原型 → TDD 研发计划 → OpenSpec → GitHub Issues → 知识库沉淀 工作流
 - Claude Code skill 包约束 Agent 按规范执行
 
 ## 快速开始
@@ -14,7 +14,20 @@
 
 在 GitHub 上点击 **Use this template**，创建新项目仓库，然后 clone 到本地 Conductor 工作区。
 
-### 2. 初始化项目
+### 2. 配置 GitHub 目标仓库
+
+编辑 `.github/openspec-config.yml`：
+
+```yaml
+repository:
+  owner: your-org
+  name: your-product-repo
+  default_branch: main
+```
+
+将 `owner` 和 `name` 改成真实目标仓库。初始化脚本会拒绝默认占位值。
+
+### 3. 初始化项目
 
 进入项目目录后运行：
 
@@ -26,18 +39,7 @@ scripts/init-project.sh
 - 校验依赖（ffmpeg、whisper、gh、openspec CLI）
 - 创建 Obsidian vault 基础结构
 - 读取 `.github/openspec-config.yml` 中的目标仓库配置
-- 提交初始 commit
-
-### 3. 配置 GitHub 目标仓库
-
-编辑 `.github/openspec-config.yml`：
-
-```yaml
-repository:
-  owner: your-org
-  name: your-product-repo
-  default_branch: main
-```
+- 在干净模板初始化时提交脚本创建的占位文件
 
 ### 4. 运行工作流
 
@@ -74,31 +76,76 @@ Agent 会基于访谈内容提问，与你多轮澄清后生成：
 
 #### Step 4: OpenSpec 提案
 
+#### Step 4: 产品设计文档评审
+
 ```bash
-claude propose-with-openspec 2026-06-27-stakeholder
+claude draft-product-design <session-id> <design-id>
 ```
 
-Agent 调用 `openspec propose` 生成：
+Agent 会生成 `designs/<design-id>/` 下的设计评审包：
+- `design-review.md`
+- `scenarios.md`
+- `feature-catalog.md`
+- `data-model.md`
+- `flows.md`
+- `feasibility.md`
+
+人类 PM 确认设计文档后，Agent 会在 `design-review.md` 写入确认标记。
+
+#### Step 5: Pencil 产品原型
+
+```bash
+claude build-product-prototype <session-id> <design-id>
+```
+
+Agent 会生成：
+- `designs/<design-id>/fields.md`
+- `designs/<design-id>/ui-spec.md`
+- `designs/<design-id>/prototype.pen`
+
+人类 PM 直接用 Pencil 应用打开、修改并保存 `.pen` 文件。确认后，保存后的 `.pen` 是最终开发参照。
+
+#### Step 6: TDD 研发计划
+
+```bash
+claude plan-tdd-development <session-id> <design-id>
+```
+
+Agent 会生成 `designs/<design-id>/tdd-plan.md`，作为 OpenSpec 和 GitHub Issues 拆分的输入。
+
+#### Step 7: OpenSpec 提案
+
+```bash
+claude propose-with-openspec <session-id> <design-id> <change-name>
+```
+
+Agent 基于 `designs/<design-id>/tdd-plan.md` 调用 `openspec propose` 生成：
 - `openspec/changes/<change-name>/proposal.md`
 - `openspec/changes/<change-name>/specs/`
 - `openspec/changes/<change-name>/design.md`
 - `openspec/changes/<change-name>/tasks.md`
 
-#### Step 5: 拆分到 GitHub
+#### Step 8: 拆分到 GitHub
 
 ```bash
-claude split-to-github 2026-06-27-stakeholder
+claude split-to-github <session-id> <change-name>
 ```
 
 Agent 将 OpenSpec tasks 拆分为 GitHub Issues。
 
-#### Step 6: 研发实现
+#### Step 9: 研发实现
 
 研发团队基于 GitHub Issues 开发，提交 PR。
 
-#### Step 7: 同步到知识库
+#### Step 10: 同步到知识库
 
-PR 合并后，GitHub Action 自动触发 Agent 更新 Obsidian vault：
+PR 合并后，GitHub Action 会提交 `.github/lincoln-sync-queue/pr-<pr-number>.yaml` 待同步队列文件。本地 Agent 后续执行：
+
+```bash
+claude sync-to-knowledge <issue-number> <pr-number>
+```
+
+Agent 更新 Obsidian vault：
 - `docs/knowledge/01-interviews/2026-06-27-stakeholder.md`
 - `docs/knowledge/02-requirements/REQ-xxx.md`
 - `docs/knowledge/03-features/<feature-slug>.md`
@@ -107,7 +154,7 @@ PR 合并后，GitHub Action 自动触发 Agent 更新 Obsidian vault：
 ## 工作流概览
 
 ```
-访谈录音 → 转写摘要 → 需求澄清 → OpenSpec 提案 → GitHub Issues → 代码实现 → PR 合并 → Obsidian 知识库
+访谈录音 → 转写摘要 → 需求澄清 → 产品设计 → Pencil 原型 → TDD 研发计划 → OpenSpec 提案 → GitHub Issues → 代码实现 → PR 合并 → Obsidian 知识库
 ```
 
 ## 目录结构
@@ -117,6 +164,7 @@ PR 合并后，GitHub Action 自动触发 Agent 更新 Obsidian vault：
 ├── recordings/              # 原始音频（gitignored）
 ├── interviews/              # 转写和摘要产物
 ├── requirements/            # 需求文档
+├── designs/                 # 产品设计文档、Pencil 原型和 TDD 研发计划
 ├── openspec/                # OpenSpec 变更目录
 ├── docs/knowledge/          # 项目独立 Obsidian vault
 ├── .claude/                 # Claude Code skill 与工作流
@@ -130,6 +178,7 @@ PR 合并后，GitHub Action 自动触发 Agent 更新 Obsidian vault：
 - `faster-whisper` 或 OpenAI Whisper API key
 - `gh` CLI（已登录）
 - `openspec` CLI：`npm install -g @fission-ai/openspec`
+- Pencil 应用或 Pencil MCP（用于 `.pen` 原型）
 - `ecc` CLI（来自 everything-claude-code）
 - Obsidian（可选，用于可视化浏览 vault）
 
@@ -138,10 +187,12 @@ PR 合并后，GitHub Action 自动触发 Agent 更新 Obsidian vault：
 Agent 必须遵守：
 - `.claude/AGENTS.md` — Agent 行为总则
 - `.claude/workflows/interview-to-knowledge.yaml` — 工作流定义
-- `.claude/skills/interview-workflow/validators/` — 准入准出校验
+- `.claude/skills/interview-workflow/validators/validate.py` — 准入准出校验 runner
 
 人类产品经理拥有以下节点的最终确认权：
 - 需求澄清完成
+- 产品设计文档确认
+- Pencil 原型确认
 - OpenSpec 提案确认
 - GitHub Issues 拆分确认
 - 研发实现完成

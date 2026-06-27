@@ -19,10 +19,10 @@ Extract structured information from the audio file and write artifacts to `inter
 5. Transcribe using Whisper (prefer local `faster-whisper`; fallback to OpenAI Whisper API if local fails).
 6. Generate `transcript.md` with timestamped Speaker A/B segments.
 7. Generate `summary.md` with:
-   - Key topics discussed
-   - Decisions made
-   - Action items
-   - Open questions or concerns
+   - `关键主题`
+   - `决策`
+   - `行动项`
+   - `开放问题`
 8. Generate `raw-insights.md` with Agent's preliminary observations about potential requirements.
 9. Write `metadata.json` with:
    - sessionId

@@ -23,8 +23,8 @@ Ensure every merged issue leaves behind a complete, linked feature note in `docs
 5. Review the merged PR diff.
 6. Create or update `docs/knowledge/03-features/<feature-slug>.md` using the feature-note template.
 7. Ensure the feature note has both:
-   - **Business Knowledge** section: background, user needs, acceptance criteria, value
-   - **Technical Knowledge** section: implementation overview, code locations, design decisions, dependencies, API/data models
+   - `业务知识` section: background, user needs, acceptance criteria, value
+   - `技术知识` section: implementation overview, code locations, design decisions, dependencies, API/data models
 8. Create/update supporting notes:
    - `docs/knowledge/01-interviews/<session>.md` if not exists
    - `docs/knowledge/02-requirements/<requirement-id>.md`

@@ -1,7 +1,7 @@
 ---
 name: interview-workflow
 description: |
-  Lincoln 标准工作流：将产品经理的访谈录音转化为结构化需求、OpenSpec 变更提案、
+  Lincoln 标准工作流：将产品经理的访谈录音转化为结构化需求、产品设计、Pencil 原型、TDD 研发计划、OpenSpec 变更提案、
   GitHub Issues，并在代码合并后沉淀到项目 Obsidian 知识库。
 version: 1.0.0
 author: Lincoln Template
@@ -31,14 +31,50 @@ commands:
         required: true
 
   propose-with-openspec:
-    description: 调用 OpenSpec CLI 生成变更提案 artifact
+    description: 基于已确认 TDD 研发计划调用 OpenSpec CLI 生成变更提案 artifact
     prompt: prompts/propose-with-openspec.md
     arguments:
       - name: session_id
         description: 访谈会话 ID
         required: true
+      - name: design_id
+        description: 产品设计 ID，如 checkout-redesign
+        required: true
       - name: change_name
         description: OpenSpec 变更名称，如 add-csv-export
+        required: true
+
+  draft-product-design:
+    description: 基于已确认需求生成产品设计评审文档包
+    prompt: prompts/draft-product-design.md
+    arguments:
+      - name: session_id
+        description: 访谈会话 ID
+        required: true
+      - name: design_id
+        description: 产品设计 ID，如 checkout-redesign
+        required: true
+
+  build-product-prototype:
+    description: 基于已确认设计文档生成字段、界面规格和 Pencil 原型
+    prompt: prompts/build-product-prototype.md
+    arguments:
+      - name: session_id
+        description: 访谈会话 ID
+        required: true
+      - name: design_id
+        description: 产品设计 ID
+        required: true
+
+  plan-tdd-development:
+    description: 基于已确认产品设计和 Pencil 原型生成 TDD 研发计划
+    prompt: prompts/plan-tdd-development.md
+    arguments:
+      - name: session_id
+        description: 访谈会话 ID
+        required: true
+      - name: design_id
+        description: 产品设计 ID
         required: true
 
   split-to-github:
