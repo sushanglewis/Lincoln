@@ -1,0 +1,38 @@
+# SKILLS.md - 产品设计文档阶段
+
+## 主要技能命令
+
+- `claude draft-product-design <session_id> <design_id>`
+  - 基于已确认需求生成产品设计评审文档包
+  - 参数：
+    - `session_id`: 访谈会话 ID，如 `2026-06-27-stakeholder`
+    - `design_id`: 产品设计 ID（kebab-case），如 `checkout-redesign`
+  - 完整 prompt 文件：`.claude/skills/interview-workflow/prompts/draft-product-design.md`
+
+## 辅助技能
+
+- `claude workflow-continue`
+  - 当人类 PM 修改文件后，恢复被暂停的工作流
+
+## 校验器使用
+
+- 入口校验：`python .claude/skills/interview-workflow/validators/validate.py --phase entry --check requirements_approved --args <session_id>`
+- 出口校验：`python .claude/skills/interview-workflow/validators/validate.py --phase exit --check design_docs_complete --args <design_id>`
+- 人类批准校验：`python .claude/skills/interview-workflow/validators/validate.py --phase exit --check design_docs_human_approved --args <design_id>`
+- 校验失败时：停止 loop、报告失败项、给出修复建议、等待人类处理
+
+## MCP 工具
+
+本阶段主要使用标准文件读写工具：
+
+- `Read` - 读取需求文档
+- `Write` - 创建设计文档
+- `Edit` - 修改设计文档（如需修正）
+- `WebSearch` / `WebFetch` - 查询技术框架和开源项目的当前官方文档
+
+## 错误处理
+
+- 需求文档缺失或未经批准：暂停工作流，提示用户先完成 `clarify-requirements` 阶段
+- 设计文档生成失败：报告具体失败文件和原因，给出修复建议
+- 校验失败：根据校验器输出定位缺失内容，补充后重新校验
+- 技术文档查询失败：记录查询失败的框架/项目，使用备选方案或标注为待确认

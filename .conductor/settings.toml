@@ -1,0 +1,23 @@
+#:schema https://conductor.build/schemas/settings.repo.schema.json
+
+# Shared Conductor settings for the Lincoln workflow template repository.
+# These settings apply to every team member who opens this repo in Conductor.
+
+[scripts]
+# Ensure each workspace has a Python venv with the only runtime dependencies
+# needed by Lincoln validators, tests, and helper scripts.
+setup = "python3 -m venv .venv && .venv/bin/pip install --upgrade pip pyyaml pytest"
+
+# Lincoln is a workflow/template repo without a long-running server.
+# The Run button runs the full static validation + test suite.
+run = "./scripts/static-check.sh"
+
+# Verify the workspace is still healthy before Conductor archives it.
+archive = "./scripts/static-check.sh"
+
+# Workspaces do not need concurrency: each branch is an independent feature
+# workflow and the only shared local resource is the validation script.
+run_mode = "nonconcurrent"
+
+[prompts]
+general = "This is the Lincoln product-manager workflow template. Prefer the workflow defined in .claude/workflows/interview-to-knowledge.yaml, run stage entry/exit checks via scripts/stage_loader.py, and never skip human_gate steps."

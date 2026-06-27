@@ -1,0 +1,51 @@
+name: Sync to Knowledge Vault
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: write
+
+jobs:
+  sync-knowledge:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract linked issue and PR info
+        id: extract
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          echo "pr_number=${{ github.event.pull_request.number }}" >> "$GITHUB_OUTPUT"
+          ISSUE=$(printf '%s\n' "$PR_BODY" | grep -oE '#[0-9]+' | head -1 | tr -d '#' || true)
+          echo "issue_number=${ISSUE:-}" >> "$GITHUB_OUTPUT"
+
+      - name: Create Lincoln sync queue item
+        if: steps.extract.outputs.issue_number != ''
+        run: |
+          mkdir -p .github/lincoln-sync-queue
+          QUEUE_FILE=".github/lincoln-sync-queue/pr-${{ steps.extract.outputs.pr_number }}.yaml"
+          cat > "$QUEUE_FILE" <<EOF
+          status: pending
+          repository: "${{ github.repository }}"
+          issue_number: "${{ steps.extract.outputs.issue_number }}"
+          pr_number: "${{ steps.extract.outputs.pr_number }}"
+          pr_url: "${{ github.event.pull_request.html_url }}"
+          issue_url: "https://github.com/${{ github.repository }}/issues/${{ steps.extract.outputs.issue_number }}"
+          merged_at: "${{ github.event.pull_request.merged_at }}"
+          created_at: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          source: github-actions
+          EOF
+
+      - name: Commit sync queue item if created
+        if: steps.extract.outputs.issue_number != ''
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add ".github/lincoln-sync-queue/pr-${{ steps.extract.outputs.pr_number }}.yaml"
+          git diff --cached --quiet || git commit -m "chore: queue PR #${{ steps.extract.outputs.pr_number }} for knowledge sync"
+          git push
