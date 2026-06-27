@@ -2,20 +2,43 @@
 
 在当前 Lincoln workspace 内录制访谈音频并触发 `process-interview`。
 
+## 安装依赖
+
+```bash
+cd tools/record-interview
+python -m pip install -e ".[dev]"
+```
+
+确保系统已安装 `ffmpeg` 和 `claude` CLI。
+
 ## 使用
 
 ```bash
-# 进入 Lincoln workspace 后
-python -m tools.record-interview SESSION_ID --design-id DESIGN_ID --topic "会议主题"
+record-interview 2026-06-27-stakeholder-checkout \
+  --design-id checkout-redesign \
+  --topic "结算流程 redesign 需求访谈" \
+  --branch "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign"
 ```
 
-## 依赖
+Or, if not using the installed console script:
 
-- Python 3.11+
-- ffmpeg
+```bash
+python -m record_interview 2026-06-27-stakeholder-checkout \
+  --design-id checkout-redesign \
+  --topic "结算流程 redesign 需求访谈" \
+  --branch "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign"
+```
+
+按回车开始录音，再次按回车停止。确认后自动触发 `claude process-interview`。
+
+## 快捷键
+
+- `Enter`：停止录音
+- `Ctrl+C`：取消录音（不触发 process-interview）
 
 ## 测试
 
 ```bash
-pytest tools/record-interview/tests -v
+cd tools/record-interview
+python -m pytest tests/ -v
 ```
