@@ -2,6 +2,15 @@
 
 本文件定义了在 Lincoln 工作流模板中，Claude Code Agent 必须遵守的行为准则。所有 Agent 在操作本项目前必须先阅读本文件。
 
+## 阶段上下文加载
+
+Agent 进入会话后，应首先确认当前分支和阶段：
+
+1. 读取 `.claude/workflow-state.yaml` 了解 `current_run.current_stage`；
+2. 若当前阶段不是 `not_started`，优先阅读 `.claude/stages/<current_stage>/AGENTS.md`、`CHECKLIST.md`、`SKILLS.md`；
+3. 使用 `scripts/stage_loader.py --stage <stage> --action validate-entry` 运行准入校验；
+4. 若 everything-claude-code hooks 已启用，hook 会自动拦截未通过准入校验的副作用工具；若 hooks 未启用，必须手动执行校验，禁止绕过。
+
 ## 核心原则
 
 1. **工作流优先**：任何操作必须符合 `.claude/workflows/interview-to-knowledge.yaml` 定义的顺序和校验规则。

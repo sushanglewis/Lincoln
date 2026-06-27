@@ -151,6 +151,28 @@ Agent 更新 Obsidian vault：
 - `docs/knowledge/03-features/<feature-slug>.md`
 - `docs/knowledge/04-decisions/<decision-id>.md`
 
+## 分支级工作流与阶段状态
+
+每个需求使用独立的 Lincoln feature 分支，阶段状态随分支提交：
+
+```bash
+# 创建新需求分支（从 main 切出）
+scripts/init-lincoln-branch.sh <session-id> <design-id> --push
+
+# 查看所有进行中的 Lincoln 分支
+scripts/list-active-lincoln-branches.sh
+```
+
+分支命名：`lincoln/<session-id>-<design-id>`，例如 `lincoln/2026-06-27-stakeholder-checkout-redesign`。
+
+阶段状态保存在 `.claude/workflow-state.yaml`，关键规则：
+- 状态文件是**分支级**的，不同 feature 分支互不干扰；
+- PM 在本地推进阶段后，**push feature 分支**到远程，不合并 `main`；
+- 下游角色（测试、研发）checkout 同一 feature 分支继续；
+- 每个阶段都有 `.claude/stages/<stage-id>/` 下的专属上下文（AGENTS.md、CHECKLIST.md、SKILLS.md、PROMPT.md）。
+
+Agent 启动时会通过 hook 加载当前阶段上下文；若 hook 未启用，Agent 必须手动调用 `scripts/stage_loader.py` 执行准入/准出校验。
+
 ## 工作流概览
 
 ```

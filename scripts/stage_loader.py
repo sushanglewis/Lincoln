@@ -1,0 +1,362 @@
+#!/usr/bin/env python3
+"""
+Lincoln stage loader / dispatcher.
+
+Loads stage-specific context, runs entry/exit validators, and manages the
+branch-scoped workflow state file at `.claude/workflow-state.yaml`.
+
+Usage:
+    python scripts/stage-loader.py --stage clarify --action load
+    python scripts/stage-loader.py --stage product-design-docs --action validate-entry
+    python scripts/stage-loader.py --stage product-design-docs --action validate-exit
+    python scripts/stage-loader.py --stage clarify --action transition-next
+    python scripts/stage-loader.py --action recover
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW_PATH = PROJECT_ROOT / ".claude" / "workflows" / "interview-to-knowledge.yaml"
+STATE_PATH = PROJECT_ROOT / ".claude" / "workflow-state.yaml"
+STAGES_DIR = PROJECT_ROOT / ".claude" / "stages"
+VALIDATOR_PATH = (
+    PROJECT_ROOT
+    / ".claude"
+    / "skills"
+    / "interview-workflow"
+    / "validators"
+    / "validate.py"
+)
+
+REQUIRED_STATE_KEYS = {
+    "schema_version",
+    "workflow",
+    "current_run",
+    "stages",
+    "variables",
+    "recovery",
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def load_yaml(path: Path) -> Any:
+    if not path.exists():
+        raise FileNotFoundError(path)
+    return yaml.safe_load(path.read_text(encoding="utf-8"))
+
+
+def save_yaml(path: Path, data: Any) -> None:
+    """Write YAML atomically to avoid corrupting the state file."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_fd, tmp_path = tempfile.mkstemp(dir=path.parent, suffix=".yaml.tmp")
+    try:
+        with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+            yaml.dump(data, f, allow_unicode=True, sort_keys=False, width=120)
+        os.replace(tmp_path, path)
+    except Exception:
+        if os.path.exists(tmp_path):
+            os.unlink(tmp_path)
+        raise
+
+
+def load_workflow() -> dict[str, Any]:
+    data = load_yaml(WORKFLOW_PATH)
+    return data.get("workflow", data)
+
+
+def load_state(path: Path | None = None) -> dict[str, Any]:
+    path = path or STATE_PATH
+    state = load_yaml(path)
+    if not isinstance(state, dict):
+        raise ValueError(f"State file {path} must contain a YAML mapping")
+    missing = REQUIRED_STATE_KEYS - set(state.keys())
+    if missing:
+        raise ValueError(f"State file missing keys: {', '.join(missing)}")
+    return state
+
+
+def save_state(state: dict[str, Any], path: Path | None = None) -> None:
+    path = path or STATE_PATH
+    state["current_run"]["last_updated_at"] = now_iso()
+    save_yaml(path, state)
+
+
+def find_stage(workflow: dict[str, Any], stage_id: str) -> dict[str, Any]:
+    for step in workflow.get("steps", []):
+        if step.get("id") == stage_id:
+            return step
+    raise ValueError(f"Stage '{stage_id}' not found in workflow")
+
+
+def compute_next_stage(workflow: dict[str, Any], stage_id: str) -> str | None:
+    steps = workflow.get("steps", [])
+    ids = [s["id"] for s in steps]
+    try:
+        idx = ids.index(stage_id)
+    except ValueError:
+        raise ValueError(f"Stage '{stage_id}' not found in workflow")
+    if idx + 1 < len(ids):
+        return ids[idx + 1]
+    return None
+
+
+def interpolate(value: str, variables: dict[str, Any]) -> str:
+    """Replace `{var}` placeholders with variable values."""
+
+    def replacer(match: re.Match) -> str:
+        key = match.group(1)
+        if key in variables and variables[key] is not None:
+            return str(variables[key])
+        return match.group(0)
+
+    return re.sub(r"\{(\w+)\}", replacer, value)
+
+
+def run_validator(
+    phase: str,
+    check_name: str,
+    args: list[str],
+    project_root: Path | None = None,
+) -> tuple[int, str, str]:
+    """Run a validator check via validate.py subprocess."""
+    if not VALIDATOR_PATH.exists():
+        raise FileNotFoundError(f"Validator not found: {VALIDATOR_PATH}")
+
+    args_str = ",".join(args)
+    cmd = [
+        sys.executable,
+        str(VALIDATOR_PATH),
+        "--phase",
+        phase,
+        "--check",
+        check_name,
+    ]
+    if args_str:
+        cmd.extend(["--args", args_str])
+
+    env = os.environ.copy()
+    if project_root:
+        # validate.py computes PROJECT_ROOT from its own location; to support
+        # testing against a temporary project, we would need to refactor it to
+        # accept an env var. For now we run against the real project root.
+        pass
+
+    result = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    return result.returncode, result.stdout, result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Actions
+# ---------------------------------------------------------------------------
+
+
+def action_load(stage_id: str, state: dict[str, Any]) -> dict[str, Any]:
+    workflow = load_workflow()
+    stage_def = find_stage(workflow, stage_id)
+    stage_dir = STAGES_DIR / stage_id
+
+    if not stage_dir.exists():
+        raise FileNotFoundError(f"Stage directory not found: {stage_dir}")
+
+    context_parts: list[str] = []
+    for filename in ["AGENTS.md", "CHECKLIST.md", "SKILLS.md", "PROMPT.md"]:
+        path = stage_dir / filename
+        if path.exists():
+            context_parts.append(path.read_text(encoding="utf-8"))
+
+    variables = state.get("variables", {})
+    context = "\n\n---\n\n".join(context_parts)
+    context = interpolate(context, variables)
+
+    return {
+        "stage_id": stage_id,
+        "stage_name": stage_def.get("name", stage_id),
+        "stage_status": state.get("stages", {}).get(stage_id, {}).get("status"),
+        "human_gate": stage_def.get("human_gate", False),
+        "next_stage": compute_next_stage(workflow, stage_id),
+        "context": context,
+    }
+
+
+def action_validate(
+    stage_id: str,
+    state: dict[str, Any],
+    phase: str,
+    state_file: Path | None = None,
+) -> int:
+    workflow = load_workflow()
+    stage_def = find_stage(workflow, stage_id)
+    checks = stage_def.get(f"{phase}_checks", [])
+    variables = state.get("variables", {})
+
+    stage_state = state.setdefault("stages", {}).setdefault(stage_id, {})
+    stage_state["started_at"] = stage_state.get("started_at") or now_iso()
+    if phase == "entry":
+        stage_state["status"] = "entry_validating"
+    save_state(state, state_file)
+
+    for check in checks:
+        check_name = check["check"]
+        raw_args = check.get("args", [])
+        args = [interpolate(str(a), variables) for a in raw_args]
+        exit_code, stdout, stderr = run_validator(phase, check_name, args)
+        if exit_code != 0:
+            stage_state["status"] = "validation_failed"
+            stage_state["error_message"] = (
+                f"{phase} check '{check_name}' failed.\nstdout: {stdout}\nstderr: {stderr}"
+            )
+            stage_state["retry_count"] = stage_state.get("retry_count", 0) + 1
+            save_state(state, state_file)
+            print(f"FAIL: {phase} check '{check_name}'", file=sys.stderr)
+            print(stdout, file=sys.stderr)
+            print(stderr, file=sys.stderr)
+            return 1
+
+    now = now_iso()
+    if phase == "entry":
+        stage_state["status"] = "in_progress"
+        stage_state["entry_checks_passed"] = True
+        stage_state["entry_checks_run_at"] = now
+    else:
+        stage_state["exit_checks_passed"] = True
+        stage_state["exit_checks_run_at"] = now
+    stage_state["error_message"] = None
+    save_state(state, state_file)
+    print(f"PASS: all {phase} checks for '{stage_id}'")
+    return 0
+
+
+def action_transition_next(stage_id: str, state: dict[str, Any], state_file: Path | None = None) -> str | None:
+    workflow = load_workflow()
+    next_stage_id = compute_next_stage(workflow, stage_id)
+
+    stage_state = state.setdefault("stages", {}).setdefault(stage_id, {})
+    stage_state["status"] = "completed"
+    stage_state["completed_at"] = now_iso()
+
+    if next_stage_id:
+        next_state = state.setdefault("stages", {}).setdefault(next_stage_id, {})
+        next_state.update(
+            {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            }
+        )
+        state["current_run"]["current_stage"] = next_stage_id
+        state["current_run"]["previous_stage"] = stage_id
+    else:
+        state["current_run"]["current_stage"] = None
+        state["current_run"]["previous_stage"] = stage_id
+        state["current_run"]["status"] = "completed"
+
+    save_state(state, state_file)
+    print(f"Transitioned from '{stage_id}' to '{next_stage_id}'")
+    return next_stage_id
+
+
+def action_recover(state: dict[str, Any], state_file: Path | None = None) -> dict[str, Any]:
+    stages = state.get("stages", {})
+    workflow = load_workflow()
+    step_ids = [s["id"] for s in workflow.get("steps", [])]
+
+    last_completed = None
+    for sid in step_ids:
+        if stages.get(sid, {}).get("status") == "completed":
+            last_completed = sid
+
+    resume_point = state["current_run"].get("current_stage") or last_completed
+    if resume_point and stages.get(resume_point, {}).get("status") == "completed":
+        resume_point = compute_next_stage(workflow, resume_point)
+
+    state["recovery"]["last_validated_checkpoint"] = last_completed
+    state["recovery"]["can_resume_from"] = resume_point
+    save_state(state, state_file)
+
+    return {
+        "last_completed": last_completed,
+        "can_resume_from": resume_point,
+        "current_stage": state["current_run"].get("current_stage"),
+        "current_status": state["current_run"].get("status"),
+    }
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Lincoln stage loader")
+    parser.add_argument("--stage", help="Stage ID")
+    parser.add_argument(
+        "--action",
+        required=True,
+        choices=["load", "validate-entry", "validate-exit", "transition-next", "recover"],
+    )
+    parser.add_argument("--state-file", type=Path, default=STATE_PATH)
+    parser.add_argument("--project-root", type=Path, default=PROJECT_ROOT)
+    args = parser.parse_args()
+
+    state = load_state(args.state_file)
+
+    if args.action == "load":
+        if not args.stage:
+            parser.error("--stage is required for load")
+        result = action_load(args.stage, state)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if args.action in ("validate-entry", "validate-exit"):
+        if not args.stage:
+            parser.error("--stage is required for validate-*")
+        phase = args.action.split("-")[1]
+        return action_validate(args.stage, state, phase, args.state_file)
+
+    if args.action == "transition-next":
+        if not args.stage:
+            parser.error("--stage is required for transition-next")
+        action_transition_next(args.stage, state, args.state_file)
+        return 0
+
+    if args.action == "recover":
+        result = action_recover(state, args.state_file)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
