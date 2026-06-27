@@ -21,7 +21,24 @@ def test_build_metadata():
     assert meta["branch"] == "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign"
     assert meta["recording_file"] == "recordings/2026-06-27-stakeholder-checkout.m4a"
     assert meta["started_at"] == "2026-06-27T10:00:00Z"
+    assert meta["ended_at"] is None
+    assert meta["duration_seconds"] is None
+    assert meta["created_by"] == "lincoln-record-interview-cli"
     assert meta["source"] == "lincoln-record-interview-cli"
+
+
+SAMPLE_METADATA = {
+    "session_id": "2026-06-27-stakeholder-checkout",
+    "design_id": "checkout-redesign",
+    "topic": "结算流程 redesign 需求访谈",
+    "branch": "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign",
+    "recording_file": "recordings/2026-06-27-stakeholder-checkout.m4a",
+    "started_at": "2026-06-27T10:00:00Z",
+    "ended_at": None,
+    "duration_seconds": None,
+    "source": "lincoln-record-interview-cli",
+    "created_by": "lincoln-record-interview-cli",
+}
 
 
 def test_read_metadata_returns_none_when_missing(tmp_path):
@@ -31,30 +48,8 @@ def test_read_metadata_returns_none_when_missing(tmp_path):
 def test_read_metadata_reads_existing(tmp_path):
     meta_path = tmp_path / "interviews" / "2026-06-27-stakeholder-checkout" / "metadata.json"
     meta_path.parent.mkdir(parents=True)
-    meta_path.write_text(json.dumps({
-        "session_id": "2026-06-27-stakeholder-checkout",
-        "design_id": "checkout-redesign",
-        "topic": "结算流程 redesign 需求访谈",
-        "branch": "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign",
-        "recording_file": "recordings/2026-06-27-stakeholder-checkout.m4a",
-        "started_at": "2026-06-27T10:00:00Z",
-        "ended_at": None,
-        "duration_seconds": None,
-        "source": "lincoln-record-interview-cli",
-        "created_by": "lincoln-record-interview-cli",
-    }), encoding="utf-8")
-    assert read_metadata(tmp_path, "2026-06-27-stakeholder-checkout") == {
-        "session_id": "2026-06-27-stakeholder-checkout",
-        "design_id": "checkout-redesign",
-        "topic": "结算流程 redesign 需求访谈",
-        "branch": "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign",
-        "recording_file": "recordings/2026-06-27-stakeholder-checkout.m4a",
-        "started_at": "2026-06-27T10:00:00Z",
-        "ended_at": None,
-        "duration_seconds": None,
-        "source": "lincoln-record-interview-cli",
-        "created_by": "lincoln-record-interview-cli",
-    }
+    meta_path.write_text(json.dumps(SAMPLE_METADATA), encoding="utf-8")
+    assert read_metadata(tmp_path, "2026-06-27-stakeholder-checkout") == SAMPLE_METADATA
 
 
 @freeze_time("2026-06-27T10:45:00Z")
@@ -72,6 +67,7 @@ def test_update_recording_complete(tmp_path):
     updated = update_recording_complete(tmp_path, "2026-06-27-stakeholder-checkout", duration_seconds=2700)
     assert updated["ended_at"] == "2026-06-27T10:45:00Z"
     assert updated["duration_seconds"] == 2700
+    assert read_metadata(tmp_path, "2026-06-27-stakeholder-checkout") == updated
 
 
 def test_write_metadata_roundtrip(tmp_path):
