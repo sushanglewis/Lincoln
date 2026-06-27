@@ -2,6 +2,16 @@
 
 本文件定义了在 Lincoln 工作流模板中，Claude Code Agent 必须遵守的行为准则。所有 Agent 在操作本项目前必须先阅读本文件。
 
+## 任务工具使用规范
+
+`TaskCreate` / `TaskUpdate` 只能用于跟踪**已确定需要动手实施的工作项**，不能作为“准备发消息”、“稍后输出”或“内部占位”的心理替代品。
+
+- **对话型阶段禁止使用任务工具**：在 `clarify`、`product-design-docs`、`product-prototype`、`implement` 等 `human_gate: true` 阶段，Agent 必须直接向人类 PM 发送消息，不得用 `TaskCreate`/`TaskUpdate` 暂存或拆分“发消息”动作。
+- **实施阶段允许任务追踪**：在 `tdd-development-plan`、`propose`、`split`、`sync-knowledge` 等非对话阶段，可以使用任务工具跟踪已明确的执行步骤。
+- **连续任务工具调用受限**：任何阶段连续调用 `TaskCreate`/`TaskUpdate` 超过 3 次且中间没有非任务动作时，hook 会强制暂停并要求 Agent 输出用户可见消息或执行其他操作。
+
+违规时 `.claude/hooks/pre-tool-use.sh` 会拦截并报错。
+
 ## 阶段上下文加载
 
 Agent 进入会话后，应首先确认当前分支和阶段：

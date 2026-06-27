@@ -51,6 +51,15 @@ STATE_OUTPUT=$(read_state)
 CURRENT_STAGE=$(echo "$STATE_OUTPUT" | sed -n '1p')
 STAGE_STATUS=$(echo "$STATE_OUTPUT" | sed -n '2p')
 
+# Task-tool guard: prevent TaskCreate/TaskUpdate from being used as
+# placeholders for user messages in dialogue stages, and cap consecutive
+# task-tool calls everywhere else.  This is invoked for every tool so it can
+# reset the burst counter on non-task actions.
+"$PYTHON" "$ROOT/scripts/task_tool_guard.py" \
+    --state-file "$STATE_FILE" \
+    --tool-name "$TOOL_NAME" \
+    --tool-args "$TOOL_ARGS"
+
 # Define side-effect tools
 SIDE_EFFECT_TOOLS=(
     "Bash"

@@ -17,6 +17,10 @@ fi
 
 STATE_FILE="${LINCOLN_STATE_FILE:-$ROOT/.claude/workflow-state.yaml}"
 
+# Reset any stale task-tool burst counter from a previous session so a fresh
+# conversation does not start already throttled.
+rm -f "$ROOT/.context/task-tool-burst.json"
+
 if [[ ! -f "$STATE_FILE" ]]; then
     exit 0
 fi

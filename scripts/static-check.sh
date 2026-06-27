@@ -114,6 +114,7 @@ echo "All hooks executable."
 echo "==> Validate Python syntax for new scripts"
 "$PYTHON" -m py_compile scripts/stage_loader.py
 "$PYTHON" -m py_compile scripts/track-artifacts.py
+"$PYTHON" -m py_compile scripts/task_tool_guard.py
 
 echo "==> Validate bash syntax for new scripts"
 bash -n scripts/init-lincoln-branch.sh
