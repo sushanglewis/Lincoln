@@ -1,9 +1,19 @@
 import { render } from 'ink-testing-library'
 import React from 'react'
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { App } from '../src/cli'
 
+vi.mock('../src/recording/useRecorder', () => ({
+  useRecorder: vi.fn(() => ({
+    state: { status: 'recording', duration: 0, amplitude: 0.3, errorMessage: null },
+    start: vi.fn(),
+    stop: vi.fn(),
+    cancel: vi.fn(),
+  })),
+}))
+
 const baseConfig = {
+  workspaceRoot: '/workspace',
   topic: '',
   designId: '',
   branch: '',

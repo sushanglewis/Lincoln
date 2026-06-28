@@ -36,6 +36,7 @@ export function App({ args, config }: AppProps) {
 
   return (
     <RecordingApp
+      workspaceRoot={config.workspaceRoot}
       sessionId={config.sessionId}
       topic={config.topic}
       designId={config.designId}

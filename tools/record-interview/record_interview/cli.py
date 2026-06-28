@@ -26,6 +26,7 @@ def run_recording_flow(
     design_id: str | None,
     topic: str | None,
     branch: str | None,
+    no_confirm: bool = False,
 ) -> int:
     recording_path = workspace_root / "recordings" / f"{session_id}.m4a"
     recording_path.parent.mkdir(parents=True, exist_ok=True)
@@ -52,6 +53,9 @@ def run_recording_flow(
     if cancelled:
         return 130
 
+    if no_confirm:
+        return 0
+
     if not _confirm(duration):
         print("Cancelled. Recording saved but process-interview was not triggered.")
         return 0
@@ -68,6 +72,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--design-id", help="Design ID")
     parser.add_argument("--topic", help="Interview topic")
     parser.add_argument("--branch", help="Current branch name")
+    parser.add_argument("--no-confirm", action="store_true", help="Save recording and exit without confirming process-interview")
     args = parser.parse_args(argv)
 
     try:
@@ -84,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
             design_id=args.design_id,
             topic=args.topic,
             branch=args.branch,
+            no_confirm=args.no_confirm,
         )
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

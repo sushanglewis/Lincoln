@@ -14,6 +14,7 @@ export interface ParsedArgs {
 }
 
 export interface ResolvedConfig extends Required<Pick<LincolnConfig, 'autoProcess' | 'showAudioMeter' | 'audioMeterStyle'>> {
+  workspaceRoot: string
   sessionId: string
   topic: string
   designId: string
@@ -52,6 +53,7 @@ export function resolveConfig(args: ParsedArgs, options: ResolveOptions = {}): R
   const sessionId = args.sessionId || generateSessionId({ now, descriptor })
 
   return {
+    workspaceRoot: cwd,
     sessionId,
     topic,
     designId,
