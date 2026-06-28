@@ -4,6 +4,7 @@ import React from 'react'
 
 import { parseArgs, type ParsedArgs } from './config/args'
 import { resolveConfig, type ResolvedConfig } from './config/resolveConfig'
+import { RecordingApp } from './components/RecordingApp'
 
 export interface AppProps {
   args: ParsedArgs
@@ -34,14 +35,13 @@ export function App({ args, config }: AppProps) {
   }
 
   return (
-    <Box flexDirection="column" padding={1}>
-      <Text bold>Lincoln</Text>
-      <Text>Session: {config.sessionId}</Text>
-      <Text>Topic: {config.topic || '(none)'}</Text>
-      <Text>Design: {config.designId || '(none)'}</Text>
-      <Text>Branch: {config.branch || '(none)'}</Text>
-      <Text dimColor>Press Enter to start recording...</Text>
-    </Box>
+    <RecordingApp
+      sessionId={config.sessionId}
+      topic={config.topic}
+      designId={config.designId}
+      branch={config.branch}
+      audioMeterStyle={config.audioMeterStyle}
+    />
   )
 }
 
