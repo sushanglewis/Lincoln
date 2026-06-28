@@ -1,10 +1,12 @@
 import { Box, Text } from 'ink'
-import React from 'react'
+import React, { useState } from 'react'
 
 import { CancelledScreen } from './CancelledScreen'
 import { RecordingScreen } from './RecordingScreen'
+import { StopConfirmation } from './StopConfirmation'
 import { useKeyHandler } from '../hooks/useKeyHandler'
 import { useRecorder } from '../recording/useRecorder'
+import { triggerProcessInterview, type TriggerResult } from '../workflow/triggerProcessInterview'
 
 export interface RecordingAppProps {
   workspaceRoot: string
@@ -16,6 +18,13 @@ export interface RecordingAppProps {
   recordInterviewPath?: string
 }
 
+type WorkflowStatus = 'idle' | 'processing' | 'success' | 'error' | 'skipped'
+
+interface WorkflowState {
+  status: WorkflowStatus
+  message: string
+}
+
 export function RecordingApp({
   workspaceRoot,
   sessionId,
@@ -25,6 +34,7 @@ export function RecordingApp({
   audioMeterStyle = 'bar',
   recordInterviewPath,
 }: RecordingAppProps) {
+  const [workflow, setWorkflow] = useState<WorkflowState>({ status: 'idle', message: '' })
   const { state, stop, cancel } = useRecorder({
     workspaceRoot,
     sessionId,
@@ -52,10 +62,29 @@ export function RecordingApp({
   }
 
   if (state.status === 'stopped') {
+    if (workflow.status === 'idle') {
+      return (
+        <StopConfirmation
+          sessionId={sessionId}
+          onConfirm={async () => {
+            setWorkflow({ status: 'processing', message: 'Running process-interview...' })
+            try {
+              const result: TriggerResult = await triggerProcessInterview(workspaceRoot, sessionId)
+              setWorkflow({ status: result.success ? 'success' : 'error', message: result.message })
+            } catch (error) {
+              const message = error instanceof Error ? error.message : String(error)
+              setWorkflow({ status: 'error', message })
+            }
+          }}
+          onCancel={() => setWorkflow({ status: 'skipped', message: 'process-interview skipped' })}
+        />
+      )
+    }
+
     return (
       <Box flexDirection="column" padding={1}>
-        <Text bold>Stopped</Text>
-        <Text>Recording saved for session {sessionId}.</Text>
+        <Text bold>{workflow.status === 'processing' ? 'Processing' : workflow.status === 'success' ? 'Done' : workflow.status === 'error' ? 'Error' : 'Skipped'}</Text>
+        <Text>{workflow.message}</Text>
       </Box>
     )
   }

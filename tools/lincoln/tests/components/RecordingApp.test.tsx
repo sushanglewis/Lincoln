@@ -22,6 +22,10 @@ vi.mock('../../src/recording/useRecorder', () => ({
   useRecorder: vi.fn(() => currentController),
 }))
 
+vi.mock('../../src/workflow/triggerProcessInterview', () => ({
+  triggerProcessInterview: vi.fn(() => Promise.resolve({ success: true, message: 'done' })),
+}))
+
 async function tick() {
   return new Promise(resolve => setTimeout(resolve, 0))
 }
@@ -75,7 +79,7 @@ describe('RecordingApp', () => {
     expect(lastFrame()).toContain('cancelled')
   })
 
-  test('shows stopped screen', () => {
+  test('shows confirmation screen when stopped', () => {
     currentController.state = { status: 'stopped', duration: 120, amplitude: 0, errorMessage: null }
 
     const { lastFrame } = render(
@@ -89,7 +93,8 @@ describe('RecordingApp', () => {
       />,
     )
 
-    expect(lastFrame()).toContain('Stopped')
+    expect(lastFrame()).toContain('process-interview')
+    expect(lastFrame()).toContain('Yes')
   })
 
   test('calls stop when Enter is pressed', async () => {
@@ -128,5 +133,51 @@ describe('RecordingApp', () => {
     await tick()
 
     expect(currentController.cancel).toHaveBeenCalled()
+  })
+
+  test('triggers process-interview when y is pressed on stopped screen', async () => {
+    const { triggerProcessInterview } = await import('../../src/workflow/triggerProcessInterview')
+    currentController.state = { status: 'stopped', duration: 120, amplitude: 0, errorMessage: null }
+
+    const { stdin, lastFrame } = render(
+      <RecordingApp
+        workspaceRoot="/workspace"
+        sessionId="2026-06-28-test"
+        topic=""
+        designId=""
+        branch=""
+        audioMeterStyle="bar"
+      />,
+    )
+
+    await tick()
+    stdin.write('y')
+    await tick()
+
+    expect(triggerProcessInterview).toHaveBeenCalledWith('/workspace', '2026-06-28-test')
+    expect(lastFrame()).toContain('Done')
+  })
+
+  test('skips process-interview when n is pressed on stopped screen', async () => {
+    const { triggerProcessInterview } = await import('../../src/workflow/triggerProcessInterview')
+    currentController.state = { status: 'stopped', duration: 120, amplitude: 0, errorMessage: null }
+
+    const { stdin, lastFrame } = render(
+      <RecordingApp
+        workspaceRoot="/workspace"
+        sessionId="2026-06-28-test"
+        topic=""
+        designId=""
+        branch=""
+        audioMeterStyle="bar"
+      />,
+    )
+
+    await tick()
+    stdin.write('n')
+    await tick()
+
+    expect(triggerProcessInterview).not.toHaveBeenCalled()
+    expect(lastFrame()).toContain('skipped')
   })
 })
