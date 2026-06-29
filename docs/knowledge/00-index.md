@@ -13,7 +13,11 @@
 
 ## 最近更新
 
-_（由 Agent 在每次 PR 合并后自动更新）_
+- 2026-06-29 — 新增 [[03-features/lincoln-recording]]：Lincoln Recording TUI 已随 PR #9 合并
+
+## 功能索引
+
+- [[03-features/lincoln-recording]] — Lincoln 访谈录音 TUI
 
 ## 快速链接
 
