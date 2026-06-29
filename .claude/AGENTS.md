@@ -52,6 +52,25 @@ Lincoln 各阶段可调用以下子技能补充方法论：
 2. 任何实施类技能（如 `subagent-driven-development`、`executing-plans`）必须在 PM 明确批准后才能调用。
 3. 调用 GSD 技能时使用 `Skill` 工具，技能名即上表所示；不使用 Codex 的 `$gsd-*` 语法。
 
+## 工作流路由
+
+当 `workflow-state.yaml` 中 `current_run.workflow_template` 为空时，Agent 必须先执行 `lincoln-workflow-router`：
+
+1. 扫描仓库结构、读取 `workflow-state.yaml`、理解用户意图。
+2. 从 `.claude/workflows/templates/` 中选择最匹配的模板。
+3. 向 PM 展示推荐模板和理由。
+4. 获得 PM 确认后，写入 `current_run.workflow_template` 和 `current_stage`。
+
+### 模板选择参考
+
+| 上下文信号 | 推荐模板 |
+|-----------|----------|
+| 有访谈录音 | `interview-to-knowledge` |
+| 已有源码但知识库为空 | `existing-project-iteration` |
+| 明确 bug/issue | `bug-fix` |
+| 仅方案预研 | `design-spike` |
+| 强依赖开源方案 | `oss-first-design` |
+
 ## 工作流步骤
 
 ### 1. process-interview
