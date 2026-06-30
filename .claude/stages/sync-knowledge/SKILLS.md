@@ -1,5 +1,12 @@
 # sync-knowledge 阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `gsd:docs-update`
+- **optional**: `gsd:forensics`, `gsd:milestone-summary`, `openspec:sync-specs`, `oh-my-claudecode:wiki`, `oh-my-claudecode:writer-memory`, `superpowers:verification-before-completion`
+- **human_gate**: 否
+
 ## 主技能命令
 
 ```

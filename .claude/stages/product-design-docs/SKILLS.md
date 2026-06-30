@@ -1,5 +1,12 @@
 # SKILLS.md - 产品设计文档阶段
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:brainstorming`, `superpowers:writing-plans`
+- **optional**: `gsd:spec-phase`, `oh-my-claudecode:plan`, `openspec:propose`
+- **human_gate**: 是
+
 ## 主要技能命令
 
 - `claude draft-product-design <session_id> <design_id>`

@@ -1,0 +1,184 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lincoln-framework.dev/schemas/stage-definition.schema.json",
+  "title": "Lincoln Stage Definition Schema",
+  "description": "Validates stage-manifest.yaml, skill-routing.yaml, and the per-stage directory structure.",
+  "type": "object",
+  "required": ["schema_version", "description"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version of the schema itself"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the manifest or routing file"
+    }
+  },
+  "allOf": [
+    {
+      "if": { "required": ["stages"] },
+      "then": { "$ref": "#/definitions/stageManifest" }
+    },
+    {
+      "if": { "required": ["routing"] },
+      "then": { "$ref": "#/definitions/skillRouting" }
+    }
+  ],
+  "definitions": {
+    "stageManifest": {
+      "type": "object",
+      "required": ["stages"],
+      "properties": {
+        "stages": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/stageEntry" },
+          "minItems": 1
+        }
+      }
+    },
+    "stageEntry": {
+      "type": "object",
+      "required": [
+        "id", "name", "description", "human_gate",
+        "template", "prerequisite_stage",
+        "required_artifacts", "required_skills",
+        "context_files", "next_stage"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*$",
+          "description": "Kebab-case stage identifier"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Human-readable stage name"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What this stage does and when it is triggered"
+        },
+        "human_gate": {
+          "type": "boolean",
+          "description": "Whether human approval is required to exit this stage"
+        },
+        "template": {
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": ["all"],
+              "description": "This stage applies to all workflow templates"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              "minItems": 1,
+              "description": "List of template IDs that include this stage"
+            }
+          ]
+        },
+        "prerequisite_stage": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[a-z][a-z0-9-/]*$" },
+            { "type": "null" }
+          ],
+          "description": "The stage that must complete before this one, or null for entry stages"
+        },
+        "required_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "Path templates (may include globs and {placeholders}) for expected artifacts"
+        },
+        "required_skills": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-/]*$",
+          "description": "Key into skill-routing.yaml routing map"
+        },
+        "context_files": {
+          "type": "object",
+          "required": ["agents_md", "checklist_md", "skills_md", "prompt_md"],
+          "properties": {
+            "agents_md": { "type": "string", "description": "Path to AGENTS.md" },
+            "checklist_md": { "type": "string", "description": "Path to CHECKLIST.md" },
+            "skills_md": { "type": "string", "description": "Path to SKILLS.md" },
+            "prompt_md": { "type": "string", "description": "Path to PROMPT.md" }
+          },
+          "additionalProperties": false
+        },
+        "next_stage": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[a-z][a-z0-9-/]*$" },
+            { "type": "null" }
+          ],
+          "description": "The stage that follows this one, or null for terminal stages"
+        }
+      },
+      "additionalProperties": false
+    },
+    "skillRouting": {
+      "type": "object",
+      "required": ["routing"],
+      "properties": {
+        "routing": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/definitions/routingEntry" },
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9-/]*$"
+          }
+        }
+      }
+    },
+    "routingEntry": {
+      "type": "object",
+      "required": ["required", "optional", "human_gate"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)*$"
+          },
+          "description": "Skills that must be available for this stage"
+        },
+        "optional": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*(:[a-z][a-z0-9-]*)*$"
+          },
+          "description": "Skills that may be used but are not mandatory"
+        },
+        "human_gate": {
+          "type": "boolean",
+          "description": "Whether human approval is required to exit this stage"
+        },
+        "notes": {
+          "type": "string",
+          "description": "Human-readable notes about when and why these skills are used"
+        }
+      },
+      "additionalProperties": false
+    },
+    "stageDirectory": {
+      "type": "object",
+      "description": "Validates that a stage directory contains the required four files",
+      "required": ["AGENTS.md", "CHECKLIST.md", "SKILLS.md", "PROMPT.md"],
+      "properties": {
+        "AGENTS.md": { "type": "string", "const": "exists" },
+        "CHECKLIST.md": { "type": "string", "const": "exists" },
+        "SKILLS.md": { "type": "string", "const": "exists" },
+        "PROMPT.md": { "type": "string", "const": "exists" }
+      }
+    }
+  }
+}

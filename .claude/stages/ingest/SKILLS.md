@@ -1,5 +1,12 @@
 # Ingest 阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: （无）
+- **optional**: `oh-my-claudecode:deep-interview`
+- **human_gate**: 否
+
 ## 主技能命令
 
 - **命令**: `process-interview`

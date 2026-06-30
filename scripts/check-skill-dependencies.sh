@@ -21,13 +21,19 @@ manifest = yaml.safe_load((root / ".claude" / "skill-dependencies.yaml").read_te
 
 skill_root = Path.home() / ".claude" / "skills"
 errors = []
+warnings = []
 
 for name, cfg in manifest.get("skills", {}).items():
     typ = cfg.get("type", "skill")
+    is_required = cfg.get("required", True)
     if typ == "cli":
         binary = cfg.get("binary", name)
         if not shutil.which(binary):
-            errors.append(f"CLI missing: {binary} (skill: {name})")
+            msg = f"CLI missing: {binary} (skill: {name})"
+            if is_required:
+                errors.append(msg)
+            else:
+                warnings.append(msg)
     else:
         path = cfg.get("path")
         if path:
@@ -35,10 +41,19 @@ for name, cfg in manifest.get("skills", {}).items():
         else:
             expected = skill_root / name / "SKILL.md"
         if not expected.exists():
-            errors.append(f"Skill missing: {name} (expected {expected})")
+            msg = f"Skill missing: {name} (expected {expected})"
+            if is_required:
+                errors.append(msg)
+            else:
+                warnings.append(msg)
+
+if warnings:
+    print("Optional dependencies missing (warnings only):")
+    for w in warnings:
+        print(f"  - {w}")
 
 if errors:
-    print("Missing dependencies:")
+    print("Required dependencies missing:")
     for e in errors:
         print(f"  - {e}")
     sys.exit(1)

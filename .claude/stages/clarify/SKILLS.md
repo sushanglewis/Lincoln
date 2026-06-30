@@ -1,5 +1,12 @@
 # Clarify 阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:brainstorming`
+- **optional**: `gsd:import`, `gsd:discuss-phase`, `oh-my-claudecode:deep-interview`, `openspec:explore`
+- **human_gate**: 是
+
 ## 主技能命令
 
 - **命令**: `clarify-requirements`
@@ -12,7 +19,7 @@
 
 - `superpowers:brainstorming` — 在起草需求前探索 2-3 种需求/方案视角，并列出 trade-offs。  
   **限制**：仅在人类 PM 批准某一方向后才能继续写 `requirements.md`。
-- `gsd-import` — 当存在外部需求文档或计划时，先调用以检测与项目已有决策的冲突。  
+- `gsd:import` — 当存在外部需求文档或计划时，先调用以检测与项目已有决策的冲突。  
   用法：`Skill("gsd-import", args="--from <path>")`。
 
 ## human_gate 子技能规则
