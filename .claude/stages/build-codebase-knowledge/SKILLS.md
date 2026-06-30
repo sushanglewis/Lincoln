@@ -1,5 +1,12 @@
 # build-codebase-knowledge 阶段技能
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: （无 — 由 `lincoln-build-codebase-knowledge` 内联技能主导）
+- **optional**: `gsd:map-codebase`
+- **human_gate**: 否
+
 ## 主技能
 
 - `lincoln-build-codebase-knowledge`

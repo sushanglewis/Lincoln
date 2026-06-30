@@ -1,5 +1,12 @@
 # OpenSpec 提案阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `openspec:propose`
+- **optional**: `superpowers:verification-before-completion`, `oh-my-claudecode:verify`
+- **human_gate**: 否
+
 ## 主技能命令
 
 - **命令**: `propose-with-openspec`

@@ -1,5 +1,12 @@
 # implement 阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:test-driven-development`, `superpowers:verification-before-completion`
+- **optional**: `openspec:apply-change`, `superpowers:subagent-driven-development`, `superpowers:using-git-worktrees`, `superpowers:systematic-debugging`, `superpowers:finishing-a-development-branch`, `superpowers:requesting-code-review`, `superpowers:receiving-code-review`, `gsd:execute-phase`, `gsd:code-review`, `gsd:debug`, `oh-my-claudecode:team`, `oh-my-claudecode:autopilot`, `oh-my-claudecode:ralph`, `oh-my-claudecode:ultrawork`
+- **human_gate**: 是
+
 ## 主技能命令
 
 本阶段无专门的 Agent 主动技能命令，由人类主导执行。

@@ -1,5 +1,12 @@
 # TDD 研发计划阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:writing-plans`, `superpowers:test-driven-development`
+- **optional**: `gsd:plan-phase`, `gsd:mvp-phase`, `oh-my-claudecode:plan`
+- **human_gate**: 否
+
 ## 主技能命令
 
 - **命令**: `plan-tdd-development`

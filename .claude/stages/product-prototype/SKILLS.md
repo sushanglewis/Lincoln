@@ -1,5 +1,12 @@
 # SKILLS.md - 产品原型阶段
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:brainstorming`
+- **optional**: `gsd:ui-phase`, `superpowers:using-git-worktrees`, `oh-my-claudecode:designer`
+- **human_gate**: 是
+
 ## 主要技能命令
 
 - `claude build-product-prototype <session_id> <design_id>`

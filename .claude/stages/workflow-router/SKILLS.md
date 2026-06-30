@@ -1,5 +1,12 @@
 # workflow-router 阶段技能
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:bootstrap`
+- **optional**: `gsd:new-project` / `gsd:new-milestone`, `oh-my-claudecode:plan`
+- **human_gate**: 是
+
 ## 主技能
 
 - `lincoln-workflow-router`

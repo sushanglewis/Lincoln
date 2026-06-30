@@ -57,3 +57,21 @@ skills:
     source: inline
     type: skill
     path: .claude/skills/lincoln-workflow-router
+
+  # oh-my-claudecode — optional multi-agent orchestration layer
+  oh-my-claudecode:
+    source: https://github.com/sushanglewis/oh-my-claudecode.git
+    ref: v1.0.0
+    type: plugin
+    required: false
+    recommended_skills:
+      - oh-my-claudecode:plan
+      - oh-my-claudecode:team
+      - oh-my-claudecode:verify
+      - oh-my-claudecode:autopilot
+      - oh-my-claudecode:ralph
+      - oh-my-claudecode:ultrawork
+      - oh-my-claudecode:deep-interview
+      - oh-my-claudecode:ai-slop-cleaner
+      - oh-my-claudecode:wiki
+      - oh-my-claudecode:writer-memory

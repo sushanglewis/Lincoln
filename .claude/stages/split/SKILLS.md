@@ -1,5 +1,12 @@
 # split 阶段技能与工具
 
+## 技能路由
+
+本阶段技能路由定义见 `.claude/skill-routing.yaml`：
+- **required**: `superpowers:dispatching-parallel-agents`
+- **optional**: `gsd:phase`, `oh-my-claudecode:team`
+- **human_gate**: 否
+
 ## 主技能命令
 
 ```
