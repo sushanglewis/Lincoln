@@ -20,7 +20,7 @@ class TranscriptionConfig:
 
 @dataclass(frozen=True)
 class DiarizationConfig:
-    provider: str = "pyannote"
+    provider: str = "heuristic"
     model: str = "pyannote/speaker-diarization-3.1"
     huggingface_token: str | None = None
 
@@ -68,7 +68,7 @@ def load_config(argv: list[str] | None = None) -> Config:
     )
 
     diarization = DiarizationConfig(
-        provider=rc.get("diarization", {}).get("provider", "pyannote"),
+        provider=rc.get("diarization", {}).get("provider", "heuristic"),
         model=rc.get("diarization", {}).get("model", "pyannote/speaker-diarization-3.1"),
         huggingface_token=_env_or_none("HUGGINGFACE_TOKEN")
         or rc.get("diarization", {}).get("huggingface_token"),

@@ -1440,6 +1440,7 @@ name = "lincoln-record-interview"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "faster-whisper" },
     { name = "pyyaml" },
     { name = "textual" },
 ]
@@ -1458,14 +1459,13 @@ dev = [
     { name = "textual-dev" },
 ]
 local = [
-    { name = "faster-whisper" },
     { name = "pyannote-audio" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "anthropic", marker = "extra == 'api'", specifier = ">=0.30" },
-    { name = "faster-whisper", marker = "extra == 'local'", specifier = ">=1.0" },
+    { name = "faster-whisper", specifier = ">=1.0" },
     { name = "freezegun", marker = "extra == 'dev'", specifier = ">=1.5" },
     { name = "openai", marker = "extra == 'api'", specifier = ">=1.0" },
     { name = "pyannote-audio", marker = "extra == 'local'", specifier = ">=3.3" },

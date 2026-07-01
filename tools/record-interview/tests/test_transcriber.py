@@ -22,7 +22,8 @@ def test_build_transcriber_falls_back_to_openai(mocker):
     assert isinstance(transcriber, OpenAIWhisperTranscriber)
 
 
-def test_build_transcriber_raises_when_no_backend():
+def test_build_transcriber_raises_when_no_backend(mocker):
+    mocker.patch.dict("sys.modules", {"faster_whisper": None})
     cfg = Config(transcription=TranscriptionConfig())
     with pytest.raises(ImportError):
         build_transcriber(cfg)
