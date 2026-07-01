@@ -465,6 +465,24 @@ def check_tdd_plan_complete(design_id: str):
     pass_check(f"TDD plan complete: {design_id}")
 
 
+def check_transcription_model_configured(session_id: str):
+    metadata_path = PROJECT_ROOT / "interviews" / session_id / "metadata.json"
+    if not metadata_path.exists():
+        fail(f"Metadata missing: {metadata_path}")
+    data = json.loads(metadata_path.read_text(encoding="utf-8"))
+    if not data.get("transcription_model"):
+        fail("transcription_model not configured in metadata")
+    pass_check(f"transcription_model: {data['transcription_model']}")
+
+
+def check_phased_summaries_exist(session_id: str):
+    session_dir = PROJECT_ROOT / "interviews" / session_id
+    summaries = sorted(session_dir.glob("phase-summary-*.md"))
+    if not summaries:
+        fail(f"No phase summaries found in {session_dir}")
+    pass_check(f"{len(summaries)} phase summaries found")
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -482,6 +500,7 @@ ENTRY_CHECKS = {
     "product_design_approved": check_product_design_approved,
     "prototype_ready": check_prototype_ready,
     "tdd_plan_ready": check_tdd_plan_ready,
+    "transcription_model_configured": check_transcription_model_configured,
 }
 
 EXIT_CHECKS = {
@@ -500,6 +519,7 @@ EXIT_CHECKS = {
     "design_docs_human_approved": check_design_docs_human_approved,
     "prototype_artifact_complete": check_prototype_artifact_complete,
     "tdd_plan_complete": check_tdd_plan_complete,
+    "phased_summaries_exist": check_phased_summaries_exist,
 }
 
 

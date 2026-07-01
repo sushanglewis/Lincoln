@@ -5,6 +5,9 @@ import subprocess
 from pathlib import Path
 
 
+from record_interview.summarizer import CLAUDE_CLI_TIMEOUT_SECONDS
+
+
 class ProcessInterviewError(Exception):
     pass
 
@@ -20,15 +23,15 @@ def trigger_process_interview(workspace_root: Path, session_id: str) -> None:
             cwd=workspace_root,
             capture_output=True,
             text=True,
-            timeout=300,
+            timeout=CLAUDE_CLI_TIMEOUT_SECONDS,
         )
     except subprocess.TimeoutExpired as e:
         raise ProcessInterviewError(
-            "claude process-interview timed out after 300 seconds"
+            f"claude process-interview timed out after {CLAUDE_CLI_TIMEOUT_SECONDS} seconds"
         ) from e
     except OSError as e:
         raise ProcessInterviewError(f"failed to run claude process-interview: {e}") from e
     if result.returncode != 0:
         raise ProcessInterviewError(
-            f"claude process-interview failed with code {result.returncode}: {result.stderr}"
+            f"claude process-interview failed with code {result.returncode}"
         )

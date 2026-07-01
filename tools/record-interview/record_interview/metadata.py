@@ -23,6 +23,9 @@ def build_metadata(
     topic: str | None,
     branch: str | None,
     started_at: str | None = None,
+    transcription_model: str | None = None,
+    diarization_model: str | None = None,
+    summarization_model: str | None = None,
 ) -> dict[str, Any]:
     return {
         "session_id": session_id,
@@ -35,7 +38,28 @@ def build_metadata(
         "duration_seconds": None,
         "source": "lincoln-record-interview-cli",
         "created_by": "lincoln-record-interview-cli",
+        "phased_summaries": [],
+        "transcription_model": transcription_model,
+        "diarization_model": diarization_model,
+        "summarization_model": summarization_model,
     }
+
+
+def add_phase_summary(
+    metadata: dict[str, Any],
+    index: int,
+    file: str,
+    start_time: str,
+    end_time: str,
+) -> dict[str, Any]:
+    summaries = list(metadata.get("phased_summaries", []))
+    summaries.append({
+        "index": index,
+        "file": file,
+        "start_time": start_time,
+        "end_time": end_time,
+    })
+    return {**metadata, "phased_summaries": summaries}
 
 
 def read_metadata(workspace_root: Path, session_id: str) -> dict[str, Any] | None:

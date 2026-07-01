@@ -1,0 +1,81 @@
+Screen {
+    align: center middle;
+}
+
+#title {
+    text-align: center;
+    text-style: bold;
+    height: auto;
+}
+
+#status {
+    text-align: center;
+    height: auto;
+}
+
+#checks {
+    height: auto;
+    margin: 1 2;
+}
+
+.check-ok {
+    color: green;
+}
+
+.check-fail {
+    color: red;
+}
+
+#actions {
+    height: auto;
+    align: center middle;
+}
+
+#recording-title {
+    text-align: center;
+    text-style: bold;
+    height: auto;
+}
+
+#recording-stats {
+    height: auto;
+    align: center middle;
+}
+
+#timer {
+    width: 50%;
+    text-align: center;
+    text-style: bold;
+}
+
+#countdown {
+    width: 50%;
+    text-align: center;
+}
+
+#transcript {
+    height: 1fr;
+    margin: 1 2;
+    border: solid green;
+}
+
+#recording-actions {
+    height: auto;
+    align: center middle;
+}
+
+#summary-title {
+    text-align: center;
+    text-style: bold;
+    height: auto;
+}
+
+#summary-body {
+    height: 1fr;
+    margin: 1 2;
+}
+
+#summary-actions {
+    height: auto;
+    align: center middle;
+}

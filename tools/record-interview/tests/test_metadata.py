@@ -6,6 +6,7 @@ import pytest
 from freezegun import freeze_time
 
 from record_interview.metadata import (
+    add_phase_summary,
     build_metadata,
     mark_recording_complete,
     read_metadata,
@@ -26,6 +27,10 @@ def make_sample_metadata() -> dict[str, Any]:
         "duration_seconds": None,
         "source": "lincoln-record-interview-cli",
         "created_by": "lincoln-record-interview-cli",
+        "phased_summaries": [],
+        "transcription_model": None,
+        "diarization_model": None,
+        "summarization_model": None,
     }
 
 
@@ -38,16 +43,42 @@ def test_build_metadata():
         branch="lincoln/2026-06-27-stakeholder-checkout-checkout-redesign",
         started_at="2026-06-27T10:00:00Z",
     )
-    assert meta["session_id"] == "2026-06-27-stakeholder-checkout"
-    assert meta["design_id"] == "checkout-redesign"
-    assert meta["topic"] == "结算流程 redesign 需求访谈"
-    assert meta["branch"] == "lincoln/2026-06-27-stakeholder-checkout-checkout-redesign"
-    assert meta["recording_file"] == "recordings/2026-06-27-stakeholder-checkout.m4a"
-    assert meta["started_at"] == "2026-06-27T10:00:00Z"
-    assert meta["ended_at"] is None
-    assert meta["duration_seconds"] is None
-    assert meta["created_by"] == "lincoln-record-interview-cli"
-    assert meta["source"] == "lincoln-record-interview-cli"
+    assert meta == make_sample_metadata()
+
+
+def test_build_metadata_with_model_fields():
+    meta = build_metadata(
+        session_id="2026-06-27-stakeholder-checkout",
+        design_id=None,
+        topic=None,
+        branch=None,
+        transcription_model="faster-whisper-small",
+        diarization_model="pyannote/speaker-diarization-3.1",
+        summarization_model="claude-sonnet-4-6",
+    )
+    assert meta["transcription_model"] == "faster-whisper-small"
+    assert meta["diarization_model"] == "pyannote/speaker-diarization-3.1"
+    assert meta["summarization_model"] == "claude-sonnet-4-6"
+
+
+def test_add_phase_summary_returns_new_metadata():
+    meta = make_sample_metadata()
+    updated = add_phase_summary(
+        meta,
+        index=1,
+        file="interviews/2026-06-27-stakeholder-checkout/phase-summary-01.md",
+        start_time="2026-06-27T10:00:00Z",
+        end_time="2026-06-27T10:10:00Z",
+    )
+    assert updated["phased_summaries"] == [
+        {
+            "index": 1,
+            "file": "interviews/2026-06-27-stakeholder-checkout/phase-summary-01.md",
+            "start_time": "2026-06-27T10:00:00Z",
+            "end_time": "2026-06-27T10:10:00Z",
+        }
+    ]
+    assert meta["phased_summaries"] == []
 
 
 def test_read_metadata_returns_none_when_missing(tmp_path):

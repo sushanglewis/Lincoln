@@ -1,15 +1,16 @@
 schema_version: 1.0.0
 workflow:
-  name: interview-to-knowledge
+  name: existing-project-iteration
   version: 1.0.0
 current_run:
-  run_id: test-001
-  branch: feat-ready-screen
-  started_at: '2026-06-27T00:00:00Z'
-  last_updated_at: '2026-06-29T07:15:00Z'
-  current_stage: null
-  previous_stage: implement
-  status: completed
+  run_id: issue-14-recording-v2
+  branch: issue-14-v1
+  workflow_template: existing-project-iteration
+  started_at: '2026-06-30T00:00:00Z'
+  last_updated_at: '2026-07-01T13:12:03Z'
+  current_stage: implement
+  previous_stage: product-prototype
+  status: in_progress
 stages:
   ingest:
     status: completed
@@ -25,55 +26,59 @@ stages:
     error_message: null
     retry_count: 0
   clarify:
-    status: validation_failed
-    started_at: null
-    completed_at: null
-    entry_checks_passed: null
-    entry_checks_run_at: null
-    exit_checks_passed: null
-    exit_checks_run_at: null
-    human_gate_passed: null
-    human_gate_passed_at: null
-    artifacts_produced: []
+    status: completed
+    started_at: '2026-06-30T08:00:00Z'
+    completed_at: '2026-06-30T10:00:00Z'
+    entry_checks_passed: true
+    entry_checks_run_at: '2026-06-30T08:00:00Z'
+    exit_checks_passed: true
+    exit_checks_run_at: '2026-06-30T10:00:00Z'
+    human_gate_passed: true
+    human_gate_passed_at: '2026-06-30T10:00:00Z'
+    artifacts_produced:
+    - requirements/2026-06-30-lincoln-recording-v2/requirements.md
     error_message: null
     retry_count: 1
   product-design-docs:
-    status: not_started
-    started_at: null
-    completed_at: null
-    entry_checks_passed: null
-    entry_checks_run_at: null
-    exit_checks_passed: null
-    exit_checks_run_at: null
-    human_gate_passed: null
-    human_gate_passed_at: null
-    artifacts_produced: []
+    status: completed
+    started_at: '2026-06-30T10:00:00Z'
+    completed_at: '2026-06-30T11:00:00Z'
+    entry_checks_passed: true
+    entry_checks_run_at: '2026-06-30T10:00:00Z'
+    exit_checks_passed: true
+    exit_checks_run_at: '2026-06-30T11:00:00Z'
+    human_gate_passed: true
+    human_gate_passed_at: '2026-06-30T11:00:00Z'
+    artifacts_produced:
+    - docs/research/lincoln-recording-v2-oss-options.md
     error_message: null
     retry_count: 0
   product-prototype:
-    status: not_started
-    started_at: null
-    completed_at: null
-    entry_checks_passed: null
-    entry_checks_run_at: null
-    exit_checks_passed: null
-    exit_checks_run_at: null
-    human_gate_passed: null
-    human_gate_passed_at: null
-    artifacts_produced: []
+    status: completed
+    started_at: '2026-06-30T11:00:00Z'
+    completed_at: '2026-06-30T12:00:00Z'
+    entry_checks_passed: true
+    entry_checks_run_at: '2026-06-30T11:00:00Z'
+    exit_checks_passed: true
+    exit_checks_run_at: '2026-06-30T12:00:00Z'
+    human_gate_passed: true
+    human_gate_passed_at: '2026-06-30T12:00:00Z'
+    artifacts_produced:
+    - designs/lincoln-recording-v2/untitled.pen
     error_message: null
     retry_count: 0
   tdd-development-plan:
-    status: not_started
-    started_at: null
-    completed_at: null
-    entry_checks_passed: null
-    entry_checks_run_at: null
-    exit_checks_passed: null
-    exit_checks_run_at: null
-    human_gate_passed: null
-    human_gate_passed_at: null
-    artifacts_produced: []
+    status: completed
+    started_at: '2026-06-30T12:00:00Z'
+    completed_at: '2026-06-30T13:00:00Z'
+    entry_checks_passed: true
+    entry_checks_run_at: '2026-06-30T12:00:00Z'
+    exit_checks_passed: true
+    exit_checks_run_at: '2026-06-30T13:00:00Z'
+    human_gate_passed: true
+    human_gate_passed_at: '2026-06-30T13:00:00Z'
+    artifacts_produced:
+    - designs/lincoln-recording-v2/tdd-plan.md
     error_message: null
     retry_count: 0
   propose:
@@ -103,18 +108,41 @@ stages:
     error_message: null
     retry_count: 0
   implement:
-    status: not_started
-    started_at: '2026-06-28T05:08:07Z'
+    status: in_progress
+    started_at: '2026-06-30T13:00:00Z'
     completed_at: null
-    entry_checks_passed: null
-    entry_checks_run_at: null
+    entry_checks_passed: true
+    entry_checks_run_at: '2026-07-01T13:01:21Z'
     exit_checks_passed: true
-    exit_checks_run_at: '2026-06-28T05:08:07Z'
+    exit_checks_run_at: '2026-07-01T13:12:03Z'
     human_gate_passed: null
     human_gate_passed_at: null
-    artifacts_produced: []
+    artifacts_produced:
+    - tools/record-interview/record_interview/errors.py
+    - tools/record-interview/record_interview/config.py
+    - tools/record-interview/record_interview/worktree.py
+    - tools/record-interview/record_interview/checks.py
+    - tools/record-interview/record_interview/transcriber.py
+    - tools/record-interview/record_interview/diarizer.py
+    - tools/record-interview/record_interview/summarizer.py
+    - tools/record-interview/record_interview/knowledge_loader.py
+    - tools/record-interview/record_interview/phased_summary.py
+    - tools/record-interview/record_interview/pipeline.py
+    - tools/record-interview/record_interview/tui/app.py
+    - tools/record-interview/record_interview/tui/screens/setup.py
+    - tools/record-interview/record_interview/tui/screens/recording.py
+    - tools/record-interview/record_interview/tui/screens/summary.py
+    - tools/record-interview/record_interview/tui/styles.css
+    - tools/record-interview/record_interview/cli.py
+    - tools/record-interview/record_interview/recorder.py
+    - tools/record-interview/record_interview/validator.py
+    - tools/record-interview/record_interview/metadata.py
+    - tools/record-interview/record_interview/process.py
+    - tools/record-interview/pyproject.toml
+    - .claude/skills/interview-workflow/validators/validate.py
     error_message: null
     retry_count: 0
+    validator_history: []
   sync-knowledge:
     status: completed
     started_at: '2026-06-29T07:10:00Z'
@@ -126,21 +154,21 @@ stages:
     human_gate_passed: null
     human_gate_passed_at: null
     artifacts_produced:
-      - docs/knowledge/03-features/lincoln-recording.md
-      - docs/knowledge/01-interviews/2026-06-28-stakeholder-checkout.md
-      - docs/knowledge/02-requirements/REQ-001.md
-      - docs/knowledge/04-decisions/DEC-001.md
-      - docs/knowledge/00-index.md
-      - .github/lincoln-sync-queue/pr-9.yaml
+    - docs/knowledge/03-features/lincoln-recording.md
+    - docs/knowledge/01-interviews/2026-06-28-stakeholder-checkout.md
+    - docs/knowledge/02-requirements/REQ-001.md
+    - docs/knowledge/04-decisions/DEC-001.md
+    - docs/knowledge/00-index.md
+    - .github/lincoln-sync-queue/pr-9.yaml
     error_message: null
     retry_count: 0
 variables:
-  session_id: 2026-06-27-test
-  design_id: null
-  change_name: null
-  issue_number: null
+  session_id: 2026-06-30-lincoln-recording-v2
+  design_id: lincoln-recording-v2
+  change_name: lincoln-recording-v2
+  issue_number: '14'
   pr_number: null
-  feature_slug: null
+  feature_slug: lincoln-recording
 recovery:
   last_validated_checkpoint: ingest
   can_resume_from: clarify

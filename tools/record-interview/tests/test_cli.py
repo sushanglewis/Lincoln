@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 from record_interview.cli import run_recording_flow
+from record_interview.config import Config
 
 
 def test_run_recording_flow_creates_metadata_and_triggers_process(tmp_path):
@@ -25,6 +26,7 @@ def test_run_recording_flow_creates_metadata_and_triggers_process(tmp_path):
         run_recording_flow(
             workspace_root=tmp_path,
             session_id="2026-06-27-test",
+            config=Config(),
             design_id="d1",
             topic="test topic",
             branch="main",
@@ -58,6 +60,7 @@ def test_run_recording_flow_no_confirm_skips_trigger(tmp_path):
         result = run_recording_flow(
             workspace_root=tmp_path,
             session_id="2026-06-27-test",
+            config=Config(),
             design_id="d1",
             topic="test topic",
             branch="main",
@@ -91,6 +94,7 @@ def test_run_recording_flow_cancels_when_not_confirmed(tmp_path):
         result = run_recording_flow(
             workspace_root=tmp_path,
             session_id="2026-06-27-test",
+            config=Config(),
             design_id="d1",
             topic="test topic",
             branch="main",
@@ -119,6 +123,7 @@ def test_run_recording_flow_cancels_on_keyboard_interrupt(tmp_path):
         result = run_recording_flow(
             workspace_root=tmp_path,
             session_id="2026-06-27-test",
+            config=Config(),
             design_id="d1",
             topic="test topic",
             branch="main",

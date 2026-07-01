@@ -4,9 +4,11 @@ import argparse
 import sys
 from pathlib import Path
 
+from record_interview.config import Config, load_config
 from record_interview.metadata import build_metadata, update_recording_complete, write_metadata
 from record_interview.process import trigger_process_interview
 from record_interview.recorder import FfmpegRecorder
+from record_interview.tui.app import LincolnRecordApp
 from record_interview.validator import resolve_workspace_root, validate_session_id
 
 
@@ -23,6 +25,7 @@ def _confirm(duration_seconds: int) -> bool:
 def run_recording_flow(
     workspace_root: Path,
     session_id: str,
+    config: Config,
     design_id: str | None,
     topic: str | None,
     branch: str | None,
@@ -31,7 +34,15 @@ def run_recording_flow(
     recording_path = workspace_root / "recordings" / f"{session_id}.m4a"
     recording_path.parent.mkdir(parents=True, exist_ok=True)
 
-    metadata = build_metadata(session_id, design_id, topic, branch)
+    metadata = build_metadata(
+        session_id,
+        design_id,
+        topic,
+        branch,
+        transcription_model=config.transcription.model if config.transcription else None,
+        diarization_model=config.diarization.model if config.diarization else None,
+        summarization_model=config.summarization.model if config.summarization else None,
+    )
     write_metadata(workspace_root, session_id, metadata)
     print(f"Metadata prepared: interviews/{session_id}/metadata.json")
 
@@ -73,6 +84,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--topic", help="Interview topic")
     parser.add_argument("--branch", help="Current branch name")
     parser.add_argument("--no-confirm", action="store_true", help="Save recording and exit without confirming process-interview")
+    parser.add_argument("--no-tui", action="store_true", help="Use the non-interactive CLI instead of the TUI")
     args = parser.parse_args(argv)
 
     try:
@@ -82,10 +94,25 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Error: {e}", file=sys.stderr)
         return 1
 
+    config = load_config()
+
+    use_tui = sys.stdin.isatty() and sys.stdout.isatty() and not args.no_tui
+    if use_tui:
+        app = LincolnRecordApp(
+            workspace_root=workspace_root,
+            session_id=session_id,
+            config=config,
+            design_id=args.design_id,
+            topic=args.topic,
+            branch=args.branch,
+        )
+        return app.run()
+
     try:
         return run_recording_flow(
             workspace_root=workspace_root,
             session_id=session_id,
+            config=config,
             design_id=args.design_id,
             topic=args.topic,
             branch=args.branch,
