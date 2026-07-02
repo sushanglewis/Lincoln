@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import platform
 import shutil
 import subprocess
 
@@ -16,22 +15,12 @@ def check_ffmpeg() -> tuple[bool, str]:
     return False, "ffmpeg not found in PATH. Install with: brew install ffmpeg"
 
 
-def request_microphone_permission(timeout_seconds: float = 60.0) -> bool:
-    """Request macOS microphone permission and return whether it was granted.
+def _probe_microphone(timeout_seconds: float = 30.0) -> tuple[bool, str]:
+    """Run a short ffmpeg capture to detect and/or unlock the microphone.
 
-    On macOS this runs a short ffmpeg capture to trigger the system permission
-    dialog. On non-macOS platforms this returns False immediately.
+    On macOS this also triggers the system permission dialog if the app has
+    not yet been granted microphone access. Returns (ok, reason_or_message).
     """
-    granted, _reason = _request_microphone_permission_with_reason(timeout_seconds)
-    return granted
-
-
-def _request_microphone_permission_with_reason(
-    timeout_seconds: float = 60.0,
-) -> tuple[bool, str]:
-    """Request macOS microphone permission and return (granted, reason)."""
-    if platform.system() != "Darwin":
-        return False, "not macOS"
     if not shutil.which("ffmpeg"):
         return False, "ffmpeg missing"
 
@@ -63,35 +52,38 @@ def _request_microphone_permission_with_reason(
 
     stderr = result.stderr.decode("utf-8", errors="replace") if result.stderr else ""
     if result.returncode == 0:
-        return True, "granted"
+        return True, "microphone accessible"
     if "permission" in stderr.lower():
-        return False, "denied"
-    _LOGGER.warning("ffmpeg permission probe failed: %s", stderr)
+        return False, "permission denied"
+    _LOGGER.warning("ffmpeg microphone probe failed: %s", stderr)
     return False, f"failed: {stderr.strip().splitlines()[-1] if stderr else 'unknown'}"
 
 
-def _list_avfoundation_devices() -> str:
-    try:
-        result = subprocess.run(
-            ["ffmpeg", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-    except (subprocess.SubprocessError, FileNotFoundError, OSError):
-        return ""
-    return result.stderr or ""
+def request_microphone_permission(timeout_seconds: float = 30.0) -> bool:
+    """Request macOS microphone permission and return whether it was granted.
+
+    On macOS this runs a short ffmpeg capture to trigger the system permission
+    dialog. On non-macOS platforms this returns False immediately.
+    """
+    ok, _reason = _probe_microphone(timeout_seconds)
+    return ok
 
 
 def check_microphone() -> tuple[bool, str]:
-    devices = _list_avfoundation_devices()
-    if "[AVFoundation indev" in devices and "input device" in devices.lower():
-        return True, "microphone detected"
-    if not shutil.which("ffmpeg"):
+    ok, reason = _probe_microphone()
+    if ok:
+        return True, reason
+    if reason == "ffmpeg missing":
         return False, "cannot check microphone because ffmpeg is missing"
+    if reason == "permission denied":
+        return (
+            False,
+            "microphone permission denied. Check System Settings > Privacy & Security > Microphone, "
+            "or run: tccutil reset Microphone",
+        )
     return (
         False,
-        "no microphone detected. Check System Settings > Privacy & Security > Microphone.",
+        f"no microphone detected ({reason}). Check System Settings > Privacy & Security > Microphone.",
     )
 
 

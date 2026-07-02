@@ -1,18 +1,19 @@
 import pytest
 import pytest_asyncio
 
+from textual.widgets import Button
+
 from record_interview.config import Config, DiarizationConfig, SummarizationConfig, TranscriptionConfig
 from record_interview.tui.app import LincolnRecordApp
 from record_interview.tui.screens.recording import RecordingScreen
 
 
 @pytest.fixture(autouse=True)
-def _patch_microphone_permission(mocker):
-    # Prevent the TUI setup screen from running a real ffmpeg permission probe
-    # during tests.
+def _patch_microphone_probe(mocker):
+    # Prevent the TUI setup screen from running a real ffmpeg probe during tests.
     mocker.patch(
-        "record_interview.tui.screens.setup._request_microphone_permission_with_reason",
-        return_value=(True, "granted"),
+        "record_interview.checks._probe_microphone",
+        return_value=(True, "microphone accessible"),
     )
 
 
@@ -51,19 +52,14 @@ async def test_setup_screen_renders_checks(app, mocker):
 
 
 @pytest.mark.asyncio
-async def test_setup_screen_requests_microphone_permission_when_missing(app, mocker):
+async def test_setup_screen_shows_microphone_failure(app, mocker):
     mocker.patch("record_interview.tui.screens.recording.TranscriptionPipeline")
     mocker.patch("record_interview.checks.check_ffmpeg", return_value=(True, "ok"))
     mocker.patch("record_interview.checks.check_transcription", return_value=(True, "ok"))
     mocker.patch("record_interview.checks.check_diarization", return_value=(True, "ok"))
     mocker.patch("record_interview.checks.check_summarization", return_value=(True, "ok"))
-    mocker.patch("record_interview.checks.check_microphone", return_value=(False, "no microphone"))
-    request_spy = mocker.patch(
-        "record_interview.tui.screens.setup._request_microphone_permission_with_reason",
-        return_value=(False, "denied"),
-    )
-    app.app.screen._requested_permission = False
+    mocker.patch("record_interview.checks.check_microphone", return_value=(False, "permission denied"))
     app.app.screen._run_checks()
     await app.pause()
-    request_spy.assert_called_once()
-    assert "denied" in app.app.screen._checks["microphone"][1]
+    assert app.app.screen._checks["microphone"] == (False, "permission denied")
+    assert app.app.screen.query_one("#start", Button).disabled is True

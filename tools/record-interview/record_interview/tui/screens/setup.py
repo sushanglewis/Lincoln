@@ -5,10 +5,7 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Static
 
-from record_interview.checks import (
-    _request_microphone_permission_with_reason,
-    run_setup_checks,
-)
+from record_interview.checks import run_setup_checks
 from record_interview.metadata import build_metadata, write_metadata
 
 
@@ -18,7 +15,6 @@ class SetupScreen(Screen):
     def __init__(self) -> None:
         super().__init__()
         self._checks: dict[str, tuple[bool, str]] = {}
-        self._requested_permission = False
 
     def compose(self) -> ComposeResult:
         yield Static("Lincoln Interview Recorder", id="title")
@@ -32,25 +28,7 @@ class SetupScreen(Screen):
         self._run_checks()
 
     def _run_checks(self) -> None:
-        app = self.app
-        self._checks = run_setup_checks(app.config)
-        mic_ready, _ = self._checks.get("microphone", (False, ""))
-        if not mic_ready and not self._requested_permission:
-            self._requested_permission = True
-            status = self.query_one("#status", Static)
-            status.update("Requesting microphone permission...")
-            try:
-                granted, reason = _request_microphone_permission_with_reason()
-            except Exception:  # noqa: BLE001
-                granted, reason = False, "unexpected error"
-            if granted:
-                self._checks = run_setup_checks(app.config)
-            else:
-                self._checks["microphone"] = (
-                    False,
-                    f"microphone permission: {reason}. "
-                    "If denied, reset with: tccutil reset Microphone",
-                )
+        self._checks = run_setup_checks(self.app.config)
         self._render_checks()
 
     def _render_checks(self) -> None:

@@ -1,7 +1,7 @@
 import subprocess
 
 from record_interview.checks import (
-    _request_microphone_permission_with_reason,
+    _probe_microphone,
     check_diarization,
     check_ffmpeg,
     check_microphone,
@@ -29,27 +29,32 @@ def test_check_ffmpeg_false_when_missing(mocker):
 
 def test_check_microphone_detected(mocker):
     mocker.patch(
-        "record_interview.checks._list_avfoundation_devices",
-        return_value="[AVFoundation indev] input device 0",
+        "record_interview.checks._probe_microphone",
+        return_value=(True, "microphone accessible"),
     )
     ready, message = check_microphone()
     assert ready is True
+    assert "accessible" in message
 
 
 def test_check_microphone_missing(mocker):
-    mocker.patch("record_interview.checks._list_avfoundation_devices", return_value="")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+    mocker.patch(
+        "record_interview.checks._probe_microphone",
+        return_value=(False, "failed: no device"),
+    )
     ready, message = check_microphone()
     assert ready is False
-    assert "Privacy" in message
+    assert "no device" in message
 
 
 def test_check_microphone_cannot_check_without_ffmpeg(mocker):
-    mocker.patch("record_interview.checks._list_avfoundation_devices", return_value="")
-    mocker.patch("shutil.which", return_value=None)
+    mocker.patch(
+        "record_interview.checks._probe_microphone",
+        return_value=(False, "ffmpeg missing"),
+    )
     ready, message = check_microphone()
     assert ready is False
-    assert "cannot check microphone" in message
+    assert "ffmpeg is missing" in message
 
 
 def test_check_transcription_local_ok(mocker):
@@ -164,91 +169,92 @@ def test_run_setup_checks_returns_all_keys(mocker):
     assert set(result.keys()) == {"ffmpeg", "microphone", "transcription", "diarization", "summarization"}
 
 
-def test_request_microphone_permission_non_macos(mocker):
-    mocker.patch("platform.system", return_value="Linux")
-    assert request_microphone_permission() is False
-
-
-def test_request_microphone_permission_missing_ffmpeg(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
+def test_probe_microphone_missing_ffmpeg(mocker):
     mocker.patch("shutil.which", return_value=None)
-    assert request_microphone_permission() is False
+    ok, reason = _probe_microphone()
+    assert ok is False
+    assert reason == "ffmpeg missing"
 
 
-def test_request_microphone_permission_granted(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+def test_probe_microphone_granted(mocker):
     result = mocker.MagicMock()
     result.returncode = 0
     result.stderr = b""
     mocker.patch("record_interview.checks.subprocess.run", return_value=result)
-    assert request_microphone_permission() is True
+    ok, reason = _probe_microphone()
+    assert ok is True
+    assert reason == "microphone accessible"
 
 
-def test_request_microphone_permission_denied(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+def test_probe_microphone_denied(mocker):
     result = mocker.MagicMock()
     result.returncode = 1
     result.stderr = b"Permission denied by user"
     mocker.patch("record_interview.checks.subprocess.run", return_value=result)
-    assert request_microphone_permission() is False
+    ok, reason = _probe_microphone()
+    assert ok is False
+    assert reason == "permission denied"
 
 
-def test_request_microphone_permission_times_out(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+def test_probe_microphone_times_out(mocker):
     mocker.patch(
         "record_interview.checks.subprocess.run",
-        side_effect=subprocess.TimeoutExpired("ffmpeg", 60),
+        side_effect=subprocess.TimeoutExpired("ffmpeg", 30),
     )
-    assert request_microphone_permission(timeout_seconds=0.01) is False
+    ok, reason = _probe_microphone(timeout_seconds=0.01)
+    assert ok is False
+    assert reason == "timed out"
 
 
-def test_request_microphone_permission_handles_subprocess_error(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+def test_probe_microphone_handles_subprocess_error(mocker):
     mocker.patch(
         "record_interview.checks.subprocess.run",
         side_effect=FileNotFoundError("ffmpeg"),
     )
-    assert request_microphone_permission() is False
+    ok, reason = _probe_microphone()
+    assert ok is False
+    assert reason.startswith("error:")
 
 
-def test_reason_non_macos(mocker):
-    mocker.patch("platform.system", return_value="Linux")
-    granted, reason = _request_microphone_permission_with_reason()
-    assert granted is False
-    assert reason == "not macOS"
-
-
-def test_reason_missing_ffmpeg(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value=None)
-    granted, reason = _request_microphone_permission_with_reason()
-    assert granted is False
-    assert reason == "ffmpeg missing"
-
-
-def test_reason_granted(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
-    result = mocker.MagicMock()
-    result.returncode = 0
-    result.stderr = b""
-    mocker.patch("record_interview.checks.subprocess.run", return_value=result)
-    granted, reason = _request_microphone_permission_with_reason()
-    assert granted is True
-    assert reason == "granted"
-
-
-def test_reason_failed(mocker):
-    mocker.patch("platform.system", return_value="Darwin")
-    mocker.patch("shutil.which", return_value="/usr/bin/ffmpeg")
+def test_probe_microphone_failed(mocker):
     result = mocker.MagicMock()
     result.returncode = 1
     result.stderr = b"first line\nlast line\n"
     mocker.patch("record_interview.checks.subprocess.run", return_value=result)
-    granted, reason = _request_microphone_permission_with_reason()
-    assert granted is False
+    ok, reason = _probe_microphone()
+    assert ok is False
     assert "last line" in reason
+
+
+def test_check_microphone_ok(mocker):
+    mocker.patch("record_interview.checks._probe_microphone", return_value=(True, "microphone accessible"))
+    ready, message = check_microphone()
+    assert ready is True
+    assert "accessible" in message
+
+
+def test_check_microphone_missing_ffmpeg(mocker):
+    mocker.patch("record_interview.checks._probe_microphone", return_value=(False, "ffmpeg missing"))
+    ready, message = check_microphone()
+    assert ready is False
+    assert "ffmpeg is missing" in message
+
+
+def test_check_microphone_permission_denied(mocker):
+    mocker.patch("record_interview.checks._probe_microphone", return_value=(False, "permission denied"))
+    ready, message = check_microphone()
+    assert ready is False
+    assert "permission denied" in message
+    assert "tccutil reset Microphone" in message
+
+
+def test_check_microphone_other_failure(mocker):
+    mocker.patch("record_interview.checks._probe_microphone", return_value=(False, "failed: no device"))
+    ready, message = check_microphone()
+    assert ready is False
+    assert "no device" in message
+
+
+def test_request_microphone_permission_returns_probe_result(mocker):
+    mocker.patch("record_interview.checks._probe_microphone", return_value=(True, "microphone accessible"))
+    assert request_microphone_permission() is True
