@@ -13,7 +13,7 @@ DEFAULT_PHASE_INTERVAL_SECONDS = 600
 
 @dataclass(frozen=True)
 class TranscriptionConfig:
-    model: str = "small"
+    model: str = "tiny"
     device: str = "auto"
     compute_type: str = "default"
 
@@ -62,7 +62,7 @@ def load_config(argv: list[str] | None = None) -> Config:
     rc = _load_lincolnrc()
 
     transcription = TranscriptionConfig(
-        model=rc.get("transcription", {}).get("model", "small"),
+        model=rc.get("transcription", {}).get("model", "tiny"),
         device=rc.get("transcription", {}).get("device", "auto"),
         compute_type=rc.get("transcription", {}).get("compute_type", "default"),
     )
