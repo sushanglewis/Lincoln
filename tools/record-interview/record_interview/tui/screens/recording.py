@@ -39,7 +39,11 @@ class RecordingScreen(Screen):
     def on_mount(self) -> None:
         self._start_time = time.monotonic()
         self.set_interval(1, self._tick)
-        self._start_pipeline()
+        try:
+            self._start_pipeline()
+        except Exception as exc:  # noqa: BLE001
+            self._on_error(exc)
+            self.app.call_from_thread(self._stop)
 
     def _start_pipeline(self) -> None:
         app = self.app
@@ -100,17 +104,21 @@ class RecordingScreen(Screen):
 
     def _stop(self) -> None:
         if self._pipeline is None:
+            self.app.push_screen("summary")
             return
         try:
             duration = self._pipeline.stop()
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self._on_error(e)
             duration = self.elapsed_seconds
         self.app.duration_seconds = duration
-        update_recording_complete(self.app.workspace_root, self.app.session_id, duration)
+        try:
+            update_recording_complete(self.app.workspace_root, self.app.session_id, duration)
+        except Exception as e:  # noqa: BLE001
+            self._on_error(e)
         try:
             summary_path = self._pipeline.generate_final_summary()
             self.app.summary_path = summary_path
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self._on_error(e)
         self.app.push_screen("summary")

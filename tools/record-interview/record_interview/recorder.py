@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 import queue
+import re
 import shutil
 import subprocess
 import threading
@@ -14,6 +15,51 @@ _LOGGER = logging.getLogger(__name__)
 
 class RecordingError(Exception):
     pass
+
+
+def _list_avfoundation_devices() -> str:
+    try:
+        result = subprocess.run(
+            ["ffmpeg", "-f", "avfoundation", "-list_devices", "true", "-i", ""],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (subprocess.SubprocessError, FileNotFoundError, OSError):
+        return ""
+    return result.stderr or ""
+
+
+def _find_avfoundation_audio_input() -> str | None:
+    """Return the first AVFoundation audio input index (e.g. ':0') or None."""
+    devices = _list_avfoundation_devices()
+    in_audio_section = False
+    for line in devices.splitlines():
+        lower = line.lower()
+        if "audio devices" in lower:
+            in_audio_section = True
+            continue
+        if "video devices" in lower:
+            in_audio_section = False
+            continue
+        if in_audio_section:
+            match = re.search(r"\[(\d+)\]", line)
+            if match:
+                return f":{match.group(1)}"
+    return None
+
+
+def _resolve_avfoundation_input() -> str:
+    """Resolve the AVFoundation audio input to use.
+
+    ':default' is the documented shorthand, but on some macOS/terminal
+    combinations it produces AVERROR_INVALIDDATA. Fall back to the first
+    enumerated audio input device.
+    """
+    explicit = _find_avfoundation_audio_input()
+    if explicit:
+        return explicit
+    return ":default"
 
 
 class FfmpegRecorder:
@@ -28,7 +74,7 @@ class FfmpegRecorder:
             "ffmpeg",
             "-y",
             "-f", "avfoundation",
-            "-i", ":default",
+            "-i", _resolve_avfoundation_input(),
             "-ar", str(self.sample_rate),
             "-c:a", "aac",
             "-b:a", "128k",
@@ -101,6 +147,7 @@ class ChunkedRecorder:
         self._started_at: float | None = None
         self._watcher_thread: threading.Thread | None = None
         self._running = False
+        self._pending_chunks: dict[Path, tuple[int, float]] = {}
 
     def _build_command(self) -> list[str]:
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -109,7 +156,7 @@ class ChunkedRecorder:
             "ffmpeg",
             "-y",
             "-f", "avfoundation",
-            "-i", ":default",
+            "-i", _resolve_avfoundation_input(),
             "-ar", str(self.sample_rate),
             "-c:a", "aac",
             "-b:a", "128k",
@@ -120,14 +167,47 @@ class ChunkedRecorder:
         ]
 
     def _watcher(self) -> None:
-        previous = set()
+        previous: set[Path] = set()
+        stable_seconds = 0.5
         while self._running:
             time.sleep(0.2)
             current = set(self.output_dir.glob("chunk_*.m4a"))
             new = current - previous
+            now = time.monotonic()
             for path in sorted(new):
+                try:
+                    size = path.stat().st_size
+                except OSError:
+                    continue
+                if size == 0:
+                    continue
+                self._pending_chunks[path] = (size, now)
+
+            ready: list[Path] = []
+            for path, (last_size, last_time) in list(self._pending_chunks.items()):
+                if not path.exists():
+                    del self._pending_chunks[path]
+                    continue
+                try:
+                    size = path.stat().st_size
+                except OSError:
+                    del self._pending_chunks[path]
+                    continue
+                if size != last_size:
+                    self._pending_chunks[path] = (size, now)
+                elif now - last_time >= stable_seconds:
+                    ready.append(path)
+                    del self._pending_chunks[path]
+
+            for path in sorted(ready):
                 self.queue.put(path)
             previous = current
+
+        # Flush any remaining pending chunks when stopping.
+        for path in sorted(self._pending_chunks):
+            if path.exists() and path.stat().st_size > 0:
+                self.queue.put(path)
+        self._pending_chunks.clear()
 
     def start(self) -> None:
         if not shutil.which("ffmpeg"):

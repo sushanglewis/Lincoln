@@ -5,6 +5,11 @@ import pytest
 from record_interview.recorder import ChunkedRecorder, RecordingError
 
 
+@pytest.fixture(autouse=True)
+def _patch_avfoundation_input(mocker):
+    mocker.patch("record_interview.recorder._resolve_avfoundation_input", return_value=":0")
+
+
 def test_chunked_recorder_build_command_uses_segment_muxer(tmp_path):
     recorder = ChunkedRecorder(output_dir=tmp_path / "chunks", chunk_seconds=5)
     cmd = recorder._build_command()

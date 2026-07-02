@@ -7,6 +7,11 @@ import pytest
 from record_interview.recorder import FfmpegRecorder, RecordingError
 
 
+@pytest.fixture(autouse=True)
+def _patch_avfoundation_input(mocker):
+    mocker.patch("record_interview.recorder._resolve_avfoundation_input", return_value=":0")
+
+
 def test_recorder_builds_correct_command():
     recorder = FfmpegRecorder(sample_rate=44100)
     output = Path("/tmp/test.m4a")
@@ -15,7 +20,7 @@ def test_recorder_builds_correct_command():
     assert "-f" in cmd
     assert "avfoundation" in cmd
     assert "-i" in cmd
-    assert ":default" in cmd
+    assert ":0" in cmd
     assert str(output) in cmd
 
 

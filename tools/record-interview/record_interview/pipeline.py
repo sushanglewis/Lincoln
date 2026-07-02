@@ -150,10 +150,14 @@ class TranscriptionPipeline:
         if not self._running:
             return 0
         self._running = False
-        duration = self._recorder.stop()
+        try:
+            duration = self._recorder.stop()
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Recorder stop failed: %s", exc)
+            duration = max(0, int(time.monotonic() - self._start_time_offset))
         self._recorder.queue.put(None)
         if self._thread is not None:
-            self._thread.join(timeout=10)
+            self._thread.join(timeout=2)
         return duration
 
     def generate_final_summary(self) -> Path:
