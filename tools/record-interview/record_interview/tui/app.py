@@ -19,6 +19,9 @@ class LincolnRecordApp(App):
         "recording": RecordingScreen,
         "summary": SummaryScreen,
     }
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+    ]
 
     def __init__(
         self,

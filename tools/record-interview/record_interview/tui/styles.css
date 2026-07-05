@@ -1,21 +1,34 @@
 Screen {
-    align: center middle;
+    layout: vertical;
 }
 
-#title {
-    text-align: center;
+Header {
+    height: 1;
+    background: $surface;
+    color: $text;
+}
+
+Footer {
+    height: 1;
+    background: $surface;
+    color: $text;
+}
+
+#setup-title {
+    height: auto;
+    padding: 1 2;
     text-style: bold;
-    height: auto;
-}
-
-#status {
-    text-align: center;
-    height: auto;
+    background: $primary-darken-2;
+    color: $text;
 }
 
 #checks {
+    height: 1fr;
+    padding: 0 2;
+}
+
+#checks-list {
     height: auto;
-    margin: 1 2;
 }
 
 .check-ok {
@@ -26,56 +39,59 @@ Screen {
     color: red;
 }
 
-#actions {
+#setup-status {
     height: auto;
-    align: center middle;
+    padding: 1 2;
+    background: $surface;
+    color: $text;
 }
 
-#recording-title {
-    text-align: center;
-    text-style: bold;
+#recording-header {
     height: auto;
-}
-
-#recording-stats {
-    height: auto;
-    align: center middle;
+    padding: 0 2;
+    background: $surface;
 }
 
 #timer {
-    width: 50%;
-    text-align: center;
+    width: 20%;
     text-style: bold;
+    color: $text;
 }
 
-#countdown {
-    width: 50%;
-    text-align: center;
+#audio-meter {
+    width: 80%;
+    color: $text;
+}
+
+#status-bar {
+    height: auto;
+    padding: 0 2;
+    background: $primary-darken-2;
+    color: $text;
 }
 
 #transcript {
     height: 1fr;
-    margin: 1 2;
-    border: solid green;
-}
-
-#recording-actions {
-    height: auto;
-    align: center middle;
-}
-
-#summary-title {
-    text-align: center;
-    text-style: bold;
-    height: auto;
+    margin: 0 1;
+    border: solid $primary;
 }
 
 #summary-body {
-    height: 1fr;
-    margin: 1 2;
+    height: auto;
+    padding: 1 2;
 }
 
-#summary-actions {
-    height: auto;
-    align: center middle;
+#phase-summaries {
+    height: 1fr;
+    margin: 0 1;
+    border: solid $primary;
+}
+
+DataTable {
+    border: solid $primary;
+}
+
+DataTable > .datatable--header {
+    text-style: bold;
+    background: $primary-darken-2;
 }

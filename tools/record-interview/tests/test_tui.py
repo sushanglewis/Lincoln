@@ -1,9 +1,12 @@
 import pytest
 import pytest_asyncio
 
-from textual.widgets import Button
-
-from record_interview.config import Config, DiarizationConfig, SummarizationConfig, TranscriptionConfig
+from record_interview.config import (
+    Config,
+    DiarizationConfig,
+    SummarizationConfig,
+    TranscriptionConfig,
+)
 from record_interview.tui.app import LincolnRecordApp
 from record_interview.tui.screens.recording import RecordingScreen
 
@@ -41,12 +44,17 @@ async def test_setup_screen_renders_checks(app, mocker):
     mocker.patch("record_interview.tui.screens.recording.TranscriptionPipeline")
     mocker.patch("record_interview.checks.check_ffmpeg", return_value=(True, "ok"))
     mocker.patch("record_interview.checks.check_microphone", return_value=(True, "ok"))
-    mocker.patch("record_interview.checks.check_transcription", return_value=(True, "ok"))
+    mocker.patch(
+        "record_interview.checks.check_transcription", return_value=(True, "ok")
+    )
     mocker.patch("record_interview.checks.check_diarization", return_value=(True, "ok"))
-    mocker.patch("record_interview.checks.check_summarization", return_value=(True, "ok"))
+    mocker.patch(
+        "record_interview.checks.check_summarization", return_value=(True, "ok")
+    )
     app.app.screen._run_checks()
     await app.pause()
-    await app.click("#start")
+    assert app.app.screen._can_start is True
+    await app.press("s")
     await app.pause()
     assert isinstance(app.app.screen, RecordingScreen)
 
@@ -55,11 +63,18 @@ async def test_setup_screen_renders_checks(app, mocker):
 async def test_setup_screen_shows_microphone_failure(app, mocker):
     mocker.patch("record_interview.tui.screens.recording.TranscriptionPipeline")
     mocker.patch("record_interview.checks.check_ffmpeg", return_value=(True, "ok"))
-    mocker.patch("record_interview.checks.check_transcription", return_value=(True, "ok"))
+    mocker.patch(
+        "record_interview.checks.check_transcription", return_value=(True, "ok")
+    )
     mocker.patch("record_interview.checks.check_diarization", return_value=(True, "ok"))
-    mocker.patch("record_interview.checks.check_summarization", return_value=(True, "ok"))
-    mocker.patch("record_interview.checks.check_microphone", return_value=(False, "permission denied"))
+    mocker.patch(
+        "record_interview.checks.check_summarization", return_value=(True, "ok")
+    )
+    mocker.patch(
+        "record_interview.checks.check_microphone",
+        return_value=(False, "permission denied"),
+    )
     app.app.screen._run_checks()
     await app.pause()
     assert app.app.screen._checks["microphone"] == (False, "permission denied")
-    assert app.app.screen.query_one("#start", Button).disabled is True
+    assert app.app.screen._can_start is False

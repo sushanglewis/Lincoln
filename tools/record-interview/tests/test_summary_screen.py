@@ -1,7 +1,12 @@
 import pytest
 import pytest_asyncio
 
-from record_interview.config import Config, DiarizationConfig, SummarizationConfig, TranscriptionConfig
+from record_interview.config import (
+    Config,
+    DiarizationConfig,
+    SummarizationConfig,
+    TranscriptionConfig,
+)
 from record_interview.tui.app import LincolnRecordApp
 from record_interview.tui.screens.summary import SummaryScreen
 
@@ -37,4 +42,5 @@ async def test_summary_screen_shows_duration_and_paths(summary_app):
     body = screen.query_one("#summary-body")
     text = "\n".join(str(child.render()) for child in body.children)
     assert "02:05" in text
-    assert "phase-summary-01.md" in text
+    table = screen.query_one("#phase-summaries")
+    assert "phase-summary-01.md" in table.get_row_at(0)[1]

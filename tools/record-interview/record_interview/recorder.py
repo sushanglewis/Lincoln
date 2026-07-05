@@ -73,11 +73,16 @@ class FfmpegRecorder:
         return [
             "ffmpeg",
             "-y",
-            "-f", "avfoundation",
-            "-i", _resolve_avfoundation_input(),
-            "-ar", str(self.sample_rate),
-            "-c:a", "aac",
-            "-b:a", "128k",
+            "-f",
+            "avfoundation",
+            "-i",
+            _resolve_avfoundation_input(),
+            "-ar",
+            str(self.sample_rate),
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
             str(output_path),
         ]
 
@@ -138,7 +143,9 @@ class FfmpegRecorder:
 class ChunkedRecorder:
     """Record audio into fixed-duration chunks using ffmpeg's segment muxer."""
 
-    def __init__(self, output_dir: Path, chunk_seconds: int = 5, sample_rate: int = 44100) -> None:
+    def __init__(
+        self, output_dir: Path, chunk_seconds: int = 5, sample_rate: int = 44100
+    ) -> None:
         self.output_dir = output_dir
         self.chunk_seconds = chunk_seconds
         self.sample_rate = sample_rate
@@ -155,14 +162,22 @@ class ChunkedRecorder:
         return [
             "ffmpeg",
             "-y",
-            "-f", "avfoundation",
-            "-i", _resolve_avfoundation_input(),
-            "-ar", str(self.sample_rate),
-            "-c:a", "aac",
-            "-b:a", "128k",
-            "-f", "segment",
-            "-segment_time", str(self.chunk_seconds),
-            "-reset_timestamps", "1",
+            "-f",
+            "avfoundation",
+            "-i",
+            _resolve_avfoundation_input(),
+            "-ar",
+            str(self.sample_rate),
+            "-c:a",
+            "aac",
+            "-b:a",
+            "128k",
+            "-f",
+            "segment",
+            "-segment_time",
+            str(self.chunk_seconds),
+            "-reset_timestamps",
+            "1",
             pattern,
         ]
 
@@ -263,3 +278,57 @@ class ChunkedRecorder:
 
     def is_recording(self) -> bool:
         return self._process is not None and self._process.poll() is None
+
+
+def get_chunk_paths(chunks_dir: Path) -> list[Path]:
+    """Return sorted list of all chunk files in the directory."""
+    return sorted(chunks_dir.glob("chunk_*.m4a"))
+
+
+def concatenate_chunks(chunks_dir: Path, output_path: Path) -> Path | None:
+    """Concatenate chunk files into a single audio file using ffmpeg concat demuxer.
+
+    Returns the output path on success, None if no chunks exist.
+    Raises RecordingError on ffmpeg failure.
+    """
+    chunk_files = get_chunk_paths(chunks_dir)
+    if not chunk_files:
+        return None
+
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    list_path = chunks_dir / "concat_list.txt"
+    lines = [f"file '{chunk.name}'" for chunk in chunk_files]
+    list_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-f",
+        "concat",
+        "-safe",
+        "0",
+        "-i",
+        str(list_path),
+        "-c",
+        "copy",
+        str(output_path),
+    ]
+
+    try:
+        result = subprocess.run(
+            cmd,
+            cwd=str(chunks_dir),
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+    except (subprocess.SubprocessError, FileNotFoundError, OSError) as exc:
+        raise RecordingError(f"chunk concatenation failed: {exc}") from exc
+
+    if result.returncode != 0:
+        raise RecordingError(
+            f"chunk concatenation failed (code {result.returncode}): {result.stderr}"
+        )
+
+    return output_path
