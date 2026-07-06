@@ -25,12 +25,17 @@ fi
 
 TOOL_NAME="${1:-}"
 TOOL_ARGS="${2:-}"
-STATE_FILE="${LINCOLN_STATE_FILE:-$ROOT/.claude/workflow-stage.yaml}"
-LEGACY_STATE_FILE="$ROOT/.claude/workflow-state.yaml"
-
-if [[ ! -f "$STATE_FILE" && -f "$LEGACY_STATE_FILE" ]]; then
-    STATE_FILE="$LEGACY_STATE_FILE"
-fi
+STATE_FILE=$("$PYTHON" - "$ROOT" "${LINCOLN_STATE_FILE:-}" <<'PY'
+import sys
+from pathlib import Path
+root = Path(sys.argv[1])
+provided = sys.argv[2]
+sys.path.insert(0, str(root))
+from scripts.lincoln_paths import resolve_state_path
+path = Path(provided) if provided else None
+print(resolve_state_path(path, root))
+PY
+)
 
 # If state file does not exist, allow everything (not a Lincoln project or not initialized)
 if [[ ! -f "$STATE_FILE" ]]; then
@@ -62,6 +67,27 @@ PY
 STATE_OUTPUT=$(read_state)
 CURRENT_STAGE=$(echo "$STATE_OUTPUT" | sed -n '1p')
 STAGE_STATUS=$(echo "$STATE_OUTPUT" | sed -n '2p')
+PROCESS_SLUG=$("$PYTHON" - "$ROOT" "$STATE_FILE" <<'PY'
+import sys, yaml
+from pathlib import Path
+root = Path(sys.argv[1])
+state_file = Path(sys.argv[2])
+sys.path.insert(0, str(root))
+from scripts.lincoln_paths import get_process_slug
+state = yaml.safe_load(open(state_file, encoding="utf-8"))
+print(get_process_slug(state, state_file))
+PY
+)
+
+TARGET_PATH=$("$PYTHON" - "$TOOL_ARGS" <<'PY'
+import json, sys
+try:
+    data = json.loads(sys.argv[1] or "{}")
+except Exception:
+    data = {}
+print(data.get("file_path") or data.get("path") or "")
+PY
+)
 
 # Task-tool guard: prevent TaskCreate/TaskUpdate from being used as
 # placeholders for user messages in dialogue stages, and cap consecutive
@@ -95,6 +121,54 @@ is_side_effect() {
     done
     return 1
 }
+
+is_plain_file_tool() {
+    case "$1" in
+        Read|Write|Edit|NotebookEdit)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+if [[ -n "$TARGET_PATH" ]]; then
+    NORMALIZED_TARGET="${TARGET_PATH#$ROOT/}"
+
+    if [[ "$NORMALIZED_TARGET" == *.pen ]] && is_plain_file_tool "$TOOL_NAME"; then
+        echo "BLOCKED: .pen files must be handled through Pencil tools, not $TOOL_NAME." >&2
+        exit 1
+    fi
+
+    if [[ "$NORMALIZED_TARGET" == "$PROCESS_SLUG/workflow-stage.yaml" ]] && is_side_effect "$TOOL_NAME"; then
+        echo "BLOCKED: workflow state must be updated through stage_loader, not $TOOL_NAME." >&2
+        exit 1
+    fi
+
+    if [[ "$NORMALIZED_TARGET" == "$PROCESS_SLUG/recordings/"* ]] && is_side_effect "$TOOL_NAME"; then
+        echo "BLOCKED: recordings are read-only process inputs." >&2
+        exit 1
+    fi
+
+    if is_side_effect "$TOOL_NAME"; then
+        if [[ -n "$PROCESS_SLUG" ]]; then
+            case "$NORMALIZED_TARGET" in
+                recordings/*|interviews/*|requirements/*|designs/*|openspec/changes/*|docs/research/*)
+                    if [[ "$NORMALIZED_TARGET" != "$PROCESS_SLUG/"* ]]; then
+                        echo "BLOCKED: process artifacts must be written under '$PROCESS_SLUG/'." >&2
+                        exit 1
+                    fi
+                    ;;
+            esac
+        else
+            case "$NORMALIZED_TARGET" in
+                recordings/*|interviews/*|requirements/*|designs/*|openspec/changes/*|docs/research/*)
+                    echo "BLOCKED: process artifacts must be written under an initialized <process_slug>/." >&2
+                    exit 1
+                    ;;
+            esac
+        fi
+    fi
+fi
 
 # Block side-effect tools when entry checks have not passed
 if [[ "$STAGE_STATUS" == "not_started" || "$STAGE_STATUS" == "entry_validating" ]]; then
