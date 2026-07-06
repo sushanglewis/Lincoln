@@ -15,10 +15,10 @@ inputs:
     description: OpenSpec 变更名称，如 add-csv-export
     required: true
 outputs:
-  - openspec/changes/{change_name}/proposal.md
-  - openspec/changes/{change_name}/design.md
-  - openspec/changes/{change_name}/tasks.md
-  - openspec/changes/{change_name}/specs/
+  - "{process_slug}/openspec/changes/{change_name}/proposal.md"
+  - "{process_slug}/openspec/changes/{change_name}/design.md"
+  - "{process_slug}/openspec/changes/{change_name}/tasks.md"
+  - "{process_slug}/openspec/changes/{change_name}/specs/"
 required_tools:
   - Read
   - Bash

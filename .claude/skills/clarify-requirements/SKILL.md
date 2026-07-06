@@ -9,9 +9,9 @@ inputs:
     description: 访谈会话 ID，如 2026-06-27-stakeholder
     required: true
 outputs:
-  - requirements/{session_id}/requirements.md
-  - requirements/{session_id}/user-stories.md
-  - requirements/{session_id}/prd.md
+  - "{process_slug}/requirements/{session_id}/requirements.md"
+  - "{process_slug}/requirements/{session_id}/user-stories.md"
+  - "{process_slug}/requirements/{session_id}/prd.md"
 required_tools:
   - Read
   - Bash

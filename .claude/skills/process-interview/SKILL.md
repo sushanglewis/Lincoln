@@ -6,13 +6,13 @@ triggers:
   - "process-interview"
 inputs:
   - name: recording_path
-    description: 录音文件路径，如 recordings/2026-06-27-stakeholder.m4a
+    description: 录音文件路径，如 {process_slug}/recordings/2026-06-27-stakeholder.m4a
     required: true
 outputs:
-  - interviews/{session_id}/metadata.json
-  - interviews/{session_id}/transcript.md
-  - interviews/{session_id}/summary.md
-  - interviews/{session_id}/raw-insights.md
+  - "{process_slug}/interviews/{session_id}/metadata.json"
+  - "{process_slug}/interviews/{session_id}/transcript.md"
+  - "{process_slug}/interviews/{session_id}/summary.md"
+  - "{process_slug}/interviews/{session_id}/raw-insights.md"
 required_tools:
   - Read
   - Bash

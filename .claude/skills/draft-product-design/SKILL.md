@@ -12,12 +12,12 @@ inputs:
     description: 产品设计 ID，如 checkout-redesign
     required: true
 outputs:
-  - designs/{design_id}/design-review.md
-  - designs/{design_id}/scenarios.md
-  - designs/{design_id}/feature-catalog.md
-  - designs/{design_id}/data-model.md
-  - designs/{design_id}/flows.md
-  - designs/{design_id}/feasibility.md
+  - "{process_slug}/designs/{design_id}/design-review.md"
+  - "{process_slug}/designs/{design_id}/scenarios.md"
+  - "{process_slug}/designs/{design_id}/feature-catalog.md"
+  - "{process_slug}/designs/{design_id}/data-model.md"
+  - "{process_slug}/designs/{design_id}/flows.md"
+  - "{process_slug}/designs/{design_id}/feasibility.md"
 required_tools:
   - Read
   - Bash
