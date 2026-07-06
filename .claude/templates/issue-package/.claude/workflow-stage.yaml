@@ -12,12 +12,13 @@ current_run:
   started_at: ""
   last_updated_at: ""
   variables:
+    process_slug: ""
     session_id: ""
     design_id: ""
-    change_name: ""
-    issue_number: ""
-    pr_number: ""
-    feature_slug: ""
+  change_name: ""
+  issue_number: ""
+  pr_number: ""
+  feature_slug: ""
 nodes: []
 recovery:
   last_validated_checkpoint: ""
