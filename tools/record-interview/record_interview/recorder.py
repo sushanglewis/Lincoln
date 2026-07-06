@@ -27,12 +27,15 @@ def _list_avfoundation_devices() -> str:
         )
     except (subprocess.SubprocessError, FileNotFoundError, OSError):
         return ""
-    return result.stderr or ""
+    stderr = result.stderr or ""
+    if isinstance(stderr, bytes):
+        stderr = stderr.decode("utf-8", errors="replace")
+    return stderr
 
 
-def _find_avfoundation_audio_input() -> str | None:
-    """Return the first AVFoundation audio input index (e.g. ':0') or None."""
-    devices = _list_avfoundation_devices()
+def _parse_avfoundation_audio_devices(devices: str) -> list[tuple[int, str]]:
+    """Return list of (index, name) for AVFoundation audio input devices."""
+    inputs: list[tuple[int, str]] = []
     in_audio_section = False
     for line in devices.splitlines():
         lower = line.lower()
@@ -42,19 +45,48 @@ def _find_avfoundation_audio_input() -> str | None:
         if "video devices" in lower:
             in_audio_section = False
             continue
-        if in_audio_section:
-            match = re.search(r"\[(\d+)\]", line)
-            if match:
-                return f":{match.group(1)}"
-    return None
+        if not in_audio_section:
+            continue
+        match = re.search(r"\[(\d+)\]\s*(.+)", line)
+        if match:
+            index = int(match.group(1))
+            name = match.group(2).strip()
+            inputs.append((index, name))
+    return inputs
+
+
+def _score_audio_input(name: str) -> int:
+    """Prefer MacBook built-in microphone; avoid iPhone and AirPods."""
+    lower = name.lower()
+    if "macbook" in lower:
+        return 100
+    if "built-in" in lower or "built in" in lower:
+        return 90
+    if "internal" in lower:
+        return 80
+    if "iphone" in lower or "ipad" in lower:
+        return -100
+    if "airpods" in lower:
+        return -50
+    return 0
+
+
+def _find_avfoundation_audio_input() -> str | None:
+    """Return the best AVFoundation audio input index (e.g. ':0') or None."""
+    devices = _list_avfoundation_devices()
+    inputs = _parse_avfoundation_audio_devices(devices)
+    if not inputs:
+        return None
+    best = max(inputs, key=lambda item: _score_audio_input(item[1]))
+    return f":{best[0]}"
 
 
 def _resolve_avfoundation_input() -> str:
     """Resolve the AVFoundation audio input to use.
 
     ':default' is the documented shorthand, but on some macOS/terminal
-    combinations it produces AVERROR_INVALIDDATA. Fall back to the first
-    enumerated audio input device.
+    combinations it produces AVERROR_INVALIDDATA and may select the wrong
+    device (e.g. an iPhone). Prefer the built-in MacBook microphone.
     """
     explicit = _find_avfoundation_audio_input()
     if explicit:

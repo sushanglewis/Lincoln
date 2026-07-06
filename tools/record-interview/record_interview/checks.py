@@ -5,6 +5,7 @@ import shutil
 import subprocess
 
 from record_interview.config import Config
+from record_interview.recorder import _resolve_avfoundation_input
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,7 +31,7 @@ def _probe_microphone(timeout_seconds: float = 30.0) -> tuple[bool, str]:
         "-f",
         "avfoundation",
         "-i",
-        ":default",
+        _resolve_avfoundation_input(),
         "-t",
         "0.1",
         "-f",
@@ -92,6 +93,7 @@ def check_transcription(config: Config) -> tuple[bool, str]:
         return False, "transcription configuration is missing"
     try:
         import faster_whisper  # noqa: F401
+
         return True, f"faster-whisper model '{config.transcription.model}' will be used"
     except ImportError:
         if config.summarization and config.summarization.openai_api_key:
@@ -110,6 +112,7 @@ def check_diarization(config: Config) -> tuple[bool, str]:
     if provider == "diarize":
         try:
             import diarize  # noqa: F401
+
             return True, "diarize (CPU) is available"
         except ImportError:
             return False, "diarize not installed. Install with: pip install diarize"
@@ -117,10 +120,16 @@ def check_diarization(config: Config) -> tuple[bool, str]:
         try:
             import pyannote.audio  # noqa: F401
         except ImportError:
-            return False, "pyannote.audio not installed. Install with: pip install pyannote.audio"
+            return (
+                False,
+                "pyannote.audio not installed. Install with: pip install pyannote.audio",
+            )
         token = config.diarization.huggingface_token if config.diarization else None
         if not token:
-            return False, "HUGGINGFACE_TOKEN is required for pyannote. Set it or switch to diarize/heuristic."
+            return (
+                False,
+                "HUGGINGFACE_TOKEN is required for pyannote. Set it or switch to diarize/heuristic.",
+            )
         return True, "pyannote speaker diarization will be used"
     return False, f"unknown diarization provider: {provider}"
 
@@ -130,7 +139,10 @@ def check_summarization(config: Config) -> tuple[bool, str]:
     if provider == "claude":
         if shutil.which("claude"):
             return True, "claude CLI will be used for summarization"
-        return False, "claude CLI not found. Install with: brew install anthropic/tap/claude-code"
+        return (
+            False,
+            "claude CLI not found. Install with: brew install anthropic/tap/claude-code",
+        )
     if provider == "openai":
         key = config.summarization.openai_api_key if config.summarization else None
         if key:
