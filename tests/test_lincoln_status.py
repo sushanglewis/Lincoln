@@ -142,6 +142,8 @@ def test_get_waiting_for_none(status_mod):
 def test_build_status_report_keys(status_mod, minimal_state):
     report = status_mod.build_status_report(minimal_state)
     expected_keys = {
+        "process_slug",
+        "state_file",
         "branch",
         "run_id",
         "workflow_template",
@@ -158,6 +160,9 @@ def test_build_status_report_keys(status_mod, minimal_state):
         "required_skills",
         "optional_skills",
         "required_artifacts",
+        "primary_agent",
+        "review_agents",
+        "handoff_to",
         "next_action",
         "metrics",
     }
@@ -186,6 +191,26 @@ def test_build_status_report_metrics(status_mod, minimal_state):
     assert "completed" in metrics
     assert "failed" in metrics
     assert "waiting_for_human" in metrics
+
+
+def test_build_status_report_interpolates_artifacts(status_mod, minimal_state, monkeypatch):
+    workflow = {
+        "name": "test",
+        "steps": [
+            {
+                "id": "ingest",
+                "name": "Ingest",
+                "artifacts": ["{process_slug}/interviews/{session_id}/summary.md"],
+            }
+        ],
+    }
+    monkeypatch.setattr(status_mod, "load_workflow", lambda _name=None: workflow)
+    minimal_state["variables"]["process_slug"] = "feature-xyz"
+    minimal_state["variables"]["session_id"] = "2026-07-06-test"
+    report = status_mod.build_status_report(minimal_state)
+    assert "feature-xyz/interviews/2026-07-06-test/summary.md" in report["required_artifacts"]
+    for art in report["required_artifacts"]:
+        assert "{" not in art, f"Artifact not interpolated: {art}"
 
 
 def test_build_status_report_no_current_stage(status_mod):

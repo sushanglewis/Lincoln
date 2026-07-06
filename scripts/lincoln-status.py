@@ -37,9 +37,12 @@ from scripts.stage_loader import (  # noqa: E402
     get_stage_skills,
     get_latest_node_for_stage,
     get_variables,
+    interpolate_artifact,
     _is_legacy_state,
     now_iso,
+    resolve_state_path,
 )
+from scripts.lincoln_paths import get_process_slug
 
 
 def get_waiting_for(stage_status: str | None, stage_def: dict[str, Any]) -> str:
@@ -79,10 +82,11 @@ def get_required_skills(stage_id: str) -> dict[str, list[str]]:
     return get_stage_skills(routing_data, stage_id)
 
 
-def get_required_artifacts(workflow: dict[str, Any], stage_id: str) -> list[str]:
-    """Return artifact paths declared in the workflow for the stage."""
+def get_required_artifacts(workflow: dict[str, Any], stage_id: str, state: dict[str, Any] | None = None) -> list[str]:
+    """Return artifact paths declared in the workflow for the stage, with variables resolved."""
     stage_def = find_stage(workflow, stage_id)
-    return stage_def.get("artifacts", [])
+    artifacts = stage_def.get("artifacts", [])
+    return [interpolate_artifact(str(art), state, resolve_state_path(None)) for art in artifacts]
 
 
 def get_next_action(state: dict[str, Any], stage_id: str | None, workflow: dict[str, Any]) -> str:
@@ -240,9 +244,13 @@ def build_status_report(state: dict[str, Any]) -> dict[str, Any]:
         retry_count = 0
 
     skills = get_required_skills(_stage_id) if _stage_id else {"required": [], "optional": []}
-    artifacts = get_required_artifacts(workflow, _stage_id) if _stage_id else []
+    artifacts = get_required_artifacts(workflow, _stage_id, state) if _stage_id else []
+
+    state_file = resolve_state_path(None)
 
     return {
+        "process_slug": get_process_slug(state, state_file),
+        "state_file": str(state_file.relative_to(PROJECT_ROOT) if state_file.is_relative_to(PROJECT_ROOT) else state_file),
         "branch": current_run.get("branch", "unknown"),
         "run_id": current_run.get("run_id", "unknown"),
         "workflow_template": template_name or "unknown",
@@ -259,6 +267,9 @@ def build_status_report(state: dict[str, Any]) -> dict[str, Any]:
         "required_skills": skills.get("required", []),
         "optional_skills": skills.get("optional", []),
         "required_artifacts": artifacts,
+        "primary_agent": stage_def.get("primary_agent") if _stage_id else None,
+        "review_agents": stage_def.get("review_agents", []) if _stage_id else [],
+        "handoff_to": stage_def.get("handoff_to") if _stage_id else None,
         "next_action": get_next_action(state, _stage_id, workflow),
         "metrics": compute_metrics(state),
     }
@@ -274,6 +285,7 @@ def format_table(report: dict[str, Any]) -> str:
     lines.append("LINCOLN BRANCH STATUS")
     lines.append("=" * 70)
     lines.append(f"{'Branch:':<25} {report['branch']}")
+    lines.append(f"{'Process Package:':<25} {report.get('process_slug', 'unknown')}")
     lines.append(f"{'Run ID:':<25} {report['run_id']}")
     lines.append(f"{'Workflow Template:':<25} {report['workflow_template']}")
     lines.append(f"{'Current Stage:':<25} {report['current_stage'] or '(none)'}")
@@ -285,6 +297,9 @@ def format_table(report: dict[str, Any]) -> str:
     lines.append(f"{'Human Gate:':<25} {report['human_gate_passed']}")
     lines.append(f"{'Retry Count:':<25} {report['retry_count']}")
     lines.append(f"{'Waiting For:':<25} {report['waiting_for']}")
+    lines.append(f"{'Primary Agent:':<25} {report.get('primary_agent') or '(none)'}")
+    lines.append(f"{'Review Agents:':<25} {', '.join(report.get('review_agents') or []) or '(none)'}")
+    lines.append(f"{'Handoff To:':<25} {report.get('handoff_to') or '(none)'}")
     lines.append("")
     lines.append("-" * 70)
     lines.append("LOADED CONTEXT")
@@ -338,6 +353,7 @@ def format_markdown(report: dict[str, Any]) -> str:
     lines.append("| Field | Value |")
     lines.append("|-------|-------|")
     lines.append(f"| Branch | `{report['branch']}` |")
+    lines.append(f"| Process Package | `{report.get('process_slug', 'unknown')}` |")
     lines.append(f"| Run ID | `{report['run_id']}` |")
     lines.append(f"| Workflow Template | `{report['workflow_template']}` |")
     lines.append(f"| Current Stage | `{report['current_stage'] or 'none'}` |")
@@ -349,6 +365,9 @@ def format_markdown(report: dict[str, Any]) -> str:
     lines.append(f"| Human Gate Passed | `{report['human_gate_passed']}` |")
     lines.append(f"| Retry Count | `{report['retry_count']}` |")
     lines.append(f"| Waiting For | `{report['waiting_for']}` |")
+    lines.append(f"| Primary Agent | `{report.get('primary_agent') or 'none'}` |")
+    lines.append(f"| Review Agents | `{', '.join(report.get('review_agents') or []) or 'none'}` |")
+    lines.append(f"| Handoff To | `{report.get('handoff_to') or 'none'}` |")
     lines.append("")
     lines.append("## Loaded Context")
     if report["loaded_context"]:
@@ -405,15 +424,17 @@ def main() -> int:
     parser.add_argument(
         "--state-file",
         type=Path,
-        default=STATE_PATH,
+        default=None,
         help="Path to workflow-stage.yaml",
     )
     args = parser.parse_args()
 
-    state = load_state(args.state_file)
+    state_file = resolve_state_path(args.state_file)
+    state = load_state(state_file)
 
     # If --branch is specified but differs from state, note it but still report state
     report = build_status_report(state)
+    report["state_file"] = str(state_file.relative_to(PROJECT_ROOT) if state_file.is_relative_to(PROJECT_ROOT) else state_file)
     if args.branch and report["branch"] != args.branch:
         report["_note"] = f"Requested branch '{args.branch}' but state shows '{report['branch']}'"
 
