@@ -6,9 +6,19 @@
 recordings/*
 !recordings/.gitkeep
 
+# Third-party source clones are local-only. Commit oss/projects.yaml instead.
+oss/clones/*
+!oss/clones/.gitkeep
+
 # Interview artifacts (can be large or contain sensitive content)
 interviews/*
 !interviews/.gitkeep
+
+# Process-package recordings and interviews (keep .gitkeep)
+*/recordings/*
+!*/recordings/.gitkeep
+*/interviews/*
+!*/interviews/.gitkeep
 
 # OpenSpec changes are committed for review and CI validation.
 
