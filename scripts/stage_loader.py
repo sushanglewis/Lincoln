@@ -3,7 +3,7 @@
 Lincoln stage loader / dispatcher.
 
 Loads stage-specific context, runs entry/exit validators, and manages the
-branch-scoped workflow state file at `.claude/workflow-stage.yaml`.
+per-process workflow state file at `<process_slug>/workflow-stage.yaml`.
 
 Usage:
     python scripts/stage-loader.py --stage clarify --action load
@@ -29,8 +29,20 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 import yaml
 
+from scripts.lincoln_paths import (
+    LEGACY_STATE_PATH,
+    ROOT_STATE_PATH,
+    get_process_slug,
+    interpolate_process_path,
+    process_package_root,
+    resolve_state_path as resolve_lincoln_state_path,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = PROJECT_ROOT / ".claude" / "workflows" / "interview-to-knowledge.yaml"
@@ -38,8 +50,7 @@ WORKFLOW_TEMPLATE_DIR = PROJECT_ROOT / ".claude" / "workflows" / "templates"
 DEFAULT_WORKFLOW_PATH = WORKFLOW_PATH
 
 # New default state file with legacy fallback
-STATE_PATH = PROJECT_ROOT / ".claude" / "workflow-stage.yaml"
-LEGACY_STATE_PATH = PROJECT_ROOT / ".claude" / "workflow-state.yaml"
+STATE_PATH = ROOT_STATE_PATH
 
 STAGES_DIR = PROJECT_ROOT / ".claude" / "stages"
 VALIDATOR_PATH = PROJECT_ROOT / "scripts" / "validate_stage.py"
@@ -128,12 +139,9 @@ def _is_legacy_state(state: dict[str, Any]) -> bool:
 
 
 def load_state(path: Path | None = None) -> dict[str, Any]:
-    path = path or STATE_PATH
+    path = resolve_state_path(path)
     if not path.exists():
-        if path == STATE_PATH and LEGACY_STATE_PATH.exists():
-            path = LEGACY_STATE_PATH
-        else:
-            raise FileNotFoundError(path)
+        raise FileNotFoundError(path)
     state = load_yaml(path)
     if not isinstance(state, dict):
         raise ValueError(f"State file {path} must contain a YAML mapping")
@@ -150,19 +158,14 @@ def load_state(path: Path | None = None) -> dict[str, Any]:
 
 
 def save_state(state: dict[str, Any], path: Path | None = None) -> None:
-    path = path or STATE_PATH
+    path = resolve_state_path(path)
     state["current_run"]["last_updated_at"] = now_iso()
     save_yaml(path, state)
 
 
 def resolve_state_path(path: Path | None = None) -> Path:
     """Return the actual state file path to use, preferring new over legacy."""
-    path = path or STATE_PATH
-    if path.exists():
-        return path
-    if path == STATE_PATH and LEGACY_STATE_PATH.exists():
-        return LEGACY_STATE_PATH
-    return path
+    return resolve_lincoln_state_path(path, PROJECT_ROOT)
 
 
 def find_stage(workflow: dict[str, Any], stage_id: str) -> dict[str, Any]:
@@ -196,6 +199,11 @@ def interpolate(value: str, variables: dict[str, Any]) -> str:
     return re.sub(r"\{(\w+)\}", replacer, value)
 
 
+def interpolate_artifact(value: str, state: dict[str, Any], state_file: Path | None = None) -> str:
+    value = interpolate(value, get_variables(state))
+    return interpolate_process_path(value, state, resolve_state_path(state_file))
+
+
 def get_variables(state: dict[str, Any]) -> dict[str, Any]:
     """Extract variables from state, handling both new and legacy schemas."""
     if _is_legacy_state(state):
@@ -226,6 +234,7 @@ def run_validator(
     phase: str,
     check_name: str,
     args: list[str],
+    state_file: Path | None = None,
     project_root: Path | None = None,
 ) -> tuple[int, str, str]:
     """Run a validator check via validate_stage.py subprocess."""
@@ -243,12 +252,12 @@ def run_validator(
     ]
     if args_str:
         cmd.extend(["--args", args_str])
+    if state_file is not None:
+        cmd.extend(["--state-file", str(state_file)])
 
     env = os.environ.copy()
-    if project_root:
-        # validate_stage.py computes PROJECT_ROOT from its own location;
-        # to support testing against a temporary project we'd need to refactor it.
-        pass
+    if project_root is not None:
+        env["LINCOLN_PROJECT_ROOT"] = str(project_root)
 
     result = subprocess.run(cmd, capture_output=True, text=True, env=env)
     return result.returncode, result.stdout, result.stderr
@@ -305,6 +314,7 @@ def action_load(stage_id: str, state: dict[str, Any]) -> dict[str, Any]:
             context_paths.append(str(path.relative_to(PROJECT_ROOT)))
 
     variables = get_variables(state)
+    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(None)))
     context = "\n\n---\n\n".join(context_parts)
     context = interpolate(context, variables)
 
@@ -344,6 +354,7 @@ def action_validate(
     stage_def = find_stage(workflow, stage_id)
     checks = stage_def.get(f"{phase}_checks", [])
     variables = get_variables(state)
+    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
 
     if _is_legacy_state(state):
         stage_state = state.setdefault("stages", {}).setdefault(stage_id, {})
@@ -363,8 +374,15 @@ def action_validate(
     for check in checks:
         check_name = check["check"]
         raw_args = check.get("args", [])
-        args = [interpolate(str(a), variables) for a in raw_args]
-        exit_code, stdout, stderr = run_validator(phase, check_name, args)
+        args = [
+            interpolate_process_path(
+                interpolate(str(a), variables),
+                state,
+                resolve_state_path(state_file),
+            )
+            for a in raw_args
+        ]
+        exit_code, stdout, stderr = run_validator(phase, check_name, args, state_file)
 
         if _is_legacy_state(state):
             stage_state["validator_history"].append(
@@ -448,7 +466,7 @@ def action_validate_exit(
     for check in exit_checks:
         check_name = check.get("check")
         raw_args = check.get("args", [])
-        args = [interpolate(str(a), variables) for a in raw_args]
+        args = [interpolate_process_path(interpolate(str(a), variables), state, resolve_state_path(state_file)) for a in raw_args]
 
         passed = _run_exit_gate_check(check_name, args, stage_id, state)
         if passed:
@@ -493,7 +511,7 @@ def _run_exit_gate_check(check_name: str, args: list[str], stage_id: str, state:
 
     # Unknown check: try running through validator as fallback
     try:
-        exit_code, _, _ = run_validator("exit", check_name, args)
+        exit_code, _, _ = run_validator("exit", check_name, args, state_file=None)
         return exit_code == 0
     except Exception:
         return False
@@ -736,7 +754,7 @@ def action_status(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
-    """Generate .context/lincoln-handoff-{stage}.md with current stage summary."""
+    """Generate <process_slug>/handoffs/lincoln-handoff-{stage}.md."""
     template_name = state.get("workflow", {}).get("template")
     workflow = load_workflow(template_name)
     stage_def = find_stage(workflow, stage_id)
@@ -786,10 +804,12 @@ def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
     lines.append("*This file is auto-generated by `scripts/stage_loader.py --action handoff-report`*")
 
     content = "\n".join(lines)
-    CONTEXT_DIR.mkdir(parents=True, exist_ok=True)
-    handoff_path = CONTEXT_DIR / f"lincoln-handoff-{stage_id}.md"
+    state_path = resolve_state_path(None)
+    handoff_dir = process_package_root(state=state, state_path=state_path) / "handoffs"
+    handoff_dir.mkdir(parents=True, exist_ok=True)
+    handoff_path = handoff_dir / f"lincoln-handoff-{stage_id}.md"
     handoff_path.write_text(content, encoding="utf-8")
-    return str(handoff_path)
+    return str(handoff_path.relative_to(PROJECT_ROOT))
 
 
 def main() -> int:
@@ -810,7 +830,7 @@ def main() -> int:
             "handoff-report",
         ],
     )
-    parser.add_argument("--state-file", type=Path, default=STATE_PATH)
+    parser.add_argument("--state-file", type=Path, default=None)
     parser.add_argument("--project-root", type=Path, default=PROJECT_ROOT)
     parser.add_argument("--approved-by", default="human-pm", help="Approver name for approve-gate")
     parser.add_argument("--node-id", help="Node ID for append-node")
@@ -819,7 +839,8 @@ def main() -> int:
     parser.add_argument("--artifacts", help="Comma-separated artifact paths for append-node")
     args = parser.parse_args()
 
-    state = load_state(args.state_file)
+    state_file = resolve_state_path(args.state_file)
+    state = load_state(state_file)
 
     if args.action == "load":
         if not args.stage:
@@ -832,14 +853,14 @@ def main() -> int:
         if not args.stage:
             parser.error("--stage is required for validate-*")
         if args.action == "validate-exit":
-            return action_validate_exit(args.stage, state, args.state_file)
+            return action_validate_exit(args.stage, state, state_file)
         phase = args.action.split("-")[1]
-        return action_validate(args.stage, state, phase, args.state_file)
+        return action_validate(args.stage, state, phase, state_file)
 
     if args.action == "approve-gate":
         if not args.stage:
             parser.error("--stage is required for approve-gate")
-        return action_approve_gate(args.stage, state, args.state_file, args.approved_by)
+        return action_approve_gate(args.stage, state, state_file, args.approved_by)
 
     if args.action == "append-node":
         if not args.node_id:
@@ -850,17 +871,17 @@ def main() -> int:
         artifacts = [a.strip() for a in args.artifacts.split(",")] if args.artifacts else None
         return action_append_node(
             stage_id, state, args.node_id, args.status,
-            args.state_file, args.handoff_file, artifacts,
+            state_file, args.handoff_file, artifacts,
         )
 
     if args.action == "transition-next":
         if not args.stage:
             parser.error("--stage is required for transition-next")
-        action_transition_next(args.stage, state, args.state_file)
+        action_transition_next(args.stage, state, state_file)
         return 0
 
     if args.action == "recover":
-        result = action_recover(state, args.state_file)
+        result = action_recover(state, state_file)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
