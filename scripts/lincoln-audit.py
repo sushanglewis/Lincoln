@@ -16,19 +16,20 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.stage_loader import (  # noqa: E402
     PROJECT_ROOT,
-    STATE_PATH,
     compute_next_stage,
     find_stage,
+    get_latest_node_for_stage,
+    get_nodes,
+    get_variables,
+    interpolate_artifact,
     load_state,
     load_workflow,
+    resolve_state_path,
 )
-
-HANDOFF_PATH = PROJECT_ROOT / ".context" / "lincoln-handoff.md"
+from scripts.lincoln_paths import get_process_slug, process_package_root
 
 
 def _parse_iso(ts: str | None) -> Any:
@@ -42,30 +43,34 @@ def _parse_iso(ts: str | None) -> Any:
         return None
 
 
+def _get_stage_status(state: dict[str, Any], stage_id: str) -> str | None:
+    node = get_latest_node_for_stage(state, stage_id)
+    if node is not None:
+        return node.get("status")
+    return None
+
+
 def audit_state_consistency(state: dict[str, Any], workflow: dict[str, Any]) -> dict[str, Any]:
     """Check that current_stage is consistent with completed stages sequence."""
-    stages = state.get("stages", {})
-    current_stage = state.get("current_run", {}).get("current_stage")
     step_ids = [s["id"] for s in workflow.get("steps", [])]
+    current_stage = state.get("current_run", {}).get("current_stage")
 
     if not current_stage:
-        # Workflow may be completed
         run_status = state.get("current_run", {}).get("status")
         if run_status == "completed":
             return {"check": "state_consistency", "status": "PASS", "message": "Workflow completed; no current stage."}
         return {"check": "state_consistency", "status": "WARN", "message": "No current stage and workflow not marked completed."}
 
-    # All stages before current_stage should be completed
     try:
         current_idx = step_ids.index(current_stage)
     except ValueError:
         return {"check": "state_consistency", "status": "FAIL", "message": f"Current stage '{current_stage}' not found in workflow."}
 
     issues = []
-    for i, sid in enumerate(step_ids[:current_idx]):
-        stage_state = stages.get(sid, {})
-        if stage_state.get("status") != "completed":
-            issues.append(f"Stage '{sid}' (before current) has status '{stage_state.get('status')}' not 'completed'")
+    for sid in step_ids[:current_idx]:
+        status = _get_stage_status(state, sid)
+        if status != "completed":
+            issues.append(f"Stage '{sid}' (before current) has status '{status}' not 'completed'")
 
     if issues:
         return {"check": "state_consistency", "status": "FAIL", "message": "; ".join(issues)}
@@ -74,12 +79,11 @@ def audit_state_consistency(state: dict[str, Any], workflow: dict[str, Any]) -> 
 
 def audit_artifact_completeness(state: dict[str, Any], workflow: dict[str, Any]) -> dict[str, Any]:
     """Check that required artifacts exist for current and completed stages."""
-    stages = state.get("stages", {})
     step_ids = [s["id"] for s in workflow.get("steps", [])]
     current_stage = state.get("current_run", {}).get("current_stage")
+    state_file = resolve_state_path(None)
 
-    # Check completed stages and current stage
-    check_stages = [sid for sid in step_ids if stages.get(sid, {}).get("status") in ("completed", "in_progress")]
+    check_stages = [sid for sid in step_ids if _get_stage_status(state, sid) in ("completed", "in_progress")]
     if current_stage and current_stage not in check_stages:
         check_stages.append(current_stage)
 
@@ -87,13 +91,13 @@ def audit_artifact_completeness(state: dict[str, Any], workflow: dict[str, Any])
     for sid in check_stages:
         stage_def = find_stage(workflow, sid)
         artifacts = stage_def.get("artifacts", [])
-        stage_state = stages.get(sid, {})
-        produced = stage_state.get("artifacts_produced", [])
+        node = get_latest_node_for_stage(state, sid)
+        produced = node.get("artifacts", []) if node else []
         for art in artifacts:
-            # Check if artifact exists on disk or is listed in artifacts_produced
-            art_path = PROJECT_ROOT / art
-            if not art_path.exists() and art not in produced:
-                missing.append(f"{sid}: {art}")
+            resolved = interpolate_artifact(str(art), state, state_file)
+            art_path = PROJECT_ROOT / resolved
+            if not art_path.exists() and resolved not in produced:
+                missing.append(f"{sid}: {resolved}")
 
     if missing:
         return {"check": "artifact_completeness", "status": "WARN", "message": f"Missing artifacts: {', '.join(missing)}"}
@@ -101,17 +105,18 @@ def audit_artifact_completeness(state: dict[str, Any], workflow: dict[str, Any])
 
 
 def audit_human_gate_compliance(state: dict[str, Any], workflow: dict[str, Any]) -> dict[str, Any]:
-    """Completed stages with human_gate=true must have human_gate_passed=true."""
-    stages = state.get("stages", {})
+    """Completed stages with human_gate=true must have gate_passed=true."""
     violations = []
-    for sid, stage_state in stages.items():
-        if stage_state.get("status") != "completed":
+    for sid in [s["id"] for s in workflow.get("steps", [])]:
+        status = _get_stage_status(state, sid)
+        if status != "completed":
             continue
         try:
             stage_def = find_stage(workflow, sid)
         except ValueError:
             continue
-        if stage_def.get("human_gate", False) and not stage_state.get("human_gate_passed"):
+        node = get_latest_node_for_stage(state, sid)
+        if stage_def.get("human_gate", False) and (node is None or not node.get("gate_passed")):
             violations.append(sid)
 
     if violations:
@@ -119,16 +124,19 @@ def audit_human_gate_compliance(state: dict[str, Any], workflow: dict[str, Any])
     return {"check": "human_gate_compliance", "status": "PASS", "message": "All human-gated stages have approval."}
 
 
-def audit_entry_exit_compliance(state: dict[str, Any]) -> dict[str, Any]:
+def audit_entry_exit_compliance(state: dict[str, Any], workflow: dict[str, Any]) -> dict[str, Any]:
     """Completed stages should have entry and exit checks passed."""
-    stages = state.get("stages", {})
     violations = []
-    for sid, stage_state in stages.items():
-        if stage_state.get("status") != "completed":
+    for sid in [s["id"] for s in workflow.get("steps", [])]:
+        status = _get_stage_status(state, sid)
+        if status != "completed":
             continue
-        if not stage_state.get("entry_checks_passed"):
+        node = get_latest_node_for_stage(state, sid)
+        if node is None:
+            continue
+        if not node.get("entry_checks_passed"):
             violations.append(f"{sid}: entry checks not passed")
-        if not stage_state.get("exit_checks_passed"):
+        if not node.get("exit_checks_passed"):
             violations.append(f"{sid}: exit checks not passed")
 
     if violations:
@@ -137,13 +145,13 @@ def audit_entry_exit_compliance(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def audit_skill_coverage(state: dict[str, Any]) -> dict[str, Any]:
-    """Current stage should have at least one skill invoked (from metrics/skills_invoked)."""
+    """Current stage should have at least one skill invoked."""
     current_stage = state.get("current_run", {}).get("current_stage")
     if not current_stage:
         return {"check": "skill_coverage", "status": "PASS", "message": "No current stage; skipping skill coverage check."}
 
-    stage_state = state.get("stages", {}).get(current_stage, {})
-    skills_invoked = stage_state.get("skills_invoked", [])
+    node = get_latest_node_for_stage(state, current_stage)
+    skills_invoked = node.get("skills_invoked", []) if node else []
     if not skills_invoked:
         return {"check": "skill_coverage", "status": "WARN", "message": f"No skills recorded for current stage '{current_stage}'."}
     return {"check": "skill_coverage", "status": "PASS", "message": f"{len(skills_invoked)} skill(s) recorded for current stage."}
@@ -151,13 +159,13 @@ def audit_skill_coverage(state: dict[str, Any]) -> dict[str, Any]:
 
 def audit_anomaly_detection(state: dict[str, Any]) -> dict[str, Any]:
     """Detect anomalies: retry_count > 1 or validation_failed stages."""
-    stages = state.get("stages", {})
     anomalies = []
-    for sid, stage_state in stages.items():
-        retry = stage_state.get("retry_count", 0)
+    for node in get_nodes(state):
+        sid = node.get("stage_id", "unknown")
+        retry = node.get("retry_count", 0)
         if retry > 1:
             anomalies.append(f"{sid}: retry_count={retry}")
-        if stage_state.get("status") == "validation_failed":
+        if node.get("status") == "validation_failed":
             anomalies.append(f"{sid}: status=validation_failed")
 
     if anomalies:
@@ -166,30 +174,47 @@ def audit_anomaly_detection(state: dict[str, Any]) -> dict[str, Any]:
 
 
 def audit_handoff_file(state: dict[str, Any]) -> dict[str, Any]:
-    """Check .context/lincoln-handoff.md exists if current stage is waiting_for_human."""
+    """Check handoff file exists if current stage is waiting_for_human."""
     current_stage = state.get("current_run", {}).get("current_stage")
     if not current_stage:
         return {"check": "handoff_file", "status": "PASS", "message": "No current stage; skipping handoff check."}
 
-    stage_state = state.get("stages", {}).get(current_stage, {})
-    if stage_state.get("status") != "waiting_for_human":
+    node = get_latest_node_for_stage(state, current_stage)
+    if node is None or node.get("status") != "waiting_for_human":
         return {"check": "handoff_file", "status": "PASS", "message": "Current stage not waiting for human; handoff file optional."}
 
-    if HANDOFF_PATH.exists():
+    handoff_file = node.get("handoff_file")
+    if handoff_file and (PROJECT_ROOT / handoff_file).exists():
         return {"check": "handoff_file", "status": "PASS", "message": "Handoff file exists."}
-    return {"check": "handoff_file", "status": "WARN", "message": f"Stage waiting for human but handoff file missing: {HANDOFF_PATH}"}
+
+    process_slug = get_process_slug(state, resolve_state_path(None))
+    handoff_dir = process_package_root(process_slug=process_slug) / "handoffs"
+    latest = None
+    if handoff_dir.exists():
+        candidates = sorted(handoff_dir.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True)
+        if candidates:
+            latest = candidates[0]
+
+    if latest and latest.exists():
+        try:
+            display = str(latest.relative_to(PROJECT_ROOT))
+        except ValueError:
+            display = str(latest)
+        return {"check": "handoff_file", "status": "PASS", "message": f"Handoff file exists: {display}"}
+
+    return {"check": "handoff_file", "status": "WARN", "message": f"Stage waiting for human but handoff file missing in {handoff_dir}"}
 
 
 def run_all_audits(state: dict[str, Any]) -> list[dict[str, Any]]:
     """Run all audit rules and return results."""
-    template_name = state.get("current_run", {}).get("workflow_template")
+    template_name = state.get("workflow", {}).get("template")
     workflow = load_workflow(template_name)
 
     results = [
         audit_state_consistency(state, workflow),
         audit_artifact_completeness(state, workflow),
         audit_human_gate_compliance(state, workflow),
-        audit_entry_exit_compliance(state),
+        audit_entry_exit_compliance(state, workflow),
         audit_skill_coverage(state),
         audit_anomaly_detection(state),
         audit_handoff_file(state),
@@ -218,7 +243,7 @@ def format_markdown(results: list[dict[str, Any]], overall: str) -> str:
     lines.append(f"**Overall Status:** {status_emoji.get(overall, '')} {overall}")
     lines.append("")
     lines.append("| Check | Status | Message |")
-    lines.append("|-------|--------|---------|")
+    lines.append("|-------|--------|")
     for r in results:
         emoji = status_emoji.get(r["status"], "")
         lines.append(f"| {r['check']} | {emoji} {r['status']} | {r['message']} |")
@@ -236,12 +261,13 @@ def main() -> int:
     parser.add_argument(
         "--state-file",
         type=Path,
-        default=STATE_PATH,
-        help="Path to workflow-state.yaml",
+        default=None,
+        help="Path to workflow-stage.yaml",
     )
     args = parser.parse_args()
 
-    state = load_state(args.state_file)
+    state_file = resolve_state_path(args.state_file)
+    state = load_state(state_file)
     results = run_all_audits(state)
     overall = compute_overall_status(results)
 
