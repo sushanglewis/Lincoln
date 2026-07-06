@@ -216,6 +216,11 @@ class ChunkedRecorder:
         if self._process is not None:
             raise RecordingError("already recording")
 
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        for path in get_chunk_paths(self.output_dir):
+            path.unlink(missing_ok=True)
+        (self.output_dir / "concat_list.txt").unlink(missing_ok=True)
+
         self._started_at = time.monotonic()
         self._running = True
         self._watcher_thread = threading.Thread(target=self._watcher, daemon=True)

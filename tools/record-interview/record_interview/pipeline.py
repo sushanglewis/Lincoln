@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import queue
+import re
 import threading
 import time
 from dataclasses import dataclass, field
@@ -122,13 +123,35 @@ class TranscriptionPipeline:
         if transcript:
             self._status("发言人区分中...")
         aligned = self._align(chunk_path, transcript)
+        offset = self._chunk_start_offset(chunk_path)
         with self._segments_lock:
             for segment in aligned:
-                self._segments.append(segment)
+                self._segments.append(
+                    PipelineSegment(
+                        start=segment.start + offset,
+                        end=segment.end + offset,
+                        speaker=segment.speaker,
+                        text=segment.text,
+                    )
+                )
         for segment in aligned:
-            self._safe_call(self.on_segment, segment)
+            self._safe_call(
+                self.on_segment,
+                PipelineSegment(
+                    start=segment.start + offset,
+                    end=segment.end + offset,
+                    speaker=segment.speaker,
+                    text=segment.text,
+                ),
+            )
         self._maybe_generate_phase_summary()
         self._status("等待音频...")
+
+    def _chunk_start_offset(self, chunk_path: Path) -> float:
+        match = re.match(r"chunk_(\d+)\.m4a", chunk_path.name)
+        if match:
+            return float(match.group(1)) * self.config.chunk_seconds
+        return 0.0
 
     def _run(self) -> None:
         while self._running:
