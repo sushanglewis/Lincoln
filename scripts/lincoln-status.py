@@ -82,11 +82,11 @@ def get_required_skills(stage_id: str) -> dict[str, list[str]]:
     return get_stage_skills(routing_data, stage_id)
 
 
-def get_required_artifacts(workflow: dict[str, Any], stage_id: str, state: dict[str, Any] | None = None) -> list[str]:
+def get_required_artifacts(workflow: dict[str, Any], stage_id: str, state: dict[str, Any] | None = None, state_file: Path | None = None) -> list[str]:
     """Return artifact paths declared in the workflow for the stage, with variables resolved."""
     stage_def = find_stage(workflow, stage_id)
     artifacts = stage_def.get("artifacts", [])
-    return [interpolate_artifact(str(art), state, resolve_state_path(None)) for art in artifacts]
+    return [interpolate_artifact(str(art), state, state_file or resolve_state_path(None)) for art in artifacts]
 
 
 def get_next_action(state: dict[str, Any], stage_id: str | None, workflow: dict[str, Any]) -> str:
@@ -212,7 +212,7 @@ def _stage_has_human_gate(state: dict[str, Any], stage_id: str) -> bool:
         return False
 
 
-def build_status_report(state: dict[str, Any]) -> dict[str, Any]:
+def build_status_report(state: dict[str, Any], state_file: Path | None = None) -> dict[str, Any]:
     """Build the full status report dictionary."""
     current_run = state.get("current_run", {})
     stage_id = current_run.get("current_stage")
@@ -244,13 +244,13 @@ def build_status_report(state: dict[str, Any]) -> dict[str, Any]:
         retry_count = 0
 
     skills = get_required_skills(_stage_id) if _stage_id else {"required": [], "optional": []}
-    artifacts = get_required_artifacts(workflow, _stage_id, state) if _stage_id else []
+    artifacts = get_required_artifacts(workflow, _stage_id, state, state_file) if _stage_id else []
 
-    state_file = resolve_state_path(None)
+    resolved_state_file = state_file or resolve_state_path(None)
 
     return {
-        "process_slug": get_process_slug(state, state_file),
-        "state_file": str(state_file.relative_to(PROJECT_ROOT) if state_file.is_relative_to(PROJECT_ROOT) else state_file),
+        "process_slug": get_process_slug(state, resolved_state_file),
+        "state_file": str(resolved_state_file.relative_to(PROJECT_ROOT) if resolved_state_file.is_relative_to(PROJECT_ROOT) else resolved_state_file),
         "branch": current_run.get("branch", "unknown"),
         "run_id": current_run.get("run_id", "unknown"),
         "workflow_template": template_name or "unknown",
@@ -433,7 +433,7 @@ def main() -> int:
     state = load_state(state_file)
 
     # If --branch is specified but differs from state, note it but still report state
-    report = build_status_report(state)
+    report = build_status_report(state, state_file)
     report["state_file"] = str(state_file.relative_to(PROJECT_ROOT) if state_file.is_relative_to(PROJECT_ROOT) else state_file)
     if args.branch and report["branch"] != args.branch:
         report["_note"] = f"Requested branch '{args.branch}' but state shows '{report['branch']}'"

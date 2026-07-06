@@ -296,7 +296,7 @@ def get_stage_skills(routing_data: dict[str, Any] | None, stage_id: str) -> dict
 # ---------------------------------------------------------------------------
 
 
-def action_load(stage_id: str, state: dict[str, Any]) -> dict[str, Any]:
+def action_load(stage_id: str, state: dict[str, Any], state_file: Path | None = None) -> dict[str, Any]:
     template_name = state.get("workflow", {}).get("template")
     workflow = load_workflow(template_name)
     stage_def = find_stage(workflow, stage_id)
@@ -314,7 +314,7 @@ def action_load(stage_id: str, state: dict[str, Any]) -> dict[str, Any]:
             context_paths.append(str(path.relative_to(PROJECT_ROOT)))
 
     variables = get_variables(state)
-    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(None)))
+    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
     context = "\n\n---\n\n".join(context_parts)
     context = interpolate(context, variables)
 
@@ -845,7 +845,7 @@ def main() -> int:
     if args.action == "load":
         if not args.stage:
             parser.error("--stage is required for load")
-        result = action_load(args.stage, state)
+        result = action_load(args.stage, state, state_file)
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return 0
 
