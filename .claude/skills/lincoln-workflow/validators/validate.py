@@ -4,7 +4,7 @@ Lincoln workflow validators.
 
 Usage:
     python validate.py --phase entry --check file_exists --args path/to/file
-    python validate.py --phase exit --check transcript_has_timestamps --args interviews/session-id
+    python validate.py --phase exit --check transcript_has_timestamps --args {process_slug}/interviews/session-id
 
 Exit code 0 means pass, 1 means fail.
 """
@@ -14,8 +14,23 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+try:
+    from scripts.lincoln_paths import default_process_slug
+except Exception:  # pragma: no cover - validator can be copied standalone
+    default_process_slug = None
+
+try:
+    from scripts.lincoln_paths import resolve_state_path, load_yaml, get_process_slug
+except Exception:  # pragma: no cover - validator can be copied standalone
+    resolve_state_path = None  # type: ignore[assignment]
+    load_yaml = None  # type: ignore[assignment]
+    get_process_slug = None  # type: ignore[assignment]
 
 
 def fail(message: str):
@@ -51,10 +66,69 @@ def read_flat_yaml(path: Path) -> dict[str, str]:
     return data
 
 
+_state_file_override: Path | None = None
+_state_cache: dict[str, Any] | None = None
+
+
+def set_state_file(path: Path | None) -> None:
+    global _state_file_override, _state_cache
+    _state_file_override = path
+    _state_cache = None
+
+
+def load_state() -> dict[str, Any] | None:
+    global _state_cache
+    if _state_cache is not None:
+        return _state_cache
+    state_file = _state_file_override
+    if state_file is None and resolve_state_path is not None:
+        state_file = resolve_state_path(None, PROJECT_ROOT)
+    if state_file is None or not state_file.exists():
+        return None
+    if load_yaml is None:
+        return None
+    try:
+        _state_cache = load_yaml(state_file)
+    except Exception:
+        return None
+    return _state_cache
+
+
+def process_slug() -> str:
+    import os
+
+    env_slug = os.environ.get("LINCOLN_PROCESS_SLUG")
+    if env_slug:
+        return env_slug
+
+    state = load_state()
+    if state is not None and get_process_slug is not None:
+        try:
+            return get_process_slug(state, _state_file_override)
+        except Exception:
+            pass
+
+    if default_process_slug:
+        return default_process_slug(PROJECT_ROOT)
+    return "lincoln-process"
+
+
+def process_root() -> Path:
+    slug = process_slug()
+    root = PROJECT_ROOT / slug
+    if root.exists():
+        return root
+    return PROJECT_ROOT
+
+
+def process_path(*parts: str) -> Path:
+    return process_root().joinpath(*parts)
+
+
 def design_base(design_id: str) -> Path:
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", design_id):
         fail(f"Invalid design_id '{design_id}'. Use kebab-case, e.g. checkout-redesign")
-    return PROJECT_ROOT / "designs" / design_id
+    return process_path("designs", design_id)
 
 
 def require_nonempty_file(path: Path, label: str):
@@ -91,14 +165,14 @@ def check_audio_format_supported(path: str):
 
 
 def check_summary_ready(session_id: str):
-    summary = PROJECT_ROOT / "interviews" / session_id / "summary.md"
+    summary = process_path("interviews", session_id, "summary.md")
     if not summary.exists() or summary.stat().st_size == 0:
         fail(f"Summary not ready: {summary}")
     pass_check(str(summary))
 
 
 def check_requirements_approved(session_id: str):
-    req = PROJECT_ROOT / "requirements" / session_id / "requirements.md"
+    req = process_path("requirements", session_id, "requirements.md")
     if not req.exists():
         fail(f"Requirements document missing: {req}")
     content = req.read_text(encoding="utf-8")
@@ -108,7 +182,7 @@ def check_requirements_approved(session_id: str):
 
 
 def check_openspec_tasks_ready(change_name: str):
-    tasks = PROJECT_ROOT / "openspec" / "changes" / change_name / "tasks.md"
+    tasks = process_path("openspec", "changes", change_name, "tasks.md")
     if not tasks.exists() or tasks.stat().st_size == 0:
         fail(f"OpenSpec tasks not ready: {tasks}")
     content = tasks.read_text(encoding="utf-8")
@@ -185,7 +259,7 @@ def check_tdd_plan_ready(design_id: str):
 # ---------------------------------------------------------------------------
 
 def check_transcript_has_timestamps(session_id: str):
-    transcript = PROJECT_ROOT / "interviews" / session_id / "transcript.md"
+    transcript = process_path("interviews", session_id, "transcript.md")
     if not transcript.exists():
         fail(f"Transcript missing: {transcript}")
     content = transcript.read_text(encoding="utf-8")
@@ -195,7 +269,7 @@ def check_transcript_has_timestamps(session_id: str):
 
 
 def check_summary_has_key_topics(session_id: str):
-    summary = PROJECT_ROOT / "interviews" / session_id / "summary.md"
+    summary = process_path("interviews", session_id, "summary.md")
     if not summary.exists():
         fail(f"Summary missing: {summary}")
     content = summary.read_text(encoding="utf-8")
@@ -211,7 +285,7 @@ def check_summary_has_key_topics(session_id: str):
 
 
 def check_requirements_has_background_problem_solution_acceptance(session_id: str):
-    req = PROJECT_ROOT / "requirements" / session_id / "requirements.md"
+    req = process_path("requirements", session_id, "requirements.md")
     if not req.exists():
         fail(f"Requirements missing: {req}")
     content = req.read_text(encoding="utf-8")
@@ -229,7 +303,7 @@ def check_requirements_has_background_problem_solution_acceptance(session_id: st
 
 
 def check_human_approved(session_id: str):
-    req = PROJECT_ROOT / "requirements" / session_id / "requirements.md"
+    req = process_path("requirements", session_id, "requirements.md")
     if not req.exists():
         fail(f"Requirements missing: {req}")
     content = req.read_text(encoding="utf-8")
@@ -239,7 +313,7 @@ def check_human_approved(session_id: str):
 
 
 def check_openspec_artifact_complete(change_name: str, design_id: str = ""):
-    base = PROJECT_ROOT / "openspec" / "changes" / change_name
+    base = process_path("openspec", "changes", change_name)
     required_files = ["proposal.md", "design.md", "tasks.md"]
     required_dirs = ["specs"]
     for f in required_files:
@@ -251,10 +325,11 @@ def check_openspec_artifact_complete(change_name: str, design_id: str = ""):
         if not p.exists() or not any(p.iterdir()):
             fail(f"OpenSpec artifact directory missing or empty: {p}")
     if design_id:
+        slug = process_slug()
         required_refs = [
-            f"designs/{design_id}/tdd-plan.md",
-            f"designs/{design_id}/prototype.pen",
-            f"designs/{design_id}/design-review.md",
+            f"{slug}/designs/{design_id}/tdd-plan.md",
+            f"{slug}/designs/{design_id}/prototype.pen",
+            f"{slug}/designs/{design_id}/design-review.md",
         ]
         combined = "\n".join((base / f).read_text(encoding="utf-8") for f in required_files)
         missing_refs = [ref for ref in required_refs if ref not in combined]
@@ -264,7 +339,7 @@ def check_openspec_artifact_complete(change_name: str, design_id: str = ""):
 
 
 def check_tasks_extracted(change_name: str):
-    tasks = PROJECT_ROOT / "openspec" / "changes" / change_name / "tasks.md"
+    tasks = process_path("openspec", "changes", change_name, "tasks.md")
     if not tasks.exists():
         fail(f"Tasks file missing: {tasks}")
     content = tasks.read_text(encoding="utf-8")
@@ -286,7 +361,7 @@ def check_issues_created(session_id: str):
 
 def check_tasks_link_back_to_issues(session_id: str):
     linked = PROJECT_ROOT / ".github" / "linked-issues.yaml"
-    req = PROJECT_ROOT / "requirements" / session_id / "requirements.md"
+    req = process_path("requirements", session_id, "requirements.md")
     if not linked.exists():
         fail("Linked issues file missing")
     if not req.exists():
@@ -448,12 +523,13 @@ def validate_tdd_plan_complete(design_id: str):
     missing = missing_heading_groups(content, required)
     if missing:
         fail(f"tdd-plan.md missing sections: {', '.join(missing)}")
+    slug = process_slug()
     required_refs = [
-        f"requirements/",
-        f"designs/{design_id}/design-review.md",
-        f"designs/{design_id}/fields.md",
-        f"designs/{design_id}/ui-spec.md",
-        f"designs/{design_id}/prototype.pen",
+        f"{slug}/requirements/",
+        f"{slug}/designs/{design_id}/design-review.md",
+        f"{slug}/designs/{design_id}/fields.md",
+        f"{slug}/designs/{design_id}/ui-spec.md",
+        f"{slug}/designs/{design_id}/prototype.pen",
     ]
     missing_refs = [ref for ref in required_refs if ref not in content]
     if missing_refs:
@@ -508,7 +584,10 @@ def main():
     parser.add_argument("--phase", required=True, choices=["entry", "exit"])
     parser.add_argument("--check", required=True)
     parser.add_argument("--args", default="", help="Comma-separated arguments for the check")
+    parser.add_argument("--state-file", type=Path, default=None, help="Path to workflow state file")
     args = parser.parse_args()
+
+    set_state_file(args.state_file)
 
     registry = ENTRY_CHECKS if args.phase == "entry" else EXIT_CHECKS
     check_fn = registry.get(args.check)
