@@ -22,6 +22,12 @@ from typing import Any
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+try:
+    from scripts.lincoln_paths import resolve_state_path
+except Exception:  # pragma: no cover - standalone fallback
+    resolve_state_path = None  # type: ignore[assignment]
+
 # Stages where the agent is expected to talk to the PM, not to manage a task
 # list.  We default this from the workflow YAML (human_gate: true), but allow
 # an override for tests.
@@ -139,12 +145,13 @@ def main(argv: list[str] | None = None) -> int:
 
     state_file = args.state_file
     if state_file is None:
-        state_file = Path(
-            os.environ.get(
-                "LINCOLN_STATE_FILE",
-                Path.cwd() / ".claude" / "workflow-state.yaml",
-            )
-        )
+        env_path = os.environ.get("LINCOLN_STATE_FILE")
+        if env_path:
+            state_file = Path(env_path)
+        elif resolve_state_path is not None:
+            state_file = resolve_state_path(None, Path(__file__).resolve().parents[1])
+        else:
+            state_file = Path.cwd() / ".claude" / "workflow-state.yaml"
 
     state = load_state(state_file)
     if state is None:

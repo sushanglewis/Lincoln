@@ -424,6 +424,16 @@ def test_guard_allows_task_tools_when_dialogue_override_empty(dialogue_in_progre
     assert result.returncode == 0
 
 
+def test_guard_resolves_per_process_state(process_package_state):
+    result = run_guard(
+        process_package_state,
+        "TaskCreate",
+        '{"subject": "x"}',
+        dialogue_stages="",
+    )
+    assert result.returncode == 0, result.stderr
+
+
 def test_guard_blocks_when_dialogue_override_contains_stage(dialogue_in_progress_state):
     result = run_guard(
         dialogue_in_progress_state,
