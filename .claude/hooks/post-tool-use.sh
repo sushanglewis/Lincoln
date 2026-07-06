@@ -26,12 +26,17 @@ fi
 TOOL_NAME="${1:-}"
 TOOL_ARGS="${2:-}"
 EXIT_CODE="${3:-0}"
-STATE_FILE="${LINCOLN_STATE_FILE:-$ROOT/.claude/workflow-stage.yaml}"
-LEGACY_STATE_FILE="$ROOT/.claude/workflow-state.yaml"
-
-if [[ ! -f "$STATE_FILE" && -f "$LEGACY_STATE_FILE" ]]; then
-    STATE_FILE="$LEGACY_STATE_FILE"
-fi
+STATE_FILE=$("$PYTHON" - "$ROOT" "${LINCOLN_STATE_FILE:-}" <<'PY'
+import sys
+from pathlib import Path
+root = Path(sys.argv[1])
+provided = sys.argv[2]
+sys.path.insert(0, str(root))
+from scripts.lincoln_paths import resolve_state_path
+path = Path(provided) if provided else None
+print(resolve_state_path(path, root))
+PY
+)
 
 # Only track successful side-effect tool uses
 if [[ "$EXIT_CODE" != "0" ]]; then
@@ -63,16 +68,14 @@ is_side_effect() {
     return 1
 }
 
-if ! is_side_effect "$TOOL_NAME"; then
-    exit 0
+if is_side_effect "$TOOL_NAME"; then
+    "$PYTHON" "$ROOT/scripts/track-artifacts.py" \
+        --state-file "$STATE_FILE" \
+        --tool "$TOOL_NAME" \
+        --args "$TOOL_ARGS" \
+        --project-root "$ROOT" \
+        2>/dev/null || true
 fi
-
-"$PYTHON" "$ROOT/scripts/track-artifacts.py" \
-    --state-file "$STATE_FILE" \
-    --tool "$TOOL_NAME" \
-    --args "$TOOL_ARGS" \
-    --project-root "$ROOT" \
-    2>/dev/null || true
 
 # Detect PR/branch sync events and append node record
 PR_EVENT=false
@@ -90,6 +93,7 @@ fi
 
 if [[ "$PR_EVENT" == true ]]; then
     "$PYTHON" "$ROOT/scripts/stage_loader.py" \
+        --state-file "$STATE_FILE" \
         --action append-node \
         --node-id "$EVENT_NODE" \
         --status "$EVENT_STATUS" \
@@ -98,7 +102,18 @@ fi
 
 # Trace logging: record key tool invocations to lincoln-trace.jsonl
 # Do not fail the hook if trace write fails; log to stderr and continue.
-TRACE_DIR="$ROOT/.omc/state"
+PROCESS_SLUG=$("$PYTHON" - "$ROOT" "$STATE_FILE" <<'PY'
+import sys, yaml
+from pathlib import Path
+root = Path(sys.argv[1])
+state_file = Path(sys.argv[2])
+sys.path.insert(0, str(root))
+from scripts.lincoln_paths import get_process_slug
+state = yaml.safe_load(open(state_file, encoding="utf-8"))
+print(get_process_slug(state, state_file))
+PY
+)
+TRACE_DIR="$ROOT/$PROCESS_SLUG/.trace"
 TRACE_FILE="$TRACE_DIR/lincoln-trace.jsonl"
 
 # Determine if this tool should be traced
