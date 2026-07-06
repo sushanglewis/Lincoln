@@ -154,7 +154,6 @@ class ChunkedRecorder:
         self._started_at: float | None = None
         self._watcher_thread: threading.Thread | None = None
         self._running = False
-        self._pending_chunks: dict[Path, tuple[int, float]] = {}
 
     def _build_command(self) -> list[str]:
         self.output_dir.mkdir(parents=True, exist_ok=True)
@@ -182,47 +181,34 @@ class ChunkedRecorder:
         ]
 
     def _watcher(self) -> None:
-        previous: set[Path] = set()
-        stable_seconds = 0.5
+        """Enqueue finalized chunks (all but the most recent) for processing."""
+        enqueued: set[Path] = set()
         while self._running:
             time.sleep(0.2)
-            current = set(self.output_dir.glob("chunk_*.m4a"))
-            new = current - previous
-            now = time.monotonic()
-            for path in sorted(new):
-                try:
-                    size = path.stat().st_size
-                except OSError:
-                    continue
-                if size == 0:
-                    continue
-                self._pending_chunks[path] = (size, now)
-
-            ready: list[Path] = []
-            for path, (last_size, last_time) in list(self._pending_chunks.items()):
-                if not path.exists():
-                    del self._pending_chunks[path]
+            chunks = get_chunk_paths(self.output_dir)
+            if len(chunks) < 2:
+                continue
+            for path in chunks[:-1]:
+                if path in enqueued:
                     continue
                 try:
-                    size = path.stat().st_size
+                    if not path.exists() or path.stat().st_size == 0:
+                        continue
                 except OSError:
-                    del self._pending_chunks[path]
                     continue
-                if size != last_size:
-                    self._pending_chunks[path] = (size, now)
-                elif now - last_time >= stable_seconds:
-                    ready.append(path)
-                    del self._pending_chunks[path]
-
-            for path in sorted(ready):
                 self.queue.put(path)
-            previous = current
+                enqueued.add(path)
 
-        # Flush any remaining pending chunks when stopping.
-        for path in sorted(self._pending_chunks):
-            if path.exists() and path.stat().st_size > 0:
-                self.queue.put(path)
-        self._pending_chunks.clear()
+        # Flush any remaining chunks when stopping; at this point ffmpeg has
+        # closed the final file.
+        for path in get_chunk_paths(self.output_dir):
+            if path in enqueued:
+                continue
+            try:
+                if path.exists() and path.stat().st_size > 0:
+                    self.queue.put(path)
+            except OSError:
+                continue
 
     def start(self) -> None:
         if not shutil.which("ffmpeg"):

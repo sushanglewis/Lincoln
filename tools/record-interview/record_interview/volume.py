@@ -87,9 +87,11 @@ class VolumeAnalyzer:
                     # Wait briefly for the chunk to finish writing.
                     time.sleep(0.2)
                     levels = analyze_chunk_loudness(path)
-                    if levels is not None:
-                        _mean, max_db = levels
-                        self._emit(max_db)
+                    if levels is None:
+                        # Retry later; the chunk may still be open.
+                        continue
+                    _mean, max_db = levels
+                    self._emit(max_db)
                     self._seen.add(path)
             except Exception:  # noqa: BLE001
                 _LOGGER.exception("Volume analyzer loop failed")
