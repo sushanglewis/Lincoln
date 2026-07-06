@@ -7,13 +7,13 @@
 ## 入口要求
 
 - 前置阶段 `clarify-requirements` 已完成
-- `requirements/<session_id>/requirements.md` 包含 `<!-- status: approved -->` 或 `[x] PM 已确认需求`
+- `{process_slug}/requirements/<session_id>/requirements.md` 包含 `<!-- status: approved -->` 或 `[x] PM 已确认需求`
 - 需求文档包含背景、问题、用户、方案、验收标准等必要章节
 
 ## 允许操作
 
-- 读取 `requirements/<session_id>/` 下的需求文件
-- 在 `designs/<design_id>/` 目录下创建新的 Markdown 文档
+- 读取 `{process_slug}/requirements/<session_id>/` 下的需求文件
+- 在 `{process_slug}/designs/<design_id>/` 目录下创建新的 Markdown 文档
 - 使用 Mermaid 语法在 `flows.md` 中绘制流程图
 - 查询当前官方技术文档或开源项目主仓库以获取技术框架建议
 - 向人类 PM 提出澄清问题（每次最多 3 个）
@@ -23,14 +23,14 @@
 
 - 禁止创建 Pencil 原型（`.pen` 文件）
 - 禁止生成 TDD 研发计划或 OpenSpec artifact
-- 禁止修改 `requirements/` 下的原始需求文件
+- 禁止修改 `{process_slug}/requirements/` 下的原始需求文件
 - 禁止在需求未确认时生成设计文档
 - **禁止将 TaskCreate/TaskUpdate 当作消息占位符**：本阶段必须直接向人类 PM 发送设计文档/评审问题，不得用任务工具拆分或延迟“发消息”动作
 - 禁止绕过校验继续工作流
 
 ## 副作用策略
 
-- 所有产物写入 `designs/<design_id>/` 目录，不修改已有文件
+- 所有产物写入 `{process_slug}/designs/<design_id>/` 目录，不修改已有文件
 - 设计文档应可追溯回原始需求文件和访谈时间戳
 - 如需修改已发布的设计文档，保留变更历史或变更说明
 

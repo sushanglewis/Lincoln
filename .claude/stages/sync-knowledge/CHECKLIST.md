@@ -17,16 +17,16 @@
 - [ ] 使用 GitHub MCP 获取 Issue 详情和 PR 详情
 - [ ] 从 Issue 正文找到关联的需求和 OpenSpec 变更
 - [ ] 读取相关文件：
-  - `requirements/<session_id>/requirements.md`
-  - `openspec/changes/<change_name>/design.md`
-  - `openspec/changes/<change_name>/tasks.md`
+  - `{process_slug}/requirements/<session_id>/requirements.md`
+  - `{process_slug}/openspec/changes/<change_name>/design.md`
+  - `{process_slug}/openspec/changes/<change_name>/tasks.md`
 - [ ] 审查合并的 PR diff
-- [ ] 创建/更新 `docs/knowledge/03-features/<feature_slug>.md`
-- [ ] 创建/更新 `docs/knowledge/01-interviews/<session_id>.md`（如不存在）
-- [ ] 创建/更新 `docs/knowledge/02-requirements/<requirement_id>.md`
-- [ ] 创建/更新 `docs/knowledge/04-decisions/<decision_id>.md`（如适用）
+- [ ] 创建/更新 `knowledge/03-features/<feature_slug>.md`
+- [ ] 创建/更新 `knowledge/01-interviews/<session_id>.md`（如不存在）
+- [ ] 创建/更新 `knowledge/02-requirements/<requirement_id>.md`
+- [ ] 创建/更新 `knowledge/04-decisions/<decision_id>.md`（如适用）
 - [ ] 使用 Obsidian wikilinks 建立文档关联
-- [ ] 更新 `docs/knowledge/00-index.md`
+- [ ] 更新 `knowledge/00-index.md`
 - [ ] 检查与已有知识的冲突
 
 ## 退出检查 (Exit Checks)
@@ -39,11 +39,11 @@
 
 ## 产物验证
 
-- [ ] `docs/knowledge/03-features/<feature_slug>.md` 已创建/更新
-- [ ] `docs/knowledge/02-requirements/<requirement_id>.md` 已创建/更新
-- [ ] `docs/knowledge/01-interviews/<session_id>.md` 已创建/更新
-- [ ] `docs/knowledge/04-decisions/<decision_id>.md` 已创建/更新（如适用）
-- [ ] `docs/knowledge/00-index.md` 已更新
+- [ ] `knowledge/03-features/<feature_slug>.md` 已创建/更新
+- [ ] `knowledge/02-requirements/<requirement_id>.md` 已创建/更新
+- [ ] `knowledge/01-interviews/<session_id>.md` 已创建/更新
+- [ ] `knowledge/04-decisions/<decision_id>.md` 已创建/更新（如适用）
+- [ ] `knowledge/00-index.md` 已更新
 - [ ] `.github/lincoln-sync-queue/pr-{pr_number}.yaml` 状态已更新为 `completed`
 
 ## 状态文件更新

@@ -28,10 +28,10 @@
 4. **读取关联文档**：需求文档、OpenSpec 设计文档
 5. **审查代码变更**：读取 PR diff，提取技术实现信息
 6. **创建知识文档**：
-   - `docs/knowledge/03-features/<feature_slug>.md`（必须包含业务知识 + 技术知识）
-   - `docs/knowledge/02-requirements/<requirement_id>.md`
-   - `docs/knowledge/01-interviews/<session_id>.md`
-   - `docs/knowledge/04-decisions/<decision_id>.md`（如适用）
+   - `knowledge/03-features/<feature_slug>.md`（必须包含业务知识 + 技术知识）
+   - `knowledge/02-requirements/<requirement_id>.md`
+   - `knowledge/01-interviews/<session_id>.md`
+   - `knowledge/04-decisions/<decision_id>.md`（如适用）
 7. **建立关联**：使用 Obsidian wikilinks（`[[...]]`）
 8. **检查冲突**：与已有知识文档对比，发现冲突则暂停
 9. **运行退出校验**：确认 `feature_doc_has_business_and_technical_sections`、`feature_doc_has_links`、`no_conflict_with_existing_knowledge`
@@ -45,8 +45,8 @@
 
 ## 关键产出
 
-- `docs/knowledge/03-features/<feature_slug>.md` — 核心功能知识文档
-- `docs/knowledge/00-index.md` — 更新后的知识库索引
+- `knowledge/03-features/<feature_slug>.md` — 核心功能知识文档
+- `knowledge/00-index.md` — 更新后的知识库索引
 - 更新后的 `.github/lincoln-sync-queue/pr-{pr_number}.yaml`（状态 `completed`）
 
 ## 文档模板要求
@@ -57,8 +57,8 @@
 ---
 id: <feature-id>
 title: <功能标题>
-source_interview: [[01-interviews/<session_id>]]
-source_requirement: [[02-requirements/<requirement_id>]]
+source_interview: [[01-{process_slug}/interviews/<session_id>]]
+source_requirement: [[02-{process_slug}/requirements/<requirement_id>]]
 source_issue: <issue_number>
 source_pr: <pr_number>
 ---

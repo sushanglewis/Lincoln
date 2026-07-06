@@ -15,7 +15,7 @@
 ## 执行中检查 (During Execution)
 
 - [ ] 从文件名派生 `session_id`（去掉扩展名）
-- [ ] 创建目录 `interviews/{session_id}/`
+- [ ] 创建目录 `{process_slug}/interviews/{session_id}/`
 - [ ] 若输入为视频，使用 `ffmpeg` 提取音频轨道
 - [ ] 使用 Whisper 转写（优先本地 `faster-whisper`）
 - [ ] 生成 `transcript.md`：带时间戳的 Speaker A/B 分段
@@ -40,10 +40,10 @@
 
 ## 产物验证
 
-- [ ] `interviews/{session_id}/metadata.json` — 非空，JSON 格式正确
-- [ ] `interviews/{session_id}/transcript.md` — 非空，含时间戳
-- [ ] `interviews/{session_id}/summary.md` — 非空，含必要章节
-- [ ] `interviews/{session_id}/raw-insights.md` — 非空
+- [ ] `{process_slug}/interviews/{session_id}/metadata.json` — 非空，JSON 格式正确
+- [ ] `{process_slug}/interviews/{session_id}/transcript.md` — 非空，含时间戳
+- [ ] `{process_slug}/interviews/{session_id}/summary.md` — 非空，含必要章节
+- [ ] `{process_slug}/interviews/{session_id}/raw-insights.md` — 非空
 
 ## 人类确认节点
 
@@ -62,10 +62,10 @@ stages:
     entry_checks_passed: true
     exit_checks_passed: true
     artifacts_produced:
-      - interviews/{session_id}/metadata.json
-      - interviews/{session_id}/transcript.md
-      - interviews/{session_id}/summary.md
-      - interviews/{session_id}/raw-insights.md
+      - {process_slug}/interviews/{session_id}/metadata.json
+      - {process_slug}/interviews/{session_id}/transcript.md
+      - {process_slug}/interviews/{session_id}/summary.md
+      - {process_slug}/interviews/{session_id}/raw-insights.md
 ```
 
 ## 失败恢复

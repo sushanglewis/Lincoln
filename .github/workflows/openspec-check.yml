@@ -24,6 +24,10 @@ jobs:
       - name: Run static checks
         run: ./scripts/static-check.sh
 
+      - name: Check main merge hygiene
+        if: github.event_name == 'pull_request' && github.base_ref == 'main'
+        run: python scripts/check-main-merge-hygiene.py --base origin/main
+
   check-openspec:
     needs: static-checks
     runs-on: ubuntu-latest

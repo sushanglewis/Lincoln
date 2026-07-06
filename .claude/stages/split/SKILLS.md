@@ -71,11 +71,11 @@ python scripts/validate_stage.py \
 
 ## 输入文件
 
-- `openspec/changes/<change_name>/tasks.md` — OpenSpec 任务列表
+- `{process_slug}/openspec/changes/<change_name>/tasks.md` — OpenSpec 任务列表
 - `.github/openspec-config.yml` — 目标仓库配置
-- `requirements/<session_id>/requirements.md` — 需求文档（追加 Issue 编号）
+- `{process_slug}/requirements/<session_id>/requirements.md` — 需求文档（追加 Issue 编号）
 
 ## 输出文件
 
 - `.github/linked-issues.yaml` — 任务到 Issue 的映射
-- `requirements/<session_id>/requirements.md` — 更新后的需求文档
+- `{process_slug}/requirements/<session_id>/requirements.md` — 更新后的需求文档

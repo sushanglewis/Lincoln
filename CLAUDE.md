@@ -72,7 +72,7 @@ Every reply must briefly state:
 2. **Human gate is sacred**: Never bypass a human gate.
 3. **Artifacts are traceable**: Every output must link back to its source stage and validation.
 4. **Knowledge dual-track**: Business and technical knowledge are maintained together.
-5. **Do not modify originals**: `recordings/` files are read-only.
+5. **Do not modify originals**: `{process_slug}/recordings/` files are read-only.
 6. **Pencil files are special**: `.pen` files are handled only via Pencil tools, never plain text editors.
 
 ## Communication Style

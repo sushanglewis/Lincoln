@@ -20,7 +20,7 @@
 
 ```bash
 # 1. 放入访谈录音
-cp ~/Downloads/2026-06-27-stakeholder.m4a recordings/
+cp ~/Downloads/2026-06-27-stakeholder.m4a {process_slug}/recordings/
 
 # 2. 初始化 Lincoln feature branch（过程文档在该分支，不合并 main）
 scripts/init-lincoln-branch.sh 2026-06-27-stakeholder checkout-redesign --push
@@ -47,7 +47,7 @@ scripts/init-lincoln-branch.sh 2026-06-27-stakeholder checkout-redesign --push
 scripts/init-lincoln-branch.sh <session-id> <design-id> --push
 
 # 2. 运行 workflow-router，选择 existing-project-iteration 模板
-# Agent 会自动扫描代码库并生成 docs/knowledge/ 功能文档
+# Agent 会自动扫描代码库并生成 knowledge/ 功能文档
 
 # 3. 进入 clarify 阶段后，按标准流程推进
 ```
@@ -86,8 +86,8 @@ scripts/init-lincoln-branch.sh <session-id> <design-id> --push
 - **工作流路由**：新增 `lincoln-workflow-router`，根据仓库上下文选择最合适的工作流模板，不再只有单一固定流程。
 - **多模板支持**：除默认 `interview-to-knowledge` 外，新增 `existing-project-iteration`、`bug-fix`、`design-spike`、`oss-first-design` 模板。
 - **自定义 Lincoln 技能**：
-  - `lincoln-build-codebase-knowledge`：扫描已有代码库，生成 `docs/knowledge/` 功能文档。
-  - `lincoln-explore-opensource`：在设计阶段调研可借鉴的开源方案，输出 `docs/research/{change_name}-oss-options.md`。
+  - `lincoln-build-codebase-knowledge`：扫描已有代码库，生成 `knowledge/` 功能文档。
+  - `lincoln-explore-opensource`：在设计阶段调研可借鉴的开源方案，输出 `{process_slug}/docs/research/{change_name}-oss-options.md`。
 - **更密集的技能调用**：各阶段已绑定 `superpowers:brainstorming`、`superpowers:writing-plans`、`superpowers:test-driven-development`、`superpowers:verification-before-completion`、`gsd-import`、`gsd-docs-update` 等方法论子技能。
 
 ---
@@ -167,7 +167,7 @@ scripts/list-active-lincoln-branches.sh
 
 阶段状态保存在 `.claude/workflow-stage.yaml`，关键规则：
 - 状态文件是**分支级**的，不同 feature 分支互不干扰；
-- **过程文档（recordings/interviews/requirements/designs/openspec/docs）随 feature 分支传递，不合并到 `main`**；
+- **过程文档（`{process_slug}/recordings/`、`{process_slug}/interviews/`、`{process_slug}/requirements/`、`{process_slug}/designs/`、`{process_slug}/openspec/changes/`、`{process_slug}/docs/research/`）随 feature 分支传递，不合并到 `main`**；
 - PM 在本地推进阶段后，**push feature 分支**到远程；
 - 下游角色（测试、研发）checkout 同一 feature 分支继续；
 - 每个阶段都有 `.claude/stages/<stage-id>/` 下的专属上下文（AGENTS.md、CHECKLIST.md、SKILLS.md、PROMPT.md）。
@@ -221,12 +221,12 @@ scripts/check-skill-dependencies.sh
 
 ```
 .
-├── recordings/              # 原始音频（gitignored，按分支存在）
-├── interviews/              # 转写和摘要产物
-├── requirements/            # 需求文档
-├── designs/                 # 产品设计文档、Pencil 原型和 TDD 研发计划
+├── {process_slug}/recordings/              # 原始音频（gitignored，按分支存在）
+├── {process_slug}/interviews/              # 转写和摘要产物
+├── {process_slug}/requirements/            # 需求文档
+├── {process_slug}/designs/                 # 产品设计文档、Pencil 原型和 TDD 研发计划
 ├── openspec/                # OpenSpec 变更目录
-├── docs/knowledge/          # 项目独立 Obsidian vault
+├── knowledge/          # 项目独立 Obsidian vault
 ├── docs/framework/          # Lincoln 框架设计文档
 ├── .claude/                 # Claude Code skill、agent、hooks、schema、工作流
 │   ├── agents/              # 智能体模板（default/pm/designer/engineer + external）

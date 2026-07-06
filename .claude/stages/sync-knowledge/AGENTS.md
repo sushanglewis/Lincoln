@@ -21,11 +21,11 @@ PR 合并后，将代码变更、Issue 讨论、设计决策沉淀到项目 Obsi
 - 读取相关需求文档、OpenSpec 设计文档
 - 审查合并的 PR diff
 - 创建/更新 Obsidian 知识库文档：
-  - `docs/knowledge/01-interviews/<session_id>.md`
-  - `docs/knowledge/02-requirements/<requirement_id>.md`
-  - `docs/knowledge/03-features/<feature_slug>.md`
-  - `docs/knowledge/04-decisions/<decision_id>.md`
-- 更新 `docs/knowledge/00-index.md`
+  - `knowledge/01-interviews/<session_id>.md`
+  - `knowledge/02-requirements/<requirement_id>.md`
+  - `knowledge/03-features/<feature_slug>.md`
+  - `knowledge/04-decisions/<decision_id>.md`
+- 更新 `knowledge/00-index.md`
 - 使用 Obsidian wikilinks（`[[...]]`）建立文档关联
 - 检查与已有知识的冲突
 - 调用 validator 执行入口/退出校验
@@ -64,5 +64,5 @@ PR 合并后，将代码变更、Issue 讨论、设计决策沉淀到项目 Obsi
    - `技术知识`：实现概述、代码位置、设计决策、依赖关系、API/数据模型
 2. 每个文档必须使用 Obsidian wikilinks 关联到来源文档
 3. 发现知识冲突时，暂停并询问人类 PM
-4. 更新 `docs/knowledge/00-index.md` 索引
+4. 更新 `knowledge/00-index.md` 索引
 5. 处理完成后将 sync-queue 文件状态更新为 `completed`

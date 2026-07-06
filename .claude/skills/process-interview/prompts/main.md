@@ -4,17 +4,17 @@ You are executing the Lincoln workflow step `ingest`: process a stakeholder inte
 
 ## Goal
 
-Extract structured information from the audio file and write artifacts to `interviews/<session-id>/`.
+Extract structured information from the audio file and write artifacts to `{process_slug}/interviews/<session-id>/`.
 
 ## Input
 
-- `recording_path`: path to the audio file (e.g., `recordings/2026-06-27-stakeholder.m4a`)
+- `recording_path`: path to the audio file (e.g., `{process_slug}/recordings/2026-06-27-stakeholder.m4a`)
 
 ## Steps
 
 1. Validate the file exists and is one of the supported formats: `.mp3`, `.m4a`, `.wav`, `.mp4`, `.mov`.
 2. Derive `session_id` from the filename without extension (e.g., `2026-06-27-stakeholder`).
-3. Create directory `interviews/<session-id>/`.
+3. Create directory `{process_slug}/interviews/<session-id>/`.
 4. Extract audio track if input is video using `ffmpeg`.
 5. Transcribe using Whisper (prefer local `faster-whisper`; fallback to OpenAI Whisper API if local fails).
 6. Generate `transcript.md` with timestamped Speaker A/B segments.
@@ -34,10 +34,10 @@ Extract structured information from the audio file and write artifacts to `inter
 
 ## Output Artifacts
 
-- `interviews/<session-id>/metadata.json`
-- `interviews/<session-id>/transcript.md`
-- `interviews/<session-id>/summary.md`
-- `interviews/<session-id>/raw-insights.md`
+- `{process_slug}/interviews/<session-id>/metadata.json`
+- `{process_slug}/interviews/<session-id>/transcript.md`
+- `{process_slug}/interviews/<session-id>/summary.md`
+- `{process_slug}/interviews/<session-id>/raw-insights.md`
 
 ## Rules
 

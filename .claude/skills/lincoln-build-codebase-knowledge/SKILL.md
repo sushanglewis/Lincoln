@@ -8,12 +8,12 @@ version: 1.0.0
 
 ## Purpose
 
-Scan an existing codebase, identify its major features/modules, and generate feature knowledge documents under `docs/knowledge/` so Lincoln can iterate from facts instead of assumptions.
+Scan an existing codebase, identify its major features/modules, and generate feature knowledge documents under `knowledge/` so Lincoln can iterate from facts instead of assumptions.
 
 ## When to Use
 
 - Project already has source code.
-- `docs/knowledge/03-features/` is empty or out of date.
+- `knowledge/03-features/` is empty or out of date.
 - The `existing-project-iteration` workflow template is active.
 
 ## Inputs
@@ -24,9 +24,9 @@ Scan an existing codebase, identify its major features/modules, and generate fea
 
 ## Outputs
 
-- `docs/knowledge/00-index.md` — master index
-- `docs/knowledge/03-features/existing-<feature>.md` — one per core feature
-- `docs/knowledge/05-glossary/00-index.md` — domain terms inferred from code
+- `knowledge/00-index.md` — master index
+- `knowledge/03-features/existing-<feature>.md` — one per core feature
+- `knowledge/05-glossary/00-index.md` — domain terms inferred from code
 
 ## Rules
 

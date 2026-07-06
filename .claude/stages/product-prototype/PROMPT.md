@@ -17,8 +17,8 @@
 ## 执行指令
 
 1. 读取 `.claude/skills/build-product-prototype/prompts/main.md` 获取完整执行步骤
-2. 确认 `designs/<design_id>/design-review.md` 已获批准
-3. 读取 `designs/<design_id>/` 下的全部设计文档
+2. 确认 `{process_slug}/designs/<design_id>/design-review.md` 已获批准
+3. 读取 `{process_slug}/designs/<design_id>/` 下的全部设计文档
 4. 创建 `fields.md`（字段规格）和 `ui-spec.md`（UI 规格）
 5. 使用 Pencil MCP 工具创建或更新 `prototype.pen`：
    - 操作前调用 `get_editor_state(include_schema: true)` 获取 schema
@@ -30,9 +30,9 @@
 
 ## 产物清单
 
-- `designs/<design_id>/fields.md` - 字段规格
-- `designs/<design_id>/ui-spec.md` - UI 规格
-- `designs/<design_id>/prototype.pen` - Pencil 原型（仅通过 Pencil 工具操作）
+- `{process_slug}/designs/<design_id>/fields.md` - 字段规格
+- `{process_slug}/designs/<design_id>/ui-spec.md` - UI 规格
+- `{process_slug}/designs/<design_id>/prototype.pen` - Pencil 原型（仅通过 Pencil 工具操作）
 
 ## 关键约束
 

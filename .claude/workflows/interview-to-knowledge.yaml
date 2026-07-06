@@ -25,10 +25,10 @@ workflow:
           args: ["{recording_path}"]
       action: process-interview
       artifacts:
-        - interviews/{session_id}/metadata.json
-        - interviews/{session_id}/transcript.md
-        - interviews/{session_id}/summary.md
-        - interviews/{session_id}/raw-insights.md
+        - "{process_slug}/interviews/{session_id}/metadata.json"
+        - "{process_slug}/interviews/{session_id}/transcript.md"
+        - "{process_slug}/interviews/{session_id}/summary.md"
+        - "{process_slug}/interviews/{session_id}/raw-insights.md"
       exit_checks:
         - check: transcript_has_timestamps
           args: ["{session_id}"]
@@ -44,9 +44,9 @@ workflow:
       action: clarify-requirements
       human_gate: true
       artifacts:
-        - requirements/{session_id}/requirements.md
-        - requirements/{session_id}/user-stories.md
-        - requirements/{session_id}/prd.md
+        - "{process_slug}/requirements/{session_id}/requirements.md"
+        - "{process_slug}/requirements/{session_id}/user-stories.md"
+        - "{process_slug}/requirements/{session_id}/prd.md"
       exit_checks:
         - check: requirements_has_background_problem_solution_acceptance
           args: ["{session_id}"]
@@ -62,12 +62,12 @@ workflow:
       action: draft-product-design
       human_gate: true
       artifacts:
-        - designs/{design_id}/design-review.md
-        - designs/{design_id}/scenarios.md
-        - designs/{design_id}/feature-catalog.md
-        - designs/{design_id}/data-model.md
-        - designs/{design_id}/flows.md
-        - designs/{design_id}/feasibility.md
+        - "{process_slug}/designs/{design_id}/design-review.md"
+        - "{process_slug}/designs/{design_id}/scenarios.md"
+        - "{process_slug}/designs/{design_id}/feature-catalog.md"
+        - "{process_slug}/designs/{design_id}/data-model.md"
+        - "{process_slug}/designs/{design_id}/flows.md"
+        - "{process_slug}/designs/{design_id}/feasibility.md"
       exit_checks:
         - check: design_docs_complete
           args: ["{design_id}"]
@@ -83,9 +83,9 @@ workflow:
       action: build-product-prototype
       human_gate: true
       artifacts:
-        - designs/{design_id}/ui-spec.md
-        - designs/{design_id}/fields.md
-        - designs/{design_id}/prototype.pen
+        - "{process_slug}/designs/{design_id}/ui-spec.md"
+        - "{process_slug}/designs/{design_id}/fields.md"
+        - "{process_slug}/designs/{design_id}/prototype.pen"
       exit_checks:
         - check: prototype_artifact_complete
           args: ["{design_id}"]
@@ -98,7 +98,7 @@ workflow:
           args: ["{design_id}"]
       action: plan-tdd-development
       artifacts:
-        - designs/{design_id}/tdd-plan.md
+        - "{process_slug}/designs/{design_id}/tdd-plan.md"
       exit_checks:
         - check: tdd_plan_complete
           args: ["{design_id}"]
@@ -111,12 +111,12 @@ workflow:
           args: ["{design_id}"]
       action: propose-with-openspec
       cli_command: "openspec propose {change_name}"
-      input_file: designs/{design_id}/tdd-plan.md
+      input_file: "{process_slug}/designs/{design_id}/tdd-plan.md"
       artifacts:
-        - openspec/changes/{change_name}/proposal.md
-        - openspec/changes/{change_name}/specs/
-        - openspec/changes/{change_name}/design.md
-        - openspec/changes/{change_name}/tasks.md
+        - "{process_slug}/openspec/changes/{change_name}/proposal.md"
+        - "{process_slug}/openspec/changes/{change_name}/specs/"
+        - "{process_slug}/openspec/changes/{change_name}/design.md"
+        - "{process_slug}/openspec/changes/{change_name}/tasks.md"
       exit_checks:
         - check: openspec_artifact_complete
           args: ["{change_name}", "{design_id}"]
@@ -159,10 +159,10 @@ workflow:
       action: sync-to-knowledge
       artifacts:
         - .github/lincoln-sync-queue/pr-{pr_number}.yaml
-        - docs/knowledge/01-interviews/{session_id}.md
-        - docs/knowledge/02-requirements/{requirement_id}.md
-        - docs/knowledge/03-features/{feature_slug}.md
-        - docs/knowledge/04-decisions/{decision_id}.md
+        - knowledge/01-interviews/{session_id}.md
+        - knowledge/02-requirements/{requirement_id}.md
+        - knowledge/03-features/{feature_slug}.md
+        - knowledge/04-decisions/{decision_id}.md
       exit_checks:
         - check: feature_doc_has_business_and_technical_sections
           args: ["{feature_slug}"]

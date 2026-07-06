@@ -13,7 +13,7 @@
 
 - 使用 WebSearch/GitHub MCP 搜索开源项目
 - 阅读项目 README、license、发布历史
-- 生成 `docs/research/{change_name}-oss-options.md`
+- 生成 `{process_slug}/docs/research/{change_name}-oss-options.md`
 
 ## 禁止的操作
 

@@ -13,7 +13,7 @@
 - **来源**: `.claude/skills/`
 - **参数**:
   - `session_id` (必填): 访谈会话 ID，如 `2026-06-27-stakeholder`
-- **提示文件**: `.claude/skills/clarify-requirements/prompts/main.md`
+- **提示文件**: `.claude/skills/clarify-{process_slug}/requirements/prompts/main.md`
 
 ## 辅助子技能
 

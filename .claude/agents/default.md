@@ -32,7 +32,7 @@ Agent 进入会话后，应首先确认当前分支和阶段：
 2. **人类确认节点不可跳过**：YAML 中标记 `human_gate: true` 的步骤，必须获得人类 PM 的显式确认才能继续。
 3. **产物可追溯**：每个需求、每个功能都必须能关联回原始访谈时间戳、OpenSpec 变更、GitHub Issue/PR。
 4. **知识库双轨维护**：每个合并的 issue 必须同时沉淀业务知识和技术知识到 Obsidian vault。
-5. **不修改原始录音**：`recordings/` 目录中的文件只读，永远不在原地修改。
+5. **不修改原始录音**：`{process_slug}/recordings/` 目录中的文件只读，永远不在原地修改。
 6. **Pencil 原型受控处理**：`.pen` 文件只能通过 Pencil 应用或 Pencil 工具处理，不用普通文件读取或编辑其内容。
 7. **技能感知执行**：始终调用最适合当前阶段方法论需求的子技能，但子技能不能替代 `human_gate`。
 
@@ -80,8 +80,8 @@ Lincoln 各阶段可调用以下子技能补充方法论：
 
 | 技能 | 触发条件 | 产物 |
 |------|----------|------|
-| `lincoln-build-codebase-knowledge` | 已有源码但知识库为空 | `docs/knowledge/00-index.md` + feature docs |
-| `lincoln-explore-opensource` | 设计阶段可借鉴开源方案 | `docs/research/{change_name}-oss-options.md` |
+| `lincoln-build-codebase-knowledge` | 已有源码但知识库为空 | `knowledge/00-index.md` + feature docs |
+| `lincoln-explore-opensource` | 设计阶段可借鉴开源方案 | `{process_slug}/docs/research/{change_name}-oss-options.md` |
 
 ## 工作流步骤
 
@@ -97,14 +97,14 @@ Lincoln 各阶段可调用以下子技能补充方法论：
 
 - 基于 transcript 和 summary 向人类 PM 提问
 - 一次最多提出 3 个澄清问题
-- 将 PM 的回答写入 `requirements/<session>/requirements.md`
+- 将 PM 的回答写入 `{process_slug}/requirements/<session>/requirements.md`
 - 人类可直接编辑 requirements.md，编辑后运行 `workflow-continue`
 - 只有人类输入 `confirm` 或通过文件修改触发继续时，才能进入下一步
 
 ### 3. draft-product-design
 
 - 只在 requirements 已确认后执行
-- 生成 `designs/<design_id>/` 下的简洁设计评审包
+- 生成 `{process_slug}/designs/<design_id>/` 下的简洁设计评审包
 - 必须覆盖场景、功能清单、数据结构、流程图/序列图/架构图、业务可行性、技术可行性、开源项目和技术框架建议
 - 技术框架和开源项目建议必须查当前官方文档或主仓库
 - 人类 PM 确认后，才能进入原型阶段
@@ -125,14 +125,14 @@ Lincoln 各阶段可调用以下子技能补充方法论：
 ### 6. propose-with-openspec
 
 - 调用 `openspec propose <change-name>` CLI 直接生成 artifact
-- 读取 `designs/<design_id>/tdd-plan.md` 作为输入
+- 读取 `{process_slug}/designs/<design_id>/tdd-plan.md` 作为输入
 - OpenSpec artifact 必须引用 TDD plan、Pencil 原型和核心设计文档
 - 校验生成的 artifact 完整（proposal.md、specs/、design.md、tasks.md）
 - 不绕过 OpenSpec CLI 手动生成 artifact
 
 ### 7. split-to-github
 
-- 读取 `openspec/changes/<change>/tasks.md`
+- 读取 `{process_slug}/openspec/changes/<change>/tasks.md`
 - 按任务拆分 GitHub Issues
 - 目标仓库来自 `.github/openspec-config.yml`
 - 每个 Issue 必须包含：标题、用户故事、验收标准、来源访谈、时间戳、需求链接、OpenSpec 变更链接
@@ -142,7 +142,7 @@ Lincoln 各阶段可调用以下子技能补充方法论：
 
 - 在 PR 合并后触发
 - 读取代码 diff、对应 issue、需求文档、OpenSpec design
-- 创建或更新 `docs/knowledge/03-features/<feature-slug>.md`
+- 创建或更新 `knowledge/03-features/<feature-slug>.md`
 - 文档必须同时包含业务知识和技术知识
 - 使用 Obsidian wikilinks 建立关联
 - 检查是否与已有知识冲突，有冲突则暂停等待人类处理
@@ -184,7 +184,7 @@ Lincoln 各阶段可调用以下子技能补充方法论：
 ## 禁止事项
 
 - 禁止在没有人类确认的情况下创建 GitHub Issues
-- 禁止删除 `recordings/` 中的原始文件
+- 禁止删除 `{process_slug}/recordings/` 中的原始文件
 - 禁止在 requirements 未确认时直接生成 OpenSpec artifact
 - 禁止在产品设计文档或 Pencil 原型未确认时生成 TDD plan 或 OpenSpec artifact
 - 禁止绕过校验继续工作流

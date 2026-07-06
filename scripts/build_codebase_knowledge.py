@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_SOURCE_DIRS = ("src", "lib", "app", "packages", "server", "client")
+DEFAULT_SOURCE_DIRS = ("products", "src", "lib", "app", "packages", "server", "client")
 IGNORE_DIRS = {".git", "node_modules", ".venv", "venv", "__pycache__", "dist", "build"}
 SOURCE_EXTENSIONS = {".py", ".ts", ".js", ".tsx", ".go", ".rs"}
 
@@ -35,9 +35,14 @@ def scan_features(root: Path, max_features: int = 10) -> dict[str, Any]:
         for child in sorted(source_root.iterdir()):
             if not child.is_dir() or child.name in IGNORE_DIRS:
                 continue
+            scan_root = child
+            if source_root.name == "products":
+                nested_source = find_source_root(child)
+                if nested_source:
+                    scan_root = nested_source
             entry_points = sorted(
                 p.relative_to(root)
-                for p in child.rglob("*")
+                for p in scan_root.rglob("*")
                 if p.is_file() and p.suffix in SOURCE_EXTENSIONS
             )[:5]
             features.append(

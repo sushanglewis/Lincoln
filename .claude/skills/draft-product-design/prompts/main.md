@@ -4,7 +4,7 @@ You are executing the Lincoln workflow step `product-design-docs`: turn approved
 
 ## Goal
 
-Create `designs/<design_id>/` with enough product, data, flow, feasibility, and technical framing for PM review and later development planning, without creating unnecessary review burden.
+Create `{process_slug}/designs/<design_id>/` with enough product, data, flow, feasibility, and technical framing for PM review and later development planning, without creating unnecessary review burden.
 
 ## Input
 
@@ -19,9 +19,9 @@ Create `designs/<design_id>/` with enough product, data, flow, feasibility, and 
 
 ## Steps
 
-1. Validate that `requirements/<session_id>/requirements.md` is approved.
-2. Create `designs/<design_id>/`.
-3. Read `requirements/<session_id>/requirements.md`, `user-stories.md`, and `prd.md`.
+1. Validate that `{process_slug}/requirements/<session_id>/requirements.md` is approved.
+2. Create `{process_slug}/designs/<design_id>/`.
+3. Read `{process_slug}/requirements/<session_id>/requirements.md`, `user-stories.md`, and `prd.md`.
 4. Produce the design package:
    - `design-review.md`: PM-facing entry point with decision summary, scope, links to all design docs, open questions, and approval checklist.
    - `scenarios.md`: target users, primary scenarios, boundary scenarios, and non-goals.

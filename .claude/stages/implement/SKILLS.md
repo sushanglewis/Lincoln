@@ -59,8 +59,8 @@ python scripts/validate_stage.py \
 
 - `.github/linked-issues.yaml` — Issue 映射关系
 - GitHub Issues — 研发任务
-- `requirements/<session_id>/requirements.md` — 需求文档（参考）
-- `openspec/changes/<change_name>/` — OpenSpec 设计文档（参考）
+- `{process_slug}/requirements/<session_id>/requirements.md` — 需求文档（参考）
+- `{process_slug}/openspec/changes/<change_name>/` — OpenSpec 设计文档（参考）
 
 ## 输出文件
 

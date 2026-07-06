@@ -7,14 +7,14 @@
 ## 入口要求
 
 - 前置阶段 `product-design-docs` 已完成
-- `designs/<design_id>/design-review.md` 包含 `<!-- status: approved -->` 或 `[x] PM 已确认设计文档`
+- `{process_slug}/designs/<design_id>/design-review.md` 包含 `<!-- status: approved -->` 或 `[x] PM 已确认设计文档`
 - 设计文档包完整（6 个文件均存在且非空）
 
 ## 允许操作
 
-- 读取 `designs/<design_id>/` 下的全部设计文档
-- 创建 `designs/<design_id>/fields.md` 和 `designs/<design_id>/ui-spec.md`
-- 使用 Pencil MCP 工具创建或更新 `designs/<design_id>/prototype.pen`
+- 读取 `{process_slug}/designs/<design_id>/` 下的全部设计文档
+- 创建 `{process_slug}/designs/<design_id>/fields.md` 和 `{process_slug}/designs/<design_id>/ui-spec.md`
+- 使用 Pencil MCP 工具创建或更新 `{process_slug}/designs/<design_id>/prototype.pen`
 - 使用 `snapshot_layout` 检查布局问题并修复
 - 向人类 PM 展示原型并请求审阅
 - 在 `ui-spec.md` 中添加 `<!-- prototype-status: approved -->` 标记
@@ -33,7 +33,7 @@
 - `.pen` 文件只能通过 Pencil MCP 工具或 Pencil 应用操作
 - 字段规格和 UI 规格以 Markdown 形式写入，便于开发者直接阅读
 - 原型修改后，开发者应以 PM 确认保存后的 `.pen` 文件作为最终开发参照
-- 所有产物写入 `designs/<design_id>/` 目录
+- 所有产物写入 `{process_slug}/designs/<design_id>/` 目录
 
 ## 人类门控规则
 

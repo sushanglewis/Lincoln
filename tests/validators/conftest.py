@@ -13,7 +13,7 @@ import validate
 def run_validator(root: Path, check_name: str, *args):
     """Run a validator exit check with PROJECT_ROOT temporarily patched to root."""
     check_fn = validate.EXIT_CHECKS[check_name]
-    with patch.object(validate, "PROJECT_ROOT", root):
+    with patch.object(validate, "PROJECT_ROOT", root), patch.dict("os.environ", {"LINCOLN_PROCESS_SLUG": "lincoln-test"}):
         with pytest.raises(SystemExit) as exc_info:
             check_fn(*args)
     return exc_info.value.code

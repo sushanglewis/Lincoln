@@ -56,6 +56,14 @@ def test_every_stage_has_required_skills(manifest):
         assert "required_skills" in stage, f"Stage '{stage.get('id', '?')}' missing 'required_skills'"
 
 
+def test_every_stage_has_agent_routing(manifest):
+    for stage in manifest["stages"]:
+        assert "primary_agent" in stage, f"Stage '{stage.get('id', '?')}' missing 'primary_agent'"
+        assert "review_agents" in stage, f"Stage '{stage.get('id', '?')}' missing 'review_agents'"
+        assert "handoff_to" in stage, f"Stage '{stage.get('id', '?')}' missing 'handoff_to'"
+        assert isinstance(stage["review_agents"], list)
+
+
 def test_every_stage_has_context_files(manifest):
     for stage in manifest["stages"]:
         assert "context_files" in stage, f"Stage '{stage.get('id', '?')}' missing 'context_files'"

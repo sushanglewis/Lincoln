@@ -6,7 +6,7 @@ current_run:
   run_id: test-001
   branch: lincoln/test-branch
   started_at: '2026-06-27T00:00:00Z'
-  last_updated_at: '2026-07-01T11:12:54Z'
+  last_updated_at: '2026-07-06T05:58:56Z'
   current_stage: ingest
   previous_stage: null
   status: in_progress

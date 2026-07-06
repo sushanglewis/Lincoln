@@ -27,8 +27,12 @@ stages:
   template: all
   prerequisite_stage: null
   required_artifacts:
-  - .claude/workflow-stage.yaml
+  - "{process_slug}/workflow-stage.yaml"
   required_skills: workflow-router
+  primary_agent: lincoln-pm
+  review_agents:
+  - lincoln-release-coordinator
+  handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/workflow-router/AGENTS.md
     checklist_md: .claude/stages/workflow-router/CHECKLIST.md
@@ -40,7 +44,7 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - .claude/workflow-stage.yaml
+      - "{process_slug}/workflow-stage.yaml"
 - id: ingest
   name: Ingest
   description: 'Ingests raw interview recordings and produces transcripts,
@@ -53,11 +57,14 @@ stages:
   - interview-to-knowledge
   prerequisite_stage: workflow-router
   required_artifacts:
-  - interviews/{session_id}/metadata.json
-  - interviews/{session_id}/transcript.md
-  - interviews/{session_id}/summary.md
-  - interviews/{session_id}/raw-insights.md
+  - "{process_slug}/interviews/{session_id}/metadata.json"
+  - "{process_slug}/interviews/{session_id}/transcript.md"
+  - "{process_slug}/interviews/{session_id}/summary.md"
+  - "{process_slug}/interviews/{session_id}/raw-insights.md"
   required_skills: ingest
+  primary_agent: lincoln-pm
+  review_agents: []
+  handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/ingest/AGENTS.md
     checklist_md: .claude/stages/ingest/CHECKLIST.md
@@ -72,16 +79,16 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - interviews/{session_id}/metadata.json
+      - "{process_slug}/interviews/{session_id}/metadata.json"
     - check: artifact_exists
       args:
-      - interviews/{session_id}/transcript.md
+      - "{process_slug}/interviews/{session_id}/transcript.md"
     - check: artifact_exists
       args:
-      - interviews/{session_id}/summary.md
+      - "{process_slug}/interviews/{session_id}/summary.md"
     - check: artifact_exists
       args:
-      - interviews/{session_id}/raw-insights.md
+      - "{process_slug}/interviews/{session_id}/raw-insights.md"
 - id: build-codebase-knowledge
   name: Build Codebase Knowledge
   description: 'Scans existing source code and builds knowledge base
@@ -98,8 +105,12 @@ stages:
   - existing-project-iteration
   prerequisite_stage: workflow-router
   required_artifacts:
-  - docs/knowledge/00-index.md
+  - knowledge/00-index.md
   required_skills: build-codebase-knowledge
+  primary_agent: lincoln-knowledge-curator
+  review_agents:
+  - lincoln-engineer
+  handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/build-codebase-knowledge/AGENTS.md
     checklist_md: .claude/stages/build-codebase-knowledge/CHECKLIST.md
@@ -114,7 +125,7 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - docs/knowledge/00-index.md
+      - knowledge/00-index.md
 - id: clarify
   name: Clarify
   description: 'Explores requirements, resolves ambiguity, and produces
@@ -126,10 +137,14 @@ stages:
   template: all
   prerequisite_stage: ingest
   required_artifacts:
-  - requirements/{session_id}/requirements.md
-  - requirements/{session_id}/user-stories.md
-  - requirements/{session_id}/prd.md
+  - "{process_slug}/requirements/{session_id}/requirements.md"
+  - "{process_slug}/requirements/{session_id}/user-stories.md"
+  - "{process_slug}/requirements/{session_id}/prd.md"
   required_skills: clarify
+  primary_agent: lincoln-pm
+  review_agents:
+  - lincoln-qa
+  handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/clarify/AGENTS.md
     checklist_md: .claude/stages/clarify/CHECKLIST.md
@@ -144,13 +159,13 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - requirements/{session_id}/requirements.md
+      - "{process_slug}/requirements/{session_id}/requirements.md"
     - check: artifact_exists
       args:
-      - requirements/{session_id}/user-stories.md
+      - "{process_slug}/requirements/{session_id}/user-stories.md"
     - check: artifact_exists
       args:
-      - requirements/{session_id}/prd.md
+      - "{process_slug}/requirements/{session_id}/prd.md"
     - check: human_approved
     - check: gate_review_passed
 - id: explore-opensource
@@ -167,8 +182,12 @@ stages:
   - oss-first-design
   prerequisite_stage: clarify
   required_artifacts:
-  - docs/research/{change_name}-oss-options.md
+  - "{process_slug}/docs/research/{change_name}-oss-options.md"
   required_skills: explore-opensource
+  primary_agent: lincoln-researcher
+  review_agents:
+  - lincoln-engineer
+  handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/explore-opensource/AGENTS.md
     checklist_md: .claude/stages/explore-opensource/CHECKLIST.md
@@ -183,7 +202,7 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - docs/research/{change_name}-oss-options.md
+      - "{process_slug}/docs/research/{change_name}-oss-options.md"
 - id: product-design-docs
   name: Product Design Docs
   description: 'Produces the design-review package based on confirmed
@@ -195,13 +214,18 @@ stages:
   template: all
   prerequisite_stage: clarify
   required_artifacts:
-  - designs/{design_id}/design-review.md
-  - designs/{design_id}/scenarios.md
-  - designs/{design_id}/feature-catalog.md
-  - designs/{design_id}/data-model.md
-  - designs/{design_id}/flows.md
-  - designs/{design_id}/feasibility.md
+  - "{process_slug}/designs/{design_id}/design-review.md"
+  - "{process_slug}/designs/{design_id}/scenarios.md"
+  - "{process_slug}/designs/{design_id}/feature-catalog.md"
+  - "{process_slug}/designs/{design_id}/data-model.md"
+  - "{process_slug}/designs/{design_id}/flows.md"
+  - "{process_slug}/designs/{design_id}/feasibility.md"
   required_skills: product-design-docs
+  primary_agent: lincoln-pm
+  review_agents:
+  - lincoln-designer
+  - lincoln-researcher
+  handoff_to: lincoln-designer
   context_files:
     agents_md: .claude/stages/product-design-docs/AGENTS.md
     checklist_md: .claude/stages/product-design-docs/CHECKLIST.md
@@ -216,22 +240,22 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - designs/{design_id}/design-review.md
+      - "{process_slug}/designs/{design_id}/design-review.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/scenarios.md
+      - "{process_slug}/designs/{design_id}/scenarios.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/feature-catalog.md
+      - "{process_slug}/designs/{design_id}/feature-catalog.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/data-model.md
+      - "{process_slug}/designs/{design_id}/data-model.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/flows.md
+      - "{process_slug}/designs/{design_id}/flows.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/feasibility.md
+      - "{process_slug}/designs/{design_id}/feasibility.md"
     - check: human_approved
     - check: gate_review_passed
 - id: product-prototype
@@ -247,10 +271,14 @@ stages:
   - oss-first-design
   prerequisite_stage: product-design-docs
   required_artifacts:
-  - designs/{design_id}/ui-spec.md
-  - designs/{design_id}/fields.md
-  - designs/{design_id}/prototype.pen
+  - "{process_slug}/designs/{design_id}/ui-spec.md"
+  - "{process_slug}/designs/{design_id}/fields.md"
+  - "{process_slug}/designs/{design_id}/prototype.pen"
   required_skills: product-prototype
+  primary_agent: lincoln-designer
+  review_agents:
+  - lincoln-pm
+  handoff_to: lincoln-engineer
   context_files:
     agents_md: .claude/stages/product-prototype/AGENTS.md
     checklist_md: .claude/stages/product-prototype/CHECKLIST.md
@@ -265,13 +293,13 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - designs/{design_id}/ui-spec.md
+      - "{process_slug}/designs/{design_id}/ui-spec.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/fields.md
+      - "{process_slug}/designs/{design_id}/fields.md"
     - check: artifact_exists
       args:
-      - designs/{design_id}/prototype.pen
+      - "{process_slug}/designs/{design_id}/prototype.pen"
     - check: human_approved
     - check: gate_review_passed
 - id: tdd-development-plan
@@ -285,8 +313,12 @@ stages:
   template: all
   prerequisite_stage: product-prototype
   required_artifacts:
-  - designs/{design_id}/tdd-plan.md
+  - "{process_slug}/designs/{design_id}/tdd-plan.md"
   required_skills: tdd-development-plan
+  primary_agent: lincoln-engineer
+  review_agents:
+  - lincoln-qa
+  handoff_to: lincoln-engineer
   context_files:
     agents_md: .claude/stages/tdd-development-plan/AGENTS.md
     checklist_md: .claude/stages/tdd-development-plan/CHECKLIST.md
@@ -301,7 +333,7 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - designs/{design_id}/tdd-plan.md
+      - "{process_slug}/designs/{design_id}/tdd-plan.md"
 - id: propose
   name: Propose
   description: 'Generates a complete OpenSpec change proposal including
@@ -313,11 +345,15 @@ stages:
   template: all
   prerequisite_stage: tdd-development-plan
   required_artifacts:
-  - openspec/changes/{change_name}/proposal.md
-  - openspec/changes/{change_name}/design.md
-  - openspec/changes/{change_name}/tasks.md
-  - openspec/changes/{change_name}/specs/
+  - "{process_slug}/openspec/changes/{change_name}/proposal.md"
+  - "{process_slug}/openspec/changes/{change_name}/design.md"
+  - "{process_slug}/openspec/changes/{change_name}/tasks.md"
+  - "{process_slug}/openspec/changes/{change_name}/specs/"
   required_skills: propose
+  primary_agent: lincoln-engineer
+  review_agents:
+  - lincoln-qa
+  handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/propose/AGENTS.md
     checklist_md: .claude/stages/propose/CHECKLIST.md
@@ -332,16 +368,16 @@ stages:
     exit:
     - check: artifact_exists
       args:
-      - openspec/changes/{change_name}/proposal.md
+      - "{process_slug}/openspec/changes/{change_name}/proposal.md"
     - check: artifact_exists
       args:
-      - openspec/changes/{change_name}/design.md
+      - "{process_slug}/openspec/changes/{change_name}/design.md"
     - check: artifact_exists
       args:
-      - openspec/changes/{change_name}/tasks.md
+      - "{process_slug}/openspec/changes/{change_name}/tasks.md"
     - check: artifact_exists
       args:
-      - openspec/changes/{change_name}/specs/
+      - "{process_slug}/openspec/changes/{change_name}/specs/"
 - id: split
   name: Split
   description: 'Breaks OpenSpec tasks into parallel, independently implementable
@@ -355,6 +391,11 @@ stages:
   required_artifacts:
   - .github/linked-issues.yaml
   required_skills: split
+  primary_agent: lincoln-pm
+  review_agents:
+  - lincoln-engineer
+  - lincoln-qa
+  handoff_to: lincoln-engineer
   context_files:
     agents_md: .claude/stages/split/AGENTS.md
     checklist_md: .claude/stages/split/CHECKLIST.md
@@ -386,6 +427,11 @@ stages:
   prerequisite_stage: split
   required_artifacts: []
   required_skills: implement
+  primary_agent: lincoln-engineer
+  review_agents:
+  - lincoln-qa
+  - lincoln-release-coordinator
+  handoff_to: lincoln-knowledge-curator
   context_files:
     agents_md: .claude/stages/implement/AGENTS.md
     checklist_md: .claude/stages/implement/CHECKLIST.md
@@ -414,11 +460,15 @@ stages:
   prerequisite_stage: implement
   required_artifacts:
   - .github/lincoln-sync-queue/pr-{pr_number}.yaml
-  - docs/knowledge/01-interviews/{session_id}.md
-  - docs/knowledge/02-requirements/{requirement_id}.md
-  - docs/knowledge/03-features/{feature_slug}.md
-  - docs/knowledge/04-decisions/{decision_id}.md
+  - knowledge/01-interviews/{session_id}.md
+  - knowledge/02-requirements/{requirement_id}.md
+  - knowledge/03-features/{feature_slug}.md
+  - knowledge/04-decisions/{decision_id}.md
   required_skills: sync-knowledge
+  primary_agent: lincoln-knowledge-curator
+  review_agents:
+  - lincoln-release-coordinator
+  handoff_to: null
   context_files:
     agents_md: .claude/stages/sync-knowledge/AGENTS.md
     checklist_md: .claude/stages/sync-knowledge/CHECKLIST.md
@@ -436,13 +486,13 @@ stages:
       - .github/lincoln-sync-queue/pr-{pr_number}.yaml
     - check: artifact_exists
       args:
-      - docs/knowledge/01-interviews/{session_id}.md
+      - knowledge/01-interviews/{session_id}.md
     - check: artifact_exists
       args:
-      - docs/knowledge/02-requirements/{requirement_id}.md
+      - knowledge/02-requirements/{requirement_id}.md
     - check: artifact_exists
       args:
-      - docs/knowledge/03-features/{feature_slug}.md
+      - knowledge/03-features/{feature_slug}.md
     - check: artifact_exists
       args:
-      - docs/knowledge/04-decisions/{decision_id}.md
+      - knowledge/04-decisions/{decision_id}.md

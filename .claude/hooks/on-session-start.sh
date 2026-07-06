@@ -16,7 +16,7 @@ else
     PYTHON="python3"
 fi
 
-STATE_FILE="$ROOT/.claude/workflow-stage.yaml"
+STATE_FILE="${LINCOLN_STATE_FILE:-}"
 LEGACY_STATE_FILE="$ROOT/.claude/workflow-state.yaml"
 
 # Reset any stale task-tool burst counter from a previous session
@@ -33,10 +33,18 @@ if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
     echo ""
 fi
 
-# 2. Determine state file (new workflow-stage.yaml preferred, legacy fallback)
-if [[ ! -f "$STATE_FILE" && -f "$LEGACY_STATE_FILE" ]]; then
-    STATE_FILE="$LEGACY_STATE_FILE"
-fi
+# 2. Determine state file (process package preferred, legacy fallback)
+STATE_FILE=$("$PYTHON" - "$ROOT" "$STATE_FILE" <<'PY'
+import sys
+from pathlib import Path
+root = Path(sys.argv[1])
+provided = sys.argv[2]
+sys.path.insert(0, str(root))
+from scripts.lincoln_paths import resolve_state_path
+path = Path(provided) if provided else None
+print(resolve_state_path(path, root))
+PY
+)
 
 if [[ ! -f "$STATE_FILE" ]]; then
     echo "No Lincoln state file found ($STATE_FILE)."
@@ -60,6 +68,9 @@ waiting_for = last_node.get("status") if last_node else None
 if waiting_for in ("completed", "merged"):
     waiting_for = "next_stage"
 variables = state.get("current_run", {}).get("variables", {})
+process_slug = variables.get("process_slug", "")
+if not process_slug and sys.argv[1].endswith("/workflow-stage.yaml"):
+    process_slug = __import__("pathlib").Path(sys.argv[1]).parent.name
 print(json.dumps({
     "current_stage": current,
     "status": status,
@@ -69,6 +80,7 @@ print(json.dumps({
     "waiting_for": waiting_for,
     "session_id": variables.get("session_id", ""),
     "design_id": variables.get("design_id", ""),
+    "process_slug": process_slug,
 }))
 PY
 )
@@ -81,8 +93,11 @@ LAST_NODE=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.dumps
 WAITING_FOR=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['waiting_for'] or 'none')")
 SESSION_ID=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['session_id'])")
 DESIGN_ID=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['design_id'])")
+PROCESS_SLUG=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['process_slug'])")
 
 echo "Workflow: $WORKFLOW_NAME ($WORKFLOW_TEMPLATE)"
+echo "Process package: ${PROCESS_SLUG:-(unset)}"
+echo "State file: ${STATE_FILE#$ROOT/}"
 echo "Current stage: $CURRENT_STAGE"
 echo "Stage status: $STATUS"
 echo "Session ID: ${SESSION_ID:-(unset)}"
@@ -120,8 +135,19 @@ if [[ -n "$HANDOFF_FILE" && -f "$ROOT/$HANDOFF_FILE" ]]; then
     echo ""
 fi
 
+if [[ -n "$PROCESS_SLUG" && -d "$ROOT/$PROCESS_SLUG/handoffs" ]]; then
+    LATEST_HANDOFF=$(ls -t "$ROOT/$PROCESS_SLUG/handoffs"/*.md 2>/dev/null | head -1 || true)
+    if [[ -n "$LATEST_HANDOFF" ]]; then
+        echo "=== Latest Process Handoff ==="
+        cat "$LATEST_HANDOFF"
+        echo ""
+        echo "=== End Latest Process Handoff ==="
+        echo ""
+    fi
+fi
+
 # 6. Run status summary
-STATUS_OUTPUT=$("$PYTHON" "$ROOT/scripts/lincoln-status.py" --format markdown 2>/dev/null) || STATUS_OUTPUT=""
+STATUS_OUTPUT=$("$PYTHON" "$ROOT/scripts/lincoln-status.py" --format markdown --state-file "$STATE_FILE" 2>/dev/null) || STATUS_OUTPUT=""
 if [[ -n "$STATUS_OUTPUT" ]]; then
     echo "=== Lincoln Status Summary ==="
     echo "$STATUS_OUTPUT"

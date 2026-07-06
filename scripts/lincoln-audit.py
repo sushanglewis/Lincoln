@@ -77,11 +77,11 @@ def audit_state_consistency(state: dict[str, Any], workflow: dict[str, Any]) -> 
     return {"check": "state_consistency", "status": "PASS", "message": "Stage sequence is consistent."}
 
 
-def audit_artifact_completeness(state: dict[str, Any], workflow: dict[str, Any]) -> dict[str, Any]:
+def audit_artifact_completeness(state: dict[str, Any], workflow: dict[str, Any], state_file: Path | None = None) -> dict[str, Any]:
     """Check that required artifacts exist for current and completed stages."""
     step_ids = [s["id"] for s in workflow.get("steps", [])]
     current_stage = state.get("current_run", {}).get("current_stage")
-    state_file = resolve_state_path(None)
+    state_file = state_file or resolve_state_path(None)
 
     check_stages = [sid for sid in step_ids if _get_stage_status(state, sid) in ("completed", "in_progress")]
     if current_stage and current_stage not in check_stages:
@@ -173,7 +173,7 @@ def audit_anomaly_detection(state: dict[str, Any]) -> dict[str, Any]:
     return {"check": "anomaly_detection", "status": "PASS", "message": "No anomalies detected."}
 
 
-def audit_handoff_file(state: dict[str, Any]) -> dict[str, Any]:
+def audit_handoff_file(state: dict[str, Any], state_file: Path | None = None) -> dict[str, Any]:
     """Check handoff file exists if current stage is waiting_for_human."""
     current_stage = state.get("current_run", {}).get("current_stage")
     if not current_stage:
@@ -187,7 +187,8 @@ def audit_handoff_file(state: dict[str, Any]) -> dict[str, Any]:
     if handoff_file and (PROJECT_ROOT / handoff_file).exists():
         return {"check": "handoff_file", "status": "PASS", "message": "Handoff file exists."}
 
-    process_slug = get_process_slug(state, resolve_state_path(None))
+    state_file = state_file or resolve_state_path(None)
+    process_slug = get_process_slug(state, state_file)
     handoff_dir = process_package_root(process_slug=process_slug) / "handoffs"
     latest = None
     if handoff_dir.exists():
@@ -205,19 +206,19 @@ def audit_handoff_file(state: dict[str, Any]) -> dict[str, Any]:
     return {"check": "handoff_file", "status": "WARN", "message": f"Stage waiting for human but handoff file missing in {handoff_dir}"}
 
 
-def run_all_audits(state: dict[str, Any]) -> list[dict[str, Any]]:
+def run_all_audits(state: dict[str, Any], state_file: Path | None = None) -> list[dict[str, Any]]:
     """Run all audit rules and return results."""
     template_name = state.get("workflow", {}).get("template")
     workflow = load_workflow(template_name)
 
     results = [
         audit_state_consistency(state, workflow),
-        audit_artifact_completeness(state, workflow),
+        audit_artifact_completeness(state, workflow, state_file),
         audit_human_gate_compliance(state, workflow),
         audit_entry_exit_compliance(state, workflow),
         audit_skill_coverage(state),
         audit_anomaly_detection(state),
-        audit_handoff_file(state),
+        audit_handoff_file(state, state_file),
     ]
     return results
 
@@ -243,7 +244,7 @@ def format_markdown(results: list[dict[str, Any]], overall: str) -> str:
     lines.append(f"**Overall Status:** {status_emoji.get(overall, '')} {overall}")
     lines.append("")
     lines.append("| Check | Status | Message |")
-    lines.append("|-------|--------|")
+    lines.append("|-------|--------|---------|")
     for r in results:
         emoji = status_emoji.get(r["status"], "")
         lines.append(f"| {r['check']} | {emoji} {r['status']} | {r['message']} |")
@@ -268,7 +269,7 @@ def main() -> int:
 
     state_file = resolve_state_path(args.state_file)
     state = load_state(state_file)
-    results = run_all_audits(state)
+    results = run_all_audits(state, state_file)
     overall = compute_overall_status(results)
 
     if args.format == "json":

@@ -35,18 +35,18 @@
 
 阶段完成后必须存在以下产物：
 
-- `openspec/changes/{change_name}/proposal.md`
-- `openspec/changes/{change_name}/specs/*.md`（至少一个文件）
-- `openspec/changes/{change_name}/design.md`
-- `openspec/changes/{change_name}/tasks.md`
+- `{process_slug}/openspec/changes/{change_name}/proposal.md`
+- `{process_slug}/openspec/changes/{change_name}/specs/*.md`（至少一个文件）
+- `{process_slug}/openspec/changes/{change_name}/design.md`
+- `{process_slug}/openspec/changes/{change_name}/tasks.md`
 
 ## 执行流程
 
 1. 运行准入校验器确认 TDD 计划已标记 `ready-for-openspec`
 2. 读取所有设计文档和 TDD 计划作为输入
-3. 检查 `openspec/changes/{change_name}/` 是否已存在，存在时询问人类是否覆盖
+3. 检查 `{process_slug}/openspec/changes/{change_name}/` 是否已存在，存在时询问人类是否覆盖
 4. 按优先级调用 OpenSpec CLI：
-   - 优先：`openspec propose {change_name} --from designs/{design_id}/tdd-plan.md`
+   - 优先：`openspec propose {change_name} --from {process_slug}/designs/{design_id}/tdd-plan.md`
    - 次选：`openspec propose {change_name}` 并 pipe TDD 计划内容
    - 失败时读取 `openspec propose --help` 并适配
 5. 调用 `superpowers:verification-before-completion` 验证 artifact：先运行退出校验并阅读输出，确认 0 失败
@@ -60,7 +60,7 @@
 2. 更新 `workflow-state.yaml` 中 `stages.propose` 状态为 `completed`
 3. 向人类汇报：
    - OpenSpec 提案已生成
-   - 产物存放路径：`openspec/changes/{change_name}/`
+   - 产物存放路径：`{process_slug}/openspec/changes/{change_name}/`
    - 下一阶段入口：`split`（运行 `claude split-to-github <session_id> <change_name>`）
 
 ## 关键提醒
@@ -69,5 +69,5 @@
 - **不绕过 CLI**：所有 artifact 必须通过 OpenSpec CLI 生成，禁止手动创建
 - **保留原始结构**：不修改 OpenSpec CLI 生成的文件结构和格式
 - **引用完整性**：artifact 必须引用 TDD 计划、Pencil 原型和核心设计文档
-- **覆盖确认**：若 `openspec/changes/{change_name}/` 已存在，需询问人类是否覆盖
+- **覆盖确认**：若 `{process_slug}/openspec/changes/{change_name}/` 已存在，需询问人类是否覆盖
 - **支持直接编辑**：人类可编辑 OpenSpec artifact 后运行 `workflow-continue`

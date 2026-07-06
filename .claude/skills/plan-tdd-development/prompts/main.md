@@ -4,7 +4,7 @@ You are executing the Lincoln workflow step `tdd-development-plan`: turn the con
 
 ## Goal
 
-Create `designs/<design_id>/tdd-plan.md` as the bridge from product design to OpenSpec and GitHub Issues.
+Create `{process_slug}/designs/<design_id>/tdd-plan.md` as the bridge from product design to OpenSpec and GitHub Issues.
 
 ## Input
 
@@ -21,8 +21,8 @@ Create `designs/<design_id>/tdd-plan.md` as the bridge from product design to Op
 
 ## Steps
 
-1. Verify that `designs/<design_id>/ui-spec.md` contains `<!-- prototype-status: approved -->` or `[x] PM 已确认原型`.
-2. Confirm `designs/<design_id>/prototype.pen`, `fields.md`, and the design review package exist.
+1. Verify that `{process_slug}/designs/<design_id>/ui-spec.md` contains `<!-- prototype-status: approved -->` or `[x] PM 已确认原型`.
+2. Confirm `{process_slug}/designs/<design_id>/prototype.pen`, `fields.md`, and the design review package exist.
 3. Read the confirmed design docs and inspect the `.pen` through Pencil tools if visual structure is needed.
 4. Write `tdd-plan.md` with:
    - Source links to requirements, design docs, fields, UI spec, and `prototype.pen`

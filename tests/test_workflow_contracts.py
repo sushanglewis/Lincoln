@@ -51,4 +51,27 @@ def test_propose_step_requires_tdd_plan_ready(workflow):
 
 def test_propose_step_uses_tdd_plan_as_input_file(workflow):
     propose = next(s for s in workflow["workflow"]["steps"] if s["id"] == "propose")
-    assert propose.get("input_file") == "designs/{design_id}/tdd-plan.md"
+    assert propose.get("input_file") == "{process_slug}/designs/{design_id}/tdd-plan.md"
+
+
+def test_process_artifacts_are_scoped_to_process_slug(workflow):
+    process_prefixes = (
+        "designs/",
+        "docs/research/",
+        "interviews/",
+        "openspec/changes/",
+        "recordings/",
+        "requirements/",
+    )
+    for step in workflow["workflow"]["steps"]:
+        for artifact in step.get("artifacts", []):
+            assert not artifact.startswith(process_prefixes), (
+                f"Process artifact is not process-scoped: {artifact}"
+            )
+
+
+def test_sync_knowledge_uses_root_knowledge(workflow):
+    sync = next(s for s in workflow["workflow"]["steps"] if s["id"] == "sync-knowledge")
+    artifacts = sync.get("artifacts", [])
+    assert any(a.startswith("knowledge/03-features/") for a in artifacts)
+    assert not any(a.startswith("docs/knowledge/") for a in artifacts)

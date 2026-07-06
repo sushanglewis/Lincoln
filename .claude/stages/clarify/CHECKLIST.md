@@ -5,7 +5,7 @@
 执行阶段前必须全部通过：
 
 - [ ] **摘要就绪检查**: `summary_ready {session_id}`
-  - `interviews/{session_id}/summary.md` 存在且非空
+  - `{process_slug}/interviews/{session_id}/summary.md` 存在且非空
   - 失败时：提示人类先完成 `ingest` 阶段（`claude process-interview <recording-path>`）
 
 ## 执行中检查 (During Execution)
@@ -13,10 +13,10 @@
 - [ ] 外部计划已检查（如存在）：调用 `gsd-import`
 - [ ] 已调用 `superpowers:brainstorming` 探索 ≥2 种需求视角
 - [ ] Brainstorming HARD-GATE 通过：PM 已确认方向
-- [ ] 读取 `interviews/{session_id}/transcript.md`
-- [ ] 读取 `interviews/{session_id}/summary.md`
-- [ ] 读取 `interviews/{session_id}/raw-insights.md`
-- [ ] 创建目录 `requirements/{session_id}/`
+- [ ] 读取 `{process_slug}/interviews/{session_id}/transcript.md`
+- [ ] 读取 `{process_slug}/interviews/{session_id}/summary.md`
+- [ ] 读取 `{process_slug}/interviews/{session_id}/raw-insights.md`
+- [ ] 创建目录 `{process_slug}/requirements/{session_id}/`
 - [ ] 起草初始 `requirements.md`，包含以下章节：
   - 背景
   - 问题
@@ -53,9 +53,9 @@
 
 ## 产物验证
 
-- [ ] `requirements/{session_id}/requirements.md` — 非空，包含所有必要章节，含审批标记
-- [ ] `requirements/{session_id}/user-stories.md` — 非空，从已确认需求派生
-- [ ] `requirements/{session_id}/prd.md` — 非空，从已确认需求派生
+- [ ] `{process_slug}/requirements/{session_id}/requirements.md` — 非空，包含所有必要章节，含审批标记
+- [ ] `{process_slug}/requirements/{session_id}/user-stories.md` — 非空，从已确认需求派生
+- [ ] `{process_slug}/requirements/{session_id}/prd.md` — 非空，从已确认需求派生
 - [ ] 每个需求项关联访谈时间戳（如 `(来源: 00:03:22)`）
 
 ## 人类确认节点
@@ -79,9 +79,9 @@ stages:
     exit_checks_passed: true
     human_gate_passed: true
     artifacts_produced:
-      - requirements/{session_id}/requirements.md
-      - requirements/{session_id}/user-stories.md
-      - requirements/{session_id}/prd.md
+      - {process_slug}/requirements/{session_id}/requirements.md
+      - {process_slug}/requirements/{session_id}/user-stories.md
+      - {process_slug}/requirements/{session_id}/prd.md
 ```
 
 ## 失败恢复

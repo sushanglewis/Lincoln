@@ -9,11 +9,11 @@
 ## 执行步骤
 
 1. 读取 `.claude/skills/lincoln-explore-opensource/prompts/explore-opensource.md`。
-2. 从 `requirements/{session_id}/requirements.md` 提取关键词。
+2. 从 `{process_slug}/requirements/{session_id}/requirements.md` 提取关键词。
 3. 搜索候选项目并评分。
-4. 生成 `docs/research/{change_name}-oss-options.md`。
+4. 生成 `{process_slug}/docs/research/{change_name}-oss-options.md`。
 5. 向 PM 展示评分表，等待确认。
 
 ## 产物
 
-- `docs/research/{change_name}-oss-options.md`
+- `{process_slug}/docs/research/{change_name}-oss-options.md`

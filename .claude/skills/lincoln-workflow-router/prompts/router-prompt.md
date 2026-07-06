@@ -5,10 +5,10 @@ You are the Lincoln Workflow Router. Your job is to assess the current project c
 ## Context signals
 
 1. Repository structure:
-   - Does `docs/knowledge/` already contain feature/requirement notes?
+   - Does `knowledge/` already contain feature/requirement notes?
    - Does `src/` or equivalent source directory exist?
    - Are there open GitHub Issues or a `.github/linked-issues.yaml`?
-   - Is there an `interviews/` directory with recordings?
+   - Is there an `{process_slug}/interviews/` directory with recordings?
 
 2. `workflow-state.yaml`:
    - What is `current_run.current_stage`?

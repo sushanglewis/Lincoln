@@ -24,7 +24,7 @@ Research existing open-source projects that solve a similar problem, score them 
 
 ## Outputs
 
-- `docs/research/{change_name}-oss-options.md`
+- `{process_slug}/docs/research/{change_name}-oss-options.md`
 
 ## Rules
 

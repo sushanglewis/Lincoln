@@ -12,27 +12,27 @@
 ## 子技能准备
 
 1. 调用 `superpowers:brainstorming` 提出 2-3 种设计方案及 trade-offs，等待 PM 确认。
-2. PM 确认后，调用 `superpowers:writing-plans` 规划 `designs/{design_id}/` 下的文件结构与每份文档的职责。
+2. PM 确认后，调用 `superpowers:writing-plans` 规划 `{process_slug}/designs/{design_id}/` 下的文件结构与每份文档的职责。
 
 ## 执行指令
 
 1. 读取 `.claude/skills/draft-product-design/prompts/main.md` 获取完整执行步骤
-2. 确认 `requirements/<session_id>/requirements.md` 已获批准
+2. 确认 `{process_slug}/requirements/<session_id>/requirements.md` 已获批准
 3. 读取需求文档包（requirements.md、user-stories.md、prd.md）
-4. （可选）如果设计涉及可借鉴开源方案，调用 `lincoln-explore-opensource` 生成 `docs/research/{change_name}-oss-options.md`，并等待 PM 确认后再继续
-5. 创建 `designs/<design_id>/` 目录并生成 6 份设计文档
+4. （可选）如果设计涉及可借鉴开源方案，调用 `lincoln-explore-opensource` 生成 `{process_slug}/docs/research/{change_name}-oss-options.md`，并等待 PM 确认后再继续
+5. 创建 `{process_slug}/designs/<design_id>/` 目录并生成 6 份设计文档
 6. 请人类 PM 审阅 `design-review.md`
 7. PM 确认后，在 `design-review.md` 添加 `<!-- status: approved -->`
 8. 提示用户运行：`claude build-product-prototype <session_id> <design_id>`
 
 ## 产物清单
 
-- `designs/<design_id>/design-review.md` - PM 评审入口
-- `designs/<design_id>/scenarios.md` - 用户场景
-- `designs/<design_id>/feature-catalog.md` - 功能清单
-- `designs/<design_id>/data-model.md` - 数据模型
-- `designs/<design_id>/flows.md` - 流程图（Mermaid）
-- `designs/<design_id>/feasibility.md` - 可行性分析
+- `{process_slug}/designs/<design_id>/design-review.md` - PM 评审入口
+- `{process_slug}/designs/<design_id>/scenarios.md` - 用户场景
+- `{process_slug}/designs/<design_id>/feature-catalog.md` - 功能清单
+- `{process_slug}/designs/<design_id>/data-model.md` - 数据模型
+- `{process_slug}/designs/<design_id>/flows.md` - 流程图（Mermaid）
+- `{process_slug}/designs/<design_id>/feasibility.md` - 可行性分析
 
 ## 关键约束
 

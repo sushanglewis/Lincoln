@@ -6,35 +6,35 @@
 
 ## 准入条件
 
-1. `prototype_ready` — `designs/{design_id}/ui-spec.md` 包含 `<!-- prototype-status: approved -->` 或 `[x] PM 已确认原型`
+1. `prototype_ready` — `{process_slug}/designs/{design_id}/ui-spec.md` 包含 `<!-- prototype-status: approved -->` 或 `[x] PM 已确认原型`
 2. `prototype_artifact_complete` — `prototype.pen`、`fields.md`、`ui-spec.md` 均存在且非空，并包含必要章节
 3. 未满足准入条件时，工作流必须暂停并提示人类先完成 `product-prototype` 阶段
 
 ## 允许的操作
 
-- 读取 `designs/{design_id}/` 下的所有设计产物：
+- 读取 `{process_slug}/designs/{design_id}/` 下的所有设计产物：
   - `design-review.md`、`scenarios.md`、`feature-catalog.md`
   - `data-model.md`、`flows.md`、`feasibility.md`
   - `fields.md`、`ui-spec.md`、`prototype.pen`
-- 读取 `requirements/{session_id}/requirements.md` 作为需求来源
+- 读取 `{process_slug}/requirements/{session_id}/requirements.md` 作为需求来源
 - 使用 Pencil 工具检查 `prototype.pen` 的视觉结构（如需）
-- 创建 `designs/{design_id}/tdd-plan.md`
+- 创建 `{process_slug}/designs/{design_id}/tdd-plan.md`
 - 在 `tdd-plan.md` 中添加 `<!-- status: ready-for-openspec -->` 标记
 
 ## 禁止的操作
 
 - **禁止在原型未确认时生成 TDD 计划**
-- **禁止在此阶段生成 OpenSpec artifact**（`openspec/changes/` 下的任何文件）
+- **禁止在此阶段生成 OpenSpec artifact**（`{process_slug}/openspec/changes/` 下的任何文件）
 - **禁止绕过原型审批标记**
-- 禁止修改 `designs/{design_id}/` 下已有的设计文档
-- 禁止修改 `requirements/` 目录下的需求文档
+- 禁止修改 `{process_slug}/designs/{design_id}/` 下已有的设计文档
+- 禁止修改 `{process_slug}/requirements/` 目录下的需求文档
 - 禁止绕过校验继续工作流
 
 ## 副作用策略
 
-- 唯一产物：`designs/{design_id}/tdd-plan.md`
+- 唯一产物：`{process_slug}/designs/{design_id}/tdd-plan.md`
 - 不修改任何已有设计文档或需求文档
-- 不创建 `openspec/changes/` 目录（留给 `propose` 阶段）
+- 不创建 `{process_slug}/openspec/changes/` 目录（留给 `propose` 阶段）
 - 人类可直接编辑 `tdd-plan.md`，编辑后运行 `workflow-continue`
 
 ## 人类确认节点
@@ -63,7 +63,7 @@
 
 ---
 
-**产物文件**: `designs/{design_id}/tdd-plan.md`
+**产物文件**: `{process_slug}/designs/{design_id}/tdd-plan.md`
 **校验命令**:
 - 准入: `python scripts/validate_stage.py --phase entry --check prototype_ready --args {design_id}`
 - 退出: `python scripts/validate_stage.py --phase exit --check tdd_plan_complete --args {design_id}`

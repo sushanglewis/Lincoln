@@ -26,3 +26,16 @@ def test_scan_features_respects_max_features(tmp_path):
 
     result = scan_features(tmp_path, max_features=5)
     assert len(result["features"]) == 5
+
+
+def test_scan_features_prefers_products_directory(tmp_path):
+    (tmp_path / "src" / "legacy").mkdir(parents=True)
+    (tmp_path / "src" / "legacy" / "old.py").write_text("pass")
+    (tmp_path / "products" / "checkout" / "src" / "payments").mkdir(parents=True)
+    (tmp_path / "products" / "checkout" / "src" / "payments" / "pay.py").write_text("def pay(): pass")
+
+    result = scan_features(tmp_path, max_features=10)
+
+    assert result["source_root"] == str(tmp_path / "products")
+    assert [feature["name"] for feature in result["features"]] == ["checkout"]
+    assert "products/checkout/src/payments/pay.py" in result["features"][0]["entry_points"]

@@ -23,7 +23,7 @@
 
 ## 额外输入
 
-- `docs/research/{change_name}-oss-options.md`（如果存在）：将其中的集成方案作为 TDD 计划的依赖项。
+- `{process_slug}/docs/research/{change_name}-oss-options.md`（如果存在）：将其中的集成方案作为 TDD 计划的依赖项。
 
 ## 执行指令
 
@@ -45,7 +45,7 @@
 
 阶段完成后必须存在以下产物：
 
-- `designs/{design_id}/tdd-plan.md` — 含 `<!-- status: ready-for-openspec -->` 标记
+- `{process_slug}/designs/{design_id}/tdd-plan.md` — 含 `<!-- status: ready-for-openspec -->` 标记
 
 ## 执行流程
 
@@ -62,7 +62,7 @@
 2. 更新 `workflow-state.yaml` 中 `stages.tdd-development-plan` 状态为 `completed`
 3. 向人类汇报：
    - TDD 计划已生成
-   - 产物存放路径：`designs/{design_id}/tdd-plan.md`
+   - 产物存放路径：`{process_slug}/designs/{design_id}/tdd-plan.md`
    - 下一阶段入口：`propose`（运行 `claude propose-with-openspec <session_id> <design_id> <change_name>`）
 
 ## 关键提醒

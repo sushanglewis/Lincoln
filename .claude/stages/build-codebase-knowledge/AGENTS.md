@@ -13,7 +13,7 @@
 
 - 读取源码、README、CHANGELOG
 - 调用 `lincoln-build-codebase-knowledge`
-- 生成/更新 `docs/knowledge/` 下的 Markdown 文件
+- 生成/更新 `knowledge/` 下的 Markdown 文件
 
 ## 禁止的操作
 
@@ -23,4 +23,4 @@
 
 ## 人类确认节点
 
-PM 必须确认 `docs/knowledge/00-index.md` 中的功能列表后，阶段才能标记完成。
+PM 必须确认 `knowledge/00-index.md` 中的功能列表后，阶段才能标记完成。

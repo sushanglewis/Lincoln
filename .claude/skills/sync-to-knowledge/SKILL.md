@@ -13,10 +13,10 @@ inputs:
     required: true
 outputs:
   - .github/lincoln-sync-queue/pr-{pr_number}.yaml
-  - docs/knowledge/01-interviews/{session_id}.md
-  - docs/knowledge/02-requirements/{requirement_id}.md
-  - docs/knowledge/03-features/{feature_slug}.md
-  - docs/knowledge/04-decisions/{decision_id}.md
+  - knowledge/01-interviews/{session_id}.md
+  - knowledge/02-requirements/{requirement_id}.md
+  - knowledge/03-features/{feature_slug}.md
+  - knowledge/04-decisions/{decision_id}.md
 required_tools:
   - Read
   - Bash

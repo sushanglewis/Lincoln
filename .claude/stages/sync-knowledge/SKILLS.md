@@ -28,7 +28,7 @@ claude sync-to-knowledge <issue_number> <pr_number>
 
 ## 约束
 
-`gsd-docs-update` 的输出需要与 `docs/knowledge/` 目录结构对齐；生成后检查是否与已有知识冲突。
+`gsd-docs-update` 的输出需要与 `knowledge/` 目录结构对齐；生成后检查是否与已有知识冲突。
 
 ## GitHub MCP 使用
 
@@ -95,15 +95,15 @@ python scripts/validate_stage.py \
 - `.github/lincoln-sync-queue/pr-{pr_number}.yaml` — 同步队列文件
 - `.github/openspec-config.yml` — 目标仓库配置
 - `.github/linked-issues.yaml` — Issue 映射关系
-- `requirements/<session_id>/requirements.md` — 需求文档
-- `openspec/changes/<change_name>/design.md` — OpenSpec 设计文档
-- `openspec/changes/<change_name>/tasks.md` — OpenSpec 任务列表
+- `{process_slug}/requirements/<session_id>/requirements.md` — 需求文档
+- `{process_slug}/openspec/changes/<change_name>/design.md` — OpenSpec 设计文档
+- `{process_slug}/openspec/changes/<change_name>/tasks.md` — OpenSpec 任务列表
 
 ## 输出文件
 
-- `docs/knowledge/03-features/<feature_slug>.md` — 功能知识文档
-- `docs/knowledge/02-requirements/<requirement_id>.md` — 需求知识文档
-- `docs/knowledge/01-interviews/<session_id>.md` — 访谈知识文档
-- `docs/knowledge/04-decisions/<decision_id>.md` — 决策知识文档（如适用）
-- `docs/knowledge/00-index.md` — 知识库索引
+- `knowledge/03-features/<feature_slug>.md` — 功能知识文档
+- `knowledge/02-requirements/<requirement_id>.md` — 需求知识文档
+- `knowledge/01-interviews/<session_id>.md` — 访谈知识文档
+- `knowledge/04-decisions/<decision_id>.md` — 决策知识文档（如适用）
+- `knowledge/00-index.md` — 知识库索引
 - 更新后的 `.github/lincoln-sync-queue/pr-{pr_number}.yaml`（状态改为 `completed`）

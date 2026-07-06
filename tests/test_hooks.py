@@ -238,6 +238,46 @@ def test_pre_tool_use_allows_process_package_artifact(process_package_state):
     assert result.returncode == 0
 
 
+def test_pre_tool_use_blocks_wrong_process_package_artifact(process_package_state):
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "other-slug/requirements/test/requirements.md"}',
+    )
+    assert result.returncode == 1
+    assert "process artifacts must be written under" in result.stderr
+
+
+def test_pre_tool_use_derives_status_from_current_stage_node(process_package_state):
+    # Make the current stage not_started even though a previous node is completed.
+    state = yaml.safe_load(process_package_state.read_text(encoding="utf-8"))
+    state["current_run"]["current_stage"] = "clarify"
+    state["current_run"]["status"] = "not_started"
+    state["nodes"] = [
+        {
+            "stage_id": "ingest",
+            "node_id": "ingest-1",
+            "status": "completed",
+            "gate_passed": False,
+            "approved_by": None,
+            "artifacts": [],
+            "handoff_file": None,
+        }
+    ]
+    process_package_state.write_text(
+        yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md"}',
+    )
+    assert result.returncode == 1
+    assert "Entry checks" in result.stderr
+
+
 def test_pre_tool_use_blocks_plain_pen_access(dialogue_in_progress_state):
     result = run_hook(
         "pre-tool-use.sh",

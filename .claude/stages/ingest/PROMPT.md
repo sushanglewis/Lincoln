@@ -33,10 +33,10 @@
 
 阶段完成后必须存在以下产物：
 
-- `interviews/{session_id}/metadata.json`
-- `interviews/{session_id}/transcript.md`
-- `interviews/{session_id}/summary.md`
-- `interviews/{session_id}/raw-insights.md`
+- `{process_slug}/interviews/{session_id}/metadata.json`
+- `{process_slug}/interviews/{session_id}/transcript.md`
+- `{process_slug}/interviews/{session_id}/summary.md`
+- `{process_slug}/interviews/{session_id}/raw-insights.md`
 
 ## 完成后操作
 

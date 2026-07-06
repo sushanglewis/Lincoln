@@ -22,16 +22,44 @@ fi
 INITIAL_STATUS="$(git status --porcelain)"
 
 # ---------------------------------------------------------------------------
-# 2. Ensure placeholder files exist for empty tracked directories
+# 2. Ensure placeholder files exist for durable tracked directories
 # ---------------------------------------------------------------------------
-mkdir -p recordings interviews requirements designs openspec/changes .context docs/knowledge/assets
+mkdir -p products oss/clones knowledge/assets knowledge/01-interviews knowledge/02-requirements knowledge/03-features knowledge/04-decisions knowledge/06-references .context
 
-touch recordings/.gitkeep
-[ -f interviews/.gitkeep ] || touch interviews/.gitkeep
-[ -f requirements/.gitkeep ] || touch requirements/.gitkeep
-[ -f designs/.gitkeep ] || touch designs/.gitkeep
-[ -f openspec/changes/.gitkeep ] || touch openspec/changes/.gitkeep
-[ -f docs/knowledge/assets/.gitkeep ] || touch docs/knowledge/assets/.gitkeep
+[ -f products/.gitkeep ] || touch products/.gitkeep
+[ -f oss/clones/.gitkeep ] || touch oss/clones/.gitkeep
+[ -f knowledge/assets/.gitkeep ] || touch knowledge/assets/.gitkeep
+[ -f knowledge/01-interviews/.gitkeep ] || touch knowledge/01-interviews/.gitkeep
+[ -f knowledge/02-requirements/.gitkeep ] || touch knowledge/02-requirements/.gitkeep
+[ -f knowledge/03-features/.gitkeep ] || touch knowledge/03-features/.gitkeep
+[ -f knowledge/04-decisions/.gitkeep ] || touch knowledge/04-decisions/.gitkeep
+[ -f knowledge/06-references/.gitkeep ] || touch knowledge/06-references/.gitkeep
+
+if [ ! -f products/README.md ]; then
+  cat > products/README.md <<'EOF'
+# Products
+
+Put first-party product code under `products/<product-slug>/`.
+
+Lincoln process artifacts live in feature-branch process packages, not here.
+EOF
+fi
+
+if [ ! -f oss/README.md ]; then
+  cat > oss/README.md <<'EOF'
+# OSS
+
+Track third-party open-source candidates in `oss/projects.yaml`.
+
+Local clones belong under `oss/clones/` and are gitignored.
+EOF
+fi
+
+if [ ! -f oss/projects.yaml ]; then
+  cat > oss/projects.yaml <<'EOF'
+projects: []
+EOF
+fi
 
 # ---------------------------------------------------------------------------
 # 3. Check dependencies
@@ -123,12 +151,16 @@ elif [ -n "$INITIAL_STATUS" ]; then
   echo "   Review and commit the changes manually when ready."
 else
   git add \
-    recordings/.gitkeep \
-    interviews/.gitkeep \
-    requirements/.gitkeep \
-    designs/.gitkeep \
-    openspec/changes/.gitkeep \
-    docs/knowledge/assets/.gitkeep
+    products/.gitkeep \
+    products/README.md \
+    oss/README.md \
+    oss/projects.yaml \
+    knowledge/assets/.gitkeep \
+    knowledge/01-interviews/.gitkeep \
+    knowledge/02-requirements/.gitkeep \
+    knowledge/03-features/.gitkeep \
+    knowledge/04-decisions/.gitkeep \
+    knowledge/06-references/.gitkeep
   if git diff --cached --quiet; then
     echo "ℹ️  No tracked initialization changes to commit"
   else
@@ -141,5 +173,6 @@ echo ""
 echo "🎉 Lincoln project initialized successfully!"
 echo ""
 echo "Next steps:"
-echo "  1. Place an interview recording in recordings/"
-echo "  2. Say to Claude Code: '处理一下这个访谈录音 recordings/<file>'"
+echo "  1. Create a feature process branch: scripts/init-lincoln-branch.sh <session-id> <design-id> --process-slug <feature-slug> --push"
+echo "  2. Place interview recordings in <feature-slug>/recordings/"
+echo "  3. Say to Claude Code: '处理一下这个访谈录音 <feature-slug>/recordings/<file>'"

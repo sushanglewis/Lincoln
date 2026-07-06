@@ -15,19 +15,19 @@
 - 读取录音文件（只读）
 - 使用 `ffmpeg` 提取视频中的音频轨道
 - 使用 Whisper（优先本地 `faster-whisper`，失败时回退到 OpenAI Whisper API）进行转写
-- 创建 `interviews/{session_id}/` 目录及产物文件
+- 创建 `{process_slug}/interviews/{session_id}/` 目录及产物文件
 - 生成 `metadata.json`、`transcript.md`、`summary.md`、`raw-insights.md`
 
 ## 禁止的操作
 
-- **禁止修改或删除原始录音文件**：`recordings/` 目录中的文件永远只读
+- **禁止修改或删除原始录音文件**：`{process_slug}/recordings/` 目录中的文件永远只读
 - 禁止在转写失败时静默跳过，必须报告错误并生成部分产物
 - 禁止跳过校验直接执行转写
 - 禁止在产物不完整时标记阶段完成
 
 ## 副作用策略
 
-- 所有产物写入 `interviews/{session_id}/` 目录，不影响其他阶段目录
+- 所有产物写入 `{process_slug}/interviews/{session_id}/` 目录，不影响其他阶段目录
 - 转写失败时写入部分产物（如 `metadata.json` 记录错误状态），便于人类排查
 - 不修改任何现有文件，只创建新文件
 
@@ -54,7 +54,7 @@
 
 ---
 
-**产物目录**: `interviews/{session_id}/`
+**产物目录**: `{process_slug}/interviews/{session_id}/`
 **校验命令**:
 - 准入: `python scripts/validate_stage.py --phase entry --check file_exists --args {recording_path}`
 - 准入: `python scripts/validate_stage.py --phase entry --check audio_format_supported --args {recording_path}`

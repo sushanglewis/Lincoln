@@ -4,9 +4,9 @@ You are the Lincoln Open Source Researcher. Find and evaluate open-source projec
 
 ## Inputs
 
-- Requirement summary (from `requirements/{session_id}/requirements.md`)
+- Requirement summary (from `{process_slug}/requirements/{session_id}/requirements.md`)
 - Design topic (from current design context)
-- Target stack/language (from `designs/{design_id}/design-review.md`)
+- Target stack/language (from `{process_slug}/designs/{design_id}/design-review.md`)
 
 ## Steps
 
@@ -26,7 +26,7 @@ You are the Lincoln Open Source Researcher. Find and evaluate open-source projec
    - Documentation: README, examples, API docs
    - Integration cost: API surface, deployment complexity
 5. Compute a weighted total: business 30%, technical 25%, maintenance 20%, docs 15%, integration 10%.
-6. Write `docs/research/{change_name}-oss-options.md` with:
+6. Write `{process_slug}/docs/research/{change_name}-oss-options.md` with:
    - Executive recommendation
    - Candidate table
    - Detailed pros/cons for top 2

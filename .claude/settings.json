@@ -6,7 +6,7 @@
     "PostToolUse": ".claude/hooks/post-tool-use.sh"
   },
   "lincoln": {
-    "state_file": ".claude/workflow-stage.yaml",
+    "state_file": "<process_slug>/workflow-stage.yaml",
     "legacy_state_file": ".claude/workflow-state.yaml",
     "auto_install_dependencies": false,
     "dependency_check_on_startup": true

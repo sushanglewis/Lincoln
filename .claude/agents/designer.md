@@ -23,6 +23,6 @@ extends:
 
 ## 产物规范
 
-- `designs/{design_id}/fields.md`
-- `designs/{design_id}/ui-spec.md`
-- `designs/{design_id}/prototype.pen`
+- `{process_slug}/designs/{design_id}/fields.md`
+- `{process_slug}/designs/{design_id}/ui-spec.md`
+- `{process_slug}/designs/{design_id}/prototype.pen`

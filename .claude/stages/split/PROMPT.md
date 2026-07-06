@@ -14,7 +14,7 @@
 2. **读取完整提示**：参考 `.claude/skills/split-to-github/prompts/main.md` 获取详细步骤
 3. **执行拆分**：为每个 OpenSpec 任务创建一个 GitHub Issue；若任务 ≥3 个且相互独立，可调用 `superpowers:dispatching-parallel-agents` 并行创建
 4. **记录映射**：写入 `.github/linked-issues.yaml`
-5. **更新需求文档**：在 `requirements/<session_id>/requirements.md` 中记录 Issue 编号
+5. **更新需求文档**：在 `{process_slug}/requirements/<session_id>/requirements.md` 中记录 Issue 编号
 6. **验证回链**：调用 `superpowers:verification-before-completion`，确认 `requirements.md` 引用了所有 `#<issue_number>`
 7. **运行退出校验**：确认 `issues_created` 和 `tasks_link_back_to_issues` 通过
 
@@ -28,7 +28,7 @@
 
 - `.github/linked-issues.yaml` — 任务与 Issue 的映射表
 - 目标仓库中的 GitHub Issues — 每个 Issue 对应一个 OpenSpec 任务
-- 更新后的 `requirements/<session_id>/requirements.md`
+- 更新后的 `{process_slug}/requirements/<session_id>/requirements.md`
 
 ## 完成后
 

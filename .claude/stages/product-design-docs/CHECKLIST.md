@@ -2,10 +2,10 @@
 
 ## 入口检查
 
-- [ ] `requirements/<session_id>/requirements.md` 存在且非空
+- [ ] `{process_slug}/requirements/<session_id>/requirements.md` 存在且非空
 - [ ] 需求文档包含批准标记（`<!-- status: approved -->` 或 `[x] PM 已确认需求`）
-- [ ] `requirements/<session_id>/user-stories.md` 存在且非空
-- [ ] `requirements/<session_id>/prd.md` 存在且非空
+- [ ] `{process_slug}/requirements/<session_id>/user-stories.md` 存在且非空
+- [ ] `{process_slug}/requirements/<session_id>/prd.md` 存在且非空
 - [ ] 校验命令通过：`python scripts/validate_stage.py --phase entry --check requirements_approved --args <session_id>`
 
 ## 执行中检查
@@ -13,7 +13,7 @@
 - [ ] 已调用 `superpowers:brainstorming` 探索 ≥2 种设计方向
 - [ ] PM 已确认设计方向（`design-review.md` 含 `<!-- status: approved -->` 或 `[x] PM 已确认设计文档`）
 - [ ] 已调用 `superpowers:writing-plans` 规划文档结构
-- [ ] 已创建 `designs/<design_id>/` 目录
+- [ ] 已创建 `{process_slug}/designs/<design_id>/` 目录
 - [ ] 已读取全部需求文档
 - [ ] `design-review.md` 包含决策摘要、范围、文档链接、待解决问题和审批清单
 - [ ] `scenarios.md` 包含目标用户、主场景、边界场景和非目标

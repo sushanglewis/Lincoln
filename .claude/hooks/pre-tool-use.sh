@@ -50,15 +50,16 @@ import yaml
 path = sys.argv[1]
 state = yaml.safe_load(open(path, encoding="utf-8"))
 current = state.get("current_run", {}).get("current_stage") or "not_started"
-# New schema: derive status from latest node; legacy schema: from stages map.
-nodes = state.get("nodes")
-if nodes:
-    stage_state = nodes[-1]
+# New schema: derive status from the latest node for the current stage; legacy schema: from stages map.
+nodes = state.get("nodes", [])
+matching = [n for n in nodes if n.get("stage_id") == current]
+if matching:
+    stage_state = matching[-1]
 elif "stages" in state and current in state["stages"]:
     stage_state = state["stages"][current]
 else:
     stage_state = {}
-status = stage_state.get("status") or "not_started"
+status = stage_state.get("status") or state.get("current_run", {}).get("status") or "not_started"
 print(current)
 print(status)
 PY
@@ -152,7 +153,7 @@ if [[ -n "$TARGET_PATH" ]]; then
     if is_side_effect "$TOOL_NAME"; then
         if [[ -n "$PROCESS_SLUG" ]]; then
             case "$NORMALIZED_TARGET" in
-                recordings/*|interviews/*|requirements/*|designs/*|openspec/changes/*|docs/research/*)
+                recordings/*|*/recordings/*|interviews/*|*/interviews/*|requirements/*|*/requirements/*|designs/*|*/designs/*|openspec/changes/*|*/openspec/changes/*|docs/research/*|*/docs/research/*)
                     if [[ "$NORMALIZED_TARGET" != "$PROCESS_SLUG/"* ]]; then
                         echo "BLOCKED: process artifacts must be written under '$PROCESS_SLUG/'." >&2
                         exit 1
@@ -161,7 +162,7 @@ if [[ -n "$TARGET_PATH" ]]; then
             esac
         else
             case "$NORMALIZED_TARGET" in
-                recordings/*|interviews/*|requirements/*|designs/*|openspec/changes/*|docs/research/*)
+                recordings/*|*/recordings/*|interviews/*|*/interviews/*|requirements/*|*/requirements/*|designs/*|*/designs/*|openspec/changes/*|*/openspec/changes/*|docs/research/*|*/docs/research/*)
                     echo "BLOCKED: process artifacts must be written under an initialized <process_slug>/." >&2
                     exit 1
                     ;;

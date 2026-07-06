@@ -21,9 +21,9 @@ For each feature from the map:
 
 ## Phase 3 — Write knowledge documents
 
-1. Create `docs/knowledge/00-index.md` with a table of features and links.
-2. Create `docs/knowledge/03-features/existing-<feature>.md` for each feature using the template below.
-3. Create `docs/knowledge/05-glossary/00-index.md` with domain terms and definitions inferred from code.
+1. Create `knowledge/00-index.md` with a table of features and links.
+2. Create `knowledge/03-features/existing-<feature>.md` for each feature using the template below.
+3. Create `knowledge/05-glossary/00-index.md` with domain terms and definitions inferred from code.
 
 ## Feature document template
 
@@ -57,5 +57,5 @@ For each feature from the map:
 
 ## Human gate
 
-- Ask the PM to review `docs/knowledge/00-index.md` before continuing.
+- Ask the PM to review `knowledge/00-index.md` before continuing.
 - Mark `codebase-knowledge-ready` in `workflow-state.yaml` only after PM confirms or 5 minutes pass with no objections.

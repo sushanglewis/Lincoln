@@ -19,6 +19,6 @@
 
 ## 输出位置
 
-- `docs/knowledge/00-index.md`
-- `docs/knowledge/03-features/existing-*.md`
-- `docs/knowledge/05-glossary/00-index.md`
+- `knowledge/00-index.md`
+- `knowledge/03-features/existing-*.md`
+- `knowledge/05-glossary/00-index.md`

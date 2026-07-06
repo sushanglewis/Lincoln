@@ -29,12 +29,12 @@
 ## OpenSpec CLI 使用
 
 - **CLI 命令**: `openspec propose {change_name}`
-- **输入文件**: `designs/{design_id}/tdd-plan.md`
+- **输入文件**: `{process_slug}/designs/{design_id}/tdd-plan.md`
 - **调用优先级**:
-  1. `openspec propose {change_name} --from designs/{design_id}/tdd-plan.md`
+  1. `openspec propose {change_name} --from {process_slug}/designs/{design_id}/tdd-plan.md`
   2. `openspec propose {change_name}` 并 pipe TDD 计划内容到 stdin
   3. 若均失败：`openspec propose --help` 读取帮助并适配
-- **输出目录**: `openspec/changes/{change_name}/`
+- **输出目录**: `{process_slug}/openspec/changes/{change_name}/`
 
 ## 校验器使用
 
@@ -72,7 +72,7 @@
 OpenSpec CLI 生成的标准目录结构：
 
 ```
-openspec/changes/{change_name}/
+{process_slug}/openspec/changes/{change_name}/
 ├── proposal.md      # 变更提案概述
 ├── specs/           # 详细规格文件（至少一个 .md）
 ├── design.md        # 设计文档
@@ -84,7 +84,7 @@ openspec/changes/{change_name}/
 | 错误场景 | 处理方式 |
 |---------|---------|
 | TDD 计划未就绪 | 暂停，提示人类先完成 `tdd-development-plan` 阶段 |
-| `openspec/changes/{change_name}/` 已存在 | 询问人类是否覆盖 |
+| `{process_slug}/openspec/changes/{change_name}/` 已存在 | 询问人类是否覆盖 |
 | OpenSpec CLI 调用失败 | 读取 `openspec propose --help`，尝试适配调用方式 |
 | OpenSpec CLI 所有调用方式均失败 | 暂停，向人类报告 CLI 错误信息 |
 | artifact 文件缺失 | 报告错误，暂停等待人类干预 |

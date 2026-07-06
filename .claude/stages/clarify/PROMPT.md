@@ -22,7 +22,7 @@
 
 ## 执行指令
 
-1. **读取完整提示文件**: `.claude/skills/clarify-requirements/prompts/main.md`
+1. **读取完整提示文件**: `.claude/skills/clarify-{process_slug}/requirements/prompts/main.md`
    - 该文件包含详细的澄清步骤、人类交互规则和产物格式
    - 按照提示文件中的步骤 1-9 执行
 
@@ -34,15 +34,15 @@
 
 3. **变量替换**:
    - 使用 `state.variables.session_id` 作为会话标识
-   - 读取 `interviews/{session_id}/` 下的 transcript.md、summary.md、raw-insights.md
+   - 读取 `{process_slug}/interviews/{session_id}/` 下的 transcript.md、summary.md、raw-insights.md
 
 ## 产物清单
 
 阶段完成后必须存在以下产物：
 
-- `requirements/{session_id}/requirements.md` — 含审批标记
-- `requirements/{session_id}/user-stories.md`
-- `requirements/{session_id}/prd.md`
+- `{process_slug}/requirements/{session_id}/requirements.md` — 含审批标记
+- `{process_slug}/requirements/{session_id}/user-stories.md`
+- `{process_slug}/requirements/{session_id}/prd.md`
 
 ## 人类交互流程
 
@@ -67,4 +67,4 @@
 - **每轮最多 3 个问题**：避免信息过载
 - **可追溯性**：每个需求必须关联访谈时间戳 `(来源: HH:MM:SS)`
 - **支持直接编辑**：人类可编辑 `requirements.md` 后运行 `workflow-continue`
-- **不修改原始产物**：`interviews/` 目录只读
+- **不修改原始产物**：`{process_slug}/interviews/` 目录只读

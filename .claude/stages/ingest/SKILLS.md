@@ -12,7 +12,7 @@
 - **命令**: `process-interview`
 - **来源**: `.claude/skills/`
 - **参数**:
-  - `recording_path` (必填): 录音文件路径，如 `recordings/2026-06-27-stakeholder.m4a`
+  - `recording_path` (必填): 录音文件路径，如 `{process_slug}/recordings/2026-06-27-stakeholder.m4a`
 - **提示文件**: `.claude/skills/process-interview/prompts/main.md`
 
 ## 辅助技能

@@ -4,7 +4,7 @@ You are executing the Lincoln workflow step `clarify`: turn interview artifacts 
 
 ## Goal
 
-Produce a clear, agreed-upon `requirements/<session-id>/requirements.md` that serves as the single source of truth for this interview.
+Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requirements.md` that serves as the single source of truth for this interview.
 
 ## Input
 
@@ -19,8 +19,8 @@ Produce a clear, agreed-upon `requirements/<session-id>/requirements.md` that se
 
 ## Steps
 
-1. Read `interviews/<session-id>/transcript.md`, `summary.md`, and `raw-insights.md`.
-2. Create `requirements/<session-id>/` if it does not exist.
+1. Read `{process_slug}/interviews/<session-id>/transcript.md`, `summary.md`, and `raw-insights.md`.
+2. Create `{process_slug}/requirements/<session-id>/` if it does not exist.
 3. Draft an initial `requirements.md` using the template:
    - `背景`
    - `问题`
@@ -45,9 +45,9 @@ Produce a clear, agreed-upon `requirements/<session-id>/requirements.md` that se
 
 ## Output Artifacts
 
-- `requirements/<session-id>/requirements.md`
-- `requirements/<session-id>/user-stories.md`
-- `requirements/<session-id>/prd.md`
+- `{process_slug}/requirements/<session-id>/requirements.md`
+- `{process_slug}/requirements/<session-id>/user-stories.md`
+- `{process_slug}/requirements/<session-id>/prd.md`
 
 ## Traceability
 

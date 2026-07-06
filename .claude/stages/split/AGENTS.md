@@ -7,16 +7,16 @@
 ## 入口条件
 
 1. 前置阶段 `propose` 已完成并通过退出校验
-2. 入口校验通过：`openspec_tasks_ready`（`openspec/changes/<change_name>/tasks.md` 存在且包含可识别的任务列表）
+2. 入口校验通过：`openspec_tasks_ready`（`{process_slug}/openspec/changes/<change_name>/tasks.md` 存在且包含可识别的任务列表）
 3. 当前 workflow state 中 `current_stage` 为 `split`
 
 ## 允许的操作
 
-- 读取 `openspec/changes/<change_name>/tasks.md` 解析任务列表
+- 读取 `{process_slug}/openspec/changes/<change_name>/tasks.md` 解析任务列表
 - 读取 `.github/openspec-config.yml` 获取目标仓库信息
 - 使用 GitHub MCP 或 `gh` CLI 创建 GitHub Issues
 - 写入 `.github/linked-issues.yaml` 记录任务与 Issue 的映射关系
-- 更新 `requirements/<session_id>/requirements.md` 记录 Issue 编号
+- 更新 `{process_slug}/requirements/<session_id>/requirements.md` 记录 Issue 编号
 - 调用 validator 执行入口/退出校验
 - 向人类汇报已创建的 Issue 列表
 
@@ -32,7 +32,7 @@
 
 - 所有写入操作均为追加或新建，不删除已有文件
 - `.github/linked-issues.yaml` 如已存在，应追加新映射而非覆盖
-- `requirements/<session_id>/requirements.md` 的更新以追加 Issue 编号的形式进行
+- `{process_slug}/requirements/<session_id>/requirements.md` 的更新以追加 Issue 编号的形式进行
 
 ## 人类确认节点
 
