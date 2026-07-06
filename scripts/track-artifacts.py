@@ -17,6 +17,9 @@ from pathlib import Path
 
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from scripts.lincoln_paths import get_process_slug
+
 
 # Paths that are considered workflow artifacts (relative to project root).
 ARTIFACT_PREFIXES = (
@@ -24,7 +27,7 @@ ARTIFACT_PREFIXES = (
     "requirements/",
     "designs/",
     "openspec/",
-    "docs/knowledge/",
+    "knowledge/",
     ".github/linked-issues.yaml",
     ".github/lincoln-sync-queue/",
 )
@@ -65,11 +68,18 @@ def extract_paths(tool: str, args: str, project_root: Path) -> list[str]:
 
     # For Pencil MCP tools, we can't easily know exported files; skip.
 
-    # Normalize and filter to project-relative artifact paths
+    # Normalize and filter to project-relative artifact paths.
     result: list[str] = []
     for p in paths:
-        p = p.strip().lstrip("/")
-        if any(p.startswith(prefix) for prefix in ARTIFACT_PREFIXES):
+        raw = Path(p.strip())
+        if raw.is_absolute():
+            try:
+                p = str(raw.resolve().relative_to(project_root.resolve()))
+            except ValueError:
+                continue
+        else:
+            p = str(raw).lstrip("/")
+        if any(p.startswith(prefix) for prefix in ARTIFACT_PREFIXES) or "/recordings/" in p or "/requirements/" in p or "/designs/" in p or "/interviews/" in p or "/openspec/" in p:
             result.append(p)
     return result
 
@@ -94,10 +104,34 @@ def main() -> int:
     if not new_paths:
         return 0
 
-    stage_state = state.setdefault("stages", {}).setdefault(current_stage, {})
-    existing = set(stage_state.get("artifacts_produced", []))
-    updated = existing | set(new_paths)
-    stage_state["artifacts_produced"] = sorted(updated)
+    if "nodes" in state:
+        matching = [n for n in state.setdefault("nodes", []) if n.get("stage_id") == current_stage]
+        if matching:
+            node = matching[-1]
+        else:
+            node = {
+                "stage_id": current_stage,
+                "node_id": f"{current_stage}-artifact-tracking",
+                "status": state.get("current_run", {}).get("status", "in_progress"),
+                "started_at": state.get("current_run", {}).get("last_updated_at"),
+                "completed_at": None,
+                "gate_passed": False,
+                "approved_by": None,
+                "artifacts": [],
+                "handoff_file": None,
+            }
+            state["nodes"].append(node)
+        existing = set(node.get("artifacts", []))
+        node["artifacts"] = sorted(existing | set(new_paths))
+    else:
+        stage_state = state.setdefault("stages", {}).setdefault(current_stage, {})
+        existing = set(stage_state.get("artifacts_produced", []))
+        stage_state["artifacts_produced"] = sorted(existing | set(new_paths))
+
+    state.setdefault("current_run", {}).setdefault("variables", {}).setdefault(
+        "process_slug",
+        get_process_slug(state, args.state_file),
+    )
     save_state(args.state_file, state)
     return 0
 
