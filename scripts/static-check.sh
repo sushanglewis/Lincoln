@@ -246,7 +246,7 @@ if "stages" not in manifest or not isinstance(manifest["stages"], list):
     sys.exit(1)
 
 for stage in manifest["stages"]:
-    for key in ["id", "name", "description", "human_gate", "template", "prerequisite_stage", "required_artifacts", "required_skills", "context_files", "next_stage"]:
+    for key in ["id", "name", "description", "human_gate", "template", "prerequisite_stage", "required_artifacts", "required_skills", "primary_agent", "review_agents", "handoff_to", "context_files", "next_stage"]:
         if key not in stage:
             print(f"Stage {stage.get('id', '?')} missing key: {key}")
             sys.exit(1)
@@ -272,6 +272,11 @@ echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/track-artifacts.py
 "$PYTHON" -m py_compile scripts/task_tool_guard.py
 "$PYTHON" -m py_compile scripts/validate_stage.py
+"$PYTHON" -m py_compile scripts/lincoln_paths.py
+"$PYTHON" -m py_compile scripts/check-main-merge-hygiene.py
+
+echo "==> Check main merge hygiene"
+"$PYTHON" scripts/check-main-merge-hygiene.py || true
 
 echo "==> Validate bash syntax for scripts"
 bash -n scripts/init-lincoln-branch.sh
