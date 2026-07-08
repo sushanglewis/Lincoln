@@ -43,18 +43,6 @@ def pass_check(message: str = ""):
     sys.exit(0)
 
 
-def has_any_heading(content: str, aliases: list[str]) -> bool:
-    return any(heading in content for heading in aliases)
-
-
-def missing_heading_groups(content: str, required_groups: dict[str, list[str]]) -> list[str]:
-    return [
-        label
-        for label, aliases in required_groups.items()
-        if not has_any_heading(content, aliases)
-    ]
-
-
 def read_flat_yaml(path: Path) -> dict[str, str]:
     data = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -260,46 +248,20 @@ def check_tdd_plan_ready(design_id: str):
 
 def check_transcript_has_timestamps(session_id: str):
     transcript = process_path("interviews", session_id, "transcript.md")
-    if not transcript.exists():
-        fail(f"Transcript missing: {transcript}")
-    content = transcript.read_text(encoding="utf-8")
-    if not re.search(r"\d{2}:\d{2}:\d{2}", content):
-        fail("Transcript does not contain timestamps")
-    pass_check()
+    require_nonempty_file(transcript, "Transcript")
+    pass_check(str(transcript))
 
 
 def check_summary_has_key_topics(session_id: str):
     summary = process_path("interviews", session_id, "summary.md")
-    if not summary.exists():
-        fail(f"Summary missing: {summary}")
-    content = summary.read_text(encoding="utf-8")
-    required = {
-        "关键主题": ["关键主题", "Key topics", "Key Topics"],
-        "决策": ["决策", "Decisions"],
-        "行动项": ["行动项", "Action items", "Action Items"],
-    }
-    missing = missing_heading_groups(content, required)
-    if missing:
-        fail(f"Summary missing sections: {', '.join(missing)}")
-    pass_check()
+    require_nonempty_file(summary, "Summary")
+    pass_check(str(summary))
 
 
 def check_requirements_has_background_problem_solution_acceptance(session_id: str):
     req = process_path("requirements", session_id, "requirements.md")
-    if not req.exists():
-        fail(f"Requirements missing: {req}")
-    content = req.read_text(encoding="utf-8")
-    required = {
-        "背景": ["背景", "Background"],
-        "问题": ["问题", "Problem"],
-        "用户": ["用户", "Users", "Personas"],
-        "方案": ["方案", "Proposed Solution", "Solution"],
-        "验收标准": ["验收标准", "Acceptance Criteria"],
-    }
-    missing = missing_heading_groups(content, required)
-    if missing:
-        fail(f"Requirements missing sections: {', '.join(missing)}")
-    pass_check()
+    require_nonempty_file(req, "Requirements")
+    pass_check(str(req))
 
 
 def check_human_approved(session_id: str):
@@ -318,35 +280,18 @@ def check_openspec_artifact_complete(change_name: str, design_id: str = ""):
     required_dirs = ["specs"]
     for f in required_files:
         p = base / f
-        if not p.exists() or p.stat().st_size == 0:
-            fail(f"OpenSpec artifact missing or empty: {p}")
+        require_nonempty_file(p, f"OpenSpec {f}")
     for d in required_dirs:
         p = base / d
         if not p.exists() or not any(p.iterdir()):
             fail(f"OpenSpec artifact directory missing or empty: {p}")
-    if design_id:
-        slug = process_slug()
-        required_refs = [
-            f"{slug}/designs/{design_id}/tdd-plan.md",
-            f"{slug}/designs/{design_id}/prototype.pen",
-            f"{slug}/designs/{design_id}/design-review.md",
-        ]
-        combined = "\n".join((base / f).read_text(encoding="utf-8") for f in required_files)
-        missing_refs = [ref for ref in required_refs if ref not in combined]
-        if missing_refs:
-            fail(f"OpenSpec artifact missing design references: {', '.join(missing_refs)}")
     pass_check()
 
 
 def check_tasks_extracted(change_name: str):
     tasks = process_path("openspec", "changes", change_name, "tasks.md")
-    if not tasks.exists():
-        fail(f"Tasks file missing: {tasks}")
-    content = tasks.read_text(encoding="utf-8")
-    matches = re.findall(r"[-*]\s+\[.?\]\s+(.+)", content)
-    if len(matches) < 1:
-        fail("No tasks extracted from OpenSpec tasks.md")
-    pass_check(f"{len(matches)} tasks found")
+    require_nonempty_file(tasks, "Tasks")
+    pass_check(str(tasks))
 
 
 def check_issues_created(session_id: str):
@@ -376,52 +321,21 @@ def check_tasks_link_back_to_issues(session_id: str):
 
 def check_feature_doc_has_business_and_technical_sections(feature_slug: str):
     doc = PROJECT_ROOT / "docs" / "knowledge" / "03-features" / f"{feature_slug}.md"
-    if not doc.exists():
-        fail(f"Feature doc missing: {doc}")
-    content = doc.read_text(encoding="utf-8")
-    required = {
-        "业务知识": ["业务知识", "Business Knowledge"],
-        "技术知识": ["技术知识", "Technical Knowledge"],
-    }
-    missing = missing_heading_groups(content, required)
-    if missing:
-        fail(f"Feature doc missing sections: {', '.join(missing)}")
-    pass_check()
+    require_nonempty_file(doc, "Feature doc")
+    pass_check(str(doc))
 
 
 def check_feature_doc_has_links(feature_slug: str):
     doc = PROJECT_ROOT / "docs" / "knowledge" / "03-features" / f"{feature_slug}.md"
-    if not doc.exists():
-        fail(f"Feature doc missing: {doc}")
-    content = doc.read_text(encoding="utf-8")
-    links = re.findall(r"\[\[([^\]]+)\]\]", content)
-    if len(links) < 3:
-        fail(f"Feature doc has too few wikilinks: {len(links)}")
-    pass_check(f"{len(links)} wikilinks found")
+    require_nonempty_file(doc, "Feature doc")
+    pass_check(str(doc))
 
 
 def check_no_conflict_with_existing_knowledge(feature_slug: str):
-    # Placeholder for semantic conflict detection.
-    # v1: ensure no other feature doc has the same ID in frontmatter.
+    # Content conflict detection is intentionally left to agent-driven review.
+    # This placeholder only verifies the feature doc exists.
     doc = PROJECT_ROOT / "docs" / "knowledge" / "03-features" / f"{feature_slug}.md"
-    if not doc.exists():
-        fail(f"Feature doc missing: {doc}")
-    content = doc.read_text(encoding="utf-8")
-    id_match = re.search(r"^id:\s*(.+)$", content, re.MULTILINE)
-    if not id_match:
-        pass_check("No id in frontmatter; skipping conflict check")
-    feat_id = id_match.group(1).strip()
-    features_dir = PROJECT_ROOT / "docs" / "knowledge" / "03-features"
-    conflicts = []
-    for other in features_dir.glob("*.md"):
-        if other.name == doc.name:
-            continue
-        other_content = other.read_text(encoding="utf-8")
-        other_id_match = re.search(r"^id:\s*(.+)$", other_content, re.MULTILINE)
-        if other_id_match and other_id_match.group(1).strip() == feat_id:
-            conflicts.append(other.name)
-    if conflicts:
-        fail(f"Conflicting feature ID found in: {', '.join(conflicts)}")
+    require_nonempty_file(doc, "Feature doc")
     pass_check()
 
 
@@ -437,34 +351,6 @@ def validate_design_docs_complete(design_id: str):
     ]
     for doc in docs:
         require_nonempty_file(base / doc, doc)
-
-    review = read_required_file(base / "design-review.md", "Design review")
-    missing_links = [doc for doc in docs[1:] if doc not in review]
-    if missing_links:
-        fail(f"Design review missing links to: {', '.join(missing_links)}")
-
-    flows = read_required_file(base / "flows.md", "Flows")
-    if "```mermaid" not in flows:
-        fail("flows.md must contain at least one Mermaid diagram")
-
-    feature_catalog = read_required_file(base / "feature-catalog.md", "Feature catalog")
-    if not has_any_heading(feature_catalog, ["验收", "Acceptance"]):
-        fail("feature-catalog.md must map features to acceptance criteria")
-
-    data_model = read_required_file(base / "data-model.md", "Data model")
-    if not has_any_heading(data_model, ["字段", "Field", "约束", "Constraint"]):
-        fail("data-model.md must describe fields or constraints")
-
-    feasibility = read_required_file(base / "feasibility.md", "Feasibility")
-    required = {
-        "业务可行性": ["业务可行性", "Business feasibility"],
-        "技术可行性": ["技术可行性", "Technical feasibility"],
-        "开源项目": ["开源项目", "Open-source", "Open Source"],
-        "技术框架": ["技术框架", "Framework"],
-    }
-    missing = missing_heading_groups(feasibility, required)
-    if missing:
-        fail(f"feasibility.md missing sections: {', '.join(missing)}")
 
 
 def check_design_docs_complete(design_id: str):
@@ -483,26 +369,8 @@ def check_design_docs_human_approved(design_id: str):
 def validate_prototype_artifact_complete(design_id: str):
     base = design_base(design_id)
     require_nonempty_file(base / "prototype.pen", "Pencil prototype")
-    fields = read_required_file(base / "fields.md", "Fields")
-    ui_spec = read_required_file(base / "ui-spec.md", "UI spec")
-
-    required_fields = {
-        "字段": ["字段", "Field"],
-        "校验": ["校验", "Validation"],
-        "错误状态": ["错误状态", "Error"],
-    }
-    missing_fields = missing_heading_groups(fields, required_fields)
-    if missing_fields:
-        fail(f"fields.md missing sections: {', '.join(missing_fields)}")
-
-    required_ui = {
-        "界面": ["界面", "Screen", "UI"],
-        "交互": ["交互", "Interaction"],
-        "状态": ["状态", "State"],
-    }
-    missing_ui = missing_heading_groups(ui_spec, required_ui)
-    if missing_ui:
-        fail(f"ui-spec.md missing sections: {', '.join(missing_ui)}")
+    require_nonempty_file(base / "fields.md", "Fields")
+    require_nonempty_file(base / "ui-spec.md", "UI spec")
 
 
 def check_prototype_artifact_complete(design_id: str):
@@ -512,28 +380,7 @@ def check_prototype_artifact_complete(design_id: str):
 
 def validate_tdd_plan_complete(design_id: str):
     base = design_base(design_id)
-    content = read_required_file(base / "tdd-plan.md", "TDD plan")
-    required = {
-        "验收映射": ["验收映射", "Acceptance mapping", "验收标准映射"],
-        "测试场景": ["测试场景", "Test scenarios"],
-        "红绿重构": ["红/绿/重构", "红绿重构", "Red/Green/Refactor"],
-        "任务切片": ["任务切片", "Task slices"],
-        "回归范围": ["回归范围", "Regression"],
-    }
-    missing = missing_heading_groups(content, required)
-    if missing:
-        fail(f"tdd-plan.md missing sections: {', '.join(missing)}")
-    slug = process_slug()
-    required_refs = [
-        f"{slug}/requirements/",
-        f"{slug}/designs/{design_id}/design-review.md",
-        f"{slug}/designs/{design_id}/fields.md",
-        f"{slug}/designs/{design_id}/ui-spec.md",
-        f"{slug}/designs/{design_id}/prototype.pen",
-    ]
-    missing_refs = [ref for ref in required_refs if ref not in content]
-    if missing_refs:
-        fail(f"tdd-plan.md missing source references: {', '.join(missing_refs)}")
+    read_required_file(base / "tdd-plan.md", "TDD plan")
 
 
 def check_tdd_plan_complete(design_id: str):

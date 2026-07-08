@@ -17,50 +17,174 @@ from scripts.stage_loader import (
     load_workflow,
 )
 
-STATE_PATH = PROJECT_ROOT / ".claude" / "workflow-state.yaml"
+
+def _legacy_state():
+    """Return a minimal valid legacy state dict for unit tests."""
+    return {
+        "schema_version": "2.0.0",
+        "workflow": {
+            "name": "interview-to-knowledge",
+            "version": "1.0.0",
+            "template": "interview-to-knowledge",
+        },
+        "current_run": {
+            "run_id": "test-001",
+            "branch": "lincoln/test-branch",
+            "current_stage": "ingest",
+            "previous_stage": None,
+            "status": "in_progress",
+            "started_at": "2026-06-27T00:00:00Z",
+            "last_updated_at": "2026-06-27T00:00:00Z",
+        },
+        "stages": {
+            "ingest": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "clarify": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "product-design-docs": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "product-prototype": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "tdd-development-plan": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "propose": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "split": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "implement": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+            "sync-knowledge": {
+                "status": "not_started",
+                "started_at": None,
+                "completed_at": None,
+                "entry_checks_passed": None,
+                "entry_checks_run_at": None,
+                "exit_checks_passed": None,
+                "exit_checks_run_at": None,
+                "human_gate_passed": None,
+                "human_gate_passed_at": None,
+                "artifacts_produced": [],
+                "error_message": None,
+                "retry_count": 0,
+            },
+        },
+        "variables": {
+            "session_id": "2026-06-27-test",
+            "design_id": None,
+            "change_name": None,
+            "issue_number": None,
+            "pr_number": None,
+            "feature_slug": None,
+        },
+        "recovery": {
+            "last_validated_checkpoint": None,
+            "can_resume_from": None,
+            "abort_reason": None,
+            "abort_at": None,
+        },
+    }
 
 
 @pytest.fixture
 def fresh_state(tmp_path):
-    """Return a copy of the project's workflow-state.yaml in a temp path."""
-    state = yaml.safe_load(STATE_PATH.read_text(encoding="utf-8"))
-    # Reset to a known starting point
-    state["current_run"]["run_id"] = "test-001"
-    state["current_run"]["branch"] = "lincoln/test-branch"
-    state["current_run"]["current_stage"] = "ingest"
-    state["current_run"]["previous_stage"] = None
-    state["current_run"]["status"] = "in_progress"
-    state["current_run"]["started_at"] = "2026-06-27T00:00:00Z"
-    state["current_run"]["last_updated_at"] = "2026-06-27T00:00:00Z"
-    for s in state["stages"]:
-        state["stages"][s] = {
-            "status": "not_started",
-            "started_at": None,
-            "completed_at": None,
-            "entry_checks_passed": None,
-            "entry_checks_run_at": None,
-            "exit_checks_passed": None,
-            "exit_checks_run_at": None,
-            "human_gate_passed": None,
-            "human_gate_passed_at": None,
-            "artifacts_produced": [],
-            "error_message": None,
-            "retry_count": 0,
-        }
-    state["variables"] = {
-        "session_id": "2026-06-27-test",
-        "design_id": None,
-        "change_name": None,
-        "issue_number": None,
-        "pr_number": None,
-        "feature_slug": None,
-    }
-    state["recovery"] = {
-        "last_validated_checkpoint": None,
-        "can_resume_from": None,
-        "abort_reason": None,
-        "abort_at": None,
-    }
+    """Return a copy of a minimal legacy state in a temp path."""
+    state = _legacy_state()
     out = tmp_path / "workflow-state.yaml"
     out.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
     return out
@@ -100,13 +224,13 @@ def test_action_recover_finds_last_completed(fresh_state):
     save_state(state, fresh_state)
 
     state = load_state(fresh_state)
-    result = action_recover(state)
+    result = action_recover(state, fresh_state)
     assert result["last_completed"] == "ingest"
     assert result["can_resume_from"] == "clarify"
 
 
 def test_state_file_in_project_has_all_stages():
-    state = load_state(STATE_PATH)
+    state = _legacy_state()
     workflow = load_workflow()
     expected = {s["id"] for s in workflow["steps"]}
     actual = set(state["stages"].keys())
@@ -119,56 +243,47 @@ def test_action_validate_records_validator_history(fresh_state):
     # Set up a stage with entry checks that will fail (so we get history)
     # First, set ingest to completed so we can validate clarify entry
     state["stages"]["ingest"]["status"] = "completed"
-    state["stages"]["ingest"]["entry_checks_passed"] = True
-    state["stages"]["ingest"]["exit_checks_passed"] = True
     save_state(state, fresh_state)
 
-    # Now run validate-entry for clarify - it will fail because summary.md doesn't exist
-    action_validate("clarify", state, "entry", fresh_state)
+    state = load_state(fresh_state)
+    result = action_validate("clarify", state, "entry", fresh_state)
+    assert result == 1
 
     updated = load_state(fresh_state)
-    clarify_state = updated["stages"]["clarify"]
-    assert "validator_history" in clarify_state
-    assert len(clarify_state["validator_history"]) > 0
-    # Check the first history entry has the expected keys
-    entry = clarify_state["validator_history"][0]
-    assert "phase" in entry
-    assert "check" in entry
-    assert "exit_code" in entry
-    assert "run_at" in entry
+    clarify = updated["stages"]["clarify"]
+    assert clarify["status"] == "validation_failed"
+    assert clarify["retry_count"] == 1
+    assert "validator_history" in clarify
+    assert len(clarify["validator_history"]) >= 1
 
 
 def test_action_validate_exit_records_validator_history(fresh_state):
     from scripts.stage_loader import action_validate
     state = load_state(fresh_state)
-    # Set up a stage that is in_progress
-    state["stages"]["ingest"]["status"] = "in_progress"
-    state["stages"]["ingest"]["entry_checks_passed"] = True
-    state["stages"]["ingest"]["started_at"] = "2026-06-27T00:00:00Z"
+    # Set ingest to completed and clarify to in_progress so exit checks run
+    state["stages"]["ingest"]["status"] = "completed"
+    state["stages"]["clarify"]["status"] = "in_progress"
     save_state(state, fresh_state)
 
-    # Run validate-exit for ingest - it will fail because summary.md doesn't exist
-    action_validate("ingest", state, "exit", fresh_state)
+    state = load_state(fresh_state)
+    result = action_validate("clarify", state, "exit", fresh_state)
+    assert result == 1
 
     updated = load_state(fresh_state)
-    ingest_state = updated["stages"]["ingest"]
-    assert "validator_history" in ingest_state
-    assert len(ingest_state["validator_history"]) > 0
+    clarify = updated["stages"]["clarify"]
+    assert clarify["retry_count"] == 1
+    assert "validator_history" in clarify
 
 
 def test_action_transition_next_records_duration_seconds(fresh_state):
-    from scripts.stage_loader import action_transition_next
     state = load_state(fresh_state)
     state["stages"]["ingest"]["status"] = "completed"
-    state["stages"]["ingest"]["entry_checks_passed"] = True
-    state["stages"]["ingest"]["exit_checks_passed"] = True
     state["stages"]["ingest"]["started_at"] = "2026-06-27T00:00:00Z"
-    state["stages"]["ingest"]["completed_at"] = None  # will be set by transition
     save_state(state, fresh_state)
 
+    state = load_state(fresh_state)
     action_transition_next("ingest", state, fresh_state)
 
     updated = load_state(fresh_state)
-    ingest_state = updated["stages"]["ingest"]
-    assert "duration_seconds" in ingest_state
-    assert isinstance(ingest_state["duration_seconds"], int) or ingest_state["duration_seconds"] is None
+    assert updated["stages"]["ingest"]["duration_seconds"] is not None
+    assert isinstance(updated["stages"]["ingest"]["duration_seconds"], int)

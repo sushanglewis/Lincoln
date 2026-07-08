@@ -1,0 +1,46 @@
+---
+schema_version: 2.0.0
+workflow:
+  name: interview-to-knowledge
+  version: 1.0.0
+  template: interview-to-knowledge
+current_run:
+  run_id: ""
+  branch: ""
+  current_stage: not_started
+  status: not_started
+  started_at: ""
+  last_updated_at: ""
+  issue_number: ""
+  variables:
+    process_slug: ""
+    session_id: ""
+    design_id: ""
+    issue_number: ""
+    change_name: ""
+    pr_number: ""
+    feature_slug: ""
+  change_name: ""
+  pr_number: ""
+  feature_slug: ""
+artifact_guidance: |
+  This issue work package holds all artifacts produced while resolving the issue.
+
+  How to use templates:
+  - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,
+    and replace placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).
+  - Use `designs/` for product design docs, `requirements/` for clarified needs,
+    `interviews/` for recorded session outputs, `openspec/` for implementation proposals,
+    `docs/` for research and decision records, and `recordings/` for raw input files only.
+  - When a stage completes, run `scripts/stage_loader.py --stage <stage> --action record-artifacts`
+    to persist produced artifact paths back into this workflow-stage.yaml.
+
+  Approval convention:
+  - Add `<!-- status: approved -->` or `[x] PM 已确认<文档类型>` to mark a document
+    as reviewed by the human PM before handoff.
+nodes: []
+recovery:
+  last_validated_checkpoint: ""
+  can_resume_from: ""
+  abort_reason: null
+  abort_at: null

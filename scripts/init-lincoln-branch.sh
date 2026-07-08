@@ -1,32 +1,61 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Initialize a new Lincoln feature branch with branch-scoped workflow state.
-# Process documents live on the feature branch and are not merged to main.
+# Initialize a Lincoln issue work package on the current feature branch.
+# The work package is scoped to the issue and lives on the feature branch only.
 #
 # Usage:
+#   scripts/init-lincoln-branch.sh --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push]
+#
+# Legacy usage (non-issue-driven):
 #   scripts/init-lincoln-branch.sh <session-id> <design-id> [--process-slug <slug>] [--push]
 #
 # Example:
-#   scripts/init-lincoln-branch.sh 2026-06-27-stakeholder checkout-redesign --process-slug lincoln-v1 --push
+#   scripts/init-lincoln-branch.sh --issue-number 21 --session-id 2026-07-08-stakeholder --design-id checkout-redesign --push
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
 
-SESSION_ID="${1:-}"
-DESIGN_ID="${2:-}"
+ISSUE_NUMBER=""
+SESSION_ID=""
+DESIGN_ID=""
 PUSH=""
 PROCESS_SLUG=""
 
-if [[ -z "$SESSION_ID" || -z "$DESIGN_ID" ]]; then
-    echo "Usage: $(basename "$0") <session-id> <design-id> [--process-slug <slug>] [--push]"
-    exit 1
+# Detect legacy positional invocation
+if [[ "${1:-}" != --* && $# -ge 2 ]]; then
+    SESSION_ID="${1:-}"
+    DESIGN_ID="${2:-}"
+    shift 2
 fi
 
-shift 2
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --issue-number)
+            ISSUE_NUMBER="${2:-}"
+            if [[ -z "$ISSUE_NUMBER" ]]; then
+                echo "ERROR: --issue-number requires a value"
+                exit 1
+            fi
+            shift 2
+            ;;
+        --session-id)
+            SESSION_ID="${2:-}"
+            if [[ -z "$SESSION_ID" ]]; then
+                echo "ERROR: --session-id requires a value"
+                exit 1
+            fi
+            shift 2
+            ;;
+        --design-id)
+            DESIGN_ID="${2:-}"
+            if [[ -z "$DESIGN_ID" ]]; then
+                echo "ERROR: --design-id requires a value"
+                exit 1
+            fi
+            shift 2
+            ;;
         --push)
             PUSH="--push"
             shift
@@ -41,37 +70,34 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "ERROR: unknown argument: $1"
-            echo "Usage: $(basename "$0") <session-id> <design-id> [--process-slug <slug>] [--push]"
+            echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push]"
             exit 1
             ;;
     esac
 done
 
-BRANCH_NAME="lincoln/${SESSION_ID}-${DESIGN_ID}"
-RUN_ID="$(date -u +%Y%m%d%H%M%S)-$(openssl rand -hex 4 2>/dev/null || echo $$)"
-
-if [[ -z "$PROCESS_SLUG" ]]; then
-    if [[ -n "${LINCOLN_PROCESS_SLUG:-}" ]]; then
-        PROCESS_SLUG="$LINCOLN_PROCESS_SLUG"
-    elif [[ -n "${CONDUCTOR_WORKSPACE_NAME:-}" ]]; then
-        PROCESS_SLUG="$CONDUCTOR_WORKSPACE_NAME"
-    elif [[ "$(basename "$(dirname "$ROOT")")" == "workspaces" ]]; then
-        PROCESS_SLUG="$(basename "$ROOT")"
-    elif [[ "$(basename "$(dirname "$(dirname "$ROOT")")")" == "workspaces" ]]; then
-        PROCESS_SLUG="$(basename "$(dirname "$ROOT")")"
-    else
-        PROCESS_SLUG="${SESSION_ID}-${DESIGN_ID}"
-    fi
-fi
-
-# Validate design_id (kebab-case, same as validator)
-if ! [[ "$DESIGN_ID" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-    echo "ERROR: design_id must be kebab-case lowercase: $DESIGN_ID"
+# Validate issue number is numeric
+if [[ -n "$ISSUE_NUMBER" && ! "$ISSUE_NUMBER" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: --issue-number must be a positive integer: $ISSUE_NUMBER"
     exit 1
 fi
 
-if ! [[ "$PROCESS_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
-    echo "ERROR: process_slug must be kebab-case lowercase: $PROCESS_SLUG"
+# Require issue number for issue-driven initialization
+if [[ -z "$ISSUE_NUMBER" && ( -z "$SESSION_ID" || -z "$DESIGN_ID" ) ]]; then
+    echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push]"
+    exit 1
+fi
+
+# Derive defaults for session/design from issue number
+if [[ -n "$ISSUE_NUMBER" ]]; then
+    TODAY="$(date -u +%Y-%m-%d)"
+    SESSION_ID="${SESSION_ID:-$TODAY-issue-$ISSUE_NUMBER}"
+    DESIGN_ID="${DESIGN_ID:-issue-$ISSUE_NUMBER}"
+fi
+
+# Validate design_id (kebab-case)
+if ! [[ "$DESIGN_ID" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+    echo "ERROR: design_id must be kebab-case lowercase: $DESIGN_ID"
     exit 1
 fi
 
@@ -81,46 +107,74 @@ if ! [[ "$SESSION_ID" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]+$ ]]; then
     exit 1
 fi
 
-# Ensure we are on main and it is clean
-CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
-if [[ "$CURRENT_BRANCH" != "main" ]]; then
-    echo "ERROR: must be on main to create a Lincoln branch. Current: ${CURRENT_BRANCH:-detached}"
+RUN_ID="$(date -u +%Y%m%d%H%M%S)-$(openssl rand -hex 4 2>/dev/null || echo $$)"
+
+if [[ -z "$PROCESS_SLUG" ]]; then
+    if [[ -n "$ISSUE_NUMBER" ]]; then
+        PROCESS_SLUG="issue-$ISSUE_NUMBER"
+    elif [[ -n "${LINCOLN_PROCESS_SLUG:-}" ]]; then
+        PROCESS_SLUG="$LINCOLN_PROCESS_SLUG"
+    elif [[ -n "${CONDUCTOR_WORKSPACE_NAME:-}" ]]; then
+        PROCESS_SLUG="$CONDUCTOR_WORKSPACE_NAME"
+    else
+        PROCESS_SLUG="${SESSION_ID}-${DESIGN_ID}"
+    fi
+fi
+
+if ! [[ "$PROCESS_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+    echo "ERROR: process_slug must be kebab-case lowercase: $PROCESS_SLUG"
     exit 1
 fi
 
+# Determine current branch / create feature branch if on main
+CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
+if [[ -z "$CURRENT_BRANCH" ]]; then
+    echo "ERROR: not on a git branch"
+    exit 1
+fi
+
+if [[ "$CURRENT_BRANCH" == "main" ]]; then
+    if [[ -z "$ISSUE_NUMBER" ]]; then
+        echo "ERROR: must provide --issue-number to create a feature branch from main"
+        exit 1
+    fi
+    BRANCH_NAME="issue-$ISSUE_NUMBER"
+    echo "==> Creating issue branch: $BRANCH_NAME"
+    git checkout -b "$BRANCH_NAME"
+    CURRENT_BRANCH="$BRANCH_NAME"
+elif [[ -n "$ISSUE_NUMBER" && "$CURRENT_BRANCH" != "issue-$ISSUE_NUMBER" && "$CURRENT_BRANCH" != issue-$ISSUE_NUMBER-* ]]; then
+    echo "WARNING: current branch '$CURRENT_BRANCH' does not match issue $ISSUE_NUMBER"
+    echo "         Continuing anyway; ensure this is the intended feature branch."
+fi
+
+# Ensure working tree is clean before initializing package
 if ! git diff --quiet || ! git diff --cached --quiet; then
     echo "ERROR: working tree or index is not clean. Commit or stash changes first."
     exit 1
 fi
 
-echo "==> Creating Lincoln branch: $BRANCH_NAME"
-git checkout -b "$BRANCH_NAME"
-
+BRANCH_NAME="$CURRENT_BRANCH"
 PROCESS_ROOT="$PROCESS_SLUG"
+TEMPLATE_ROOT="$ROOT/.claude/templates/issue-package"
 
-# Create branch-scoped process package directories.
-echo "==> Creating Lincoln process package: $PROCESS_ROOT/"
-mkdir -p "$PROCESS_ROOT/designs/$DESIGN_ID"
-mkdir -p "$PROCESS_ROOT/docs/research"
-mkdir -p "$PROCESS_ROOT/handoffs"
-mkdir -p "$PROCESS_ROOT/interviews/$SESSION_ID"
-mkdir -p "$PROCESS_ROOT/openspec/changes"
-mkdir -p "$PROCESS_ROOT/recordings"
-mkdir -p "$PROCESS_ROOT/requirements/$SESSION_ID"
-mkdir -p ".github/lincoln-sync-queue"
+# Create branch-scoped process package directories from template.
+echo "==> Creating Lincoln issue work package: $PROCESS_ROOT/"
+mkdir -p "$PROCESS_ROOT"
 
-# Initialize workflow-stage.yaml for this branch
-echo "==> Initializing $PROCESS_ROOT/workflow-stage.yaml"
-python3 - "$SESSION_ID" "$DESIGN_ID" "$BRANCH_NAME" "$RUN_ID" "$ROOT" "$PROCESS_SLUG" <<'PY'
+# Copy template tree, preserving directory structure
+cp -R "$TEMPLATE_ROOT/"* "$PROCESS_ROOT/"
+
+# Initialize workflow-stage.yaml for this issue
+python3 - "$ISSUE_NUMBER" "$SESSION_ID" "$DESIGN_ID" "$BRANCH_NAME" "$RUN_ID" "$ROOT" "$PROCESS_SLUG" <<'PY'
 import sys
 from pathlib import Path
 import yaml
 
-session_id, design_id, branch_name, run_id, root_path, process_slug = sys.argv[1:7]
+issue_number, session_id, design_id, branch_name, run_id, root_path, process_slug = sys.argv[1:8]
 root = Path(root_path)
 state_path = root / process_slug / "workflow-stage.yaml"
 
-template_path = root / ".claude" / "templates" / "issue-package" / ".claude" / "workflow-stage.yaml"
+template_path = root / ".claude" / "templates" / "issue-package" / "workflow-stage.yaml"
 state = yaml.safe_load(template_path.read_text(encoding="utf-8"))
 state["current_run"]["run_id"] = run_id
 state["current_run"]["branch"] = branch_name
@@ -128,32 +182,35 @@ state["current_run"]["started_at"] = __import__("datetime").datetime.now(__impor
 state["current_run"]["last_updated_at"] = state["current_run"]["started_at"]
 state["current_run"]["current_stage"] = "ingest"
 state["current_run"]["status"] = "in_progress"
+state["current_run"]["issue_number"] = issue_number
 state["current_run"]["variables"]["session_id"] = session_id
 state["current_run"]["variables"]["design_id"] = design_id
+state["current_run"]["variables"]["issue_number"] = issue_number
 state["current_run"]["variables"]["process_slug"] = process_slug
 state["recovery"]["can_resume_from"] = "ingest"
 
-state_path.parent.mkdir(parents=True, exist_ok=True)
 state_path.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
-print(f"Initialized workflow-stage.yaml for branch {branch_name}")
+print(f"Initialized workflow-stage.yaml for issue #{issue_number} on branch {branch_name}")
 PY
 
 # Add gitkeep files for empty directories to ensure they are tracked
-for dir in ".context" "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PROCESS_ROOT/handoffs" "$PROCESS_ROOT/interviews/$SESSION_ID" "$PROCESS_ROOT/openspec/changes" "$PROCESS_ROOT/recordings" "$PROCESS_ROOT/requirements/$SESSION_ID" ".github/lincoln-sync-queue"; do
+for dir in "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PROCESS_ROOT/handoffs" "$PROCESS_ROOT/interviews/$SESSION_ID" "$PROCESS_ROOT/openspec/changes" "$PROCESS_ROOT/openspec/specs" "$PROCESS_ROOT/recordings" "$PROCESS_ROOT/requirements/$SESSION_ID" ".github/lincoln-sync-queue"; do
+    mkdir -p "$dir"
     touch "$dir/.gitkeep"
 done
 
 # Stage and commit initial state
-echo "==> Committing initial branch state"
+echo "==> Committing initial issue work package"
 git add .
-git commit -m "chore: initialize Lincoln branch $BRANCH_NAME
+git commit -m "chore: initialize Lincoln issue work package for #$ISSUE_NUMBER
 
+- branch: $BRANCH_NAME
+- process_slug: $PROCESS_SLUG
 - session_id: $SESSION_ID
 - design_id: $DESIGN_ID
-- process_slug: $PROCESS_SLUG
 - run_id: $RUN_ID
 
-Process documents are branch-scoped and will not be merged to main."
+Issue work package is branch-scoped and will not be merged to main."
 
 if [[ "$PUSH" == "--push" ]]; then
     echo "==> Pushing branch to remote"
@@ -161,7 +218,8 @@ if [[ "$PUSH" == "--push" ]]; then
 fi
 
 echo ""
-echo "Lincoln branch created: $BRANCH_NAME"
+echo "Lincoln issue work package created for issue #$ISSUE_NUMBER"
+echo "Branch: $BRANCH_NAME"
 echo "Process package: $PROCESS_ROOT/"
 echo "Next step: place the recording in $PROCESS_ROOT/recordings/ and say:"
 echo "  '处理一下这个访谈录音 $PROCESS_ROOT/recordings/<recording-file>'"

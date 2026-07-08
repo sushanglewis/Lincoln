@@ -458,6 +458,7 @@ def action_validate_exit(
     exit_checks = gates.get("exit", [])
     if not exit_checks:
         print(f"PASS: no exit gates defined for '{stage_id}'")
+        action_record_artifacts(stage_id, state, state_file)
         return 0
 
     variables = get_variables(state)
@@ -475,7 +476,55 @@ def action_validate_exit(
             print(f"FAIL: exit check '{check_name}'", file=sys.stderr)
             all_passed = False
 
+    if all_passed:
+        action_record_artifacts(stage_id, state, state_file)
+
     return 0 if all_passed else 1
+
+
+def action_record_artifacts(
+    stage_id: str,
+    state: dict[str, Any],
+    state_file: Path | None = None,
+) -> list[str]:
+    """Discover existing artifact paths declared by the workflow step and record them in the latest node."""
+    template_name = state.get("workflow", {}).get("template")
+    workflow = load_workflow(template_name)
+    stage_def = find_stage(workflow, stage_id)
+    variables = get_variables(state)
+    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
+
+    recorded: list[str] = []
+    for art in stage_def.get("artifacts", []):
+        path = interpolate_artifact(str(art), state, state_file)
+        target = PROJECT_ROOT / path
+        if target.exists():
+            recorded.append(str(path))
+
+    latest_node = get_latest_node_for_stage(state, stage_id)
+    if latest_node is None:
+        latest_node = {
+            "stage_id": stage_id,
+            "node_id": f"{stage_id}-{now_iso()}",
+            "status": "in_progress",
+            "started_at": now_iso(),
+            "completed_at": None,
+            "gate_passed": False,
+            "approved_by": None,
+            "artifacts": [],
+            "handoff_file": None,
+        }
+        state.setdefault("nodes", []).append(latest_node)
+
+    existing = set(latest_node.get("artifacts", []))
+    existing.update(recorded)
+    latest_node["artifacts"] = sorted(existing)
+
+    save_state(state, state_file)
+    print(f"Recorded {len(recorded)} artifacts for stage '{stage_id}'")
+    for art in recorded:
+        print(f"  - {art}")
+    return recorded
 
 
 def _run_exit_gate_check(check_name: str, args: list[str], stage_id: str, state: dict[str, Any]) -> bool:
@@ -655,6 +704,7 @@ def action_transition_next(stage_id: str, state: dict[str, Any], state_file: Pat
     else:
         # New schema: append a completed node for current stage and a new node for next
         now = now_iso()
+        recorded_artifacts = action_record_artifacts(stage_id, state, state_file)
         completed_node = {
             "stage_id": stage_id,
             "node_id": f"{stage_id}-completed",
@@ -663,7 +713,7 @@ def action_transition_next(stage_id: str, state: dict[str, Any], state_file: Pat
             "completed_at": now,
             "gate_passed": True,
             "approved_by": "system",
-            "artifacts": [],
+            "artifacts": recorded_artifacts,
             "handoff_file": None,
         }
         state.setdefault("nodes", []).append(completed_node)
@@ -822,6 +872,7 @@ def main() -> int:
             "load",
             "validate-entry",
             "validate-exit",
+            "record-artifacts",
             "approve-gate",
             "append-node",
             "transition-next",
@@ -856,6 +907,12 @@ def main() -> int:
             return action_validate_exit(args.stage, state, state_file)
         phase = args.action.split("-")[1]
         return action_validate(args.stage, state, phase, state_file)
+
+    if args.action == "record-artifacts":
+        if not args.stage:
+            parser.error("--stage is required for record-artifacts")
+        action_record_artifacts(args.stage, state, state_file)
+        return 0
 
     if args.action == "approve-gate":
         if not args.stage:

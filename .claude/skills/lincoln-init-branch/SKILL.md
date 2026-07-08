@@ -1,21 +1,28 @@
 ---
 name: lincoln-init-branch
-description: 从 main 切出 Lincoln feature branch 并初始化过程文档目录
+description: 基于 GitHub issue 初始化 Lincoln issue work package 和 feature branch
 triggers:
   - "初始化 Lincoln 分支"
   - "lincoln-init-branch"
   - "创建 Lincoln feature branch"
+  - "初始化 issue 工作包"
 inputs:
+  - name: issue_number
+    description: GitHub issue 编号，如 21
+    required: true
   - name: session_id
-    description: 会话 ID，如 2026-06-27-stakeholder
-    required: true
+    description: 会话 ID，如 2026-06-27-stakeholder；可选，默认基于 issue 生成
+    required: false
   - name: design_id
-    description: 设计 ID，如 checkout-redesign
-    required: true
+    description: 设计 ID，如 checkout-redesign；可选，默认基于 issue 生成
+    required: false
+  - name: process_slug
+    description: 过程包目录名；可选，默认 issue-{number}
+    required: false
 outputs:
-  - git branch lincoln/{session_id}-{design_id}
-  - 分支根目录下的 {process_slug}/recordings/ {process_slug}/interviews/ {process_slug}/requirements/ {process_slug}/designs/ {process_slug}/openspec/changes/ {process_slug}/docs/research/ {process_slug}/handoffs/
-  - "{process_slug}/workflow-stage.yaml"
+  - git branch issue-{number}（若当前在 main）
+  - 分支根目录下的 {process_slug}/ 过程包（designs/ docs/ interviews/ openspec/ recordings/ requirements/）
+  - "{process_slug}/workflow-stage.yaml" 含 issue_number
 required_tools:
   - Bash
   - Read
@@ -24,11 +31,17 @@ required_tools:
 
 # lincoln-init-branch
 
-为新的 Lincoln 需求初始化 feature branch：
+PM 在 Conductor 中基于 GitHub issue 初始化 workspace 后，调用此 skill 创建对应的过程包：
 
-1. 从 `main` 切出分支 `lincoln/{session_id}-{design_id}`。
-2. 创建 `{process_slug}/` 实施过程包。
-3. 在 `{process_slug}/workflow-stage.yaml` 中写入 `variables.session_id`、`variables.design_id` 和 `variables.process_slug`。
-4. Commit 并可选地 push 到远程。
+1. 若当前在 `main`，切出 `issue-{number}` feature branch；若已处于 feature branch，则使用该分支。
+2. 从 `.claude/templates/issue-package/` 复制完整模板到 `{process_slug}/`。
+3. 写入 `{process_slug}/workflow-stage.yaml`，设置 `issue_number`、`session_id`、`design_id`、`process_slug`。
+4. Commit 初始过程包，可选 `--push` 到远程。
 
-如果分支名已包含 session-id 和 design-id，可自动解析参数。
+示例：
+
+```bash
+scripts/init-lincoln-branch.sh --issue-number 21 --session-id 2026-07-08-stakeholder --design-id checkout-redesign --push
+```
+
+过程包只存在于 feature branch，不合并到 `main`。
