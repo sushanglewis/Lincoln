@@ -46,9 +46,16 @@ print(resolve_state_path(path, root))
 PY
 )
 
+CURRENT_BRANCH="$(git branch --show-current 2>/dev/null || true)"
+
 if [[ ! -f "$STATE_FILE" ]]; then
     echo "No Lincoln state file found ($STATE_FILE)."
-    echo "Run: scripts/init-lincoln-branch.sh <session-id> <design-id> --push"
+    if [[ "$CURRENT_BRANCH" == issue-* ]]; then
+        echo "Current branch looks like an issue branch. To initialize the issue work package, run:"
+        echo "  scripts/init-lincoln-branch.sh --issue-number <issue-number>"
+    else
+        echo "Run: scripts/init-lincoln-branch.sh --issue-number <issue-number>"
+    fi
     echo "=== End Lincoln Session Start ==="
     echo ""
     exit 0

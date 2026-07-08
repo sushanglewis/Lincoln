@@ -32,6 +32,7 @@
         },
         "started_at": { "type": "string" },
         "last_updated_at": { "type": "string" },
+        "issue_number": { "type": "string" },
         "variables": {
           "type": "object",
           "properties": {

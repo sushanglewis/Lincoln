@@ -20,13 +20,11 @@ def _load_status_module():
     return mod
 
 
-def run_status(*args):
-    return subprocess.run(
-        [sys.executable, str(STATUS_SCRIPT), *args],
-        capture_output=True,
-        text=True,
-        cwd=ROOT,
-    )
+def run_status(*args, state_file=None):
+    cmd = [sys.executable, str(STATUS_SCRIPT), *args]
+    if state_file is not None:
+        cmd.extend(["--state-file", str(state_file)])
+    return subprocess.run(cmd, capture_output=True, text=True, cwd=ROOT)
 
 
 @pytest.fixture
@@ -285,22 +283,60 @@ def test_format_markdown_contains_headers(status_mod, minimal_state):
 # ---------------------------------------------------------------------------
 
 
-def test_cli_format_json():
-    result = run_status("--format", "json")
-    assert result.returncode == 0
+@pytest.fixture
+def minimal_state_file(tmp_path):
+    """Create a minimal valid workflow-stage.yaml in a temporary issue process package."""
+    state = {
+        "schema_version": "2.0.0",
+        "workflow": {
+            "name": "interview-to-knowledge",
+            "version": "1.0.0",
+            "template": "interview-to-knowledge",
+        },
+        "current_run": {
+            "run_id": "test-run",
+            "branch": "issue-test",
+            "current_stage": "ingest",
+            "status": "in_progress",
+            "started_at": "2026-06-27T00:00:00Z",
+            "last_updated_at": "2026-06-27T00:00:00Z",
+            "issue_number": "999",
+            "variables": {
+                "process_slug": "issue-test",
+                "session_id": "2026-06-27-stakeholder",
+                "design_id": "checkout-redesign",
+                "issue_number": "999",
+            },
+        },
+        "nodes": [],
+        "recovery": {
+            "last_validated_checkpoint": "",
+            "can_resume_from": "ingest",
+        },
+    }
+    pkg = tmp_path / "issue-test"
+    pkg.mkdir()
+    state_file = pkg / "workflow-stage.yaml"
+    state_file.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    return state_file
+
+
+def test_cli_format_json(minimal_state_file):
+    result = run_status("--format", "json", state_file=minimal_state_file)
+    assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
     assert "branch" in data
 
 
-def test_cli_format_table():
-    result = run_status("--format", "table")
-    assert result.returncode == 0
+def test_cli_format_table(minimal_state_file):
+    result = run_status("--format", "table", state_file=minimal_state_file)
+    assert result.returncode == 0, result.stderr
     assert "LINCOLN BRANCH STATUS" in result.stdout
 
 
-def test_cli_format_markdown():
-    result = run_status("--format", "markdown")
-    assert result.returncode == 0
+def test_cli_format_markdown(minimal_state_file):
+    result = run_status("--format", "markdown", state_file=minimal_state_file)
+    assert result.returncode == 0, result.stderr
     assert "# Lincoln Branch Status" in result.stdout
 
 
