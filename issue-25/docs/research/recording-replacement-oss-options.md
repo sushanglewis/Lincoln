@@ -23,113 +23,119 @@
 
 1. 只需要**本地桌面录音**（替代当前麦克风录制）；
 2. 转写必须**本地/离线**；
-3. 技术栈无偏好，以方案成熟度为准；
+3. 技术栈无偏好，以**方案成熟度**为准；
 4. **Speaker diarization 是硬需求**。
 
 ## 3. 候选项目深度对比
 
-### 3.1 pasrom/meeting-transcriber（推荐主选）
+### 3.1 OpenWhispr（更新后推荐主选）
 
-- **Repo**: https://github.com/pasrom/meeting-transcriber
-- **官网**: https://meetingtranscriber.app/
+- **Repo**: https://github.com/OpenWhispr/OpenWhispr
 - **License**: MIT — 可商业使用，无 copyleft 顾虑。
-- **平台**: macOS 14.2+ Apple Silicon only。
-- **形态**: 菜单栏原生 Swift 应用 + Local Automation API。
-- **录音**: 通过 `CATapDescription` 同时捕获应用音频与麦克风（双音轨）。
-- **转写**: 本地 WhisperKit（99+ 语言）或 Parakeet TDT v3（25 个欧洲语言，~10× 更快）。
-- **Diarization**: 本地 FluidAudio（CoreML/ANE）双音轨 diarization + 说话人识别。
-- **API**: Homebrew 构建提供 `127.0.0.1:9876` 本地 HTTP API，`POST /v1/transcribe?include=transcript` 可提交音频文件并获取 diarized transcript。
-- **优势**: 完全符合“本地 + 离线 + diarization”约束；有本地 API 可被 Lincoln adapter 调用；MIT 协议友好。
-- **劣势**: 仅支持 Apple Silicon macOS 14.2+；需要先运行菜单栏 GUI；API 只能转写已录制文件，不能直接远程“开始录音”；无 Linux/Windows。
+- **Stars**: ~4.4k（截至 2026-07-10），持续活跃更新。
+- **平台**: macOS（Apple Silicon + Intel）、Windows、Linux。
+- **形态**: Electron 桌面应用 + 本地 HTTP bridge（`127.0.0.1:8200–8219`）+ MCP server。
+- **录音**: 自动检测 Zoom/Teams/FaceTime，捕获系统音频 + 麦克风；也支持全局热键 dictation。
+- **转写**: 本地 `whisper.cpp` 或 NVIDIA Parakeet（via sherpa-onnx），完全离线。
+- **Diarization**: README 明确列出 **local speaker diarization** + voice fingerprinting across meetings，无需云端。
+- **API**: 提供 Public API（`https://api.openwhispr.com/api/v1`）和 **Local HTTP bridge**。桌面应用运行时 CLI/脚本走 `127.0.0.1` 本地桥，应用关闭时回退到云端。
+- **MCP**: 提供 MCP server（`https://mcp.openwhispr.com/mcp`），暴露 `list_transcriptions`、`get_transcription`、`get_note_transcript` 等工具，可被 Claude/Cursor 等调用。
+- **优势**: 成熟度明显高于 pasrom；跨平台；MIT；本地 diarization 已可用；有 API/MCP 便于 Lincoln adapter 消费转写结果。
+- **劣势**: Electron 应用较重；官方未提供“上传音频文件转写”的公开 REST endpoint，主要面向实时录音/应用内文件转写；本地桥端口和 token 由桌面应用管理，集成时需检测应用是否运行。
 
 ### 3.2 Meetly / Meetily-Local
 
 - **Repo**: https://github.com/Zackriya-Solutions/meetily
 - **License**: MIT。
+- **Stars**: ~22.2k，社区热度最高。
 - **形态**: Tauri 桌面应用（Rust + Next.js）。
 - **录音**: 本地麦克风 + 系统音频。
-- **转写**: Whisper / Whisper.cpp / NVIDIA Parakeet，本地运行。
-- **Diarization**: 官网与第三方评测均表示 speaker diarization 仍在 roadmap/早期阶段。
+- **转写**: Whisper / Parakeet，本地运行。
+- **Diarization**: README/PRO 文案显示 **speaker diarization 目前仅规划在 Meetily PRO（mid-June）**，社区版暂未提供。
 - **API/CLI**: 当前版本无稳定 CLI 或公开 API；旧版 FastAPI/Docker 后端已归档不再维护。
-- **结论**: 协议安全，但作为 Lincoln 后端缺少可编程接口与成熟 diarization，**不适合作为直接替换**。
+- **结论**: 协议安全、社区最大，但**当前社区版不满足 diarization 硬需求**，且缺少可编程接口。**不作为直接替换主选**。
 
-### 3.3 Vexa
+### 3.3 anarlog（fastrepl）
+
+- **Repo**: https://github.com/fastrepl/anarlog
+- **License**: MIT。
+- **Stars**: ~8.8k。
+- **形态**: Rust + Tauri 桌面应用，Granola 风格。
+- **录音**: 系统音频 + 麦克风；以 Markdown 文件保存笔记到本地磁盘。
+- **转写**: 本地 Whisper / Parakeet，BYO LLM（Ollama/LM Studio 等）。
+- **Diarization**: 公开资料未强调 speaker diarization，**不满足硬需求**。
+- **结论**: 数据控制权极佳（本地 `.md`），但 diarization 缺失，**暂不推荐**。
+
+### 3.4 pasrom/meeting-transcriber（原候选，因成熟度降级）
+
+- **Repo**: https://github.com/pasrom/meeting-transcriber
+- **License**: MIT。
+- **Stars**: ~19，主要为个人 side project。
+- **平台**: macOS 14.2+ Apple Silicon only。
+- **录音/转写/diarization**: 功能完整（双音轨 + FluidAudio diarization），并提供 `127.0.0.1:9876` 本地 API。
+- **结论**: 技术上最贴合 Lincoln 当前 macOS 环境，但**社区成熟度过低**，维护风险高。仅作为 OpenWhispr 集成失败时的 **macOS-only fallback**。
+
+### 3.5 Vexa
 
 - **Repo**: https://github.com/Vexa-ai/vexa
 - **License**: Apache-2.0。
-- **形态**: TypeScript 会议机器人 + 自托管服务端，支持 Docker/Kubernetes。
-- **录音**: Playwright/CDP 浏览器机器人加入 Zoom/Meet/Teams 录制。
-- **转写**: 实时 WebSocket 转写，云端或自托管。
-- **Diarization**: 当前评测为“尚未实现”。
-- **结论**: 技术栈与 API-first 设计优秀，但属于**云端/bot 录制**，违反“本地桌面录音 + 离线转写”约束。仅作为未来扩展方向保留。
+- **形态**: 会议机器人 + 自托管服务端（TypeScript/Playwright/CDP）。
+- **结论**: 属于 bot/云端架构，违反“本地桌面录音 + 离线转写”约束。仅作为未来 bot 场景保留。
 
-### 3.4 Millet
+### 3.6 Millet / ScreenApp / MeetingBot
 
-- **Repo**: https://github.com/pretyflaco/millet
-- **License**: GPL-3.0 — copyleft，纳入 Lincoln 需法律评审。
-- **形态**: Python CLI（PyPI: `millet-pipeline`）。
-- **录音**: 目前仅支持 Linux PipeWire/PulseAudio；macOS 仅支持后处理（转写/标注）。
-- **转写**: WhisperX。
-- **Diarization**: pyannote.audio，支持说话人 diarization。
-- **结论**: 协议存在 copyleft 风险，且**当前音频捕获不支持 macOS**，与 Lincoln 当前环境不符。
-
-### 3.5 ScreenApp Meeting Bot / MeetingBot
-
-- **ScreenApp**: MIT，Docker 化会议机器人，轻量但属于 bot 云端架构。
-- **MeetingBot**: LGPL-3.0，AWS-centric 全栈参考应用。
-- **结论**: 均不符合本地离线约束。
-
-### 3.6 保持现状
-
-- 继续维护 `record-interview` + `lincoln` TUI。
-- **结论**: 功能与体验均不满足 diarization 与系统音频捕获需求，维护成本高，**不推荐**。
+- **Millet**: GPL-3.0 + Linux-only 音频捕获，排除。
+- **ScreenApp Meeting Bot**: MIT，但为 Docker 化 bot，非本地离线，排除。
+- **MeetingBot**: LGPL-3.0 + AWS-centric，排除。
 
 ## 4. 评分矩阵（1 = 最差，5 = 最好）
 
-| 候选 | License | 集成成本 | 本地/离线 | Diarization | macOS 适配 | API/CLI | 成熟度 | 综合 |
-|---|---|---|---|---|---|---|---|---|
-| **pasrom/meeting-transcriber** | 5 (MIT) | 4 | 5 | 5 | 4 (AS only) | 4 | 4 | **4.4** |
-| Meetly | 5 (MIT) | 2 | 5 | 2 | 4 | 1 | 3 | 3.1 |
-| Meetily-Local fork | 5 (MIT) | 2 | 5 | 2 | 4 | 1 | 2 | 2.8 |
-| Vexa | 5 (Apache-2.0) | 4 | 2 | 2 | N/A | 5 | 4 | 3.7 |
-| Millet | 1 (GPL-3.0) | 3 | 5 | 4 | 1 (Linux only) | 3 | 2 | 2.6 |
-| ScreenApp Meeting Bot | 5 (MIT) | 4 | 2 | 2 | N/A | 3 | 2 | 3.0 |
-| MeetingBot | 2 (LGPL-3.0) | 2 | 2 | 2 | N/A | 3 | 3 | 2.6 |
-| 保持现状 | 5 | 2 | 5 | 1 | 3 | 3 | 1 | 2.5 |
+| 候选 | License | 成熟度/社区 | 本地/离线 | Diarization | 跨平台 | 可编程集成 | 综合 |
+|---|---|---|---|---|---|---|---|
+| **OpenWhispr** | 5 (MIT) | 4 (~4.4k stars，活跃) | 5 | 4 | 5 | 4 (本地桥 + MCP) | **4.5** |
+| Meetly | 5 (MIT) | 5 (~22.2k stars) | 5 | 1 (社区版无) | 4 | 1 (无 API) | 3.5 |
+| anarlog | 5 (MIT) | 4 (~8.8k stars) | 5 | 1 | 2 (macOS 为主) | 2 (Markdown on disk) | 3.0 |
+| pasrom/meeting-transcriber | 5 (MIT) | 1 (~19 stars，个人项目) | 5 | 5 | 1 (macOS AS only) | 4 (本地 API) | 3.4 |
+| Vexa | 5 (Apache-2.0) | 3 | 2 | 2 | N/A | 5 | 3.4 |
+| 保持现状 | 5 | 1 | 5 | 1 | 2 | 3 | 2.8 |
 
-## 5. 推荐方案
+## 5. 推荐方案（修订）
 
-**主选：`pasrom/meeting-transcriber` + Lincoln adapter**
+**主选：OpenWhispr + Lincoln adapter**
 
-- 由 Meeting Transcriber 负责录音、本地转写与 speaker diarization；
-- Lincoln 侧新增 adapter，通过 `127.0.0.1:9876` `/v1/transcribe` 接口消费其输出，或将应用生成的 Markdown 标准化为 `issue-XX/interviews/<session>/` 结构；
-- 复用现有 `process-interview` skill 生成 `summary.md` 与 `raw-insights.md`。
+- OpenWhispr 负责录音、本地离线转写、speaker diarization；
+- Lincoln adapter 通过 **Local HTTP bridge** 或 **MCP server** 拉取 transcription/notes；
+- 将拉取到的 transcript 标准化为 Lincoln 的 `issue-XX/interviews/<session>/transcript.md`，再触发 `process-interview` 生成摘要与洞察。
 
-**不采用 Meetly**：协议可用，但缺少稳定 API/CLI 与成熟 diarization，无法无感嵌入工作流。
+**不直接采用 Meetly**：社区版暂未提供 speaker diarization，且缺少可编程接口。
 
-**未来备选**：若需求从本地桌面录音扩展为会议机器人，重新评估 **Vexa**（Apache-2.0、API-first）。
+**不直接采用 anarlog**：虽然 star 数和本地 Markdown 存储很吸引人，但缺少成熟 diarization。
 
-**Fallback**：若目标环境不是 Apple Silicon macOS 14.2+，则基于 WhisperKit/WhisperX + pyannote 自建本地 pipeline，或保留旧 `record-interview` 作为 deprecated fallback。
+**不直接采用 pasrom**：功能匹配，但社区成熟度太低，不符合“以成熟度为准”的约束；仅保留为 macOS-only fallback。
+
+**未来扩展**：若后续需求从本地桌面录音扩展为会议机器人录制，重新评估 **Vexa**。
 
 ## 6. 风险与假设
 
-- **Apple Silicon + macOS 14.2+ 门槛**：若 Lincoln 用户含 Intel Mac 或 Linux，主方案不可用。
-- **菜单栏 GUI 应用**：需要先运行一个原生应用，非纯 CLI；adapter 需检测运行状态并友好提示。
-- **API 仅转写已录制文件**：无法远程开始录音，Lincoln 要么依赖自动会议检测，要么让用户手动触发录制。
-- **Speaker DB 只读**：headless API 不会自动注册新说话人，首次标注需在 UI 完成。
+- **Electron 应用较重**：首次安装包体积大、启动资源高于原生 Swift 应用。
+- **本地桥需桌面应用运行**：Lincoln adapter 需要检测 OpenWhispr 是否在运行，并提示用户启动；应用关闭时 CLI 可能回退到云端，需在 adapter 中强制本地模式或报错。
+- **无官方“上传文件转写”API**： Lincoln 无法直接提交 WAV/M4A 给 OpenWhispr 转写；更适合“用户用 OpenWhispr 录制/导入，Lincoln 拉取结果”的模式。
+- **Speaker fingerprint 首次标注**：跨会议说话人识别需要用户在 OpenWhispr UI 中完成首次 voice enrollment。
 
 ## 7. 来源
 
-- [pasrom/meeting-transcriber GitHub](https://github.com/pasrom/meeting-transcriber)
-- [Meeting Transcriber 官网](https://meetingtranscriber.app/)
+- [OpenWhispr GitHub](https://github.com/OpenWhispr/OpenWhispr)
+- [OpenWhispr Docs — API overview](https://docs.openwhispr.com/api/overview)
+- [OpenWhispr Docs — MCP](https://docs.openwhispr.com/integrations/mcp)
+- [OpenWhispr vs Meetily comparison](https://openwhispr.com/compare/meetily)
 - [Meetily GitHub](https://github.com/Zackriya-Solutions/meetily)
-- [Hankanman/Meetily-Local GitHub](https://github.com/Hankanman/Meetily-Local)
+- [anarlog GitHub](https://github.com/fastrepl/anarlog)
+- [anarlog homepage](https://anarlog.so/)
+- [pasrom/meeting-transcriber GitHub](https://github.com/pasrom/meeting-transcriber)
 - [Vexa GitHub](https://github.com/Vexa-ai/vexa)
 - [Millet GitHub](https://github.com/pretyflaco/millet)
 - [ScreenApp Meeting Bot GitHub](https://github.com/screenappai/meeting-bot)
 - [MeetingBot GitHub](https://github.com/meetingbot/meetingbot)
-- [OpenWhispr vs Meetily comparison](https://openwhispr.com/compare/meetily)
-- [Meetily review at char.com](https://char.com/blog/meetily-review/)
 
 ---
 *PM 确认时请添加 `<!-- status: approved -->` 或 `[x] PM 已确认调研结论`。*

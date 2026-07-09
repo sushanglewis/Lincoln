@@ -1,24 +1,34 @@
 projects:
-  - name: pasrom/meeting-transcriber
-    url: https://github.com/pasrom/meeting-transcriber
+  - name: OpenWhispr/OpenWhispr
+    url: https://github.com/OpenWhispr/OpenWhispr
     license: MIT
-    fit_score: 4.4
+    fit_score: 4.5
     status: recommended
     notes: |
-      macOS 14.2+ Apple Silicon local recorder. Captures app audio + mic,
-      transcribes with WhisperKit/Parakeet, speaker diarization via FluidAudio.
-      Provides localhost HTTP API for headless transcript consumption.
-      Best fit for Lincoln's local/offline/diarization constraints.
+      Cross-platform (macOS/Windows/Linux) Electron voice dictation + meeting
+      transcription app. Local Whisper/Parakeet transcription, local speaker
+      diarization with voice fingerprinting, local HTTP bridge (127.0.0.1),
+      and MCP server. ~4.4k stars, actively maintained. Best balance of
+      maturity and Lincoln constraints.
+
+  - name: fastrepl/anarlog
+    url: https://github.com/fastrepl/anarlog
+    license: MIT
+    fit_score: 3.0
+    status: reference_only
+    notes: |
+      Rust/Tauri local-first meeting notetaker, ~8.8k stars. Saves notes as
+      Markdown on disk. Lacks robust speaker diarization today.
 
   - name: Zackriya-Solutions/meetily
     url: https://github.com/Zackriya-Solutions/meetily
     license: MIT
-    fit_score: 3.1
+    fit_score: 3.5
     status: reference_only
     notes: |
-      Popular local meeting assistant (Tauri desktop). License is safe, but
-      no stable CLI/API and speaker diarization is still on the roadmap.
-      Not a drop-in replacement for Lincoln's workflow.
+      Most popular (~22.2k stars) local meeting assistant. License is safe,
+      but speaker diarization is currently only planned for the PRO tier and
+      there is no stable CLI/API. Not a drop-in replacement today.
 
   - name: Hankanman/Meetily-Local
     url: https://github.com/Hankanman/Meetily-Local
@@ -28,10 +38,20 @@ projects:
     notes: |
       Meetily fork, still desktop-only without public API/CLI.
 
+  - name: pasrom/meeting-transcriber
+    url: https://github.com/pasrom/meeting-transcriber
+    license: MIT
+    fit_score: 3.4
+    status: fallback
+    notes: |
+      Native macOS Swift app with excellent local diarization and localhost
+      HTTP API, but only ~19 stars and a solo side project. Risky as primary
+      dependency; keep as macOS-only fallback if OpenWhispr integration fails.
+
   - name: Vexa-ai/vexa
     url: https://github.com/Vexa-ai/vexa
     license: Apache-2.0
-    fit_score: 3.7
+    fit_score: 3.4
     status: future_bot_candidate
     notes: |
       API-first meeting bot with self-hosted option. Strong for cloud/bot
