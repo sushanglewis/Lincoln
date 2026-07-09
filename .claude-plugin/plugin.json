@@ -1,7 +1,7 @@
 {
   "name": "lincoln",
   "version": "1.2.0",
-  "description": "AI-native product-management workflow template for Conductor + Claude Code + OpenSpec + GitHub + Obsidian",
+  "description": "AI-Native product R&D collaboration system for Conductor + Claude Code + OpenSpec + GitHub + Obsidian",
   "author": {
     "name": "Lincoln contributors"
   },
@@ -11,8 +11,9 @@
   "keywords": [
     "claude-code",
     "plugin",
-    "product-management",
-    "workflow",
+    "ai-native",
+    "product-rnd",
+    "collaboration",
     "interview-to-knowledge",
     "openspec",
     "obsidian"
