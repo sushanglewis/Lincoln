@@ -45,37 +45,7 @@ issue-21/
 
 `issue-21/workflow-stage.yaml` 是人类、Agent 之间共享的阶段交接协议；`.claude/templates/issue-package/workflow-stage.yaml` 只是生成它的模板。
 
-### 场景 A：从访谈录音开始
-
-```bash
-# 1. 放入访谈录音
-cp ~/Downloads/2026-07-08-stakeholder.m4a issue-21/recordings/
-
-# 2. 启动 Lincoln，Claude Code 会根据当前 stage 自动路由
-#    - 处理访谈录音
-#    - 澄清需求
-#    - 生成产品设计文档
-#    - 生成产品原型
-#    - 生成 TDD 研发计划
-#    - 生成 OpenSpec 提案
-#    - 拆分到 GitHub
-#    - PR 合并后同步到知识库
-```
-
-### 场景 B：已有代码库但无知识库
-
-运行 `lincoln-workflow-router`，选择 `existing-project-iteration` 模板。Agent 会先扫描代码库生成 `knowledge/` 功能文档，再进入 clarify 阶段。
-
-### 场景 C：明确 bug/issue
-
-选择 `bug-fix` 模板。clarify 阶段会自动注入调试相关技能，流程跳过原型、聚焦回归测试。
-
-### 场景 D：方案预研或开源优先
-
-- `design-spike`：终止于原型或 TDD 计划，直接沉淀知识。
-- `oss-first-design`：clarify 后自动触发开源方案调研。
-
-> 全部模板的详细说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
+> 全部模板的详细说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。工作流模板是场景参考，人类可以基于当前场景要求 Agent 按某个固定 workflow 执行，不强制自动路由。
 
 ---
 
@@ -109,7 +79,7 @@ python scripts/stage_loader.py --stage <current-stage> --action handoff-report
 
 生成 `.context/lincoln-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档，包含当前阶段、已确认产物、待解决问题、下一角色、推荐技能。
 
-阶段通过人类 PM 确认后：
+阶段通过人类确认后：
 
 ```bash
 python scripts/stage_loader.py --stage <current-stage> --action approve-gate
@@ -152,7 +122,7 @@ Lincoln 框架的核心定义直接内联在 `.claude/` 中：
 - 每个需求使用独立的 Lincoln feature 分支（例如 `issue-21`）。
 - 阶段状态随分支提交，保存在 `{process_slug}/workflow-stage.yaml`。
 - 过程文档（`recordings/`、`interviews/`、`requirements/`、`designs/`、`openspec/`、`docs/research/`）随 feature 分支传递，**不合并到 `main`**。
-- PM 在本地推进阶段后，push feature 分支到远程；下游角色 checkout 同一分支继续。
+- 当前负责人在本地推进阶段后，push feature 分支到远程；下游角色 checkout 同一分支继续。
 - 每个阶段都有 `.claude/stages/<stage-id>/` 下的专属上下文（`AGENTS.md`、`CHECKLIST.md`、`SKILLS.md`、`PROMPT.md`）。
 
 Agent 启动时，`.claude/hooks/on-session-start.sh` 会自动解析 `{process_slug}/workflow-stage.yaml`、加载当前阶段上下文、读取 handoff 文档并注入推荐技能，无需手动先读 README 再读 CLAUDE.md。
@@ -248,18 +218,10 @@ Lincoln 支持以 Claude Code 插件形式安装。清单文件位于 `.claude-p
 
 ## 规范约束
 
-Agent 必须遵守：
-- [`.claude/agents/default.md`](.claude/agents/default.md) — Agent 行为总则
-- [`CLAUDE.md`](CLAUDE.md) — Agent 启动自检与汇报契约
-- [`.claude/workflows/README.md`](.claude/workflows/README.md) — 工作流模板索引
-- [`.claude/stages/stage-manifest.yaml`](.claude/stages/stage-manifest.yaml) — 阶段注册表与门控要求
-- `scripts/validate_stage.py` — 准入准出校验 runner
-
-人类产品经理拥有以下节点的最终确认权：
-- 需求澄清完成
-- 产品设计文档确认
-- Pencil 原型确认
-- 研发实现完成
+- Agent 启动时会由 `.claude/hooks/on-session-start.sh` 自动加载当前阶段上下文，无需手动遍历所有文件。
+- 具体行为契约见 [`CLAUDE.md`](CLAUDE.md)；阶段级上下文见 `.claude/stages/<stage-id>/`。
+- `human_gate: true` 阶段必须获得人类最终确认后才能继续。
+- 阶段准出校验通过 `scripts/validate_stage.py` 运行。
 
 ---
 
