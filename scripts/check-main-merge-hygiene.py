@@ -35,7 +35,6 @@ ALLOWED_ROOT_PREFIXES = (
     ".github/",
     "CLAUDE.md",
     "README.md",
-    "docs/framework/",
     "knowledge/",
     "oss/README.md",
     "oss/projects.yaml",

@@ -40,7 +40,7 @@
 ## 状态感知
 
 - 检查 `.github/lincoln-sync-queue/pr-{pr_number}.yaml` 获取同步任务信息
-- 检查 `.claude/workflow-stage.yaml` 获取当前 `session_id` 和 `change_name`
+- 当前阶段状态由 session-start hook 自动加载，必要时读取 `<process_slug>/workflow-stage.yaml` 获取当前 `session_id` 和 `change_name`
 - 如果 sync-queue 文件状态不是 `pending`，检查是否已处理过
 
 ## 关键产出

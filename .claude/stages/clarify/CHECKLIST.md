@@ -69,11 +69,12 @@
 
 ## 状态文件更新
 
-阶段完成后，更新 `.claude/workflow-stage.yaml`：
+阶段完成后，通过 `scripts/stage_loader.py --stage clarify --action transition-next` 更新 `<process_slug>/workflow-stage.yaml`（节点追加模式，不再直接修改 `stages.*.status`）：
 
 ```yaml
-stages:
-  clarify:
+nodes:
+  - node_id: clarify-<timestamp>
+    stage_id: clarify
     status: completed
     entry_checks_passed: true
     exit_checks_passed: true
@@ -82,6 +83,8 @@ stages:
       - {process_slug}/requirements/{session_id}/requirements.md
       - {process_slug}/requirements/{session_id}/user-stories.md
       - {process_slug}/requirements/{session_id}/prd.md
+current_run:
+  current_stage: product-design-docs
 ```
 
 ## 失败恢复

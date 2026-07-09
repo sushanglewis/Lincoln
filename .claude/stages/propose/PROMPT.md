@@ -21,9 +21,9 @@
    - 按照提示文件中的步骤 1-9 执行
 
 2. **阶段状态感知**:
-   - 检查 `.claude/workflow-stage.yaml` 中的 `stages.propose` 状态
-   - 若状态为 `completed`，检查是否需要重新生成（人类要求时）
-   - 若状态为 `validation_failed`，根据 `error_message` 修复后重试
+   - 当前阶段状态由 session-start hook 自动加载，必要时读取 `<process_slug>/workflow-stage.yaml`
+   - 若本阶段已有 `completed` 节点，检查是否需要重新生成（人类要求时）
+   - 若当前节点状态为 `validation_failed`，根据 `error_message` 修复后重试
    - 若人类运行 `workflow-continue`，重新读取 OpenSpec artifact 并重新校验
 
 3. **变量替换**:
@@ -57,7 +57,7 @@
 ## 完成后操作
 
 1. 运行退出校验器验证 artifact 完整性和引用完整性
-2. 更新 `workflow-state.yaml` 中 `stages.propose` 状态为 `completed`
+2. 通过 `scripts/stage_loader.py --stage propose --action transition-next` 推进阶段（节点追加模式）
 3. 向人类汇报：
    - OpenSpec 提案已生成
    - 产物存放路径：`{process_slug}/openspec/changes/{change_name}/`

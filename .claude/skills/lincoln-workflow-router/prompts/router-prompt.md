@@ -10,7 +10,7 @@ You are the Lincoln Workflow Router. Your job is to assess the current project c
    - Are there open GitHub Issues or a `.github/linked-issues.yaml`?
    - Is there an `{process_slug}/interviews/` directory with recordings?
 
-2. `workflow-state.yaml`:
+2. `<process_slug>/workflow-stage.yaml`:
    - What is `current_run.current_stage`?
    - Have any stages been completed?
 
@@ -23,11 +23,11 @@ You are the Lincoln Workflow Router. Your job is to assess the current project c
 
 ## Steps
 
-1. Read `.claude/workflow-state.yaml`.
+1. Confirm current stage from the hook-loaded state (read `<process_slug>/workflow-stage.yaml` only if needed).
 2. List top-level directories and key files to assess context.
 3. Choose the best template from `.claude/workflows/templates/`.
 4. If confidence is low, ask the PM at most 3 clarifying questions.
-5. Once confirmed, set `current_run.workflow_template` and `current_stage` in `workflow-state.yaml`.
+5. Once confirmed, set `current_run.workflow_template` and `current_stage` in `<process_slug>/workflow-stage.yaml` via `scripts/stage_loader.py`.
 6. Write a one-sentence `current_run.context_assessment` summary.
 
 ## Output format

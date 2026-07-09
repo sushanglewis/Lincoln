@@ -7,4 +7,4 @@
 - [ ] 已生成 `knowledge/03-features/existing-*.md`
 - [ ] 已生成 `knowledge/05-glossary/00-index.md`
 - [ ] PM 已确认功能索引
-- [ ] 已在 `workflow-state.yaml` 中标记 `codebase-knowledge-ready`
+- [ ] 已在 `<process_slug>/workflow-stage.yaml` 的 `current_run` 中标记 `codebase-knowledge-ready`

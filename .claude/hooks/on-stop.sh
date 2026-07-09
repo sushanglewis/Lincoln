@@ -4,7 +4,7 @@ set -euo pipefail
 # On-stop hook for Lincoln workflow.
 # Updates last_updated_at in the workflow stage file when a session ends.
 #
-# The state file is branch-scoped: .claude/workflow-stage.yaml
+# The operational state file is branch-scoped: <process_slug>/workflow-stage.yaml
 # (falls back to legacy .claude/workflow-state.yaml if present).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

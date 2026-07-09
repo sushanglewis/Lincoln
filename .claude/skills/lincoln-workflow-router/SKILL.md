@@ -12,13 +12,13 @@ Inspects the current project context and chooses a workflow template from `.clau
 
 ## When to Use
 
-- At session start when `.claude/workflow-stage.yaml` has no `workflow.template`.
+- At session start when `<process_slug>/workflow-stage.yaml` has no `workflow.template`.
 - When the human PM says "重新评估工作流" or asks to switch templates.
 
 ## Inputs
 
 - Repository root contents
-- `.claude/workflow-stage.yaml`
+- `<process_slug>/workflow-stage.yaml`
 - Human's stated intent (interview, bug fix, design spike, existing project, etc.)
 
 ## Outputs

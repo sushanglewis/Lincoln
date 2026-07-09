@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # On-session-start hook for Lincoln workflow.
-# Loads stage context, checks dependencies, parses workflow-stage.yaml,
+# Loads stage context, checks dependencies, parses <process_slug>/workflow-stage.yaml,
 # reads previous node handoff, and injects current node driving context.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

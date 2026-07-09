@@ -20,9 +20,9 @@
 
 ## 状态感知
 
-- 检查 `.claude/workflow-stage.yaml` 获取当前 `session_id` 和 `change_name`
-- 如果 `stages.split.status` 不是 `not_started`，说明本阶段可能已部分执行，检查已有产物
-- 如果 `stages.propose.status` 不是 `completed`，必须先完成 propose 阶段
+- 当前阶段状态由 session-start hook 自动加载，必要时读取 `<process_slug>/workflow-stage.yaml` 获取当前 `session_id` 和 `change_name`
+- 如果本阶段已有非 `not_started` 节点，说明本阶段可能已部分执行，检查已有产物
+- 如果 `propose` 阶段没有 `completed` 节点，必须先完成 propose 阶段
 
 ## 关键产出
 

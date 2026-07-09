@@ -76,16 +76,19 @@
 
 ## 状态文件更新
 
-阶段完成后，更新 `.claude/workflow-stage.yaml`：
+阶段完成后，通过 `scripts/stage_loader.py --stage tdd-development-plan --action transition-next` 更新 `<process_slug>/workflow-stage.yaml`（节点追加模式，不再直接修改 `stages.*.status`）：
 
 ```yaml
-stages:
-  tdd-development-plan:
+nodes:
+  - node_id: tdd-development-plan-<timestamp>
+    stage_id: tdd-development-plan
     status: completed
     entry_checks_passed: true
     exit_checks_passed: true
     artifacts_produced:
       - {process_slug}/designs/{design_id}/tdd-plan.md
+current_run:
+  current_stage: propose
 ```
 
 ## 失败恢复

@@ -15,7 +15,7 @@
 
 - `Read` — 读取 state 和目录
 - `Glob` / `Bash` — 扫描仓库结构
-- `Edit` — 更新 `workflow-state.yaml`
+- `Edit` / `scripts/stage_loader.py` — 更新 `<process_slug>/workflow-stage.yaml`
 
 ## 模板库
 

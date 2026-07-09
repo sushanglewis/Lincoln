@@ -11,8 +11,8 @@
 1. 读取 `.claude/skills/lincoln-workflow-router/prompts/router-prompt.md`。
 2. 按 prompt 评估仓库上下文。
 3. 推荐模板并等待 PM 确认。
-4. 确认后更新 `.claude/workflow-stage.yaml`。
+4. 确认后更新 `<process_slug>/workflow-stage.yaml`。
 
 ## 产物
 
-- 更新后的 `workflow-state.yaml`（含 `workflow_template` 和 `current_stage`）
+- 更新后的 `<process_slug>/workflow-stage.yaml`（含 `workflow_template` 和 `current_stage`）

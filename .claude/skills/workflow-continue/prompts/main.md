@@ -8,7 +8,7 @@ Re-read the current workflow state, detect what changed, and continue from the a
 
 ## Steps
 
-1. Read `.context/workflow-state.yaml`.
+1. Confirm the current stage from the hook-loaded state (read `<process_slug>/workflow-stage.yaml` only if needed).
 2. Identify the current step and its status (paused, waiting_for_human, validation_failed).
 3. Re-read all artifacts associated with the current step.
 4. If the human edited files directly, compare the current version with the version recorded in the state file and summarize the diff.

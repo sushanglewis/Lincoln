@@ -6,14 +6,14 @@
 
 ## 入口条件
 
-- `workflow-state.yaml` 中 `current_run.workflow_template` 为空
+- `<process_slug>/workflow-stage.yaml` 中 `current_run.workflow_template` 为空
 - 或 PM 明确要求重新评估
 
 ## 允许的操作
 
-- 读取仓库结构和 `workflow-state.yaml`
+- 基于 session-start hook 已加载的状态和仓库结构评估上下文
 - 向 PM 提出最多 3 个澄清问题
-- 设置 `current_run.workflow_template` 和 `current_stage`
+- 通过 `scripts/stage_loader.py` 设置 `current_run.workflow_template` 和 `current_stage`
 
 ## 禁止的操作
 

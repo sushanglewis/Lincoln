@@ -58,4 +58,4 @@ For each feature from the map:
 ## Human gate
 
 - Ask the PM to review `knowledge/00-index.md` before continuing.
-- Mark `codebase-knowledge-ready` in `workflow-state.yaml` only after PM confirms or 5 minutes pass with no objections.
+- Mark `codebase-knowledge-ready` in `<process_slug>/workflow-stage.yaml` only after PM confirms or 5 minutes pass with no objections.

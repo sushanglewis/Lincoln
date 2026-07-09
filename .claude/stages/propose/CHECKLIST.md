@@ -76,11 +76,12 @@
 
 ## 状态文件更新
 
-阶段完成后，更新 `.claude/workflow-stage.yaml`：
+阶段完成后，通过 `scripts/stage_loader.py --stage propose --action transition-next` 更新 `<process_slug>/workflow-stage.yaml`（节点追加模式，不再直接修改 `stages.*.status`）：
 
 ```yaml
-stages:
-  propose:
+nodes:
+  - node_id: propose-<timestamp>
+    stage_id: propose
     status: completed
     entry_checks_passed: true
     exit_checks_passed: true
@@ -89,6 +90,8 @@ stages:
       - {process_slug}/openspec/changes/{change_name}/specs/
       - {process_slug}/openspec/changes/{change_name}/design.md
       - {process_slug}/openspec/changes/{change_name}/tasks.md
+current_run:
+  current_stage: split
 ```
 
 ## 失败恢复

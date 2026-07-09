@@ -20,7 +20,7 @@ stages:
   name: Workflow Router
   description: 'Entry point. Assesses repository context, selects the most
 
-    appropriate workflow template, and initializes workflow-state.
+    appropriate workflow template, and initializes workflow-stage.
 
     '
   human_gate: true

@@ -38,11 +38,9 @@
 
 ## 状态文件更新
 
-- [ ] 更新 `.claude/workflow-stage.yaml`：
-  - `stages.implement.status` = `completed`
-  - `stages.implement.completed_at` = 当前 ISO 时间
-  - `current_run.current_stage` = `sync-knowledge`
-  - `stages.sync-knowledge.status` = `not_started`
+- [ ] 通过 `scripts/stage_loader.py --stage implement --action transition-next` 更新 `<process_slug>/workflow-stage.yaml`（节点追加模式）：
+  - 追加 `implement` 完成节点
+  - 设置 `current_run.current_stage` = `sync-knowledge`
 
 ## 触发 sync-knowledge
 

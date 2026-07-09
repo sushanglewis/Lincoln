@@ -34,9 +34,6 @@
 
 ## 状态文件更新
 
-- [ ] 更新 `.claude/workflow-stage.yaml`：
-  - `stages.split.status` = `completed`
-  - `stages.split.exit_checks_passed` = `true`
-  - `stages.split.completed_at` = 当前 ISO 时间
-  - `current_run.current_stage` = `implement`
-  - `stages.implement.status` = `not_started`
+- [ ] 通过 `scripts/stage_loader.py --stage split --action transition-next` 更新 `<process_slug>/workflow-stage.yaml`（节点追加模式）：
+  - 追加 `split` 完成节点
+  - 设置 `current_run.current_stage` = `implement`

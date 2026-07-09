@@ -53,11 +53,12 @@
 
 ## 状态文件更新
 
-阶段完成后，更新 `.claude/workflow-stage.yaml`：
+阶段完成后，通过 `scripts/stage_loader.py --stage ingest --action transition-next` 更新 `<process_slug>/workflow-stage.yaml`（节点追加模式，不再直接修改 `stages.*.status`）：
 
 ```yaml
-stages:
-  ingest:
+nodes:
+  - node_id: ingest-<timestamp>
+    stage_id: ingest
     status: completed
     entry_checks_passed: true
     exit_checks_passed: true
@@ -66,6 +67,8 @@ stages:
       - {process_slug}/interviews/{session_id}/transcript.md
       - {process_slug}/interviews/{session_id}/summary.md
       - {process_slug}/interviews/{session_id}/raw-insights.md
+current_run:
+  current_stage: clarify
 ```
 
 ## 失败恢复
