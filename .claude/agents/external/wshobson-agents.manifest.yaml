@@ -1,0 +1,23 @@
+---
+schema_version: 1.0.0
+framework: wshobson-agents
+source: https://github.com/wshobson/agents.git
+ref: main
+license: MIT
+paths:
+  agents: plugins
+prefix: wshobson
+sync_strategy: sparse-checkout
+imported_agents:
+  - application-performance/agents/frontend-developer
+---
+
+# wshobson/agents Agent Manifest
+
+本文件声明 Lincoln 需要引用的 wshobson/agents 插件市场中的 agent。
+
+运行 `scripts/sync-external-agents.sh` 会根据本 manifest 把指定 agent 拉取到 `.claude/agents/external/wshobson-agents/`。
+
+这些 agent 供 Lincoln 自有角色通过 `extends` 字段组合使用。
+
+来源：https://github.com/wshobson/agents.git @ main，MIT License。

@@ -3,6 +3,8 @@ name: lincoln-engineer
 description: 研发工程师角色模板，用于 TDD 计划、实现、测试阶段
 extends:
   - agents/default.md
+  - agents/external/everything-claude-code/agents/ecc-tdd-guide.md
+  - agents/external/oh-my-claudecode/agents/omc-architect.md
 ---
 
 # Lincoln 工程师角色

@@ -225,6 +225,7 @@ stages:
   review_agents:
   - lincoln-designer
   - lincoln-researcher
+  - lincoln-architect
   handoff_to: lincoln-designer
   context_files:
     agents_md: .claude/stages/product-design-docs/AGENTS.md
@@ -278,6 +279,7 @@ stages:
   primary_agent: lincoln-designer
   review_agents:
   - lincoln-pm
+  - lincoln-frontend-engineer
   handoff_to: lincoln-engineer
   context_files:
     agents_md: .claude/stages/product-prototype/AGENTS.md
@@ -318,6 +320,7 @@ stages:
   primary_agent: lincoln-engineer
   review_agents:
   - lincoln-qa
+  - lincoln-architect
   handoff_to: lincoln-engineer
   context_files:
     agents_md: .claude/stages/tdd-development-plan/AGENTS.md
@@ -353,6 +356,7 @@ stages:
   primary_agent: lincoln-engineer
   review_agents:
   - lincoln-qa
+  - lincoln-architect
   handoff_to: lincoln-pm
   context_files:
     agents_md: .claude/stages/propose/AGENTS.md
@@ -431,6 +435,7 @@ stages:
   review_agents:
   - lincoln-qa
   - lincoln-release-coordinator
+  - lincoln-architect
   handoff_to: lincoln-knowledge-curator
   context_files:
     agents_md: .claude/stages/implement/AGENTS.md

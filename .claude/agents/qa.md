@@ -3,6 +3,8 @@ name: lincoln-qa
 description: QA and acceptance specialist for Lincoln validation and release readiness
 extends:
   - agents/default.md
+  - agents/external/oh-my-claudecode/agents/omc-code-reviewer.md
+  - agents/external/oh-my-claudecode/agents/omc-qa-tester.md
 ---
 
 # Lincoln QA

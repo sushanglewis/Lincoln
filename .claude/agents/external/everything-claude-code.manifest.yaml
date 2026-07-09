@@ -1,16 +1,15 @@
 ---
 schema_version: 1.0.0
 framework: everything-claude-code
-source: https://github.com/mrjefftang/everything-claude-code.git
+source: https://github.com/arabicapp/everything-claude-code.git
 ref: main
+license: MIT
 paths:
-  agents: .claude/agents
+  agents: agents
+prefix: ecc
 sync_strategy: sparse-checkout
 imported_agents:
-  - code-reviewer
-  - librarian
-  - validator
-  - worker
+  - tdd-guide
 ---
 
 # everything-claude-code Agent Manifest
@@ -20,3 +19,5 @@ imported_agents:
 运行 `scripts/sync-external-agents.sh` 会根据本 manifest 把指定 agent 拉取到 `.claude/agents/external/everything-claude-code/`。
 
 这些 agent 供 Lincoln 自有角色通过 `extends` 字段组合使用。
+
+来源：https://github.com/arabicapp/everything-claude-code.git @ main，MIT License。

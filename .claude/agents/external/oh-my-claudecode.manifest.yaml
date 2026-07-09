@@ -1,0 +1,26 @@
+---
+schema_version: 1.0.0
+framework: oh-my-claudecode
+source: https://github.com/Yeachan-Heo/oh-my-claudecode.git
+ref: main
+license: MIT
+paths:
+  agents: agents
+prefix: omc
+sync_strategy: sparse-checkout
+imported_agents:
+  - designer
+  - code-reviewer
+  - architect
+  - qa-tester
+---
+
+# oh-my-claudecode Agent Manifest
+
+本文件声明 Lincoln 需要引用的 oh-my-claudecode 框架 agent。
+
+运行 `scripts/sync-external-agents.sh` 会根据本 manifest 把指定 agent 拉取到 `.claude/agents/external/oh-my-claudecode/`。
+
+这些 agent 供 Lincoln 自有角色通过 `extends` 字段组合使用。
+
+来源：https://github.com/Yeachan-Heo/oh-my-claudecode.git @ main，MIT License。
