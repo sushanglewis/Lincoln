@@ -1,1 +1,64 @@
-projects: []
+projects:
+  - name: pasrom/meeting-transcriber
+    url: https://github.com/pasrom/meeting-transcriber
+    license: MIT
+    fit_score: 4.4
+    status: recommended
+    notes: |
+      macOS 14.2+ Apple Silicon local recorder. Captures app audio + mic,
+      transcribes with WhisperKit/Parakeet, speaker diarization via FluidAudio.
+      Provides localhost HTTP API for headless transcript consumption.
+      Best fit for Lincoln's local/offline/diarization constraints.
+
+  - name: Zackriya-Solutions/meetily
+    url: https://github.com/Zackriya-Solutions/meetily
+    license: MIT
+    fit_score: 3.1
+    status: reference_only
+    notes: |
+      Popular local meeting assistant (Tauri desktop). License is safe, but
+      no stable CLI/API and speaker diarization is still on the roadmap.
+      Not a drop-in replacement for Lincoln's workflow.
+
+  - name: Hankanman/Meetily-Local
+    url: https://github.com/Hankanman/Meetily-Local
+    license: MIT
+    fit_score: 2.8
+    status: excluded
+    notes: |
+      Meetily fork, still desktop-only without public API/CLI.
+
+  - name: Vexa-ai/vexa
+    url: https://github.com/Vexa-ai/vexa
+    license: Apache-2.0
+    fit_score: 3.7
+    status: future_bot_candidate
+    notes: |
+      API-first meeting bot with self-hosted option. Strong for cloud/bot
+      scenarios, violates current local desktop + offline constraints.
+
+  - name: pretyflaco/millet
+    url: https://github.com/pretyflaco/millet
+    license: GPL-3.0
+    fit_score: 2.6
+    status: excluded
+    notes: |
+      Fully offline Python pipeline with diarization. Copyleft license risk;
+      audio capture currently Linux-only.
+
+  - name: screenappai/meeting-bot
+    url: https://github.com/screenappai/meeting-bot
+    license: MIT
+    fit_score: 3.0
+    status: excluded
+    notes: |
+      Lightweight Dockerized meeting bot. Cloud/bot architecture, not local.
+
+  - name: meetingbot/meetingbot
+    url: https://github.com/meetingbot/meetingbot
+    license: LGPL-3.0
+    fit_score: 2.6
+    status: excluded
+    notes: |
+      AWS-centric full-stack reference app. Heavier operational footprint and
+      copyleft concerns.

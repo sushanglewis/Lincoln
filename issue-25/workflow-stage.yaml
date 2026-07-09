@@ -1,39 +1,76 @@
 schema_version: 2.0.0
 workflow:
-  name: interview-to-knowledge
+  name: oss-first-design
   version: 1.0.0
-  template: interview-to-knowledge
+  template: oss-first-design
 current_run:
   run_id: 20260709154736-48f5cebe
   branch: issue-25
-  current_stage: ingest
+  current_stage: product-design-docs
   status: in_progress
   started_at: '2026-07-09T15:47:36Z'
-  last_updated_at: '2026-07-09T15:47:36Z'
+  last_updated_at: '2026-07-09T16:04:25Z'
   issue_number: '25'
   variables:
     process_slug: issue-25
     session_id: 2026-07-09-recording-replacement
     design_id: recording-replacement
     issue_number: '25'
-    change_name: ''
+    change_name: recording-replacement
     pr_number: ''
-    feature_slug: ''
-  change_name: ''
+    feature_slug: recording-replacement
+  change_name: recording-replacement
   pr_number: ''
-  feature_slug: ''
-artifact_guidance: "This issue work package holds all artifacts produced while resolving\
-  \ the issue.\n\nHow to use templates:\n- Copy a `.tpl` file from the relevant directory,\
-  \ remove the `.tpl` extension,\n  and replace placeholders ({issue_number}, {session_id},\
-  \ {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/`\
-  \ for clarified needs,\n  `interviews/` for recorded session outputs, `openspec/`\
-  \ for implementation proposals,\n  `docs/` for research and decision records, and\
-  \ `recordings/` for raw input files only.\n- When a stage completes, run `scripts/stage_loader.py\
-  \ --stage <stage> --action record-artifacts`\n  to persist produced artifact paths\
-  \ back into this workflow-stage.yaml.\n\nApproval convention:\n- Add `<!-- status:\
-  \ approved -->` or `[x] PM 已确认<文档类型>` to mark a document\n  as reviewed by the human\
-  \ PM before handoff.\n"
-nodes: []
+  feature_slug: recording-replacement
+  previous_stage: explore-opensource
+artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
+  - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,\n  and replace placeholders ({issue_number},\
+  \ {session_id}, {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
+  \  `interviews/` for recorded session outputs, `openspec/` for implementation proposals,\n  `docs/` for research and decision\
+  \ records, and `recordings/` for raw input files only.\n- When a stage completes, run `scripts/stage_loader.py --stage <stage>\
+  \ --action record-artifacts`\n  to persist produced artifact paths back into this workflow-stage.yaml.\n\nApproval convention:\n\
+  - Add `<!-- status: approved -->` or `[x] PM 已确认<文档类型>` to mark a document\n  as reviewed by the human PM before handoff.\n"
+nodes:
+- stage_id: clarify
+  node_id: clarify-2026-07-09T15:52:42Z
+  status: in_progress
+  started_at: '2026-07-09T15:52:42Z'
+  completed_at: '2026-07-09T15:56:04Z'
+  gate_passed: true
+  approved_by: PM
+  artifacts:
+  - issue-25/requirements/2026-07-09-recording-replacement/requirements.md
+  handoff_file: null
+- stage_id: clarify
+  node_id: clarify-completed
+  status: completed
+  started_at: '2026-07-09T15:59:16Z'
+  completed_at: '2026-07-09T15:59:16Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/requirements/2026-07-09-recording-replacement/requirements.md
+  handoff_file: null
+- stage_id: explore-opensource
+  node_id: explore-opensource-2026-07-09T16:01:46Z
+  status: in_progress
+  started_at: '2026-07-09T16:01:46Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-25/docs/research/recording-replacement-oss-options.md
+  handoff_file: null
+- stage_id: explore-opensource
+  node_id: explore-opensource-completed
+  status: completed
+  started_at: '2026-07-09T16:04:01Z'
+  completed_at: '2026-07-09T16:04:01Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/docs/research/recording-replacement-oss-options.md
+  handoff_file: null
 recovery:
   last_validated_checkpoint: ''
   can_resume_from: ingest
