@@ -1,9 +1,9 @@
-# Lincoln — AI 原生产品管理工作流模板
+# Lincoln — AI-Native 产研协作体系
 
-> **Lincoln 是什么？** Lincoln 是一个基于 **Conductor + Claude Code + OpenSpec + GitHub + Obsidian** 的 AI 原生产品管理工作流模板仓库。它以 issue 为单元、以阶段为节奏、以门控为质量保障，将访谈录音、需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、GitHub Issues 拆分、研发实现和知识库沉淀串联成可重复的 SOP。
+> **Lincoln 是什么？** Lincoln 是一个基于 **Conductor + Claude Code + OpenSpec + GitHub + Obsidian** 的 AI-Native 产研协作体系。它以 issue 为单元、以阶段为节奏、以门控为质量保障，将需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、GitHub Issues 拆分、研发实现和知识库沉淀串联成可重复的 SOP，让产品经理、设计师、工程师与 Agent 在各自擅长的环节高效协作。
 
 > **使用者还是开发者？**
-> - **使用者**（产品经理、设计师、工程师）：直接跳到 [快速开始](#快速开始)。
+> - **使用者**（产品、设计、研发、QA）：直接跳到 [快速开始](#快速开始)。
 > - **开发者**（工作流开发者、框架维护者）：阅读 [框架文档](#框架文档) 和 [`CLAUDE.md`](CLAUDE.md)。
 
 ## 快速开始

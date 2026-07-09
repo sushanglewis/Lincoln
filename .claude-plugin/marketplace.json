@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "lincoln",
-  "description": "AI-native product-management workflow template that turns stakeholder interviews into shipped features and maintained knowledge.",
+  "description": "AI-Native product R&D collaboration system that connects product, design, engineering, and agents into a repeatable workflow.",
   "owner": {
     "name": "Lincoln contributors"
   },
   "plugins": [
     {
       "name": "lincoln",
-      "description": "AI-native product-management workflow template for Conductor + Claude Code. Orchestrates stages, gates, artifacts, skills, and roles from interview recordings to GitHub Issues to Obsidian knowledge base.",
+      "description": "AI-Native product R&D collaboration system for Conductor + Claude Code. Orchestrates stages, gates, artifacts, skills, and roles across product, design, and engineering into a repeatable workflow from recordings to GitHub Issues to Obsidian knowledge base.",
       "version": "1.2.0",
       "author": {
         "name": "Lincoln contributors"
@@ -17,8 +17,9 @@
       "category": "productivity",
       "homepage": "https://github.com/sushanglewis/Lincoln",
       "tags": [
-        "product-management",
-        "workflow",
+        "ai-native",
+        "product-rnd",
+        "collaboration",
         "interview-to-knowledge",
         "openspec",
         "obsidian",
