@@ -22,7 +22,7 @@ inputs:
 outputs:
   - git branch issue-{number}（若当前在 main）
   - 分支根目录下的 {process_slug}/ 过程包（designs/ docs/ interviews/ openspec/ recordings/ requirements/）
-  - "{process_slug}/workflow-stage.yaml" 含 issue_number
+  - '"{process_slug}/workflow-stage.yaml" 含 issue_number'
 required_tools:
   - Bash
   - Read

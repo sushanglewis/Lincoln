@@ -73,4 +73,13 @@ if [[ -n "$CURRENT_STAGE" && ( "$STAGE_STATUS" == "waiting_for_human" || "$STAGE
         >/dev/null 2>&1 || true
 fi
 
+# Generate a session-stop benchmark report directly from the hook.
+# lincoln_benchmark.py handles its own 5-second deduplication.
+BENCHMARK_ROOT="${LINCOLN_BENCHMARK_PROJECT_ROOT:-$ROOT}"
+LINCOLN_SKIP_TRACE=1 "$PYTHON" "$ROOT/scripts/lincoln_benchmark.py" \
+    --state-file "$STATE_FILE" \
+    --trigger session_stop \
+    --project-root "$BENCHMARK_ROOT" \
+    >/dev/null 2>&1 || true
+
 exit 0

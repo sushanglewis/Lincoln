@@ -114,4 +114,26 @@ if [[ "$PR_EVENT" == true ]]; then
         2>/dev/null || true
 fi
 
+# Trigger benchmark reports for handoff/PR lifecycle events.
+BENCHMARK_TRIGGER=""
+if [[ "$TOOL_NAME" == "mcp__plugin_ecc_github__create_pull_request" ]]; then
+    BENCHMARK_TRIGGER="pr_created"
+elif [[ "$TOOL_NAME" == "mcp__plugin_ecc_github__merge_pull_request" ]]; then
+    BENCHMARK_TRIGGER="pr_merged"
+elif [[ "$TOOL_NAME" == "Bash" ]]; then
+    BASH_COMMAND=$(echo "$TOOL_ARGS" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin).get('command',''))" 2>/dev/null || echo "")
+    if [[ "$BASH_COMMAND" == *"--action handoff-report"* ]]; then
+        BENCHMARK_TRIGGER="handoff"
+    fi
+fi
+
+if [[ -n "$BENCHMARK_TRIGGER" ]]; then
+    BENCHMARK_ROOT="${LINCOLN_BENCHMARK_PROJECT_ROOT:-$ROOT}"
+    LINCOLN_SKIP_TRACE=1 "$PYTHON" "$ROOT/scripts/lincoln_benchmark.py" \
+        --state-file "$STATE_FILE" \
+        --trigger "$BENCHMARK_TRIGGER" \
+        --project-root "$BENCHMARK_ROOT" \
+        >/dev/null 2>&1 || true
+fi
+
 exit 0

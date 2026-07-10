@@ -269,6 +269,8 @@ echo "All hooks executable."
 echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/stage_loader.py
 "$PYTHON" -m py_compile scripts/lincoln-status.py
+"$PYTHON" -m py_compile scripts/lincoln_trace.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark.py
 "$PYTHON" -m py_compile scripts/track-artifacts.py
 "$PYTHON" -m py_compile scripts/task_tool_guard.py
 "$PYTHON" -m py_compile scripts/validate_stage.py

@@ -862,11 +862,23 @@ def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
     return str(handoff_path.relative_to(PROJECT_ROOT))
 
 
+def action_benchmark_report(state_file: Path, trigger: str) -> dict[str, str] | None:
+    """Generate a benchmark report for the current process state."""
+    from scripts import lincoln_benchmark
+
+    result = lincoln_benchmark.write_benchmark_report(state_file, trigger, PROJECT_ROOT)
+    if result is None:
+        return None
+    return {
+        "markdown": str(result["markdown"].relative_to(PROJECT_ROOT)),
+        "json": str(result["json"].relative_to(PROJECT_ROOT)),
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Lincoln stage loader")
     parser.add_argument("--stage", help="Stage ID")
-    parser.add_argument(
-        "--action",
+    parser.add_argument("--action",
         required=True,
         choices=[
             "load",
@@ -879,6 +891,7 @@ def main() -> int:
             "recover",
             "status",
             "handoff-report",
+            "benchmark-report",
         ],
     )
     parser.add_argument("--state-file", type=Path, default=None)
@@ -888,6 +901,7 @@ def main() -> int:
     parser.add_argument("--status", help="Node status for append-node")
     parser.add_argument("--handoff-file", help="Handoff file path for append-node")
     parser.add_argument("--artifacts", help="Comma-separated artifact paths for append-node")
+    parser.add_argument("--trigger", default="manual", help="Trigger type for benchmark-report")
     args = parser.parse_args()
 
     state_file = resolve_state_path(args.state_file)
@@ -952,6 +966,14 @@ def main() -> int:
             parser.error("--stage is required for handoff-report")
         path = action_handoff_report(args.stage, state)
         print(f"Handoff report written to: {path}")
+        return 0
+
+    if args.action == "benchmark-report":
+        result = action_benchmark_report(state_file, args.trigger)
+        if result is None:
+            print("Benchmark report skipped")
+        else:
+            print(f"Benchmark report written to:\n  {result['markdown']}\n  {result['json']}")
         return 0
 
     return 0

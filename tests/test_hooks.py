@@ -134,10 +134,12 @@ def process_package_state(tmp_path):
     return _write_process_state(tmp_path, state)
 
 
-def run_hook(hook_name, state_file, *extra_args):
+def run_hook(hook_name, state_file, *extra_args, project_root=None):
     hook = HOOKS_DIR / hook_name
     env = os.environ.copy()
     env["LINCOLN_STATE_FILE"] = str(state_file)
+    if project_root:
+        env["LINCOLN_BENCHMARK_PROJECT_ROOT"] = str(project_root)
     return subprocess.run(
         [str(hook), *extra_args],
         cwd=state_file.parent,
@@ -572,3 +574,42 @@ def test_post_tool_use_trace_records_failed_exit_code(process_package_state):
     assert result.returncode == 0
     entry = _last_trace_entry(process_package_state)
     assert entry["exit_code"] == 1
+
+
+def _benchmark_files(state_file, trigger):
+    slug = state_file.parent.name
+    benchmark_dir = state_file.parent.parent / slug / "benchmark"
+    return sorted(benchmark_dir.glob(f"lincoln-benchmark-{trigger}-*.json"))
+
+
+def test_post_tool_use_triggers_benchmark_on_handoff(process_package_state):
+    project_root = process_package_state.parent.parent
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "python scripts/stage_loader.py --stage clarify --action handoff-report"}',
+        "0",
+        project_root=project_root,
+    )
+    assert result.returncode == 0
+    files = _benchmark_files(process_package_state, "handoff")
+    assert len(files) >= 1
+
+
+def test_on_stop_triggers_session_stop_benchmark(process_package_state):
+    project_root = process_package_state.parent.parent
+    result = run_hook("on-stop.sh", process_package_state, project_root=project_root)
+    assert result.returncode == 0
+    files = _benchmark_files(process_package_state, "session_stop")
+    assert len(files) >= 1
+
+
+def test_on_stop_session_stop_benchmark_dedup(process_package_state):
+    project_root = process_package_state.parent.parent
+    run_hook("on-stop.sh", process_package_state, project_root=project_root)
+    files_before = _benchmark_files(process_package_state, "session_stop")
+    result = run_hook("on-stop.sh", process_package_state, project_root=project_root)
+    assert result.returncode == 0
+    files_after = _benchmark_files(process_package_state, "session_stop")
+    assert len(files_after) == len(files_before)
