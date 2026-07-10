@@ -1,6 +1,6 @@
 # Design Review: recording-replacement
 
-<!-- status: draft -->
+<!-- status: approved -->
 
 ## 背景
 
