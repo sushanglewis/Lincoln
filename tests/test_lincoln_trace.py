@@ -41,11 +41,36 @@ def test_categorize_tool():
     assert lincoln_trace.categorize_tool("Bash") == "bash"
     assert lincoln_trace.categorize_tool("TaskCreate") == "task"
     assert lincoln_trace.categorize_tool("mcp__context7__query-docs") == "mcp"
+    assert lincoln_trace.categorize_tool("LincolnHandoff") == "handoff"
     assert lincoln_trace.categorize_tool("Monitor") == "other"
 
 
 def test_redact_args_bash():
     assert lincoln_trace.redact_args("Bash", {"command": "echo hello"}) == {"command": "echo hello"}
+
+
+def test_redact_args_bash_masks_secrets():
+    command = (
+        "curl -H 'Authorization: Bearer super_secret_token' "
+        "--api-key AKIAIOSFODNN7EXAMPLE "
+        "--token=ghp_secrettoken "
+        "OPENAI_API_KEY=sk-abc123 "
+        "-u admin:password123 "
+        "https://token:secret@github.com/org/repo.git "
+        "https://api.example.com?api_key=leaked&token=leaked2 "
+        "normal-arg"
+    )
+    summary = lincoln_trace.redact_args("Bash", {"command": command})
+    masked = summary["command"]
+    assert "super_secret_token" not in masked
+    assert "AKIAIOSFODNN7EXAMPLE" not in masked
+    assert "ghp_secrettoken" not in masked
+    assert "sk-abc123" not in masked
+    assert "password123" not in masked
+    assert "token:secret@github.com" not in masked
+    assert "api_key=leaked" not in masked
+    assert "token=leaked2" not in masked
+    assert "normal-arg" in masked
 
 
 def test_redact_args_write():

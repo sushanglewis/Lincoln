@@ -15,6 +15,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+mkdir -p "$ROOT/.context"
+
 if [ -x "$ROOT/.venv/bin/python3" ]; then
     PYTHON="$ROOT/.venv/bin/python3"
 elif [ -x "$ROOT/venv/bin/python3" ]; then
@@ -52,7 +54,7 @@ if [[ "${LINCOLN_SKIP_TRACE:-}" != "1" ]]; then
             --tool "$TOOL_NAME" \
             --args-json "$TOOL_ARGS" \
             --exit-code "$EXIT_CODE" \
-            2>/dev/null || true
+            2>>"$ROOT/.context/lincoln-trace-errors.log" || true
     fi
 fi
 
@@ -91,21 +93,29 @@ if is_side_effect "$TOOL_NAME"; then
         2>/dev/null || true
 fi
 
-# Detect PR/branch sync events and append node record
-PR_EVENT=false
-EVENT_NODE=""
+# Determine the current stage so PR lifecycle nodes are attached to the stage
+# that actually produced the PR, instead of hardcoding "implement".
+CURRENT_STAGE=$("$PYTHON" - "$STATE_FILE" <<'PY' 2>/dev/null
+import sys, yaml
+state = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
+print(state.get("current_run", {}).get("current_stage") or "implement")
+PY
+) || CURRENT_STAGE="implement"
+
+# Detect PR/branch sync events, append a node record, and queue the matching
+# benchmark trigger in a single mapping to avoid duplicated logic.
+BENCHMARK_TRIGGER=""
 EVENT_STATUS=""
 if [[ "$TOOL_NAME" == "mcp__plugin_ecc_github__create_pull_request" ]]; then
-    PR_EVENT=true
-    EVENT_NODE="implement"
+    BENCHMARK_TRIGGER="pr_created"
     EVENT_STATUS="pr_submitted"
 elif [[ "$TOOL_NAME" == "mcp__plugin_ecc_github__merge_pull_request" ]]; then
-    PR_EVENT=true
-    EVENT_NODE="implement"
+    BENCHMARK_TRIGGER="pr_merged"
     EVENT_STATUS="merged"
 fi
 
-if [[ "$PR_EVENT" == true ]]; then
+if [[ -n "$BENCHMARK_TRIGGER" ]]; then
+    EVENT_NODE="${CURRENT_STAGE:-implement}"
     "$PYTHON" "$ROOT/scripts/stage_loader.py" \
         --state-file "$STATE_FILE" \
         --action append-node \
@@ -114,25 +124,12 @@ if [[ "$PR_EVENT" == true ]]; then
         2>/dev/null || true
 fi
 
-# Trigger benchmark reports for handoff/PR lifecycle events.
-BENCHMARK_TRIGGER=""
-if [[ "$TOOL_NAME" == "mcp__plugin_ecc_github__create_pull_request" ]]; then
-    BENCHMARK_TRIGGER="pr_created"
-elif [[ "$TOOL_NAME" == "mcp__plugin_ecc_github__merge_pull_request" ]]; then
-    BENCHMARK_TRIGGER="pr_merged"
-elif [[ "$TOOL_NAME" == "Bash" ]]; then
-    BASH_COMMAND=$(echo "$TOOL_ARGS" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin).get('command',''))" 2>/dev/null || echo "")
-    if [[ "$BASH_COMMAND" == *"--action handoff-report"* ]]; then
-        BENCHMARK_TRIGGER="handoff"
-    fi
-fi
-
+# Trigger benchmark reports for PR lifecycle events. Handoff reports are now
+# generated directly by stage_loader when it processes --action handoff-report.
 if [[ -n "$BENCHMARK_TRIGGER" ]]; then
-    BENCHMARK_ROOT="${LINCOLN_BENCHMARK_PROJECT_ROOT:-$ROOT}"
     LINCOLN_SKIP_TRACE=1 "$PYTHON" "$ROOT/scripts/lincoln_benchmark.py" \
         --state-file "$STATE_FILE" \
         --trigger "$BENCHMARK_TRIGGER" \
-        --project-root "$BENCHMARK_ROOT" \
         >/dev/null 2>&1 || true
 fi
 

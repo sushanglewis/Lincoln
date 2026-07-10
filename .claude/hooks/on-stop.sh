@@ -34,17 +34,11 @@ if [[ ! -f "$STATE_FILE" ]]; then
     exit 0
 fi
 
-"$PYTHON" - "$STATE_FILE" <<'PY'
-import sys
-from datetime import datetime, timezone
-import yaml
-
-path = sys.argv[1]
-state = yaml.safe_load(open(path, encoding="utf-8"))
-state["current_run"]["last_updated_at"] = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-with open(path, "w", encoding="utf-8") as f:
-    yaml.dump(state, f, allow_unicode=True, sort_keys=False)
-PY
+# Update last_updated_at through the canonical state mutation layer.
+"$PYTHON" "$ROOT/scripts/stage_loader.py" \
+    --state-file "$STATE_FILE" \
+    --action update-last-updated \
+    2>/dev/null || true
 
 CURRENT_STAGE=$("$PYTHON" - "$STATE_FILE" <<'PY' 2>/dev/null
 import sys, yaml
@@ -75,11 +69,9 @@ fi
 
 # Generate a session-stop benchmark report directly from the hook.
 # lincoln_benchmark.py handles its own 5-second deduplication.
-BENCHMARK_ROOT="${LINCOLN_BENCHMARK_PROJECT_ROOT:-$ROOT}"
 LINCOLN_SKIP_TRACE=1 "$PYTHON" "$ROOT/scripts/lincoln_benchmark.py" \
     --state-file "$STATE_FILE" \
     --trigger session_stop \
-    --project-root "$BENCHMARK_ROOT" \
     >/dev/null 2>&1 || true
 
 exit 0

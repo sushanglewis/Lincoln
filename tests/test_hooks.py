@@ -550,7 +550,7 @@ def test_post_tool_use_skips_read_trace(process_package_state):
     assert not _trace_file(process_package_state).exists()
 
 
-def test_post_tool_use_skips_trace_when_linclon_skip_trace_set(process_package_state, monkeypatch):
+def test_post_tool_use_skips_trace_when_lincoln_skip_trace_set(process_package_state, monkeypatch):
     monkeypatch.setenv("LINCOLN_SKIP_TRACE", "1")
     result = run_hook(
         "post-tool-use.sh",
@@ -576,25 +576,15 @@ def test_post_tool_use_trace_records_failed_exit_code(process_package_state):
     assert entry["exit_code"] == 1
 
 
+# Handoff benchmark reports are now triggered directly by stage_loader's
+# handoff-report action rather than by post-tool-use.sh string-matching the
+# Bash command.
+
+
 def _benchmark_files(state_file, trigger):
     slug = state_file.parent.name
     benchmark_dir = state_file.parent.parent / slug / "benchmark"
     return sorted(benchmark_dir.glob(f"lincoln-benchmark-{trigger}-*.json"))
-
-
-def test_post_tool_use_triggers_benchmark_on_handoff(process_package_state):
-    project_root = process_package_state.parent.parent
-    result = run_hook(
-        "post-tool-use.sh",
-        process_package_state,
-        "Bash",
-        '{"command": "python scripts/stage_loader.py --stage clarify --action handoff-report"}',
-        "0",
-        project_root=project_root,
-    )
-    assert result.returncode == 0
-    files = _benchmark_files(process_package_state, "handoff")
-    assert len(files) >= 1
 
 
 def test_on_stop_triggers_session_stop_benchmark(process_package_state):

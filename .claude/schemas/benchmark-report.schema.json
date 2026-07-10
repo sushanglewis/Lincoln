@@ -82,7 +82,8 @@
             "workflow_adherence_score": { "type": "number" },
             "human_gate_count": { "type": "integer" },
             "human_gate_wait_seconds": { "type": "integer" },
-            "human_gate_pass_rate": { "type": "number" }
+            "human_gate_pass_rate": { "type": "number" },
+            "build_codebase_knowledge_duration_seconds": { "type": "integer" }
           }
         },
         "collaboration": {
@@ -116,7 +117,8 @@
             "pr_merge_latency_seconds": { "type": "integer" },
             "knowledge_synced": { "type": ["boolean", "null"] },
             "time_to_pr_seconds": { "type": "integer" },
-            "time_to_merge_seconds": { "type": "integer" }
+            "time_to_merge_seconds": { "type": "integer" },
+            "unique_files_touched_ratio": { "type": "number" }
           }
         }
       }

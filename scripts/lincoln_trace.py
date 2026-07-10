@@ -11,7 +11,9 @@ from __future__ import annotations
 import argparse
 import fcntl
 import json
+import logging
 import os
+import re
 import sys
 import uuid
 from datetime import datetime, timezone
@@ -34,6 +36,34 @@ TRACE_SCHEMA_VERSION = "1.0.0"
 # Tools whose invocations are not traced to avoid recursion or noise.
 NO_TRACE_TOOLS = {"Read", "Grep", "Glob"}
 
+# Task-management tools that share the same trace category and redaction rules.
+TASK_TOOLS = frozenset({
+    "TaskCreate",
+    "TaskUpdate",
+    "TaskGet",
+    "TaskList",
+    "TaskOutput",
+    "TaskStop",
+})
+
+# Maximum length stored for a Bash command summary in the trace entry.
+COMMAND_SUMMARY_MAX_LEN = 500
+
+# Basic secret masking for Bash command strings. Values following common secret
+# flags or environment variable assignments are replaced with `***`.
+_MASK_PATTERNS = [
+    re.compile(r"(?i)((?:--api-key|-k|--token|--password|--secret|--access-token)\s+)\S+"),
+    re.compile(r"(?i)((?:--api-key|-k|--token|--password|--secret|--access-token)=)\S+"),
+    re.compile(
+        r"(?i)\b(API_KEY|TOKEN|PASSWORD|SECRET|GH_TOKEN|GITHUB_TOKEN|OPENAI_API_KEY|ANTHROPIC_API_KEY|AWS_ACCESS_KEY_ID|AWS_SECRET_ACCESS_KEY|ACCESS_TOKEN)=\S+"
+    ),
+    re.compile(r"(?i)(Authorization:\s*(?:Bearer|Basic|Token)\s+)\S+"),
+    re.compile(r"(?i)(X-Api-Key:\s+)\S+"),
+    re.compile(r"(?i)((?:--user|-u)\s+)\S+:\S+"),
+    re.compile(r"(?i)(https?://)[^:]+:[^@]+@"),
+    re.compile(r"(?i)([\?\x26])(api_key|token|key)=[^\x26]+"),
+]
+
 
 def categorize_tool(tool: str) -> str:
     """Bucket a Claude Code tool name into a Lincoln trace category."""
@@ -49,17 +79,12 @@ def categorize_tool(tool: str) -> str:
         return "edit"
     if tool == "Bash":
         return "bash"
-    if tool in {
-        "TaskCreate",
-        "TaskUpdate",
-        "TaskGet",
-        "TaskList",
-        "TaskOutput",
-        "TaskStop",
-    }:
+    if tool in TASK_TOOLS:
         return "task"
     if tool.startswith("mcp__"):
         return "mcp"
+    if tool == "LincolnHandoff":
+        return "handoff"
     return "other"
 
 
@@ -68,6 +93,62 @@ def _first_non_none(mapping: dict[str, Any], *keys: str) -> Any:
         if key in mapping:
             return mapping[key]
     return None
+
+
+def _mask_command(command: str) -> str:
+    masked = command
+    for pattern in _MASK_PATTERNS:
+        masked = pattern.sub(r"\1***", masked)
+    return masked
+
+
+def _redact_bash(args: dict[str, Any]) -> dict[str, Any]:
+    command = args.get("command", "")
+    return {"command": _mask_command(str(command))[:COMMAND_SUMMARY_MAX_LEN]}
+
+
+def _redact_file(args: dict[str, Any]) -> dict[str, Any]:
+    return {"file_path": str(args.get("file_path", ""))[:500]}
+
+
+def _redact_skill(args: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "skill": str(args.get("skill", ""))[:200],
+        "args": str(args.get("args", ""))[:500],
+    }
+
+
+def _redact_agent(args: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "subagent_type": str(args.get("subagent_type", ""))[:200] or "general-purpose",
+        "description": str(args.get("description", ""))[:300],
+    }
+
+
+def _redact_task(args: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "subject": str(_first_non_none(args, "subject", "taskId", "description") or "")[:300],
+    }
+
+
+def _redact_mcp(args: dict[str, Any]) -> dict[str, Any]:
+    summary: dict[str, Any] = {}
+    for key in ("path", "name", "url", "projectId", "skill", "query"):
+        if key in args:
+            summary[key] = str(args[key])[:200]
+    return summary
+
+
+def _redact_handoff(args: dict[str, Any]) -> dict[str, Any]:
+    return {"stage": str(args.get("stage", ""))[:100]}
+
+
+def _redact_generic(args: dict[str, Any]) -> dict[str, Any]:
+    return {
+        key: str(value)[:200]
+        for key, value in args.items()
+        if isinstance(value, (str, int, float, bool))
+    }
 
 
 def redact_args(tool: str, args: Any) -> dict[str, Any]:
@@ -82,50 +163,20 @@ def redact_args(tool: str, args: Any) -> dict[str, Any]:
         return {"_raw_type": type(args).__name__}
 
     if tool == "Bash":
-        command = args.get("command", "")
-        return {"command": str(command)[:500]}
-
+        return _redact_bash(args)
     if tool in ("Write", "Edit", "Read"):
-        return {"file_path": str(args.get("file_path", ""))[:500]}
-
+        return _redact_file(args)
     if tool == "Skill":
-        return {
-            "skill": str(args.get("skill", ""))[:200],
-            "args": str(args.get("args", ""))[:500],
-        }
-
+        return _redact_skill(args)
     if tool == "Agent":
-        return {
-            "subagent_type": str(args.get("subagent_type", ""))[:200] or "general-purpose",
-            "description": str(args.get("description", ""))[:300],
-        }
-
-    if tool in {
-        "TaskCreate",
-        "TaskUpdate",
-        "TaskGet",
-        "TaskList",
-        "TaskOutput",
-        "TaskStop",
-    }:
-        return {
-            "subject": str(_first_non_none(args, "subject", "taskId", "description") or "")[:300],
-        }
-
+        return _redact_agent(args)
+    if tool == "LincolnHandoff":
+        return _redact_handoff(args)
+    if tool in TASK_TOOLS:
+        return _redact_task(args)
     if tool.startswith("mcp__"):
-        # Keep only the first few primitive keys; never include full bodies.
-        summary: dict[str, Any] = {}
-        for key in ("path", "name", "url", "projectId", "skill", "query"):
-            if key in args:
-                summary[key] = str(args[key])[:200]
-        return summary
-
-    # Generic fallback: include primitive top-level keys only.
-    return {
-        key: str(value)[:200]
-        for key, value in args.items()
-        if isinstance(value, (str, int, float, bool))
-    }
+        return _redact_mcp(args)
+    return _redact_generic(args)
 
 
 def generate_sequence_id() -> str:
@@ -171,9 +222,65 @@ def _safe_json_loads(value: Any) -> Any:
     if isinstance(value, str):
         try:
             return json.loads(value)
-        except Exception:
+        except Exception as exc:
+            logging.warning("Could not parse trace args as JSON: %s", exc)
             return {"_unparsed": value[:200]}
     return value
+
+
+def _load_state(state_path: Path | None) -> dict[str, Any] | None:
+    if not state_path or not state_path.exists():
+        return None
+    try:
+        return load_yaml(state_path)
+    except Exception as exc:
+        logging.warning("Failed to load workflow state from %s: %s", state_path, exc)
+        return None
+
+
+def _build_trace_target(tool: str, args_summary: dict[str, Any]) -> str:
+    if tool == "Skill":
+        return str(args_summary.get("skill", ""))
+    if tool == "Agent":
+        return str(args_summary.get("subagent_type", ""))
+    if tool == "Bash":
+        return str(args_summary.get("command", ""))[:120]
+    if "file_path" in args_summary:
+        return str(args_summary["file_path"])
+    return str(args_summary.get("path", args_summary.get("name", "")))
+
+
+def _build_trace_entry(
+    tool: str,
+    args_summary: dict[str, Any],
+    exit_code: int,
+    run_id: str,
+    stage: str,
+) -> dict[str, Any]:
+    return {
+        "schema_version": TRACE_SCHEMA_VERSION,
+        "sequence_id": generate_sequence_id(),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "run_id": run_id,
+        "stage": stage,
+        "tool": tool,
+        "category": categorize_tool(tool),
+        "target": _build_trace_target(tool, args_summary),
+        "exit_code": int(exit_code),
+        "args_summary": args_summary,
+    }
+
+
+def _append_trace_line(trace_file: Path, entry: dict[str, Any]) -> None:
+    trace_file.parent.mkdir(parents=True, exist_ok=True)
+    line = json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n"
+    with open(trace_file, "a", encoding="utf-8") as fh:
+        fcntl.lockf(fh.fileno(), fcntl.LOCK_EX)
+        try:
+            fh.write(line)
+            fh.flush()
+        finally:
+            fcntl.lockf(fh.fileno(), fcntl.LOCK_UN)
 
 
 def append_trace_entry(
@@ -193,56 +300,13 @@ def append_trace_entry(
     if tool in NO_TRACE_TOOLS:
         return None
 
-    state: dict[str, Any] | None = None
-    if state_path and state_path.exists():
-        try:
-            state = load_yaml(state_path)
-        except Exception:
-            state = None
-
+    state = _load_state(state_path)
     resolved_run_id = _get_run_id(state, run_id)
     resolved_stage = _get_stage(state, stage)
     trace_file = _resolve_trace_file(state, state_path)
-
     args_summary = redact_args(tool, _safe_json_loads(args))
-
-    target = ""
-    if tool == "Skill":
-        target = str(args_summary.get("skill", ""))
-    elif tool == "Agent":
-        target = str(args_summary.get("subagent_type", ""))
-    elif tool == "Bash":
-        target = str(args_summary.get("command", ""))[:120]
-    elif "file_path" in args_summary:
-        target = str(args_summary["file_path"])
-    else:
-        target = str(args_summary.get("path", args_summary.get("name", "")))
-
-    entry = {
-        "schema_version": TRACE_SCHEMA_VERSION,
-        "sequence_id": generate_sequence_id(),
-        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "run_id": resolved_run_id,
-        "stage": resolved_stage,
-        "tool": tool,
-        "category": categorize_tool(tool),
-        "target": target,
-        "exit_code": int(exit_code),
-        "args_summary": args_summary,
-    }
-
-    trace_file.parent.mkdir(parents=True, exist_ok=True)
-    line = json.dumps(entry, ensure_ascii=False, separators=(",", ":")) + "\n"
-
-    with open(trace_file, "a", encoding="utf-8") as fh:
-        # Advisory lock for cross-process concurrency safety.
-        fcntl.lockf(fh.fileno(), fcntl.LOCK_EX)
-        try:
-            fh.write(line)
-            fh.flush()
-        finally:
-            fcntl.lockf(fh.fileno(), fcntl.LOCK_UN)
-
+    entry = _build_trace_entry(tool, args_summary, exit_code, resolved_run_id, resolved_stage)
+    _append_trace_line(trace_file, entry)
     return trace_file
 
 

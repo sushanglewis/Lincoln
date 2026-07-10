@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts import lincoln_benchmark
+from scripts import lincoln_benchmark, lincoln_benchmark_metrics
 
 
 def _write_state(tmp_path: Path, state: dict) -> Path:
@@ -142,6 +142,19 @@ def test_compute_metrics_retry_count(base_state):
     assert metrics["session"]["retry_count"] == 2
 
 
+def test_compute_metrics_build_codebase_knowledge_duration(base_state):
+    trace = [
+        _trace_entry("Bash", "bash", "x", stage="build-codebase-knowledge", timestamp="2026-07-10T10:00:00Z", sequence_id="s1"),
+        _trace_entry("Bash", "bash", "y", stage="build-codebase-knowledge", timestamp="2026-07-10T10:00:30Z", sequence_id="s2"),
+    ]
+    state = yaml.safe_load(base_state.read_text(encoding="utf-8"))
+    metrics, confidence = lincoln_benchmark.compute_metrics(trace, state, "S2", base_state.parent.parent)
+    assert metrics["workflow"]["build_codebase_knowledge_duration_seconds"] == 30
+    assert confidence["build_codebase_knowledge_duration_seconds"] == "estimated"
+    evaluation = lincoln_benchmark.evaluate_against_thresholds(metrics, "S2")
+    assert "build_codebase_knowledge_duration_seconds" in evaluation
+
+
 def test_compute_metrics_workflow_progress(base_state):
     trace = [
         _trace_entry("Bash", "bash", "x", stage="clarify", sequence_id="s1"),
@@ -158,8 +171,8 @@ def test_compute_metrics_workflow_progress(base_state):
 
 def test_compute_metrics_collaboration_handoff(base_state):
     trace = [
-        _trace_entry("Bash", "bash", "scripts/stage_loader.py --action handoff-report", stage="clarify", timestamp="2026-07-10T10:05:00Z", sequence_id="s1"),
-        _trace_entry("Bash", "bash", "echo", stage="clarify", timestamp="2026-07-10T10:00:00Z", sequence_id="s2"),
+        _trace_entry("Bash", "bash", "echo", stage="clarify", timestamp="2026-07-10T10:00:00Z", sequence_id="s1"),
+        _trace_entry("LincolnHandoff", "handoff", "", stage="clarify", timestamp="2026-07-10T10:05:00Z", sequence_id="s2"),
     ]
     state = yaml.safe_load(base_state.read_text(encoding="utf-8"))
     metrics, confidence = lincoln_benchmark.compute_metrics(trace, state, "S1", base_state.parent.parent)
@@ -209,6 +222,14 @@ def test_write_benchmark_report(base_state):
     assert payload["scenario"] == "S1"
     assert payload["trigger"] == "manual"
     assert "metrics" in payload
+    assert payload["metadata"]["linear_id"] == "LEW-27"
+
+
+def test_write_benchmark_report_linear_id_from_env(base_state, monkeypatch):
+    monkeypatch.setenv("LINCOLN_LINEAR_ID", "LEW-999")
+    result = lincoln_benchmark.write_benchmark_report(base_state, "manual", base_state.parent.parent)
+    payload = json.loads(result["json"].read_text(encoding="utf-8"))
+    assert payload["metadata"]["linear_id"] == "LEW-999"
 
 
 def test_write_benchmark_report_session_stop_dedup(base_state):
@@ -329,11 +350,9 @@ def test_evaluate_thresholds_other_scenarios():
 
 def test_main_cli(base_state):
     from scripts.lincoln_benchmark import main
-    import sys
     argv = [
         "--state-file", str(base_state),
         "--trigger", "manual",
-        "--project-root", str(base_state.parent.parent),
     ]
     assert main(argv) == 0
     files = list((base_state.parent / "benchmark").glob("lincoln-benchmark-manual-*.json"))
@@ -349,3 +368,43 @@ def test_load_trace_skips_malformed_lines(base_state):
     )
     trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lincoln-test")
     assert len(trace) == 1
+
+
+def test_run_audit_parses_results_key(tmp_path):
+    audit_script = tmp_path / "scripts" / "lincoln-audit.py"
+    audit_script.parent.mkdir(parents=True)
+    audit_script.write_text(
+        '#!/usr/bin/env python3\n'
+        'import json\n'
+        'print(json.dumps({"results": [{"status": "PASS"}, {"status": "FAIL"}, {"status": "WARN"}]}))\n',
+        encoding="utf-8",
+    )
+    audit_script.chmod(0o755)
+    counts = lincoln_benchmark_metrics._run_audit(tmp_path)
+    assert counts == {"PASS": 1, "FAIL": 1, "WARN": 1}
+
+
+def test_run_audit_parses_checks_key(tmp_path):
+    audit_script = tmp_path / "scripts" / "lincoln-audit.py"
+    audit_script.parent.mkdir(parents=True)
+    audit_script.write_text(
+        '#!/usr/bin/env python3\n'
+        'import json\n'
+        'print(json.dumps({"checks": [{"status": "PASS"}, {"status": "PASS"}]}))\n',
+        encoding="utf-8",
+    )
+    audit_script.chmod(0o755)
+    counts = lincoln_benchmark_metrics._run_audit(tmp_path)
+    assert counts == {"PASS": 2}
+
+
+def test_run_audit_returns_none_when_script_missing(tmp_path):
+    assert lincoln_benchmark_metrics._run_audit(tmp_path) is None
+
+
+def test_run_audit_returns_none_for_invalid_json(tmp_path):
+    audit_script = tmp_path / "scripts" / "lincoln-audit.py"
+    audit_script.parent.mkdir(parents=True)
+    audit_script.write_text("not json\n", encoding="utf-8")
+    audit_script.chmod(0o755)
+    assert lincoln_benchmark_metrics._run_audit(tmp_path) is None
