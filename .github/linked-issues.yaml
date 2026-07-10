@@ -35,7 +35,7 @@ parent:
 sub_issues:
   - issue_number: 25-phase-1
     title: "Phase 1: lincoln-record CLI skeleton and configuration"
-    status: in_progress
+    status: completed
     accepts:
       - tools/lincoln-record/src/cli.rs
       - tools/lincoln-record/src/config.rs
@@ -45,7 +45,14 @@ sub_issues:
       - tools/lincoln-record/tests/devices_test.rs
   - issue_number: 25-phase-2
     title: "Phase 2: Audio capture and checkpoint saving"
-    status: pending
+    status: in_progress
+    accepts:
+      - tools/lincoln-record/src/audio/source.rs
+      - tools/lincoln-record/src/audio/resampler.rs
+      - tools/lincoln-record/src/audio/saver.rs
+      - tools/lincoln-record/src/audio/capture/microphone.rs
+      - tools/lincoln-record/src/main.rs
+      - tools/lincoln-record/tests/integration_tests.rs
   - issue_number: 25-phase-3
     title: "Phase 3: Local transcription providers"
     status: pending

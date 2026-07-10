@@ -1,5 +1,7 @@
 use clap::Parser;
+use std::path::PathBuf;
 
+/// Top-level CLI for `lincoln-record`.
 #[derive(Debug, Clone, Parser)]
 #[command(name = "lincoln-record")]
 #[command(about = "Headless local recorder and transcriber for Lincoln interviews")]
@@ -17,6 +19,7 @@ pub enum Cli {
     Warmup,
 }
 
+/// Arguments for the `record` subcommand.
 #[derive(Debug, Clone, Parser)]
 pub struct RecordArgs {
     #[arg(long, help = "Unique session identifier for this interview")]
@@ -38,21 +41,27 @@ pub struct RecordArgs {
     pub diarize: bool,
 
     #[arg(long, help = "Output directory")]
-    pub output: Option<String>,
+    pub output: Option<PathBuf>,
 
     #[arg(long, help = "Language code (e.g. en, zh)")]
     pub language: Option<String>,
+
+    /// Recording duration in seconds. Hidden while full SIGINT stop control is in progress.
+    #[arg(long, hide = true)]
+    pub duration: Option<f32>,
 }
 
+/// Arguments for the `stop` subcommand.
 #[derive(Debug, Clone, Parser)]
 pub struct StopArgs {
     #[arg(long, help = "Session identifier to stop")]
     pub session_id: String,
 }
 
+/// Arguments for the `transcribe` subcommand.
 #[derive(Debug, Clone, Parser)]
 pub struct TranscribeArgs {
-    pub path: String,
+    pub path: PathBuf,
 
     #[arg(long, help = "Session identifier")]
     pub session_id: Option<String>,
@@ -67,7 +76,7 @@ pub struct TranscribeArgs {
     pub diarize: bool,
 
     #[arg(long, help = "Output directory")]
-    pub output: Option<String>,
+    pub output: Option<PathBuf>,
 
     #[arg(long, help = "Language code (e.g. en, zh)")]
     pub language: Option<String>,

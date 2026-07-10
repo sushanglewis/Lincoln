@@ -1,5 +1,7 @@
-use lincoln_record::cli::Cli;
+use std::path::PathBuf;
+
 use clap::Parser;
+use lincoln_record::cli::Cli;
 
 #[test]
 fn test_cli_parses_record_command() {
@@ -31,7 +33,7 @@ fn test_cli_parses_record_command() {
             assert_eq!(args.engine, "whisper");
             assert_eq!(args.model, Some("large-v3-turbo".to_string()));
             assert!(args.diarize);
-            assert_eq!(args.output, Some("/tmp/interviews".to_string()));
+            assert_eq!(args.output, Some(PathBuf::from("/tmp/interviews")));
             assert_eq!(args.language, Some("zh".to_string()));
         }
         other => panic!("expected Record command, got {:?}", other),
@@ -52,7 +54,7 @@ fn test_cli_parses_transcribe_command() {
 
     match cli {
         Cli::Transcribe(args) => {
-            assert_eq!(args.path, "/tmp/sample.wav");
+            assert_eq!(args.path, PathBuf::from("/tmp/sample.wav"));
             assert_eq!(args.session_id, Some("test-session".to_string()));
             assert!(args.diarize);
             assert!(!args.engine.is_empty());
@@ -64,11 +66,14 @@ fn test_cli_parses_transcribe_command() {
 #[test]
 fn test_cli_parses_devices_command() {
     let cli = Cli::try_parse_from(["lincoln-record", "devices"]).expect("devices should parse");
-    matches!(cli, Cli::Devices);
+    assert!(matches!(cli, Cli::Devices));
 }
 
 #[test]
 fn test_cli_record_requires_session_id() {
     let result = Cli::try_parse_from(["lincoln-record", "record"]);
-    assert!(result.is_err(), "record command should require --session-id");
+    assert!(
+        result.is_err(),
+        "record command should require --session-id"
+    );
 }

@@ -1,7 +1,9 @@
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
+/// Top-level configuration for `lincoln-record`.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
     pub audio: AudioConfig,
@@ -13,7 +15,8 @@ pub struct Config {
     pub output: OutputConfig,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// Audio capture and pipeline settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct AudioConfig {
     #[serde(default = "default_sample_rate")]
     pub sample_rate: u32,
@@ -21,7 +24,8 @@ pub struct AudioConfig {
     pub channels: u16,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// Transcription engine settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TranscriptionConfig {
     #[serde(default = "default_engine")]
     pub engine: String,
@@ -31,7 +35,8 @@ pub struct TranscriptionConfig {
     pub language: String,
 }
 
-#[derive(Debug, Default, Clone, Serialize, Deserialize, PartialEq)]
+/// Speaker diarization settings.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct DiarizationConfig {
     #[serde(default)]
     pub enabled: bool,
@@ -39,7 +44,8 @@ pub struct DiarizationConfig {
     pub hf_token: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+/// Output formatting and retention settings.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct OutputConfig {
     #[serde(default = "default_output_format")]
     pub format: String,
@@ -76,13 +82,16 @@ impl Default for OutputConfig {
 }
 
 impl Config {
+    /// Load configuration from `path`. Returns defaults if the file is missing.
     pub fn load_from_path<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         let path = path.as_ref();
         if !path.exists() {
             return Ok(Self::default());
         }
-        let contents = std::fs::read_to_string(path)?;
-        let config: Config = toml::from_str(&contents)?;
+        let contents = std::fs::read_to_string(path)
+            .with_context(|| format!("failed to read config: {}", path.display()))?;
+        let config: Config = toml::from_str(&contents)
+            .with_context(|| format!("failed to parse config: {}", path.display()))?;
         Ok(config)
     }
 }
