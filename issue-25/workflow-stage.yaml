@@ -6,10 +6,10 @@ workflow:
 current_run:
   run_id: 20260709154736-48f5cebe
   branch: issue-25
-  current_stage: split
-  status: not_started
+  current_stage: implement
+  status: in_progress
   started_at: '2026-07-09T15:47:36Z'
-  last_updated_at: '2026-07-10T00:35:09Z'
+  last_updated_at: '2026-07-10T04:54:10Z'
   issue_number: '25'
   variables:
     process_slug: issue-25
@@ -22,7 +22,7 @@ current_run:
   change_name: recording-replacement
   pr_number: ''
   feature_slug: recording-replacement
-  previous_stage: propose
+  previous_stage: split
 artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
   - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,\n  and replace placeholders ({issue_number},\
   \ {session_id}, {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
@@ -130,6 +130,54 @@ nodes:
   approved_by: system
   artifacts:
   - issue-25/openspec/changes/recording-replacement/
+  handoff_file: null
+- stage_id: split
+  node_id: split-2026-07-10T04:51:20Z
+  status: in_progress
+  started_at: '2026-07-10T04:51:20Z'
+  completed_at: '2026-07-10T04:52:06Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .github/linked-issues.yaml
+  handoff_file: null
+- stage_id: split
+  node_id: split-completed
+  status: completed
+  started_at: '2026-07-10T04:52:33Z'
+  completed_at: '2026-07-10T04:52:33Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .github/linked-issues.yaml
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-2026-07-10T04:53:26Z
+  status: in_progress
+  started_at: '2026-07-10T04:53:26Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts: []
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase1-2026-07-10
+  status: in_progress
+  started_at: '2026-07-10T04:54:10Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - tools/lincoln-record/Cargo.toml
+  - tools/lincoln-record/src/main.rs
+  - tools/lincoln-record/src/lib.rs
+  - tools/lincoln-record/src/cli.rs
+  - tools/lincoln-record/src/config.rs
+  - tools/lincoln-record/src/audio/mod.rs
+  - tools/lincoln-record/src/audio/devices.rs
+  - tools/lincoln-record/tests/cli_args.rs
+  - tools/lincoln-record/tests/config_test.rs
+  - tools/lincoln-record/tests/devices_test.rs
   handoff_file: null
 recovery:
   last_validated_checkpoint: ''
