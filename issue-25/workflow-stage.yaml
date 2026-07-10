@@ -9,7 +9,7 @@ current_run:
   current_stage: product-design-docs
   status: in_progress
   started_at: '2026-07-09T15:47:36Z'
-  last_updated_at: '2026-07-09T23:51:04Z'
+  last_updated_at: '2026-07-10T00:20:58Z'
   issue_number: '25'
   variables:
     process_slug: issue-25
@@ -70,6 +70,16 @@ nodes:
   approved_by: system
   artifacts:
   - issue-25/docs/research/recording-replacement-oss-options.md
+  handoff_file: null
+- stage_id: product-design-docs
+  node_id: product-design-docs-2026-07-10T00:20:27Z
+  status: in_progress
+  started_at: '2026-07-10T00:20:27Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-25/designs/recording-replacement/design-review.md
   handoff_file: null
 recovery:
   last_validated_checkpoint: ''
