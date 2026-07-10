@@ -7,6 +7,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+if [ -x "$PROJECT_ROOT/.venv/bin/python3" ]; then
+  PYTHON="$PROJECT_ROOT/.venv/bin/python3"
+elif [ -x "$PROJECT_ROOT/venv/bin/python3" ]; then
+  PYTHON="$PROJECT_ROOT/venv/bin/python3"
+else
+  PYTHON="python3"
+fi
+
 cd "$PROJECT_ROOT"
 
 echo "🚀 Initializing Lincoln project at $PROJECT_ROOT"
@@ -62,66 +70,56 @@ EOF
 fi
 
 # ---------------------------------------------------------------------------
-# 3. Check dependencies
+# 3. Check dependencies (warn only; bootstrap should have installed them)
 # ---------------------------------------------------------------------------
-MISSING=()
-
-check_command() {
-  if ! command -v "$1" > /dev/null 2>&1; then
-    MISSING+=("$2")
+if [ -f "$PROJECT_ROOT/.claude/skills/dependencies.yaml" ]; then
+  if ! "$PYTHON" "$PROJECT_ROOT/scripts/lincoln-setup.py" check --root "$PROJECT_ROOT" > /dev/null 2>&1; then
+    echo "⚠️  Lincoln dependency check found missing items."
+    echo "   Ask Claude to finish the bootstrap before creating issue work packages."
+  else
+    echo "✅ Lincoln dependency check passed"
   fi
-}
-
-check_command ffmpeg "ffmpeg (install via brew install ffmpeg)"
-check_command gh "GitHub CLI (install via brew install gh)"
-check_command openspec "OpenSpec CLI (npm install -g @fission-ai/openspec)"
-
-# Check for a Whisper implementation
-if ! command -v faster-whisper > /dev/null 2>&1 && \
-   ! python3 -c "import whisper" > /dev/null 2>&1 && \
-   ! command -v whisper > /dev/null 2>&1; then
-  MISSING+=("Whisper implementation (faster-whisper, openai-whisper, or whisper CLI)")
 fi
-
-if [ ${#MISSING[@]} -gt 0 ]; then
-  echo "❌ Missing dependencies:"
-  for dep in "${MISSING[@]}"; do
-    echo "  - $dep"
-  done
-  echo ""
-  echo "Please install missing dependencies and re-run this script."
-  exit 1
-fi
-
-echo "✅ All required dependencies found"
 
 # ---------------------------------------------------------------------------
-# 4. Validate OpenSpec config
+# 4. Ensure OpenSpec config is configured
 # ---------------------------------------------------------------------------
 CONFIG_FILE=".github/openspec-config.yml"
+NEEDS_INIT=false
+
 if [ ! -f "$CONFIG_FILE" ]; then
-  echo "❌ Error: $CONFIG_FILE not found"
-  exit 1
+  NEEDS_INIT=true
+else
+  if grep -qE "owner:\s*your-org" "$CONFIG_FILE" || grep -qE "name:\s*your-product-repo" "$CONFIG_FILE"; then
+    NEEDS_INIT=true
+  fi
 fi
 
-if ! grep -qE "^repository:" "$CONFIG_FILE" || \
-   ! grep -qE "owner:\s*\S+" "$CONFIG_FILE" || \
-   ! grep -qE "name:\s*\S+" "$CONFIG_FILE"; then
-  echo "❌ Error: $CONFIG_FILE must define repository.owner and repository.name"
-  echo "   Please edit $CONFIG_FILE and set your target GitHub repository."
-  exit 1
+if [ "$NEEDS_INIT" = true ]; then
+  echo ""
+  echo "📝 $CONFIG_FILE needs the real GitHub owner and repo name."
+  OWNER="${LINCOLN_REPO_OWNER:-}"
+  NAME="${LINCOLN_REPO_NAME:-}"
+
+  if [ -z "$OWNER" ] || [ -z "$NAME" ]; then
+    REMOTE_URL="$(git remote get-url origin 2>/dev/null || true)"
+    if [[ "$REMOTE_URL" =~ github\.com[:/]([^/]+)/([^/]+?)(\.git)?$ ]]; then
+      OWNER="${BASH_REMATCH[1]}"
+      NAME="${BASH_REMATCH[2]}"
+    fi
+  fi
+
+  if [ -n "$OWNER" ] && [ -n "$NAME" ]; then
+    "$PYTHON" "$PROJECT_ROOT/scripts/lincoln-setup.py" init-repo-config \
+      --root "$PROJECT_ROOT" --owner "$OWNER" --name "$NAME"
+  else
+    echo "   Please ask Claude to run:"
+    echo "     python scripts/lincoln-setup.py init-repo-config --owner <owner> --name <repo>"
+    echo "   Or set LINCOLN_REPO_OWNER and LINCOLN_REPO_NAME and re-run."
+  fi
+else
+  echo "✅ OpenSpec config already contains real values"
 fi
-
-REPO_OWNER="$(sed -nE 's/^[[:space:]]*owner:[[:space:]]*"?([^"#]+)"?.*/\1/p' "$CONFIG_FILE" | head -1 | xargs)"
-REPO_NAME="$(sed -nE 's/^[[:space:]]*name:[[:space:]]*"?([^"#]+)"?.*/\1/p' "$CONFIG_FILE" | head -1 | xargs)"
-
-if [ "$REPO_OWNER" = "your-org" ] || [ "$REPO_NAME" = "your-product-repo" ]; then
-  echo "❌ Error: $CONFIG_FILE still contains the default placeholder repository."
-  echo "   Set repository.owner and repository.name to the real target repository before initialization."
-  exit 1
-fi
-
-echo "✅ OpenSpec config valid"
 
 # ---------------------------------------------------------------------------
 # 5. Make validator executable
@@ -135,10 +133,14 @@ fi
 # ---------------------------------------------------------------------------
 # 6. GitHub CLI auth check
 # ---------------------------------------------------------------------------
-if ! gh auth status > /dev/null 2>&1; then
-  echo "⚠️  GitHub CLI is not authenticated. Run 'gh auth login' before using split-to-github."
+if command -v gh > /dev/null 2>&1; then
+  if ! gh auth status > /dev/null 2>&1; then
+    echo "⚠️  GitHub CLI is installed but not authenticated. Ask Claude to run 'gh auth login' before using split-to-github."
+  else
+    echo "✅ GitHub CLI authenticated"
+  fi
 else
-  echo "✅ GitHub CLI authenticated"
+  echo "⚠️  GitHub CLI not found. Ask Claude to install it during bootstrap."
 fi
 
 # ---------------------------------------------------------------------------
@@ -169,10 +171,14 @@ else
   fi
 fi
 
+# Record that project initialization is complete.
+"$PYTHON" "$PROJECT_ROOT/scripts/lincoln-setup.py" mark-step \
+  --root "$PROJECT_ROOT" --step init_project --status completed
+
 echo ""
 echo "🎉 Lincoln project initialized successfully!"
 echo ""
 echo "Next steps:"
-echo "  1. Create a feature process branch: scripts/init-lincoln-branch.sh <session-id> <design-id> --process-slug <feature-slug> --push"
+echo "  1. Create a feature process branch: scripts/init-lincoln-branch.sh --issue-number <number> --session-id <session-id> --design-id <design-id> --process-slug <feature-slug> --push"
 echo "  2. Place interview recordings in <feature-slug>/recordings/"
 echo "  3. Say to Claude Code: '处理一下这个访谈录音 <feature-slug>/recordings/<file>'"

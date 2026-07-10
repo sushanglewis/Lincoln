@@ -33,6 +33,7 @@ fi
 "$PYTHON" - "$ROOT" "$DEP_FILE" "$SILENT" <<'PY'
 import sys
 import shutil
+import platform
 from pathlib import Path
 import yaml
 
@@ -47,6 +48,22 @@ errors = []
 warnings = []
 install_commands = []
 
+system = platform.system().lower()
+if system == "darwin":
+    platform_name = "macos"
+elif system == "linux":
+    platform_name = "linux"
+else:
+    platform_name = system
+
+def get_install_command(cfg):
+    if "platforms" in cfg and isinstance(cfg["platforms"], dict):
+        if platform_name in cfg["platforms"]:
+            return cfg["platforms"][platform_name]
+        if "linux" in cfg["platforms"]:
+            return cfg["platforms"]["linux"]
+    return cfg.get("install")
+
 for name, cfg in manifest.get("skills", {}).items():
     typ = cfg.get("type", "skill")
     is_required = cfg.get("required", True)
@@ -55,8 +72,9 @@ for name, cfg in manifest.get("skills", {}).items():
         binary = cfg.get("binary", name)
         if not shutil.which(binary):
             msg = f"CLI missing: {binary} (skill: {name})"
-            if cfg.get("install"):
-                install_commands.append(f"# Install {name}: {cfg['install']}")
+            cmd = get_install_command(cfg)
+            if cmd:
+                install_commands.append(f"# Install {name}: {cmd}")
             if is_required:
                 errors.append(msg)
             else:
@@ -70,7 +88,9 @@ for name, cfg in manifest.get("skills", {}).items():
         if not expected.exists():
             msg = f"Skill missing: {name} (expected {expected})"
             if source and source != "inline":
-                install_commands.append(f"# Install {name}: git clone {source} {skill_root / name}")
+                ref = cfg.get("ref", "")
+                ref_arg = f" --branch {ref}" if ref else ""
+                install_commands.append(f"# Install {name}: git clone{ref_arg} --single-branch --depth 1 {source} {skill_root / name}")
             if is_required:
                 errors.append(msg)
             else:

@@ -9,6 +9,7 @@ skills:
     source: https://github.com/sushanglewis/claude-superpowers.git
     ref: v1.2.0
     type: skill
+    required: true
     required_skills:
       - superpowers:brainstorming
       - superpowers:writing-plans
@@ -27,6 +28,7 @@ skills:
     source: https://github.com/sushanglewis/gsd-skills.git
     ref: v2.0.1
     type: skill
+    required: true
     required_skills:
       - gsd-import
       - gsd-docs-update
@@ -42,6 +44,43 @@ skills:
     ref: v0.5.0
     type: cli
     binary: openspec
+    required: true
+    platforms:
+      macos: npm install -g @fission-ai/openspec
+      linux: npm install -g @fission-ai/openspec
+    install_note: Requires Node.js >= 20.
+
+  gh:
+    source: https://cli.github.com/
+    type: cli
+    binary: gh
+    required: true
+    platforms:
+      macos: brew install gh
+      linux: sudo apt-get install gh
+    install_note: After install, run 'gh auth login'.
+
+  ffmpeg:
+    source: https://ffmpeg.org/
+    type: cli
+    binary: ffmpeg
+    required: true
+    platforms:
+      macos: brew install ffmpeg
+      linux: sudo apt-get install ffmpeg
+    install_note: Used for audio/video processing during interview ingestion.
+
+  faster-whisper:
+    source: https://github.com/SYSTRAN/faster-whisper.git
+    type: cli
+    binary: faster-whisper
+    required: true
+    platforms:
+      macos: pip install faster-whisper
+      linux: pip install faster-whisper
+    install_note: |
+      Recommended local Whisper implementation.
+      Alternatives: openai-whisper (`pip install openai-whisper`) or OpenAI API.
 
   lincoln-explore-opensource:
     source: inline
@@ -58,12 +97,17 @@ skills:
     type: skill
     path: .claude/skills/lincoln-workflow-router
 
-  # oh-my-claudecode — optional multi-agent orchestration layer
+  # oh-my-claudecode — optional multi-agent orchestration layer, installed by default
   oh-my-claudecode:
     source: https://github.com/sushanglewis/oh-my-claudecode.git
     ref: v1.0.0
     type: plugin
     required: false
+    default_install: true
+    platforms:
+      macos: git clone --branch v1.0.0 --single-branch --depth 1 https://github.com/sushanglewis/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
+      linux: git clone --branch v1.0.0 --single-branch --depth 1 https://github.com/sushanglewis/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
+    install_note: Optional but recommended. Installed as a skill under ~/.claude/skills/.
     recommended_skills:
       - oh-my-claudecode:plan
       - oh-my-claudecode:team

@@ -2,6 +2,21 @@
 
 > **Lincoln 是什么？** Lincoln 是一个基于 **Conductor + Claude Code + OpenSpec + GitHub + Obsidian** 的 AI-Native 产研协作体系。它以 issue 为单元、以阶段为节奏、以门控为质量保障，将需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、GitHub Issues 拆分、研发实现和知识库沉淀串联成可重复的 SOP，让产品经理、设计师、工程师与 Agent 在各自擅长的环节高效协作。
 
+## 首次打开？让 Claude 帮你完成安装
+
+Lincoln 的 hooks 通常会在你第一次打开仓库时自动触发安装。如果 Claude 没有自动开始，请复制下面的提示词发送给 Claude：
+
+> 请帮我完成 Lincoln 的初始化安装：
+> 1. 检查当前仓库的 Lincoln 环境，列出所有缺失的依赖。
+> 2. 安装外部 skills：superpowers（v1.2.0）、gsd（v2.0.1）到 `~/.claude/skills/`，并确保 ref 正确。
+> 3. 安装 CLI 工具：openspec、gh、ffmpeg、以及一个 Whisper 实现（优先 faster-whisper）。
+> 4. 安装 oh-my-claudecode 插件。
+> 5. 交互式配置 `.github/openspec-config.yml`（询问我 GitHub owner 和 repo name）。
+> 6. 运行 `scripts/init-project.sh` 完成项目初始化。
+> 7. 完成后汇报状态。
+>
+> 安装任何全局工具或写入配置前，请先向我确认。
+
 > **使用者还是开发者？**
 > - **使用者**（产品、设计、研发、QA）：直接跳到 [快速开始](#快速开始)。
 > - **开发者**（工作流开发者、框架维护者）：阅读 [框架文档](#框架文档) 和 [`CLAUDE.md`](CLAUDE.md)。
@@ -197,10 +212,10 @@ Lincoln 提供两个配套工具：
 - `ecc` CLI（来自 everything-claude-code）
 - Obsidian（可选，用于可视化浏览 vault）
 
-此外，Lincoln 依赖若干外部 skill/CLI，清单见 `.claude/skills/dependencies.yaml`。初始化或升级后请运行：
+此外，Lincoln 依赖若干外部 skill/CLI，清单见 `.claude/skills/dependencies.yaml`。初始化或升级后请让 Claude 运行：
 
 ```bash
-scripts/check-skill-dependencies.sh
+python scripts/lincoln-setup.py check
 ```
 
 ---

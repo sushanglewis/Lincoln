@@ -26,10 +26,43 @@ echo ""
 echo "=== Lincoln Session Start ==="
 echo ""
 
-# 1. Dependency check (detect + prompt, do not auto-install)
+# 1. Dependency check + first-run prompt
 if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
     echo "[Lincoln] Checking dependencies..."
-    "$PYTHON" "$ROOT/scripts/check-skill-dependencies.sh" --silent 2>/dev/null || true
+    if ! "$PYTHON" "$ROOT/scripts/lincoln-setup.py" check --root "$ROOT" > /dev/null 2>&1; then
+        SETUP_COMPLETE="false"
+        if [[ -f "$ROOT/.context/lincoln-setup-state.yaml" ]]; then
+            if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
+                SETUP_COMPLETE="true"
+            fi
+        fi
+        if [[ "$SETUP_COMPLETE" != "true" ]]; then
+            echo ""
+            echo "=== Lincoln 首次安装 ==="
+            echo ""
+            echo "你是 Lincoln 的初始化助手。当前仓库尚未完成 Lincoln 环境配置。"
+            echo "请立即执行以下操作，并在每一步完成后向用户简要汇报："
+            echo ""
+            echo "1. 调用 Lincoln setup skill："
+            echo "   请使用 Skill 工具调用 lincoln-setup skill，或运行等效命令："
+            echo "   python scripts/lincoln-setup.py bootstrap"
+            echo ""
+            echo "2. 该命令会："
+            echo "   - 检查并安装外部 skills（superpowers v1.2.0、gsd v2.0.1）到 ~/.claude/skills/"
+            echo "   - 安装 CLI 工具：openspec、gh、ffmpeg、faster-whisper"
+            echo "   - 安装 oh-my-claudecode 插件"
+            echo "   - 交互式配置 .github/openspec-config.yml"
+            echo "   - 运行 scripts/init-project.sh 完成项目初始化"
+            echo ""
+            echo "3. 如果安装过程中需要你向用户确认（例如安装全局工具、输入 GitHub 仓库信息），请先询问用户，不要擅自继续。"
+            echo ""
+            echo "在完成以上所有步骤之前，请不要进行任何其他 Lincoln 工作流操作。"
+            echo ""
+            echo "=== End Lincoln 首次安装 ==="
+            echo ""
+            exit 0
+        fi
+    fi
     echo ""
 fi
 
