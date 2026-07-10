@@ -1,19 +1,43 @@
-"""Tests for .claude/stages/stage-manifest.yaml."""
+"""Tests for .claude/stages/*.yaml stage definitions."""
 from pathlib import Path
 
 import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-MANIFEST_PATH = ROOT / ".claude" / "stages" / "stage-manifest.yaml"
+STAGES_DIR = ROOT / ".claude" / "stages"
 WORKFLOW_PATH = ROOT / ".claude" / "workflows" / "interview-to-knowledge.yaml"
+
+REQUIRED_KEYS = {
+    "schema_version",
+    "id",
+    "name",
+    "description",
+    "templates",
+    "prerequisite_stage",
+    "next_stage",
+    "human_gate",
+    "agent",
+    "skills",
+    "artifacts",
+    "context",
+    "gates",
+}
 
 
 @pytest.fixture
-def manifest():
-    data = yaml.safe_load(MANIFEST_PATH.read_text(encoding="utf-8"))
-    assert isinstance(data, dict)
-    return data
+def stage_files():
+    return sorted(p for p in STAGES_DIR.glob("*.yaml") if p.stem != "stage-manifest")
+
+
+@pytest.fixture
+def stages(stage_files):
+    loaded = []
+    for path in stage_files:
+        data = yaml.safe_load(path.read_text(encoding="utf-8"))
+        assert isinstance(data, dict), f"{path.name}: root is not a mapping"
+        loaded.append((path, data))
+    return loaded
 
 
 # ---------------------------------------------------------------------------
@@ -21,90 +45,56 @@ def manifest():
 # ---------------------------------------------------------------------------
 
 
-def test_yaml_has_schema_version(manifest):
-    assert "schema_version" in manifest
+def test_stage_yaml_files_exist(stage_files):
+    assert stage_files, f"No stage YAML files found under {STAGES_DIR}"
 
 
-def test_yaml_has_stages(manifest):
-    assert "stages" in manifest
-    assert isinstance(manifest["stages"], list)
+def test_every_stage_has_required_keys(stages):
+    for path, data in stages:
+        missing = REQUIRED_KEYS - set(data.keys())
+        assert not missing, f"{path.name}: missing keys {missing}"
 
 
-# ---------------------------------------------------------------------------
-# Stage manifest structure tests
-# ---------------------------------------------------------------------------
+def test_every_stage_has_context_goal(stages):
+    for path, data in stages:
+        assert "goal" in data.get("context", {}), f"{path.name}: missing context.goal"
 
 
-def test_every_stage_has_id(manifest):
-    for stage in manifest["stages"]:
-        assert "id" in stage, f"Stage missing 'id': {stage}"
+def test_human_gate_is_boolean(stages):
+    for path, data in stages:
+        assert isinstance(data["human_gate"], bool), f"{path.name}: human_gate is not a bool"
 
 
-def test_every_stage_has_name(manifest):
-    for stage in manifest["stages"]:
-        assert "name" in stage, f"Stage '{stage.get('id', '?')}' missing 'name'"
+def test_agent_block_has_primary(stages):
+    for path, data in stages:
+        agent = data.get("agent", {})
+        assert "primary" in agent, f"{path.name}: missing agent.primary"
 
 
-def test_every_stage_has_human_gate(manifest):
-    for stage in manifest["stages"]:
-        assert "human_gate" in stage, f"Stage '{stage.get('id', '?')}' missing 'human_gate'"
-        assert isinstance(stage["human_gate"], bool)
+def test_skills_are_lists(stages):
+    for path, data in stages:
+        skills = data.get("skills", {})
+        assert isinstance(skills.get("required", []), list), f"{path.name}: required skills not a list"
+        assert isinstance(skills.get("optional", []), list), f"{path.name}: optional skills not a list"
 
 
-def test_every_stage_has_required_skills(manifest):
-    for stage in manifest["stages"]:
-        assert "required_skills" in stage, f"Stage '{stage.get('id', '?')}' missing 'required_skills'"
-
-
-def test_every_stage_has_agent_routing(manifest):
-    for stage in manifest["stages"]:
-        assert "primary_agent" in stage, f"Stage '{stage.get('id', '?')}' missing 'primary_agent'"
-        assert "review_agents" in stage, f"Stage '{stage.get('id', '?')}' missing 'review_agents'"
-        assert "handoff_to" in stage, f"Stage '{stage.get('id', '?')}' missing 'handoff_to'"
-        assert isinstance(stage["review_agents"], list)
-
-
-def test_every_stage_has_context_files(manifest):
-    for stage in manifest["stages"]:
-        assert "context_files" in stage, f"Stage '{stage.get('id', '?')}' missing 'context_files'"
-        ctx = stage["context_files"]
-        for key in ["agents_md", "checklist_md", "skills_md", "prompt_md"]:
-            assert key in ctx, f"Stage '{stage.get('id', '?')}' context_files missing '{key}'"
+def test_artifacts_are_lists(stages):
+    for path, data in stages:
+        artifacts = data.get("artifacts", {})
+        assert isinstance(artifacts.get("required", []), list), f"{path.name}: required artifacts not a list"
+        assert isinstance(artifacts.get("optional", []), list), f"{path.name}: optional artifacts not a list"
 
 
 # ---------------------------------------------------------------------------
-# Physical directory tests
+# Id consistency tests
 # ---------------------------------------------------------------------------
 
 
-def test_every_stage_has_physical_directory(manifest):
-    for stage in manifest["stages"]:
-        stage_dir = ROOT / ".claude" / "stages" / stage["id"]
-        assert stage_dir.is_dir(), f"Stage directory missing: {stage_dir}"
-
-
-def test_every_stage_has_agents_md(manifest):
-    for stage in manifest["stages"]:
-        path = ROOT / ".claude" / "stages" / stage["id"] / "AGENTS.md"
-        assert path.exists(), f"AGENTS.md missing for stage '{stage['id']}'"
-
-
-def test_every_stage_has_checklist_md(manifest):
-    for stage in manifest["stages"]:
-        path = ROOT / ".claude" / "stages" / stage["id"] / "CHECKLIST.md"
-        assert path.exists(), f"CHECKLIST.md missing for stage '{stage['id']}'"
-
-
-def test_every_stage_has_skills_md(manifest):
-    for stage in manifest["stages"]:
-        path = ROOT / ".claude" / "stages" / stage["id"] / "SKILLS.md"
-        assert path.exists(), f"SKILLS.md missing for stage '{stage['id']}'"
-
-
-def test_every_stage_has_prompt_md(manifest):
-    for stage in manifest["stages"]:
-        path = ROOT / ".claude" / "stages" / stage["id"] / "PROMPT.md"
-        assert path.exists(), f"PROMPT.md missing for stage '{stage['id']}'"
+def test_stage_filename_matches_id(stages):
+    for path, data in stages:
+        assert path.stem == data["id"], (
+            f"{path.name}: filename '{path.stem}' does not match id '{data['id']}'"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -112,27 +102,24 @@ def test_every_stage_has_prompt_md(manifest):
 # ---------------------------------------------------------------------------
 
 
-def test_every_workflow_stage_in_manifest(manifest):
+def test_every_workflow_stage_has_yaml(stages):
     workflow = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
     workflow_steps = workflow.get("workflow", {}).get("steps", [])
     workflow_stage_ids = {step["id"] for step in workflow_steps}
 
-    manifest_stage_ids = {stage["id"] for stage in manifest["stages"]}
+    yaml_stage_ids = {data["id"] for _, data in stages}
 
-    missing = workflow_stage_ids - manifest_stage_ids
-    assert not missing, f"Workflow stages missing from manifest: {missing}"
+    missing = workflow_stage_ids - yaml_stage_ids
+    assert not missing, f"Workflow stages missing from stage YAMLs: {missing}"
 
 
 # ---------------------------------------------------------------------------
-# Context file existence tests
+# Gate tests
 # ---------------------------------------------------------------------------
 
 
-def test_context_files_paths_exist(manifest):
-    for stage in manifest["stages"]:
-        ctx = stage.get("context_files", {})
-        for key, rel_path in ctx.items():
-            full_path = ROOT / rel_path
-            assert full_path.exists(), (
-                f"Stage '{stage['id']}' context file '{key}' not found: {full_path}"
-            )
+def test_entry_and_exit_gates_are_lists(stages):
+    for path, data in stages:
+        gates = data.get("gates", {})
+        assert isinstance(gates.get("entry", []), list), f"{path.name}: entry gates not a list"
+        assert isinstance(gates.get("exit", []), list), f"{path.name}: exit gates not a list"

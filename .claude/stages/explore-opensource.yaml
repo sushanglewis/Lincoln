@@ -1,0 +1,89 @@
+schema_version: 2.0.0
+id: explore-opensource
+name: Explore Open Source
+description: 'Researches existing open-source projects that can inform
+
+  or solve the current requirement. Triggered by oss-first-design
+
+  template after clarify.'
+templates:
+- oss-first-design
+prerequisite_stage: clarify
+next_stage: product-design-docs
+human_gate: false
+agent:
+  primary: lincoln-researcher
+  reviewers:
+  - lincoln-engineer
+  handoff_to: lincoln-pm
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/docs/research/{change_name}-oss-options.md'
+context:
+  goal: 在设计阶段探索开源方案，避免从零造轮子，并为实现提供参考。
+  execution: '## Allowed actions
+
+    - 使用 WebSearch/GitHub MCP 搜索开源项目
+
+    - 阅读项目 README、license、发布历史
+
+    - 生成 `{process_slug}/docs/research/{change_name}-oss-options.md`
+
+
+    ## Skills and tools
+
+    # explore-opensource 阶段技能
+
+
+    ## 技能路由
+
+
+    本阶段技能路由定义见 `.claude/skills/routing.yaml`：
+
+    - **required**: （无 — 由 `lincoln-explore-opensource` 内联技能主导）
+
+    - **optional**: `gsd:explore`
+
+    - **human_gate**: 否
+
+
+    ## 主技能
+
+
+    - `lincoln-explore-opensource`
+
+
+    ## 辅助工具
+
+
+    - `WebSearch` — 搜索候选项目
+
+    - GitHub MCP / `mcp__plugin_ecc_github__search_repositories` — GitHub 搜索
+
+    - `Read` / `WebFetch` — 阅读 README 和文档
+
+    - `Write` — 生成研究报告'
+  constraints: '## Forbidden actions
+
+    - 下载或执行第三方代码
+
+    - 自动选择最终方案（必须 PM 确认）
+
+    - 阻塞设计流程：搜索失败时降级为简短摘要并继续
+
+
+    ## Human confirmation
+
+    PM 必须确认推荐方案或明确要求继续自行设计。'
+gates:
+  entry:
+  - check: previous_gate_passed
+    args:
+    - clarify
+  exit:
+  - check: artifact_exists
+    args:
+    - '{process_slug}/docs/research/{change_name}-oss-options.md'

@@ -1,0 +1,99 @@
+schema_version: 2.0.0
+id: build-codebase-knowledge
+name: Build Codebase Knowledge
+description: 'Scans existing source code and builds knowledge base
+
+  for projects entering Lincoln with existing code but no
+
+  feature knowledge base. Triggered by existing-project-iteration
+
+  template after workflow-router.'
+templates:
+- existing-project-iteration
+prerequisite_stage: workflow-router
+next_stage: clarify
+human_gate: false
+agent:
+  primary: lincoln-knowledge-curator
+  reviewers:
+  - lincoln-engineer
+  handoff_to: lincoln-pm
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - knowledge/00-index.md
+context:
+  goal: 为已有源码项目构建功能知识库，使后续 PM 迭代能基于事实。
+  execution: '## Allowed actions
+
+    - 读取源码、README、CHANGELOG
+
+    - 调用 `lincoln-build-codebase-knowledge`
+
+    - 生成/更新 `knowledge/` 下的 Markdown 文件
+
+
+    ## Skills and tools
+
+    # build-codebase-knowledge 阶段技能
+
+
+    ## 技能路由
+
+
+    本阶段技能路由定义见 `.claude/skills/routing.yaml`：
+
+    - **required**: （无 — 由 `lincoln-build-codebase-knowledge` 内联技能主导）
+
+    - **optional**: `gsd:map-codebase`
+
+    - **human_gate**: 否
+
+
+    ## 主技能
+
+
+    - `lincoln-build-codebase-knowledge`
+
+
+    ## 辅助工具
+
+
+    - `scripts/build-codebase-knowledge.py` — 扫描代码库结构
+
+    - `Read` / `Glob` / `Bash` — 读取源码和文档
+
+    - `Edit` / `Write` — 生成知识文档
+
+
+    ## 输出位置
+
+
+    - `knowledge/00-index.md`
+
+    - `knowledge/03-features/existing-*.md`
+
+    - `knowledge/05-glossary/00-index.md`'
+  constraints: '## Forbidden actions
+
+    - 修改源码
+
+    - 生成未经验证的假设
+
+    - 跳过 PM 确认直接标记完成
+
+
+    ## Human confirmation
+
+    PM 必须确认 `knowledge/00-index.md` 中的功能列表后，阶段才能标记完成。'
+gates:
+  entry:
+  - check: previous_gate_passed
+    args:
+    - workflow-router
+  exit:
+  - check: artifact_exists
+    args:
+    - knowledge/00-index.md

@@ -27,11 +27,9 @@ from scripts.stage_loader import (  # noqa: E402
     STATE_PATH,
     LEGACY_STATE_PATH,
     STAGES_DIR,
-    SKILL_ROUTING_PATH,
-    LEGACY_SKILL_ROUTING_PATH,
     compute_next_stage,
-    find_stage,
     load_state,
+    load_stage_yaml,
     load_workflow,
     load_skill_routing,
     get_stage_skills,
@@ -66,14 +64,11 @@ def get_waiting_for(stage_status: str | None, stage_def: dict[str, Any]) -> str:
 
 
 def get_loaded_context(stage_id: str) -> list[str]:
-    """Return paths to context files for the given stage."""
-    stage_dir = STAGES_DIR / stage_id
-    context_files = []
-    for filename in ["AGENTS.md", "CHECKLIST.md", "SKILLS.md", "PROMPT.md"]:
-        path = stage_dir / filename
-        if path.exists():
-            context_files.append(str(path.relative_to(PROJECT_ROOT)))
-    return context_files
+    """Return the path to the stage YAML context file."""
+    stage_yaml = STAGES_DIR / f"{stage_id}.yaml"
+    if stage_yaml.exists():
+        return [str(stage_yaml.relative_to(PROJECT_ROOT))]
+    return []
 
 
 def get_required_skills(stage_id: str) -> dict[str, list[str]]:
@@ -82,11 +77,15 @@ def get_required_skills(stage_id: str) -> dict[str, list[str]]:
     return get_stage_skills(routing_data, stage_id)
 
 
-def get_required_artifacts(workflow: dict[str, Any], stage_id: str, state: dict[str, Any] | None = None, state_file: Path | None = None) -> list[str]:
-    """Return artifact paths declared in the workflow for the stage, with variables resolved."""
-    stage_def = find_stage(workflow, stage_id)
-    artifacts = stage_def.get("artifacts", [])
-    return [interpolate_artifact(str(art), state, state_file or resolve_state_path(None)) for art in artifacts]
+def get_required_artifacts(stage_id: str, state: dict[str, Any] | None = None, state_file: Path | None = None) -> list[str]:
+    """Return artifact paths declared in the stage YAML, with variables resolved."""
+    try:
+        stage = load_stage_yaml(stage_id)
+    except Exception:
+        return []
+    artifacts = stage.get("artifacts", {})
+    paths = artifacts.get("required", [])
+    return [interpolate_artifact(str(art), state, state_file or resolve_state_path(None)) for art in paths]
 
 
 def get_next_action(state: dict[str, Any], stage_id: str | None, workflow: dict[str, Any]) -> str:
@@ -105,9 +104,12 @@ def get_next_action(state: dict[str, Any], stage_id: str | None, workflow: dict[
         stage_state = latest_node or {}
         stage_status = stage_state.get("status", state.get("current_run", {}).get("status", "unknown"))
 
-    stage_def = find_stage(workflow, stage_id)
-    human_gate = stage_def.get("human_gate", False)
-    waiting_for = get_waiting_for(stage_status, stage_def)
+    try:
+        stage_yaml = load_stage_yaml(stage_id)
+    except Exception:
+        stage_yaml = {}
+    human_gate = stage_yaml.get("human_gate", False)
+    waiting_for = get_waiting_for(stage_status, stage_yaml)
 
     if stage_status == "not_started":
         if human_gate:
@@ -148,7 +150,7 @@ def compute_metrics(state: dict[str, Any]) -> dict[str, Any]:
         waiting_for_human = sum(
             1 for sid, s in stages.items()
             if s.get("status") in ("waiting_for_human", "not_started")
-            and _stage_has_human_gate(state, sid)
+            and _stage_has_human_gate(sid)
         )
         return {
             "total_stages": total,
@@ -178,19 +180,11 @@ def compute_metrics(state: dict[str, Any]) -> dict[str, Any]:
     for stage_id in touched_stages:
         latest = get_latest_node_for_stage(state, stage_id)
         if latest and latest.get("status") in ("not_started", "waiting_for_human"):
-            try:
-                stage_def = find_stage(workflow, stage_id)
-                if stage_def.get("human_gate", False):
-                    waiting_for_human += 1
-            except Exception:
-                pass
+            if _stage_has_human_gate(stage_id):
+                waiting_for_human += 1
         elif latest and latest.get("status") == "in_progress":
-            try:
-                stage_def = find_stage(workflow, stage_id)
-                if stage_def.get("human_gate", False) and not latest.get("gate_passed"):
-                    waiting_for_human += 1
-            except Exception:
-                pass
+            if _stage_has_human_gate(stage_id) and not latest.get("gate_passed"):
+                waiting_for_human += 1
 
     return {
         "total_stages": total_stages,
@@ -201,13 +195,11 @@ def compute_metrics(state: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _stage_has_human_gate(state: dict[str, Any], stage_id: str) -> bool:
-    """Check if a stage has human_gate enabled by looking at the workflow."""
-    template_name = state.get("current_run", {}).get("workflow_template")
+def _stage_has_human_gate(stage_id: str) -> bool:
+    """Check if a stage has human_gate enabled by reading stage YAML."""
     try:
-        workflow = load_workflow(template_name)
-        stage_def = find_stage(workflow, stage_id)
-        return stage_def.get("human_gate", False)
+        stage = load_stage_yaml(stage_id)
+        return stage.get("human_gate", False)
     except Exception:
         return False
 
@@ -227,24 +219,28 @@ def build_status_report(state: dict[str, Any], state_file: Path | None = None) -
 
     if _is_legacy_state(state):
         stage_state = state.get("stages", {}).get(stage_id, {}) if stage_id else {}
-        stage_def = find_stage(workflow, stage_id) if stage_id else {}
         stage_status = stage_state.get("status", "unknown")
         entry_checks_passed = stage_state.get("entry_checks_passed")
         exit_checks_passed = stage_state.get("exit_checks_passed")
         human_gate_passed = stage_state.get("human_gate_passed")
         retry_count = stage_state.get("retry_count", 0)
+        stage_yaml = {}
     else:
         latest_node = get_latest_node_for_stage(state, _stage_id) if _stage_id else None
         stage_state = latest_node or {}
-        stage_def = find_stage(workflow, _stage_id) if _stage_id else {}
         stage_status = stage_state.get("status", current_run.get("status", "unknown")) if _stage_id else current_run.get("status", "unknown")
-        entry_checks_passed = None  # Not tracked per-node in new schema
+        entry_checks_passed = None
         exit_checks_passed = None
         human_gate_passed = stage_state.get("gate_passed")
         retry_count = 0
+        try:
+            stage_yaml = load_stage_yaml(_stage_id) if _stage_id else {}
+        except Exception:
+            stage_yaml = {}
 
+    agent = stage_yaml.get("agent", {}) if stage_yaml else {}
     skills = get_required_skills(_stage_id) if _stage_id else {"required": [], "optional": []}
-    artifacts = get_required_artifacts(workflow, _stage_id, state, state_file) if _stage_id else []
+    artifacts = get_required_artifacts(_stage_id, state, state_file) if _stage_id else []
 
     resolved_state_file = state_file or resolve_state_path(None)
 
@@ -262,14 +258,14 @@ def build_status_report(state: dict[str, Any], state_file: Path | None = None) -
         "exit_checks_passed": exit_checks_passed,
         "human_gate_passed": human_gate_passed,
         "retry_count": retry_count,
-        "waiting_for": get_waiting_for(stage_status, stage_def) if _stage_id else "none",
+        "waiting_for": get_waiting_for(stage_status, stage_yaml) if _stage_id else "none",
         "loaded_context": get_loaded_context(_stage_id) if _stage_id else [],
         "required_skills": skills.get("required", []),
         "optional_skills": skills.get("optional", []),
         "required_artifacts": artifacts,
-        "primary_agent": stage_def.get("primary_agent") if _stage_id else None,
-        "review_agents": stage_def.get("review_agents", []) if _stage_id else [],
-        "handoff_to": stage_def.get("handoff_to") if _stage_id else None,
+        "primary_agent": agent.get("primary") if _stage_id else None,
+        "review_agents": agent.get("reviewers", []) if _stage_id else None,
+        "handoff_to": agent.get("handoff_to") if _stage_id else None,
         "next_action": get_next_action(state, _stage_id, workflow),
         "metrics": compute_metrics(state),
     }

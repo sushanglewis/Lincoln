@@ -1,0 +1,95 @@
+schema_version: 2.0.0
+id: workflow-router
+name: Workflow Router
+description: 'Entry point. Assesses repository context, selects the most
+
+  appropriate workflow template, and initializes workflow-stage.'
+templates: all
+prerequisite_stage: null
+next_stage: null
+human_gate: true
+agent:
+  primary: lincoln-pm
+  reviewers:
+  - lincoln-release-coordinator
+  handoff_to: lincoln-pm
+skills:
+  required:
+  - superpowers:bootstrap
+  optional:
+  - gsd:new-project
+  - gsd:new-milestone
+  - oh-my-claudecode:plan
+artifacts:
+  required:
+  - '{process_slug}/workflow-stage.yaml'
+context:
+  goal: 在会话启动时评估项目上下文，选择最适合的 Lincoln 工作流模板。
+  execution: '## Allowed actions
+
+    - 基于 session-start hook 已加载的状态和仓库结构评估上下文
+
+    - 向 PM 提出最多 3 个澄清问题
+
+    - 通过 `scripts/stage_loader.py` 设置 `current_run.workflow_template` 和 `current_stage`
+
+
+    ## Skills and tools
+
+    # workflow-router 阶段技能
+
+
+    ## 技能路由
+
+
+    本阶段技能路由定义见 `.claude/skills/routing.yaml`：
+
+    - **required**: `superpowers:bootstrap`
+
+    - **optional**: `gsd:new-project` / `gsd:new-milestone`, `oh-my-claudecode:plan`
+
+    - **human_gate**: 是
+
+
+    ## 主技能
+
+
+    - `lincoln-workflow-router`
+
+
+    ## 辅助工具
+
+
+    - `Read` — 读取 state 和目录
+
+    - `Glob` / `Bash` — 扫描仓库结构
+
+    - `Edit` / `scripts/stage_loader.py` — 更新 `<process_slug>/workflow-stage.yaml`
+
+
+    ## 模板库
+
+
+    位于 `.claude/workflows/templates/`：
+
+
+    - `interview-to-knowledge.yaml`
+
+    - `existing-project-iteration.yaml`
+
+    - `bug-fix.yaml`
+
+    - `design-spike.yaml`
+
+    - `oss-first-design.yaml`'
+  constraints: '## Forbidden actions
+
+    - 在未获 PM 确认前进入任何实施阶段
+
+    - 修改任何阶段产物'
+gates:
+  entry: []
+  exit:
+  - check: artifact_exists
+    args:
+    - '{process_slug}/workflow-stage.yaml'

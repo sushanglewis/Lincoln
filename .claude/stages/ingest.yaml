@@ -1,0 +1,130 @@
+schema_version: 2.0.0
+id: ingest
+name: Ingest
+description: 'Ingests raw interview recordings and produces transcripts,
+
+  summaries, and raw insights.'
+templates:
+- interview-to-knowledge
+prerequisite_stage: workflow-router
+next_stage: clarify
+human_gate: false
+agent:
+  primary: lincoln-pm
+  handoff_to: lincoln-pm
+skills:
+  required: []
+  optional:
+  - oh-my-claudecode:deep-interview
+artifacts:
+  required:
+  - '{process_slug}/interviews/{session_id}/metadata.json'
+  - '{process_slug}/interviews/{session_id}/transcript.md'
+  - '{process_slug}/interviews/{session_id}/summary.md'
+  - '{process_slug}/interviews/{session_id}/raw-insights.md'
+context:
+  goal: '将音频访谈录音转写为结构化文本，生成带时间戳的逐字稿、摘要和初始洞察，为后续需求澄清阶段提供输入。
+
+
+    将音频访谈录音转写为结构化文本，生成带时间戳的逐字稿、摘要和初始洞察。'
+  entry: "执行阶段前必须全部通过：\n\n- [ ] **文件存在性检查**: `file_exists {recording_path}`\n  - 录音文件路径有效且文件存在\n\
+    \  - 失败时：向人类确认文件路径是否正确\n\n- [ ] **音频格式检查**: `audio_format_supported {recording_path}`\n\
+    \  - 格式为 `.mp3`、`.m4a`、`.wav`、`.mp4`、`.mov` 之一\n  - 失败时：建议人类转换格式（如使用 `ffmpeg -i\
+    \ input.xxx output.m4a`）"
+  execution: "## Allowed actions\n- 读取录音文件（只读）\n- 使用 `ffmpeg` 提取视频中的音频轨道\n- 使用 Whisper（优先本地\
+    \ `faster-whisper`，失败时回退到 OpenAI Whisper API）进行转写\n- 创建 `{process_slug}/interviews/{session_id}/`\
+    \ 目录及产物文件\n- 生成 `metadata.json`、`transcript.md`、`summary.md`、`raw-insights.md`\n\
+    \n## Side-effect strategy\n- 所有产物写入 `{process_slug}/interviews/{session_id}/`\
+    \ 目录，不影响其他阶段目录\n- 转写失败时写入部分产物（如 `metadata.json` 记录错误状态），便于人类排查\n- 不修改任何现有文件，只创建新文件\n\
+    \n## During execution\n- [ ] 从文件名派生 `session_id`（去掉扩展名）\n- [ ] 创建目录 `{process_slug}/interviews/{session_id}/`\n\
+    - [ ] 若输入为视频，使用 `ffmpeg` 提取音频轨道\n- [ ] 使用 Whisper 转写（优先本地 `faster-whisper`）\n\
+    - [ ] 生成 `transcript.md`：带时间戳的 Speaker A/B 分段\n- [ ] 生成 `summary.md`：包含关键主题、决策、行动项、开放问题\n\
+    - [ ] 生成 `raw-insights.md`：Agent 对潜在需求的初步观察\n- [ ] 生成 `metadata.json`：sessionId、originalFile、duration、processedAt、transcriptModel、status\n\
+    \n## Failure recovery\n- 准入校验失败：暂停，向人类报告具体失败项和修复建议\n- 转写失败：写入部分产物，`metadata.json`\
+    \ 中 `status: failed`，报告错误\n- 退出校验失败：根据校验器反馈补充或修正产物，重试一次（`max_retries: 1`）\n\n\
+    ## Skills and tools\n# Ingest 阶段技能与工具\n\n## 技能路由\n\n本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n\
+    - **required**: （无）\n- **optional**: `oh-my-claudecode:deep-interview`\n- **human_gate**:\
+    \ 否\n\n## 主技能命令\n\n- **命令**: `process-interview`\n- **来源**: `.claude/skills/`\n\
+    - **参数**:\n  - `recording_path` (必填): 录音文件路径，如 `{process_slug}/recordings/2026-06-27-stakeholder.m4a`\n\
+    - **提示文件**: `.claude/skills/process-interview/prompts/main.md`\n\n## 辅助技能\n\n\
+    - `workflow-continue` — 人类修改文件后恢复被暂停的工作流\n- `clarify-requirements` — 下一阶段命令（完成后提示人类执行）\n\
+    \n## 校验器使用\n\n- **校验器路径**: `scripts/validate_stage.py`\n- **使用方式**:\n  ```bash\n\
+    \  # 准入校验\n  python scripts/validate_stage.py \\\n    --phase entry --check file_exists\
+    \ --args {recording_path}\n\n  python scripts/validate_stage.py \\\n    --phase\
+    \ entry --check audio_format_supported --args {recording_path}\n\n  # 退出校验\n \
+    \ python scripts/validate_stage.py \\\n    --phase exit --check transcript_has_timestamps\
+    \ --args {session_id}\n\n  python scripts/validate_stage.py \\\n    --phase exit\
+    \ --check summary_has_key_topics --args {session_id}\n  ```\n\n## 允许的工具\n\n根据\
+    \ `skill.yaml` 的 `tools` 列表，本阶段可用：\n\n| 工具 | 用途 |\n|------|------|\n| `Read` |\
+    \ 读取录音文件元数据、已有产物 |\n| `Grep` | 在转写文本中搜索关键词 |\n| `Glob` | 查找录音文件、匹配目录 |\n| `Bash`\
+    \ | 执行 `ffmpeg`、Whisper CLI、文件操作 |\n| `Edit` | 修改产物文件（如补充缺失章节） |\n| `Write` |\
+    \ 创建产物文件 |\n\n## 外部工具依赖\n\n- `ffmpeg` — 视频提取音频（可选，仅在输入为视频时需要）\n- `faster-whisper`\
+    \ (本地) — 优先转写引擎\n- OpenAI Whisper API — 本地失败时的回退方案\n\n## 错误处理\n\n| 错误场景 | 处理方式\
+    \ |\n|---------|---------|\n| 录音文件不存在 | 暂停，报告路径错误，等待人类确认 |\n| 音频格式不支持 | 暂停，建议转换格式，给出\
+    \ `ffmpeg` 命令示例 |\n| 本地 Whisper 失败 | 回退到 OpenAI Whisper API |\n| 转写 API 失败 | 写入部分产物，`status:\
+    \ failed`，报告错误 |\n| 产物缺少时间戳 | 重新检查转写输出，必要时重新转写 |\n| 摘要缺少必要章节 | 自动补充缺失章节 |\n\n\
+    ## 产物规范\n\n- 所有 Markdown 产物使用中文（除非访谈本身为英文）\n- `metadata.json` 使用 UTF-8 编码，包含标准字段\n\
+    - 时间戳格式统一为 `HH:MM:SS`\n\n## Execution instructions\n1. **读取完整提示文件**: `.claude/skills/process-interview/prompts/main.md`\n\
+    \   - 该文件包含详细的转写步骤、产物格式和规则\n   - 按照提示文件中的步骤 1-9 执行\n\n2. **阶段状态感知**:\n   - 当前阶段状态由\
+    \ session-start hook 自动加载，必要时读取 `<process_slug>/workflow-stage.yaml`\n   - 若本阶段已有\
+    \ `completed` 节点，跳过重复执行\n   - 若当前节点状态为 `validation_failed`，根据 `error_message`\
+    \ 修复后重试\n\n3. **变量替换**:\n   - 使用 `state.variables.recording_path` 作为输入文件路径\n \
+    \  - 使用 `state.variables.session_id` 作为会话标识（若未设置，从文件名派生）\n\n## Completion actions\n\
+    1. 运行退出校验器验证产物完整性\n2. 通过 `scripts/stage_loader.py --stage ingest --action transition-next`\
+    \ 推进阶段（节点追加模式）\n3. 向人类汇报：\n   - 产物存放路径\n   - 访谈摘要要点（3-5 条）\n   - 下一步命令：`claude\
+    \ clarify-requirements <session-id>`"
+  exit: "阶段完成后必须全部通过：\n\n- [ ] **时间戳检查**: `transcript_has_timestamps {session_id}`\n\
+    \  - `transcript.md` 存在且包含 `HH:MM:SS` 格式时间戳\n  - 失败时：检查转写输出是否完整，必要时重新转写\n\n- [\
+    \ ] **摘要完整性检查**: `summary_has_key_topics {session_id}`\n  - `summary.md` 存在且包含以下章节：\n\
+    \    - 关键主题 / Key topics\n    - 决策 / Decisions\n    - 行动项 / Action items\n  -\
+    \ 失败时：补充缺失章节\n\n## Artifact verification\n- [ ] `{process_slug}/interviews/{session_id}/metadata.json`\
+    \ — 非空，JSON 格式正确\n- [ ] `{process_slug}/interviews/{session_id}/transcript.md`\
+    \ — 非空，含时间戳\n- [ ] `{process_slug}/interviews/{session_id}/summary.md` — 非空，含必要章节\n\
+    - [ ] `{process_slug}/interviews/{session_id}/raw-insights.md` — 非空"
+  constraints: '## Forbidden actions
+
+    - **禁止修改或删除原始录音文件**：`{process_slug}/recordings/` 目录中的文件永远只读
+
+    - 禁止在转写失败时静默跳过，必须报告错误并生成部分产物
+
+    - 禁止跳过校验直接执行转写
+
+    - 禁止在产物不完整时标记阶段完成
+
+
+    ## Human confirmation
+
+    本阶段 **无** `human_gate`，为全自动执行阶段。
+
+    - 转写完成后自动进入下一阶段的准入校验
+
+    - 人类可在完成后审阅产物，但不需要显式确认即可继续工作流
+
+
+    ## Key reminders
+
+    - 原始录音文件 **只读**，绝不修改或删除
+
+    - 转写失败时写入部分产物并清晰报告错误
+
+    - 摘要和洞察使用中文（除非访谈为英文）
+
+    - 每个需求必须关联回访谈时间戳'
+gates:
+  entry:
+  - check: previous_gate_passed
+    args:
+    - workflow-router
+  exit:
+  - check: artifact_exists
+    args:
+    - '{process_slug}/interviews/{session_id}/metadata.json'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/interviews/{session_id}/transcript.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/interviews/{session_id}/summary.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/interviews/{session_id}/raw-insights.md'

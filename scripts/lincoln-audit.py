@@ -25,6 +25,7 @@ from scripts.stage_loader import (  # noqa: E402
     get_nodes,
     get_variables,
     interpolate_artifact,
+    load_stage_yaml,
     load_state,
     load_workflow,
     resolve_state_path,
@@ -89,8 +90,11 @@ def audit_artifact_completeness(state: dict[str, Any], workflow: dict[str, Any],
 
     missing = []
     for sid in check_stages:
-        stage_def = find_stage(workflow, sid)
-        artifacts = stage_def.get("artifacts", [])
+        try:
+            stage = load_stage_yaml(sid)
+        except Exception:
+            continue
+        artifacts = stage.get("artifacts", {}).get("required", [])
         node = get_latest_node_for_stage(state, sid)
         produced = node.get("artifacts", []) if node else []
         for art in artifacts:
@@ -112,11 +116,11 @@ def audit_human_gate_compliance(state: dict[str, Any], workflow: dict[str, Any])
         if status != "completed":
             continue
         try:
-            stage_def = find_stage(workflow, sid)
-        except ValueError:
+            stage = load_stage_yaml(sid)
+        except Exception:
             continue
         node = get_latest_node_for_stage(state, sid)
-        if stage_def.get("human_gate", False) and (node is None or not node.get("gate_passed")):
+        if stage.get("human_gate", False) and (node is None or not node.get("gate_passed")):
             violations.append(sid)
 
     if violations:

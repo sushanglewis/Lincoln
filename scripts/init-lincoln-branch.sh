@@ -5,13 +5,17 @@ set -euo pipefail
 # The work package is scoped to the issue and lives on the feature branch only.
 #
 # Usage:
-#   scripts/init-lincoln-branch.sh --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push]
+#   scripts/init-lincoln-branch.sh --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push] [--no-commit] [--auto]
 #
 # Legacy usage (non-issue-driven):
 #   scripts/init-lincoln-branch.sh <session-id> <design-id> [--process-slug <slug>] [--push]
 #
 # Example:
 #   scripts/init-lincoln-branch.sh --issue-number 21 --session-id 2026-07-08-stakeholder --design-id checkout-redesign --push
+#
+# Flags:
+#   --no-commit    Create the issue package and workflow-stage.yaml but do not git-add/commit.
+#   --auto         Non-interactive mode used by hooks; skips prompts and tolerates a dirty working tree.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -22,6 +26,8 @@ SESSION_ID=""
 DESIGN_ID=""
 PUSH=""
 PROCESS_SLUG=""
+NO_COMMIT=""
+AUTO=""
 
 # Detect legacy positional invocation
 if [[ "${1:-}" != --* && $# -ge 2 ]]; then
@@ -60,6 +66,14 @@ while [[ $# -gt 0 ]]; do
             PUSH="--push"
             shift
             ;;
+        --no-commit)
+            NO_COMMIT="1"
+            shift
+            ;;
+        --auto)
+            AUTO="1"
+            shift
+            ;;
         --process-slug)
             PROCESS_SLUG="${2:-}"
             if [[ -z "$PROCESS_SLUG" ]]; then
@@ -70,7 +84,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "ERROR: unknown argument: $1"
-            echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push]"
+            echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push] [--no-commit] [--auto]"
             exit 1
             ;;
     esac
@@ -84,7 +98,7 @@ fi
 
 # Require issue number for issue-driven initialization
 if [[ -z "$ISSUE_NUMBER" && ( -z "$SESSION_ID" || -z "$DESIGN_ID" ) ]]; then
-    echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push]"
+    echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push] [--no-commit] [--auto]"
     exit 1
 fi
 
@@ -147,8 +161,8 @@ elif [[ -n "$ISSUE_NUMBER" && "$CURRENT_BRANCH" != "issue-$ISSUE_NUMBER" && "$CU
     echo "         Continuing anyway; ensure this is the intended feature branch."
 fi
 
-# Ensure working tree is clean before initializing package
-if ! git diff --quiet || ! git diff --cached --quiet; then
+# Ensure working tree is clean before initializing package (skip in --auto mode)
+if [[ -z "$AUTO" ]] && { ! git diff --quiet || ! git diff --cached --quiet; }; then
     echo "ERROR: working tree or index is not clean. Commit or stash changes first."
     exit 1
 fi
@@ -199,10 +213,13 @@ for dir in "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PR
     touch "$dir/.gitkeep"
 done
 
-# Stage and commit initial state
-echo "==> Committing initial issue work package"
-git add .
-git commit -m "chore: initialize Lincoln issue work package for #$ISSUE_NUMBER
+if [[ -n "$NO_COMMIT" ]]; then
+    echo "==> Skipping git commit (--no-commit requested)"
+else
+    # Stage and commit initial state
+    echo "==> Committing initial issue work package"
+    git add .
+    git commit -m "chore: initialize Lincoln issue work package for #$ISSUE_NUMBER
 
 - branch: $BRANCH_NAME
 - process_slug: $PROCESS_SLUG
@@ -211,6 +228,7 @@ git commit -m "chore: initialize Lincoln issue work package for #$ISSUE_NUMBER
 - run_id: $RUN_ID
 
 Issue work package is branch-scoped and will not be merged to main."
+fi
 
 if [[ "$PUSH" == "--push" ]]; then
     echo "==> Pushing branch to remote"

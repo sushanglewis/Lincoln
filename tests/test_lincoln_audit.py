@@ -12,6 +12,22 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT_SCRIPT = ROOT / "scripts" / "lincoln-audit.py"
 
 
+STAGE_HUMAN_GATES = {
+    "ingest": False,
+    "clarify": True,
+    "product-design-docs": True,
+    "implement": True,
+}
+
+
+def fake_load_stage_yaml(stage_id: str) -> dict:
+    """Minimal stage definition for unit tests; no required artifacts by default."""
+    return {
+        "human_gate": STAGE_HUMAN_GATES.get(stage_id, False),
+        "artifacts": {"required": []},
+    }
+
+
 def _load_audit_module():
     """Load lincoln-audit.py as a module (filename has hyphen)."""
     spec = importlib.util.spec_from_file_location("lincoln_audit", AUDIT_SCRIPT)
@@ -123,7 +139,8 @@ def test_audit_state_consistency_pass(audit_mod, completed_state, valid_workflow
     assert result["status"] == "PASS"
 
 
-def test_audit_artifact_completeness_pass(audit_mod, completed_state, valid_workflow):
+def test_audit_artifact_completeness_pass(audit_mod, completed_state, valid_workflow, monkeypatch):
+    monkeypatch.setattr(audit_mod, "load_stage_yaml", fake_load_stage_yaml)
     result = audit_mod.audit_artifact_completeness(completed_state, valid_workflow)
     assert result["status"] == "PASS"
 
@@ -151,6 +168,7 @@ def test_audit_anomaly_detection_pass(audit_mod, completed_state):
 def test_run_all_audits_no_failures(audit_mod, completed_state, valid_workflow, monkeypatch):
     """Run all audits on completed state - should not have any FAIL."""
     monkeypatch.setattr(audit_mod, "load_workflow", lambda _name=None: valid_workflow)
+    monkeypatch.setattr(audit_mod, "load_stage_yaml", fake_load_stage_yaml)
     results = audit_mod.run_all_audits(completed_state)
     overall = audit_mod.compute_overall_status(results)
     assert overall in ("PASS", "WARN")
@@ -174,12 +192,20 @@ def test_human_gate_fail_when_completed_but_not_passed(audit_mod, completed_stat
     assert "clarify" in result["message"]
 
 
-def test_artifact_completeness_warn_when_required_missing(audit_mod, valid_workflow):
+def test_artifact_completeness_warn_when_required_missing(audit_mod, valid_workflow, monkeypatch):
     """WARN when required artifacts missing."""
+    def fake_load(stage_id: str) -> dict:
+        return {
+            "human_gate": False,
+            "artifacts": {"required": ["missing/file.txt"]},
+        }
+
+    monkeypatch.setattr(audit_mod, "load_stage_yaml", fake_load)
+
     workflow = {
         "name": "test",
         "steps": [
-            {"id": "ingest", "name": "Ingest", "human_gate": False, "artifacts": ["missing/file.txt"]},
+            {"id": "ingest", "name": "Ingest", "human_gate": False, "artifacts": []},
         ],
     }
     state = {

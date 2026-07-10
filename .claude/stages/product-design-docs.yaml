@@ -1,0 +1,103 @@
+schema_version: 2.0.0
+id: product-design-docs
+name: Product Design Docs
+description: 'Produces the design-review package based on confirmed
+
+  requirements. May include early OpenSpec drafts.'
+templates: all
+prerequisite_stage: clarify
+next_stage: product-prototype
+human_gate: true
+agent:
+  primary: lincoln-pm
+  reviewers:
+  - lincoln-designer
+  - lincoln-researcher
+  - lincoln-architect
+  handoff_to: lincoln-designer
+skills:
+  required:
+  - superpowers:brainstorming
+  - superpowers:writing-plans
+  optional:
+  - gsd:spec-phase
+  - oh-my-claudecode:plan
+  - openspec:propose
+artifacts:
+  required:
+  - '{process_slug}/designs/{design_id}/design-review.md'
+  - '{process_slug}/designs/{design_id}/scenarios.md'
+  - '{process_slug}/designs/{design_id}/feature-catalog.md'
+  - '{process_slug}/designs/{design_id}/data-model.md'
+  - '{process_slug}/designs/{design_id}/flows.md'
+  - '{process_slug}/designs/{design_id}/feasibility.md'
+context:
+  goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包。产出包括：设计评审入口文档、用户场景、功能清单、数据模型、流程图和可行性分析。本阶段不生成原型或代码。
+  execution: "## Side-effect strategy\n- 所有产物写入 `{process_slug}/designs/<design_id>/`\
+    \ 目录，不修改已有文件\n- 设计文档应可追溯回原始需求文件和访谈时间戳\n- 如需修改已发布的设计文档，保留变更历史或变更说明\n\n## During\
+    \ execution\n- [ ] 已调用 `superpowers:brainstorming` 探索 ≥2 种设计方向\n- [ ] PM 已确认设计方向（`design-review.md`\
+    \ 含 `<!-- status: approved -->` 或 `[x] PM 已确认设计文档`）\n- [ ] 已调用 `superpowers:writing-plans`\
+    \ 规划文档结构\n- [ ] 已创建 `{process_slug}/designs/<design_id>/` 目录\n- [ ] 已读取全部需求文档\n\
+    - [ ] `design-review.md` 包含决策摘要、范围、文档链接、待解决问题和审批清单\n- [ ] `scenarios.md` 包含目标用户、主场景、边界场景和非目标\n\
+    - [ ] `feature-catalog.md` 包含功能列表、优先级、验收映射和需求来源链接\n- [ ] `data-model.md` 包含核心实体、字段、约束、校验规则和状态转换\n\
+    - [ ] `flows.md` 包含至少一个 Mermaid 图表（用户流、业务流、序列图或架构图）\n- [ ] `feasibility.md` 包含业务可行性、技术可行性、开源项目/技术框架建议、风险评估\n\
+    - [ ] 所有文档使用中文（除非需求原文为英文）\n- [ ] 技术框架和开源项目建议已查阅当前官方文档或主仓库\n\n## Skills and tools\n\
+    # SKILLS.md - 产品设计文档阶段\n\n## 技能路由\n\n本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n\
+    - **required**: `superpowers:brainstorming`, `superpowers:writing-plans`\n- **optional**:\
+    \ `gsd:spec-phase`, `oh-my-claudecode:plan`, `openspec:propose`\n- **human_gate**:\
+    \ 是\n\n## 主要技能命令\n\n- `claude draft-product-design <session_id> <design_id>`\n\
+    \  - 基于已确认需求生成产品设计评审文档包\n  - 参数：\n    - `session_id`: 访谈会话 ID，如 `2026-06-27-stakeholder`\n\
+    \    - `design_id`: 产品设计 ID（kebab-case），如 `checkout-redesign`\n  - 完整 prompt 文件：`.claude/skills/draft-product-design/prompts/main.md`\n\
+    \n## 辅助技能\n\n- `claude workflow-continue`\n  - 当人类 PM 修改文件后，恢复被暂停的工作流\n- `superpowers:brainstorming`\
+    \ — 生成设计文档前先探索 2-3 种设计方向，列出 trade-offs。\n  **限制**：PM 未批准前不得调用 `writing-plans`\
+    \ 进入文档实施。\n- `superpowers:writing-plans` — 将设计文档包结构化为可执行计划，明确每个文件的职责与路径。\n- `lincoln-explore-opensource`\
+    \ — 当设计涉及可借鉴开源方案时，在设计文档前先做 OSS 研究。产物：`{process_slug}/docs/research/{change_name}-oss-options.md`。\n\
+    \n## human_gate 子技能规则\n\n`brainstorming` 完成后的 HARD-GATE 与 Lincoln 的 `human_gate`\
+    \ 合并：必须获得 PM 对设计方向的确认，才能继续生成 `design-review.md` 等产物。\n\n## 校验器使用\n\n- 入口校验：`python\
+    \ scripts/validate_stage.py --phase entry --check requirements_approved --args\
+    \ <session_id>`\n- 出口校验：`python scripts/validate_stage.py --phase exit --check\
+    \ design_docs_complete --args <design_id>`\n- 人类批准校验：`python scripts/validate_stage.py\
+    \ --phase exit --check design_docs_human_approved --args <design_id>`\n- 校验失败时：停止\
+    \ loop、报告失败项、给出修复建议、等待人类处理\n\n## MCP 工具\n\n本阶段主要使用标准文件读写工具：\n\n- `Read` - 读取需求文档\n\
+    - `Write` - 创建设计文档\n- `Edit` - 修改设计文档（如需修正）\n- `WebSearch` / `WebFetch` - 查询技术框架和开源项目的当前官方文档\n\
+    \n## 错误处理\n\n- 需求文档缺失或未经批准：暂停工作流，提示用户先完成 `clarify-requirements` 阶段\n- 设计文档生成失败：报告具体失败文件和原因，给出修复建议\n\
+    - 校验失败：根据校验器输出定位缺失内容，补充后重新校验\n- 技术文档查询失败：记录查询失败的框架/项目，使用备选方案或标注为待确认\n\n## Execution\
+    \ instructions\n1. 读取 `.claude/skills/draft-product-design/prompts/main.md` 获取完整执行步骤\n\
+    2. 确认 `{process_slug}/requirements/<session_id>/requirements.md` 已获批准\n3. 读取需求文档包（requirements.md、user-stories.md、prd.md）\n\
+    4. （可选）如果设计涉及可借鉴开源方案，调用 `lincoln-explore-opensource` 生成 `{process_slug}/docs/research/{change_name}-oss-options.md`，并等待\
+    \ PM 确认后再继续\n5. 创建 `{process_slug}/designs/<design_id>/` 目录并生成 6 份设计文档\n6. 请人类\
+    \ PM 审阅 `design-review.md`\n7. PM 确认后，在 `design-review.md` 添加 `<!-- status: approved\
+    \ -->`\n8. 提示用户运行：`claude build-product-prototype <session_id> <design_id>`"
+  exit: '## Artifact verification
+
+    - [ ] 设计文档包完整（6 个文件）
+
+    - [ ] 文档可追溯回原始需求文件
+
+    - [ ] 文档简洁、以表格和图表为主，避免冗长叙述'
+gates:
+  entry:
+  - check: previous_gate_passed
+    args:
+    - clarify
+  exit:
+  - check: artifact_exists
+    args:
+    - '{process_slug}/designs/{design_id}/design-review.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/designs/{design_id}/scenarios.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/designs/{design_id}/feature-catalog.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/designs/{design_id}/data-model.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/designs/{design_id}/flows.md'
+  - check: artifact_exists
+    args:
+    - '{process_slug}/designs/{design_id}/feasibility.md'
+  - check: human_approved
+  - check: gate_review_passed

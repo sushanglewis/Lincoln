@@ -1,0 +1,103 @@
+schema_version: 2.0.0
+id: split
+name: Split
+description: 'Breaks OpenSpec tasks into parallel, independently implementable
+
+  GitHub Issues with clear boundaries and acceptance criteria.'
+templates: all
+prerequisite_stage: propose
+next_stage: implement
+human_gate: false
+agent:
+  primary: lincoln-pm
+  reviewers:
+  - lincoln-engineer
+  - lincoln-qa
+  handoff_to: lincoln-engineer
+skills:
+  required:
+  - superpowers:dispatching-parallel-agents
+  optional:
+  - gsd:phase
+  - oh-my-claudecode:team
+artifacts:
+  required:
+  - .github/linked-issues.yaml
+context:
+  goal: 将 OpenSpec 变更提案中的 tasks 拆分为可执行的 GitHub Issues，建立从需求到代码追踪的完整链路。
+  execution: "## Allowed actions\n- 读取 `{process_slug}/openspec/changes/<change_name>/tasks.md`\
+    \ 解析任务列表\n- 读取 `.github/openspec-config.yml` 获取目标仓库信息\n- 使用 GitHub MCP 或 `gh`\
+    \ CLI 创建 GitHub Issues\n- 写入 `.github/linked-issues.yaml` 记录任务与 Issue 的映射关系\n\
+    - 更新 `{process_slug}/requirements/<session_id>/requirements.md` 记录 Issue 编号\n\
+    - 调用 validator 执行入口/退出校验\n- 向人类汇报已创建的 Issue 列表\n\n## Side-effect strategy\n- 所有写入操作均为追加或新建，不删除已有文件\n\
+    - `.github/linked-issues.yaml` 如已存在，应追加新映射而非覆盖\n- `{process_slug}/requirements/<session_id>/requirements.md`\
+    \ 的更新以追加 Issue 编号的形式进行\n\n## Skills and tools\n# split 阶段技能与工具\n\n## 技能路由\n\n\
+    本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n- **required**: `superpowers:dispatching-parallel-agents`\n\
+    - **optional**: `gsd:phase`, `oh-my-claudecode:team`\n- **human_gate**: 否\n\n\
+    ## 主技能命令\n\n```\nclaude split-to-github <session_id> <change_name>\n```\n\n对应\
+    \ `interview-workflow` skill 中的 `split-to-github` 命令。\n\n参数：\n- `session_id`:\
+    \ 访谈会话 ID\n- `change_name`: OpenSpec 变更名称\n\n## 辅助子技能\n\n- `superpowers:dispatching-parallel-agents`\
+    \ — 当需要创建 3 个以上相互独立的 GitHub Issues 时，可并行派发独立 agent 加速。\n- `superpowers:verification-before-completion`\
+    \ — Issue 创建后必须验证：所有 issue 都能在 `requirements.md` 中通过 `#<number>` 回链。\n\n## GitHub\
+    \ MCP 使用\n\n本阶段使用 GitHub MCP 进行 Issue 操作：\n\n- **创建 Issue**：`mcp__plugin_ecc_github__create_issue`\n\
+    \  - 参数：`owner`, `repo`, `title`, `body`, `labels`\n  - 每个任务对应一个 Issue\n- **列出\
+    \ Issues**（验证用）：`mcp__plugin_ecc_github__list_issues`\n  - 验证已创建的 Issue 是否存在\n\
+    \n替代方案：使用 `gh issue create` CLI 命令（当 MCP 不可用时）\n\n## Validator 使用\n\n入口校验：\n```bash\n\
+    python scripts/validate_stage.py \\\n  --phase entry \\\n  --check openspec_tasks_ready\
+    \ \\\n  --args <change_name>\n```\n\n退出校验：\n```bash\npython scripts/validate_stage.py\
+    \ \\\n  --phase exit \\\n  --check issues_created \\\n  --args <session_id>\n\n\
+    python scripts/validate_stage.py \\\n  --phase exit \\\n  --check tasks_link_back_to_issues\
+    \ \\\n  --args <session_id>\n```\n\n## 错误处理\n\n| 错误场景 | 处理方式 |\n|---------|---------|\n\
+    | `tasks.md` 不存在或为空 | 暂停，报告错误，建议人类先完成 `propose` 阶段 |\n| `.github/openspec-config.yml`\
+    \ 缺失 | 暂停，报告错误，提示人类创建配置文件 |\n| GitHub API 创建失败 | 记录失败的任务，重试一次，仍失败则暂停 |\n| Issue\
+    \ 创建后链接文件写入失败 | 重试写入，仍失败则暂停并报告已创建的 Issue 编号 |\n| 校验失败 | 按 AGENTS.md 校验失败流程：停止、报告、修复建议、等待人类\
+    \ |\n\n## 输入文件\n\n- `{process_slug}/openspec/changes/<change_name>/tasks.md` —\
+    \ OpenSpec 任务列表\n- `.github/openspec-config.yml` — 目标仓库配置\n- `{process_slug}/requirements/<session_id>/requirements.md`\
+    \ — 需求文档（追加 Issue 编号）\n\n## 输出文件\n\n- `.github/linked-issues.yaml` — 任务到 Issue\
+    \ 的映射\n- `{process_slug}/requirements/<session_id>/requirements.md` — 更新后的需求文档"
+  exit: '- [ ] 运行退出校验：`python scripts/validate_stage.py --phase exit --check issues_created
+    --args <session_id>`
+
+    - [ ] 运行退出校验：`python scripts/validate_stage.py --phase exit --check tasks_link_back_to_issues
+    --args <session_id>`
+
+    - [ ] 确认 `.github/linked-issues.yaml` 包含有效的 issue_number
+
+    - [ ] 确认 `{process_slug}/requirements/<session_id>/requirements.md` 中引用了所有创建的
+    Issue 编号
+
+
+    ## Artifact verification
+
+    - [ ] `.github/linked-issues.yaml` 已创建/更新
+
+    - [ ] `{process_slug}/requirements/<session_id>/requirements.md` 已更新
+
+    - [ ] GitHub Issues 在目标仓库中可见且可访问'
+  constraints: '## Forbidden actions
+
+    - **禁止**创建没有明确验收标准的 Issue
+
+    - **禁止**一个 Issue 映射多个 OpenSpec 任务（必须一对一）
+
+    - **禁止**绕过 OpenSpec CLI 手动生成 tasks
+
+    - **禁止**在 Issue 中遗漏来源访谈、需求文档、OpenSpec 变更的链接
+
+    - **禁止**跳过校验直接进入下一阶段
+
+
+    ## Human confirmation
+
+    - 本阶段 **无** `human_gate`，但创建 Issue 后必须向人类汇报
+
+    - 如人类要求修改 Issue 内容，Agent 应协助编辑后重新校验'
+gates:
+  entry:
+  - check: previous_gate_passed
+    args:
+    - propose
+  exit:
+  - check: artifact_exists
+    args:
+    - .github/linked-issues.yaml
