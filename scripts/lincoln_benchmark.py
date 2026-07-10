@@ -53,32 +53,32 @@ STATIC_CHECK_RE = re.compile(r"\bstatic-check\.sh\b")
 
 THRESHOLDS: dict[str, dict[str, dict[str, Any]]] = {
     "S1": {
-        "time_to_merge_seconds": {"green": 3 * 24 * 3600, "yellow": 7 * 24 * 3600},
-        "human_gate_wait_seconds": {"green": 4 * 3600, "yellow": 8 * 3600},
-        "human_gate_pass_rate": {"green": 1.0, "yellow": 0.8},
-        "requirements_clarity_score": {"green": 4, "yellow": 3},
-        "static_check_pass": {"green": True, "yellow": None},
-        "pr_size": {"green": 400, "yellow": 800},
+        "time_to_merge_seconds": {"green": 3 * 24 * 3600, "yellow": 7 * 24 * 3600, "direction": "minimize"},
+        "human_gate_wait_seconds": {"green": 4 * 3600, "yellow": 8 * 3600, "direction": "minimize"},
+        "human_gate_pass_rate": {"green": 1.0, "yellow": 0.8, "direction": "maximize"},
+        "requirements_clarity_score": {"green": 4, "yellow": 3, "direction": "maximize"},
+        "static_check_pass": {"green": True, "yellow": None, "direction": "maximize"},
+        "pr_size": {"green": 400, "yellow": 800, "direction": "minimize"},
     },
     "S2": {
-        "build_codebase_knowledge_duration_seconds": {"green": 3600, "yellow": 2 * 3600},
-        "unique_files_touched_ratio": {"green": 1.0, "yellow": 1.5},
-        "pr_size": {"green": 300, "yellow": 600},
+        "build_codebase_knowledge_duration_seconds": {"green": 3600, "yellow": 2 * 3600, "direction": "minimize"},
+        "unique_files_touched_ratio": {"green": 1.0, "yellow": 1.5, "direction": "minimize"},
+        "pr_size": {"green": 300, "yellow": 600, "direction": "minimize"},
     },
     "S3": {
-        "time_to_pr_seconds": {"green": 3600, "yellow": 4 * 3600},
-        "retry_count": {"green": 1, "yellow": 3},
-        "test_runs": {"green": 2, "yellow": 1},
-        "pr_size": {"green": 100, "yellow": 300},
+        "time_to_pr_seconds": {"green": 3600, "yellow": 4 * 3600, "direction": "minimize"},
+        "retry_count": {"green": 1, "yellow": 3, "direction": "minimize"},
+        "test_runs": {"green": 2, "yellow": 1, "direction": "maximize"},
+        "pr_size": {"green": 100, "yellow": 300, "direction": "minimize"},
     },
     "S4": {
-        "time_to_first_handoff": {"green": 30 * 60, "yellow": 2 * 3600},
-        "explored_options_count": {"green": 2, "yellow": 1},
-        "design_doc_completeness": {"green": 1.0, "yellow": 0.8},
+        "time_to_first_handoff": {"green": 30 * 60, "yellow": 2 * 3600, "direction": "minimize"},
+        "explored_options_count": {"green": 2, "yellow": 1, "direction": "maximize"},
+        "design_doc_completeness": {"green": 1.0, "yellow": 0.8, "direction": "maximize"},
     },
     "S5": {
-        "time_to_first_handoff": {"green": 3600, "yellow": 4 * 3600},
-        "oss_candidates_evaluated": {"green": 3, "yellow": 1},
+        "time_to_first_handoff": {"green": 3600, "yellow": 4 * 3600, "direction": "minimize"},
+        "oss_candidates_evaluated": {"green": 3, "yellow": 1, "direction": "maximize"},
     },
 }
 
@@ -723,19 +723,28 @@ def evaluate_against_thresholds(metrics: dict[str, Any], scenario: str) -> dict[
             continue
         green = cfg.get("green")
         yellow = cfg.get("yellow")
+        direction = cfg.get("direction", "minimize")
         status = "unknown"
         if isinstance(green, bool):
             status = "green" if value == green else "red"
         elif isinstance(green, (int, float)):
-            if yellow is None:
-                status = "green" if value <= green else "red"
-            else:
-                if value <= green:
+            if direction == "maximize":
+                if value >= green:
                     status = "green"
-                elif value <= yellow:
+                elif yellow is not None and value >= yellow:
                     status = "yellow"
                 else:
                     status = "red"
+            else:
+                if yellow is None:
+                    status = "green" if value <= green else "red"
+                else:
+                    if value <= green:
+                        status = "green"
+                    elif value <= yellow:
+                        status = "yellow"
+                    else:
+                        status = "red"
         evaluation[metric] = {"value": value, "threshold": cfg, "status": status}
 
     # Boolean/structured metrics not in thresholds but worth surfacing
