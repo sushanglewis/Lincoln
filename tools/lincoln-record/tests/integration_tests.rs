@@ -8,7 +8,7 @@ fn test_synthetic_source_writes_wav_file() {
     let tmp = TempDir::new().expect("temp dir");
     let output = tmp.path().join("sine.wav");
 
-    let source = SineWaveSource::new(48000.0, 1, 1000.0, 1.0);
+    let source = SineWaveSource::new(48000.0, 1, 1000.0, 1.0).expect("valid source");
     write_source_to_wav(&source, &output, 48000, 1).expect("write wav");
 
     assert!(output.exists(), "output wav file should exist");
@@ -30,6 +30,7 @@ fn test_synthetic_source_writes_wav_file() {
 #[test]
 fn test_resample_changes_sample_rate() {
     let input: Vec<f32> = SineWaveSource::new(16000.0, 1, 440.0, 1.0)
+        .expect("valid source")
         .iter()
         .take(16000)
         .collect();

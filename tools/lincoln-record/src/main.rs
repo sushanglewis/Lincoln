@@ -5,7 +5,12 @@ use lincoln_record::audio::devices::{
 };
 use lincoln_record::audio::saver::write_source_to_wav;
 use lincoln_record::audio::source::AudioSource;
-use lincoln_record::cli::{Cli, RecordArgs};
+use lincoln_record::cli::{Cli, RecordArgs, TranscribeArgs};
+use lincoln_record::output::metadata::{DeviceInfo, FileInfo, SessionMetadata};
+use lincoln_record::output::transcript::format_transcript;
+use lincoln_record::transcription::provider::{
+    MockProvider, TranscriptSegment, TranscriptionProvider,
+};
 use std::path::PathBuf;
 
 #[tokio::main]
@@ -18,6 +23,7 @@ async fn main() {
             Ok(())
         }
         Cli::Record(args) => run_record(args).await,
+        Cli::Transcribe(args) => run_transcribe(args).await,
         other => {
             eprintln!("{:?} is not yet implemented", other);
             std::process::exit(1);
@@ -46,6 +52,8 @@ fn run_devices() {
 }
 
 async fn run_record(args: RecordArgs) -> anyhow::Result<()> {
+    validate_session_id(&args.session_id)?;
+
     let output_dir = args.output.unwrap_or_else(|| PathBuf::from("."));
     let session_dir = output_dir.join(&args.session_id);
     tokio::fs::create_dir_all(&session_dir).await?;
@@ -67,5 +75,82 @@ async fn run_record(args: RecordArgs) -> anyhow::Result<()> {
     .await??;
 
     println!("Wrote {}", output_path.display());
+    Ok(())
+}
+
+async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
+    let session_id = args.session_id.unwrap_or_else(|| {
+        args.path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .to_string()
+    });
+    validate_session_id(&session_id)?;
+
+    let output_dir = args.output.unwrap_or_else(|| PathBuf::from("."));
+    let session_dir = output_dir.join(&session_id);
+    tokio::fs::create_dir_all(&session_dir).await?;
+
+    let provider: Box<dyn TranscriptionProvider> = match args.engine.as_str() {
+        "mock" => Box::new(MockProvider::new(vec![TranscriptSegment {
+            start: 0.0,
+            end: 1.0,
+            speaker: None,
+            text: "Mock transcription output".to_string(),
+        }])),
+        other => anyhow::bail!(
+            "transcription engine '{}' is not yet implemented; use 'mock' for testing",
+            other
+        ),
+    };
+
+    let segments = provider.transcribe(&args.path, args.language.as_deref())?;
+    let transcript = format_transcript(&session_id, &segments);
+    tokio::fs::write(session_dir.join("transcript.md"), transcript).await?;
+
+    let metadata = SessionMetadata {
+        session_id: session_id.clone(),
+        process_slug: "issue-25".to_string(),
+        started_at: chrono::Utc::now().to_rfc3339(),
+        ended_at: Some(chrono::Utc::now().to_rfc3339()),
+        engine: args.engine,
+        model: args.model.unwrap_or_default(),
+        diarization: args.diarize,
+        devices: DeviceInfo {
+            microphone: "unknown".to_string(),
+            system: None,
+        },
+        files: FileInfo {
+            transcript: "transcript.md".to_string(),
+            audio: args
+                .path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string(),
+            metadata: "metadata.json".to_string(),
+        },
+    };
+    tokio::fs::write(
+        session_dir.join("metadata.json"),
+        serde_json::to_string_pretty(&metadata)?,
+    )
+    .await?;
+
+    println!("Wrote transcript and metadata to {}", session_dir.display());
+    Ok(())
+}
+
+fn validate_session_id(session_id: &str) -> anyhow::Result<()> {
+    if session_id.is_empty() {
+        anyhow::bail!("session-id must not be empty");
+    }
+    if session_id.len() > 128 {
+        anyhow::bail!("session-id must be 128 characters or fewer");
+    }
+    if session_id.contains('/') || session_id.contains('\\') || session_id.contains("..") {
+        anyhow::bail!("session-id must not contain path separators or parent references");
+    }
     Ok(())
 }

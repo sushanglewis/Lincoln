@@ -12,9 +12,10 @@ pub fn resample_interleaved(
 ) -> Result<Vec<f32>> {
     ensure!(input_rate > 0, "input_rate must be greater than zero");
     ensure!(output_rate > 0, "output_rate must be greater than zero");
-    let channels = channels.max(1) as usize;
+    let channels = channels as usize;
+    ensure!(channels > 0, "channels must be greater than zero");
     ensure!(
-        input.len() % channels == 0,
+        input.len().is_multiple_of(channels),
         "input length must be a multiple of channels"
     );
 
@@ -23,7 +24,7 @@ pub fn resample_interleaved(
         (input_frames as f64 * output_rate as f64 / input_rate as f64).ceil() as usize;
     let ratio = input_rate as f64 / output_rate as f64;
 
-    let mut output = Vec::with_capacity(output_frames * channels);
+    let mut output = Vec::with_capacity(output_frames.saturating_mul(channels));
 
     for out_frame in 0..output_frames {
         let in_pos = out_frame as f64 * ratio;

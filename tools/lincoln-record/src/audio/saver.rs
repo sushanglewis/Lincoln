@@ -1,6 +1,6 @@
 use crate::audio::resampler::resample_interleaved;
 use crate::audio::source::AudioSource;
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use hound::{WavSpec, WavWriter};
 use std::path::Path;
 
@@ -16,6 +16,15 @@ pub fn write_source_to_wav(
     target_sample_rate: u32,
     target_channels: u16,
 ) -> Result<()> {
+    anyhow::ensure!(
+        target_sample_rate > 0,
+        "target_sample_rate must be greater than zero"
+    );
+    anyhow::ensure!(
+        target_channels > 0,
+        "target_channels must be greater than zero"
+    );
+
     let spec = WavSpec {
         channels: target_channels,
         sample_rate: target_sample_rate,
@@ -26,8 +35,8 @@ pub fn write_source_to_wav(
     let mut writer = WavWriter::create(output, spec)
         .with_context(|| format!("failed to create wav writer: {}", output.display()))?;
 
-    let frames = (source.sample_rate() as f32 * source.duration_seconds()) as usize;
-    let expected_samples = frames * source.channels() as usize;
+    let frames = (source.sample_rate() as f32 * source.duration_seconds()).max(0.0) as usize;
+    let expected_samples = frames.saturating_mul(source.channels() as usize);
     let samples: Vec<f32> = source.iter().take(expected_samples).collect();
 
     let final_samples = if source.sample_rate() != target_sample_rate {
@@ -41,8 +50,8 @@ pub fn write_source_to_wav(
         samples
     };
 
-    let final_channels = target_channels.max(1) as usize;
-    let source_channels = source.channels().max(1) as usize;
+    let final_channels = target_channels as usize;
+    let source_channels = source.channels() as usize;
 
     for frame in final_samples.chunks(source_channels) {
         match (source_channels, final_channels) {
@@ -56,11 +65,16 @@ pub fn write_source_to_wav(
                 let right = frame.get(1).copied().unwrap_or(0.0);
                 writer.write_sample(to_i16((left + right) * 0.5))?;
             }
-            _ => {
+            (s, t) if s == t => {
                 for value in frame {
                     writer.write_sample(to_i16(*value))?;
                 }
             }
+            _ => bail!(
+                "unsupported channel conversion from {} to {}",
+                source_channels,
+                final_channels
+            ),
         }
     }
 

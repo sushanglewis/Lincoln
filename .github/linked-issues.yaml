@@ -45,7 +45,7 @@ sub_issues:
       - tools/lincoln-record/tests/devices_test.rs
   - issue_number: 25-phase-2
     title: "Phase 2: Audio capture and checkpoint saving"
-    status: in_progress
+    status: completed
     accepts:
       - tools/lincoln-record/src/audio/source.rs
       - tools/lincoln-record/src/audio/resampler.rs
@@ -55,7 +55,12 @@ sub_issues:
       - tools/lincoln-record/tests/integration_tests.rs
   - issue_number: 25-phase-3
     title: "Phase 3: Local transcription providers"
-    status: pending
+    status: in_progress
+    accepts:
+      - tools/lincoln-record/src/transcription/provider.rs
+      - tools/lincoln-record/src/output/transcript.rs
+      - tools/lincoln-record/src/output/metadata.rs
+      - tools/lincoln-record/tests/transcription_tests.rs
   - issue_number: 25-phase-4
     title: "Phase 4: Speaker diarization sidecar"
     status: pending
