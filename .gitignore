@@ -35,6 +35,9 @@ docs/knowledge/.obsidian/graph.json
 # macOS
 .DS_Store
 
+# Session trace files (instance-level, not committed)
+*/.trace/
+
 # Python virtual environments
 .venv/
 venv/

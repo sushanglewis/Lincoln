@@ -483,3 +483,92 @@ def test_guard_blocks_when_dialogue_override_contains_stage(dialogue_in_progress
     )
     assert result.returncode == 1
     assert "TaskCreate/TaskUpdate are not allowed" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Lincoln trace integration
+# ---------------------------------------------------------------------------
+
+
+def _trace_file(state_file):
+    slug = state_file.parent.name
+    return state_file.parent.parent / slug / ".trace" / "lincoln-trace.jsonl"
+
+
+def _last_trace_entry(state_file):
+    trace = _trace_file(state_file)
+    if not trace.exists():
+        return None
+    lines = trace.read_text(encoding="utf-8").strip().splitlines()
+    return json.loads(lines[-1]) if lines else None
+
+
+def test_post_tool_use_writes_trace_for_write(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md", "content": "x"}',
+        "0",
+    )
+    assert result.returncode == 0
+    entry = _last_trace_entry(process_package_state)
+    assert entry is not None
+    assert entry["tool"] == "Write"
+    assert entry["category"] == "write"
+    assert entry["target"].endswith("requirements.md")
+    assert entry["stage"] == "clarify"
+    assert entry["run_id"] == "test"
+
+
+def test_post_tool_use_writes_trace_for_bash(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "pytest scripts/"}',
+        "0",
+    )
+    assert result.returncode == 0
+    entry = _last_trace_entry(process_package_state)
+    assert entry["tool"] == "Bash"
+    assert entry["category"] == "bash"
+    assert "pytest" in entry["target"]
+
+
+def test_post_tool_use_skips_read_trace(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Read",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md"}',
+        "0",
+    )
+    assert result.returncode == 0
+    assert not _trace_file(process_package_state).exists()
+
+
+def test_post_tool_use_skips_trace_when_linclon_skip_trace_set(process_package_state, monkeypatch):
+    monkeypatch.setenv("LINCOLN_SKIP_TRACE", "1")
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md", "content": "x"}',
+        "0",
+    )
+    assert result.returncode == 0
+    assert not _trace_file(process_package_state).exists()
+
+
+def test_post_tool_use_trace_records_failed_exit_code(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "false"}',
+        "1",
+    )
+    assert result.returncode == 0
+    entry = _last_trace_entry(process_package_state)
+    assert entry["exit_code"] == 1
