@@ -816,11 +816,6 @@ def action_status(state: dict[str, Any]) -> dict[str, Any]:
         raise RuntimeError("Could not import lincoln-status module")
 
 
-def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
-    """Generate <process_slug>/handoffs/lincoln-handoff-{stage}.md."""
-    stage = load_stage_yaml(stage_id)
-    workflow = load_workflow(state.get("workflow", {}).get("template"))
-    workflow_step = find_stage(workflow, stage_id)
 def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path) -> str:
     """Generate <process_slug>/handoffs/lincoln-handoff-{stage}.md and trigger a handoff benchmark report."""
     template_name = state.get("workflow", {}).get("template")
@@ -844,14 +839,14 @@ def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path
     lines.append("")
     lines.append("## Current Stage")
     lines.append(f"- **Stage:** {stage_id}")
-    lines.append(f"- **Name:** {workflow_step.get('name', stage.get('name', stage_id))}")
+    lines.append(f"- **Name:** {stage_def.get('name', stage_id)}")
     if _is_legacy_state(state):
         lines.append(f"- **Status:** {stage_state.get('status', 'unknown')}")
     else:
         lines.append(f"- **Status:** {stage_state.get('status', state.get('current_run', {}).get('status', 'unknown'))}")
     lines.append("")
     lines.append("## Waiting For")
-    lines.append(f"- **Waiting for:** {'human' if stage.get('human_gate') and not stage_state.get('gate_passed') else 'agent'}")
+    lines.append(f"- **Waiting for:** {'human' if stage_def.get('human_gate') and not stage_state.get('gate_passed') else 'agent'}")
     lines.append("")
     lines.append("## Artifacts")
     if artifacts_produced:
@@ -861,7 +856,7 @@ def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path
 
     required = [
         interpolate_artifact(str(art), state, resolve_state_path(None))
-        for art in stage.get("artifacts", {}).get("required", [])
+        for art in stage_def.get("artifacts", [])
     ]
     if required:
         lines.append("### Required")
