@@ -63,3 +63,42 @@ impl AudioSource for SineWaveSource {
         }))
     }
 }
+
+/// An in-memory audio source for tests and offline processing.
+pub struct InMemorySource {
+    samples: Vec<f32>,
+    sample_rate: u32,
+    channels: u16,
+}
+
+impl InMemorySource {
+    pub fn new(samples: Vec<f32>, sample_rate: u32, channels: u16, duration: f32) -> Self {
+        let expected = ((sample_rate as f32 * duration.max(0.0)).ceil() as usize)
+            .saturating_mul(channels.max(1) as usize)
+            .min(samples.len());
+        Self {
+            samples: samples.into_iter().take(expected).collect(),
+            sample_rate,
+            channels,
+        }
+    }
+}
+
+impl AudioSource for InMemorySource {
+    fn sample_rate(&self) -> u32 {
+        self.sample_rate
+    }
+
+    fn channels(&self) -> u16 {
+        self.channels
+    }
+
+    fn duration_seconds(&self) -> f32 {
+        let frames = self.samples.len() / (self.channels as usize).max(1);
+        frames as f32 / self.sample_rate as f32
+    }
+
+    fn iter(&self) -> Box<dyn Iterator<Item = f32> + Send + '_> {
+        Box::new(self.samples.iter().copied())
+    }
+}

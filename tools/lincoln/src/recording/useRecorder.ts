@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { spawnRecorder, type RecorderProcess, type SpawnRecorderOptions } from './spawnRecorder'
 
-export interface UseRecorderOptions extends Omit<SpawnRecorderOptions, 'recordInterviewPath'> {
-  recordInterviewPath?: string
+export interface UseRecorderOptions extends SpawnRecorderOptions {
   startOnMount?: boolean
 }
 
@@ -30,10 +29,7 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
     startOnMount = false,
     workspaceRoot,
     sessionId,
-    topic,
-    designId,
-    branch,
-    recordInterviewPath,
+    lincolnRecordPath,
   } = options
   const [state, setState] = useState<RecorderState>({
     status: 'idle',
@@ -67,10 +63,7 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
       const recorder = spawnRecorder({
         workspaceRoot,
         sessionId,
-        topic,
-        designId,
-        branch,
-        recordInterviewPath,
+        lincolnRecordPath,
       })
       recorderRef.current = recorder
 
@@ -92,8 +85,8 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
         }
 
         const reason = code !== null && code !== undefined
-          ? `record-interview exited unexpectedly with code ${code}`
-          : `record-interview exited unexpectedly with signal ${signal}`
+          ? `lincoln-record exited unexpectedly with code ${code}`
+          : `lincoln-record exited unexpectedly with signal ${signal}`
         setState(s => ({ ...s, status: 'error', errorMessage: reason }))
       })
 
@@ -109,7 +102,7 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
       const message = error instanceof Error ? error.message : String(error)
       setState(s => ({ ...s, status: 'error', errorMessage: message }))
     }
-  }, [workspaceRoot, sessionId, topic, designId, branch, recordInterviewPath, clearRecordingInterval])
+  }, [workspaceRoot, sessionId, lincolnRecordPath, clearRecordingInterval])
 
   const stop = useCallback(async () => {
     const recorder = recorderRef.current

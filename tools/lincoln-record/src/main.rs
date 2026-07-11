@@ -8,6 +8,7 @@ use lincoln_record::audio::source::AudioSource;
 use lincoln_record::cli::{Cli, RecordArgs, TranscribeArgs};
 use lincoln_record::output::metadata::{DeviceInfo, FileInfo, SessionMetadata};
 use lincoln_record::output::transcript::format_transcript;
+use lincoln_record::transcription::diarization::diarize_and_merge;
 use lincoln_record::transcription::provider::{
     MockProvider, TranscriptSegment, TranscriptionProvider,
 };
@@ -63,16 +64,27 @@ async fn run_record(args: RecordArgs) -> anyhow::Result<()> {
     let mic = args.mic;
 
     let output_path_clone = output_path.clone();
-    tokio::task::spawn_blocking(move || {
-        let source = MicrophoneSource::new(mic.as_deref(), duration)?;
+    let source = MicrophoneSource::new(mic.as_deref(), duration)?;
+    let stop_handle = source.stop_handle();
+    let mut handle = tokio::task::spawn_blocking(move || {
         write_source_to_wav(
             &source,
             &output_path_clone,
             source.sample_rate(),
             source.channels(),
         )
-    })
-    .await??;
+    });
+
+    tokio::select! {
+        _ = tokio::signal::ctrl_c() => {
+            log::info!("received stop signal, shutting down recording");
+            stop_handle.stop();
+            (&mut handle).await??;
+        }
+        result = &mut handle => {
+            result??;
+        }
+    }
 
     println!("Wrote {}", output_path.display());
     Ok(())
@@ -92,7 +104,7 @@ async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
     let session_dir = output_dir.join(&session_id);
     tokio::fs::create_dir_all(&session_dir).await?;
 
-    let provider: Box<dyn TranscriptionProvider> = match args.engine.as_str() {
+    let provider: Box<dyn TranscriptionProvider + Send + Sync> = match args.engine.as_str() {
         "mock" => Box::new(MockProvider::new(vec![TranscriptSegment {
             start: 0.0,
             end: 1.0,
@@ -105,7 +117,19 @@ async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
         ),
     };
 
-    let segments = provider.transcribe(&args.path, args.language.as_deref())?;
+    let audio_path = args.path.clone();
+    let language = args.language.clone();
+    let diarize = args.diarize;
+    let diarize_work_dir = session_dir.clone();
+    let segments = tokio::task::spawn_blocking(move || {
+        let mut segs = provider.transcribe(&audio_path, language.as_deref())?;
+        if diarize {
+            segs = diarize_and_merge(&audio_path, &segs, &diarize_work_dir)?;
+        }
+        Ok::<_, anyhow::Error>(segs)
+    })
+    .await??;
+
     let transcript = format_transcript(&session_id, &segments);
     tokio::fs::write(session_dir.join("transcript.md"), transcript).await?;
 

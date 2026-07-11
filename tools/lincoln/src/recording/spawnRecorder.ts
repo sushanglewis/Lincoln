@@ -5,14 +5,13 @@ import { EventEmitter } from 'node:events'
 export interface SpawnRecorderOptions {
   workspaceRoot: string
   sessionId: string
-  topic?: string
-  designId?: string
-  branch?: string
-  recordInterviewPath?: string
+  lincolnRecordPath?: string
 }
 
 export interface RecorderProcess {
-  on(event: 'ready' | 'error' | 'exit', listener: (...args: any[]) => void): this
+  on(event: 'ready', listener: () => void): this
+  on(event: 'error', listener: (error: Error) => void): this
+  on(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): this
   stop(): Promise<void>
   cancel(): Promise<void>
 }
@@ -42,16 +41,15 @@ class RecorderProcessImpl extends EventEmitter implements RecorderProcess {
     })
 
     this.child.stdout.on('data', (data: Buffer) => {
-      const line = data.toString('utf-8')
-      if (line.includes('Metadata prepared')) {
-        this.emit('ready')
-      }
+      process.stdout.write(data)
     })
 
     this.child.stderr.on('data', (data: Buffer) => {
-      // Forward stderr for debugging; could be parsed for levels in future
       process.stderr.write(data)
     })
+
+    // lincoln-record begins capturing immediately; treat it as ready.
+    process.nextTick(() => this.emit('ready'))
   }
 
   private settleExit(): void {
@@ -62,14 +60,14 @@ class RecorderProcessImpl extends EventEmitter implements RecorderProcess {
   }
 
   stop(): Promise<void> {
-    return this._terminate(false)
+    return this._terminate('SIGINT')
   }
 
   cancel(): Promise<void> {
-    return this._terminate(true)
+    return this._terminate('SIGKILL')
   }
 
-  private _terminate(force: boolean): Promise<void> {
+  private _terminate(signal: NodeJS.Signals): Promise<void> {
     if (this.stopped) {
       return this.exitPromise
     }
@@ -79,12 +77,7 @@ class RecorderProcessImpl extends EventEmitter implements RecorderProcess {
       return this.exitPromise
     }
 
-    if (!force && this.child.stdin) {
-      this.child.stdin.write('\n')
-      this.child.stdin.end()
-    } else {
-      this.child.kill(force ? 'SIGKILL' : 'SIGINT')
-    }
+    this.child.kill(signal)
 
     const timeout = setTimeout(() => {
       if (!this.child.killed) {
@@ -102,18 +95,18 @@ export function spawnRecorder(options: SpawnRecorderOptions): RecorderProcess {
   const {
     workspaceRoot,
     sessionId,
-    topic,
-    designId,
-    branch,
-    recordInterviewPath = 'record-interview',
+    lincolnRecordPath = 'lincoln-record',
   } = options
 
-  const args: string[] = [sessionId, '--no-confirm']
-  if (topic) args.push('--topic', topic)
-  if (designId) args.push('--design-id', designId)
-  if (branch) args.push('--branch', branch)
+  const args: string[] = [
+    'record',
+    '--session-id',
+    sessionId,
+    '--output',
+    workspaceRoot,
+  ]
 
-  const child = spawn(recordInterviewPath, args, {
+  const child = spawn(lincolnRecordPath, args, {
     cwd: workspaceRoot,
     stdio: ['pipe', 'pipe', 'pipe'],
   })

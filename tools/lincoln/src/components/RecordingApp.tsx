@@ -15,7 +15,7 @@ export interface RecordingAppProps {
   designId: string
   branch: string
   audioMeterStyle?: 'bar' | 'dot' | 'wave'
-  recordInterviewPath?: string
+  lincolnRecordPath?: string
 }
 
 type AppPhase = 'ready' | 'recording' | 'cancelled'
@@ -29,7 +29,7 @@ export function RecordingApp({
   designId,
   branch,
   audioMeterStyle = 'bar',
-  recordInterviewPath,
+  lincolnRecordPath,
 }: RecordingAppProps) {
   const { exit } = useApp()
   const [phase, setPhase] = useState<AppPhase>('ready')
@@ -37,10 +37,7 @@ export function RecordingApp({
   const { state, start, stop, cancel } = useRecorder({
     workspaceRoot,
     sessionId,
-    topic,
-    designId,
-    branch,
-    recordInterviewPath,
+    lincolnRecordPath,
     startOnMount: false,
   })
 
@@ -59,14 +56,14 @@ export function RecordingApp({
           handleExit()
         }
       } else if (state.status === 'recording') {
-        stop()
+        stop().catch(() => {})
       }
     },
-    onCancel: () => {
+    onCancel: async () => {
       if (phase === 'ready') {
         setPhase('cancelled')
       } else if (state.status === 'recording') {
-        cancel()
+        await cancel().catch(() => {})
       }
       handleExit()
     },
