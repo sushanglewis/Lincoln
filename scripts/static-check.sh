@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+STATIC_CHECK_RESULT="$ROOT/.context/static-check-result.json"
+mkdir -p "$ROOT/.context"
+
 # Prefer project venv if available; otherwise rely on system python3 having pytest/pyyaml.
 if [ -d "$ROOT/.venv" ] && [ -x "$ROOT/.venv/bin/python3" ]; then
     PYTHON="$ROOT/.venv/bin/python3"
@@ -12,6 +15,23 @@ elif [ -d "$ROOT/venv" ] && [ -x "$ROOT/venv/bin/python3" ]; then
 else
     PYTHON="python3"
 fi
+
+# Record a structured pass/fail result so benchmark metrics can consume it
+# instead of regex-scanning the command text.
+write_static_check_result() {
+    local passed="$1"
+    "$PYTHON" - "$passed" <<'PY'
+import sys, json
+from datetime import datetime, timezone
+passed = sys.argv[1] == "true"
+print(json.dumps({
+    "passed": passed,
+    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+}, ensure_ascii=False))
+PY
+}
+
+trap 'write_static_check_result false > "$STATIC_CHECK_RESULT"' ERR
 
 echo "==> Validate workflow YAML"
 "$PYTHON" -c "import yaml; yaml.safe_load(open('.claude/workflows/interview-to-knowledge.yaml'))"
@@ -283,6 +303,11 @@ echo "All hooks executable."
 echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/stage_loader.py
 "$PYTHON" -m py_compile scripts/lincoln-status.py
+"$PYTHON" -m py_compile scripts/lincoln_trace.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark_eval.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark_report.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark_metrics.py
 "$PYTHON" -m py_compile scripts/track-artifacts.py
 "$PYTHON" -m py_compile scripts/task_tool_guard.py
 "$PYTHON" -m py_compile scripts/validate_stage.py
@@ -304,5 +329,14 @@ done
 
 echo "==> Run pytest"
 "$PYTHON" -m pytest tests/ -v
+pytest_exit=$?
 
-echo "==> All static checks passed"
+if [ $pytest_exit -eq 0 ]; then
+    write_static_check_result true > "$STATIC_CHECK_RESULT"
+    echo "==> All static checks passed"
+else
+    write_static_check_result false > "$STATIC_CHECK_RESULT"
+    echo "==> Static checks failed"
+fi
+
+exit $pytest_exit

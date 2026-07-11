@@ -134,10 +134,12 @@ def process_package_state(tmp_path):
     return _write_process_state(tmp_path, state)
 
 
-def run_hook(hook_name, state_file, *extra_args):
+def run_hook(hook_name, state_file, *extra_args, project_root=None):
     hook = HOOKS_DIR / hook_name
     env = os.environ.copy()
     env["LINCOLN_STATE_FILE"] = str(state_file)
+    if project_root:
+        env["LINCOLN_BENCHMARK_PROJECT_ROOT"] = str(project_root)
     return subprocess.run(
         [str(hook), *extra_args],
         cwd=state_file.parent,
@@ -483,3 +485,121 @@ def test_guard_blocks_when_dialogue_override_contains_stage(dialogue_in_progress
     )
     assert result.returncode == 1
     assert "TaskCreate/TaskUpdate are not allowed" in result.stderr
+
+
+# ---------------------------------------------------------------------------
+# Lincoln trace integration
+# ---------------------------------------------------------------------------
+
+
+def _trace_file(state_file):
+    slug = state_file.parent.name
+    return state_file.parent.parent / slug / ".trace" / "lincoln-trace.jsonl"
+
+
+def _last_trace_entry(state_file):
+    trace = _trace_file(state_file)
+    if not trace.exists():
+        return None
+    lines = trace.read_text(encoding="utf-8").strip().splitlines()
+    return json.loads(lines[-1]) if lines else None
+
+
+def test_post_tool_use_writes_trace_for_write(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md", "content": "x"}',
+        "0",
+    )
+    assert result.returncode == 0
+    entry = _last_trace_entry(process_package_state)
+    assert entry is not None
+    assert entry["tool"] == "Write"
+    assert entry["category"] == "write"
+    assert entry["target"].endswith("requirements.md")
+    assert entry["stage"] == "clarify"
+    assert entry["run_id"] == "test"
+
+
+def test_post_tool_use_writes_trace_for_bash(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "pytest scripts/"}',
+        "0",
+    )
+    assert result.returncode == 0
+    entry = _last_trace_entry(process_package_state)
+    assert entry["tool"] == "Bash"
+    assert entry["category"] == "bash"
+    assert "pytest" in entry["target"]
+
+
+def test_post_tool_use_skips_read_trace(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Read",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md"}',
+        "0",
+    )
+    assert result.returncode == 0
+    assert not _trace_file(process_package_state).exists()
+
+
+def test_post_tool_use_skips_trace_when_lincoln_skip_trace_set(process_package_state, monkeypatch):
+    monkeypatch.setenv("LINCOLN_SKIP_TRACE", "1")
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lincoln-test/requirements/test/requirements.md", "content": "x"}',
+        "0",
+    )
+    assert result.returncode == 0
+    assert not _trace_file(process_package_state).exists()
+
+
+def test_post_tool_use_trace_records_failed_exit_code(process_package_state):
+    result = run_hook(
+        "post-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "false"}',
+        "1",
+    )
+    assert result.returncode == 0
+    entry = _last_trace_entry(process_package_state)
+    assert entry["exit_code"] == 1
+
+
+# Handoff benchmark reports are now triggered directly by stage_loader's
+# handoff-report action rather than by post-tool-use.sh string-matching the
+# Bash command.
+
+
+def _benchmark_files(state_file, trigger):
+    slug = state_file.parent.name
+    benchmark_dir = state_file.parent.parent / slug / "benchmark"
+    return sorted(benchmark_dir.glob(f"lincoln-benchmark-{trigger}-*.json"))
+
+
+def test_on_stop_triggers_session_stop_benchmark(process_package_state):
+    project_root = process_package_state.parent.parent
+    result = run_hook("on-stop.sh", process_package_state, project_root=project_root)
+    assert result.returncode == 0
+    files = _benchmark_files(process_package_state, "session_stop")
+    assert len(files) >= 1
+
+
+def test_on_stop_session_stop_benchmark_dedup(process_package_state):
+    project_root = process_package_state.parent.parent
+    run_hook("on-stop.sh", process_package_state, project_root=project_root)
+    files_before = _benchmark_files(process_package_state, "session_stop")
+    result = run_hook("on-stop.sh", process_package_state, project_root=project_root)
+    assert result.returncode == 0
+    files_after = _benchmark_files(process_package_state, "session_stop")
+    assert len(files_after) == len(files_before)

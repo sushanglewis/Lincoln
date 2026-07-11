@@ -1,0 +1,148 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://lincoln-framework.dev/schemas/benchmark-report.schema.json",
+  "title": "Lincoln Benchmark Report",
+  "description": "Schema for a Lincoln benchmark report generated from session trace and workflow state.",
+  "type": "object",
+  "required": [
+    "report_id",
+    "schema_version",
+    "scenario",
+    "trigger",
+    "generated_at",
+    "metadata",
+    "metrics",
+    "confidence",
+    "evaluation"
+  ],
+  "properties": {
+    "report_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "scenario": {
+      "type": "string",
+      "enum": ["S1", "S2", "S3", "S4", "S5"]
+    },
+    "trigger": {
+      "type": "string",
+      "enum": ["handoff", "pr_created", "pr_merged", "session_stop", "manual"]
+    },
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["process_slug", "run_id", "branch", "issue_number", "current_stage", "workflow_template"],
+      "properties": {
+        "process_slug": { "type": "string" },
+        "run_id": { "type": "string" },
+        "branch": { "type": "string" },
+        "issue_number": { "type": "string" },
+        "linear_id": { "type": "string" },
+        "current_stage": { "type": "string" },
+        "trace_files": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "workflow_template": { "type": "string" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "required": ["session", "workflow", "collaboration", "quality", "outcome"],
+      "properties": {
+        "session": {
+          "type": "object",
+          "properties": {
+            "session_duration_seconds": { "type": "integer" },
+            "trace_line_count": { "type": "integer" },
+            "total_tool_calls": { "type": "integer" },
+            "tool_calls_by_category": { "type": "object" },
+            "unique_skills": { "type": "array", "items": { "type": "string" } },
+            "unique_files_touched": { "type": "integer" },
+            "test_runs": { "type": "integer" },
+            "error_count": { "type": "integer" },
+            "retry_count": { "type": "integer" }
+          }
+        },
+        "workflow": {
+          "type": "object",
+          "properties": {
+            "stage_transition_count": { "type": "integer" },
+            "stage_durations": { "type": "object" },
+            "stage_completion_rate": { "type": "number" },
+            "stage_rework_count": { "type": "integer" },
+            "artifact_completion_rate": { "type": "number" },
+            "validation_failure_count": { "type": "integer" },
+            "workflow_adherence_score": { "type": "number" },
+            "human_gate_count": { "type": "integer" },
+            "human_gate_wait_seconds": { "type": "integer" },
+            "human_gate_pass_rate": { "type": "number" },
+            "build_codebase_knowledge_duration_seconds": { "type": "integer" }
+          }
+        },
+        "collaboration": {
+          "type": "object",
+          "properties": {
+            "handoff_count": { "type": "integer" },
+            "agent_switches": { "type": "integer" },
+            "pm_turns": { "type": "integer" },
+            "time_to_first_handoff": { "type": "integer" }
+          }
+        },
+        "quality": {
+          "type": "object",
+          "properties": {
+            "requirements_clarity_score": { "type": "integer" },
+            "design_doc_completeness": { "type": "number" },
+            "tdd_plan_red_green_refactor": { "type": "object" },
+            "openspec_task_count": { "type": "integer" },
+            "static_check_pass": { "type": ["boolean", "null"] },
+            "test_coverage": { "type": ["number", "null"] },
+            "pr_size": { "type": "integer" },
+            "audit_score": { "type": ["object", "null"] },
+            "code_review_calls": { "type": "integer" }
+          }
+        },
+        "outcome": {
+          "type": "object",
+          "properties": {
+            "issue_closed": { "type": ["boolean", "null"] },
+            "pr_merged": { "type": ["boolean", "null"] },
+            "pr_merge_latency_seconds": { "type": "integer" },
+            "knowledge_synced": { "type": ["boolean", "null"] },
+            "time_to_pr_seconds": { "type": "integer" },
+            "time_to_merge_seconds": { "type": "integer" },
+            "unique_files_touched_ratio": { "type": "number" }
+          }
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "enum": ["exact", "estimated", "pending"]
+      }
+    },
+    "evaluation": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "properties": {
+          "value": {},
+          "threshold": {},
+          "status": {
+            "type": "string",
+            "enum": ["green", "yellow", "red", "unknown"]
+          }
+        }
+      }
+    }
+  }
+}

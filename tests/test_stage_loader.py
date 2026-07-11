@@ -128,3 +128,26 @@ def test_record_artifacts_action_discovers_existing_files(minimal_state_file):
         if process_dir.exists():
             import shutil
             shutil.rmtree(process_dir, ignore_errors=True)
+
+
+def test_handoff_report_generates_benchmark_and_handoff_trace(minimal_state_file):
+    result = run_loader("--stage", "clarify", "--action", "handoff-report", state_file=minimal_state_file)
+    assert result.returncode == 0, result.stderr
+
+    state = yaml.safe_load(minimal_state_file.read_text(encoding="utf-8"))
+    process_slug = state["current_run"]["variables"]["process_slug"]
+    project_root = minimal_state_file.parent.parent
+    process_dir = project_root / process_slug
+
+    handoff_file = process_dir / "handoffs" / "lincoln-handoff-clarify.md"
+    assert handoff_file.exists()
+
+    benchmark_files = list((process_dir / "benchmark").glob("lincoln-benchmark-handoff-*.json"))
+    assert len(benchmark_files) >= 1
+
+    trace_file = process_dir / ".trace" / "lincoln-trace.jsonl"
+    assert trace_file.exists()
+    entries = [json.loads(line) for line in trace_file.read_text(encoding="utf-8").strip().splitlines()]
+    handoff_entries = [e for e in entries if e.get("category") == "handoff"]
+    assert len(handoff_entries) == 1
+    assert handoff_entries[0].get("tool") == "LincolnHandoff"
