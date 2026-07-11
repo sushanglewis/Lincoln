@@ -1,20 +1,22 @@
 import { Text } from 'ink'
 import { render } from 'ink-testing-library'
-import React, { useState } from 'react'
+import React from 'react'
 import { describe, expect, test, vi } from 'vitest'
 import { useKeyHandler } from '../../src/hooks/useKeyHandler'
 
 interface TestComponentProps {
-  onStop: () => void
-  onCancel: () => void
-  onUp?: () => void
-  onDown?: () => void
+  onRecord?: () => void
+  onStop?: () => void
+  onCancel?: () => void
+  onQuit?: () => void
+  onDevices?: () => void
+  onModel?: () => void
+  onAnyKey?: () => void
 }
 
-function TestComponent({ onStop, onCancel, onUp, onDown }: TestComponentProps) {
-  useKeyHandler({ onStop, onCancel, onUp, onDown })
-  const [count, setCount] = useState(0)
-  return <Text onClick={() => setCount(c => c + 1)}>{count}</Text>
+function TestComponent(props: TestComponentProps) {
+  useKeyHandler(props)
+  return <Text>handlers active</Text>
 }
 
 async function tick() {
@@ -22,74 +24,107 @@ async function tick() {
 }
 
 describe('useKeyHandler', () => {
-  test('calls onStop when Enter is pressed', async () => {
-    const onStop = vi.fn()
-    const onCancel = vi.fn()
+  test('calls onRecord when r is pressed', async () => {
+    const onRecord = vi.fn()
     const { stdin } = render(
-      <TestComponent onStop={onStop} onCancel={onCancel} />,
+      <TestComponent onRecord={onRecord} />,
     )
 
     await tick()
-    stdin.write('\r')
+    stdin.write('r')
+    await tick()
+
+    expect(onRecord).toHaveBeenCalledTimes(1)
+  })
+
+  test('calls onStop when s is pressed', async () => {
+    const onStop = vi.fn()
+    const { stdin } = render(
+      <TestComponent onStop={onStop} />,
+    )
+
+    await tick()
+    stdin.write('s')
     await tick()
 
     expect(onStop).toHaveBeenCalledTimes(1)
-    expect(onCancel).not.toHaveBeenCalled()
   })
 
-  test('calls onCancel when q is pressed', async () => {
-    const onStop = vi.fn()
+  test('calls onCancel when c is pressed', async () => {
     const onCancel = vi.fn()
     const { stdin } = render(
-      <TestComponent onStop={onStop} onCancel={onCancel} />,
+      <TestComponent onCancel={onCancel} />,
+    )
+
+    await tick()
+    stdin.write('c')
+    await tick()
+
+    expect(onCancel).toHaveBeenCalledTimes(1)
+  })
+
+  test('calls onQuit when q is pressed', async () => {
+    const onQuit = vi.fn()
+    const { stdin } = render(
+      <TestComponent onQuit={onQuit} />,
     )
 
     await tick()
     stdin.write('q')
     await tick()
 
-    expect(onCancel).toHaveBeenCalledTimes(1)
-    expect(onStop).not.toHaveBeenCalled()
+    expect(onQuit).toHaveBeenCalledTimes(1)
   })
 
-  test('calls onCancel when Escape is pressed', async () => {
-    const onStop = vi.fn()
-    const onCancel = vi.fn()
+  test('calls onQuit when Escape is pressed', async () => {
+    const onQuit = vi.fn()
     const { stdin } = render(
-      <TestComponent onStop={onStop} onCancel={onCancel} />,
+      <TestComponent onQuit={onQuit} />,
     )
 
     await tick()
     stdin.write('')
     await tick()
 
-    expect(onCancel).toHaveBeenCalledTimes(1)
-    expect(onStop).not.toHaveBeenCalled()
+    expect(onQuit).toHaveBeenCalledTimes(1)
   })
 
-  test('calls onUp when up arrow is pressed', async () => {
-    const onUp = vi.fn()
+  test('calls onDevices when d is pressed', async () => {
+    const onDevices = vi.fn()
     const { stdin } = render(
-      <TestComponent onStop={vi.fn()} onCancel={vi.fn()} onUp={onUp} />,
+      <TestComponent onDevices={onDevices} />,
     )
 
     await tick()
-    stdin.write('[A')
+    stdin.write('d')
     await tick()
 
-    expect(onUp).toHaveBeenCalledTimes(1)
+    expect(onDevices).toHaveBeenCalledTimes(1)
   })
 
-  test('calls onDown when down arrow is pressed', async () => {
-    const onDown = vi.fn()
+  test('calls onModel when m is pressed', async () => {
+    const onModel = vi.fn()
     const { stdin } = render(
-      <TestComponent onStop={vi.fn()} onCancel={vi.fn()} onDown={onDown} />,
+      <TestComponent onModel={onModel} />,
     )
 
     await tick()
-    stdin.write('[B')
+    stdin.write('m')
     await tick()
 
-    expect(onDown).toHaveBeenCalledTimes(1)
+    expect(onModel).toHaveBeenCalledTimes(1)
+  })
+
+  test('calls onAnyKey for unrecognized input', async () => {
+    const onAnyKey = vi.fn()
+    const { stdin } = render(
+      <TestComponent onAnyKey={onAnyKey} />,
+    )
+
+    await tick()
+    stdin.write('x')
+    await tick()
+
+    expect(onAnyKey).toHaveBeenCalledTimes(1)
   })
 })

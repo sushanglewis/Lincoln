@@ -1,10 +1,9 @@
-import { Box, Text, useApp } from 'ink'
-import React, { useState } from 'react'
+import { Box, useApp } from 'ink'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { CancelledScreen } from './CancelledScreen'
-import { RecordingScreen } from './RecordingScreen'
-import { ReadyScreen } from './ReadyScreen'
-import { StopConfirmation } from './StopConfirmation'
+import { StatusPanel } from './StatusPanel'
+import { LogView, type LogEntry } from './LogView'
+import { HintBar } from './HintBar'
 import { useKeyHandler } from '../hooks/useKeyHandler'
 import { useRecorder } from '../recording/useRecorder'
 
@@ -18,9 +17,9 @@ export interface RecordingAppProps {
   lincolnRecordPath?: string
 }
 
-type AppPhase = 'ready' | 'recording' | 'cancelled'
-
-const MENU_OPTION_COUNT = 2
+function createLogId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
 
 export function RecordingApp({
   workspaceRoot,
@@ -32,8 +31,11 @@ export function RecordingApp({
   lincolnRecordPath,
 }: RecordingAppProps) {
   const { exit } = useApp()
-  const [phase, setPhase] = useState<AppPhase>('ready')
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
+    setLogs(prev => [...prev, { id: createLogId(), message, type }])
+  }, [])
+
   const { state, start, stop, cancel } = useRecorder({
     workspaceRoot,
     sessionId,
@@ -41,87 +43,88 @@ export function RecordingApp({
     startOnMount: false,
   })
 
-  const handleExit = () => {
+  useEffect(() => {
+    switch (state.status) {
+      case 'recording':
+        addLog('Recording started.', 'info')
+        break
+      case 'stopped':
+        addLog(`Saved to ${workspaceRoot}/${sessionId}/audio.wav`, 'success')
+        addLog(`Run: claude process-interview ${sessionId}`, 'command')
+        break
+      case 'cancelled':
+        addLog('Recording cancelled. No files were saved.', 'error')
+        break
+      case 'error':
+        addLog(`Recording error: ${state.errorMessage ?? 'unknown error'}`, 'error')
+        break
+    }
+  }, [state.status, state.errorMessage, addLog, workspaceRoot, sessionId])
+
+  const handleQuit = useCallback(() => {
     exit()
-  }
+  }, [exit])
+
+  const handleRecord = useCallback(() => {
+    if (state.status === 'idle') {
+      start()
+    }
+  }, [state.status, start])
+
+  const handleStop = useCallback(() => {
+    if (state.status === 'recording') {
+      stop().catch(() => {})
+    }
+  }, [state.status, stop])
+
+  const handleCancel = useCallback(() => {
+    if (state.status === 'recording') {
+      cancel().catch(() => {})
+    }
+  }, [state.status, cancel])
+
+  const handleDevices = useCallback(() => {
+    addLog('Devices menu is not implemented yet. Run lincoln-record devices.', 'info')
+  }, [addLog])
+
+  const handleModel = useCallback(() => {
+    addLog('Model menu is not implemented yet. Run lincoln-record warmup --model <name>.', 'info')
+  }, [addLog])
+
+  const isTerminal = state.status === 'stopped' || state.status === 'cancelled' || state.status === 'error'
 
   useKeyHandler({
-    onStop: () => {
-      if (phase === 'ready') {
-        if (selectedIndex === 0) {
-          setPhase('recording')
-          start()
-        } else {
-          setPhase('cancelled')
-          handleExit()
-        }
-      } else if (state.status === 'recording') {
-        stop().catch(() => {})
-      }
-    },
-    onCancel: async () => {
-      if (phase === 'ready') {
-        setPhase('cancelled')
-      } else if (state.status === 'recording') {
-        await cancel().catch(() => {})
-      }
-      handleExit()
-    },
-    onUp: () => {
-      if (phase === 'ready') {
-        setSelectedIndex(index => (index - 1 + MENU_OPTION_COUNT) % MENU_OPTION_COUNT)
-      }
-    },
-    onDown: () => {
-      if (phase === 'ready') {
-        setSelectedIndex(index => (index + 1) % MENU_OPTION_COUNT)
-      }
-    },
+    onRecord: handleRecord,
+    onStop: handleStop,
+    onCancel: handleCancel,
+    onQuit: handleQuit,
+    onDevices: handleDevices,
+    onModel: handleModel,
+    onAnyKey: isTerminal ? handleQuit : undefined,
   })
 
-  if (phase === 'cancelled' || state.status === 'cancelled') {
-    return <CancelledScreen />
-  }
+  const hintMode = useMemo(() => {
+    if (state.status === 'idle') return 'idle'
+    if (state.status === 'recording') return 'recording'
+    if (state.status === 'stopped') return 'stopped'
+    if (state.status === 'cancelled') return 'cancelled'
+    return 'error'
+  }, [state.status])
 
-  if (state.status === 'stopped') {
-    return (
-      <StopConfirmation
-        sessionId={sessionId}
-        workspaceRoot={workspaceRoot}
-        onConfirm={handleExit}
-      />
-    )
-  }
-
-  if (state.status === 'error') {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold color="red">Recording error</Text>
-        <Text>{state.errorMessage}</Text>
-      </Box>
-    )
-  }
-
-  if (phase === 'ready') {
-    return (
-      <ReadyScreen
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="gray" height={24}>
+      <StatusPanel
         sessionId={sessionId}
         topic={topic}
         designId={designId}
         branch={branch}
-        selectedIndex={selectedIndex}
+        status={state.status}
+        duration={state.duration}
       />
-    )
-  }
-
-  return (
-    <RecordingScreen
-      sessionId={sessionId}
-      topic={topic}
-      designId={designId}
-      duration={state.duration}
-      amplitude={state.amplitude}
-      audioMeterStyle={audioMeterStyle}
-    />
+      <LogView logs={logs} />
+      <Box flexGrow={1} />
+      {state.status === 'recording' && audioMeterStyle ? null : null}
+      <HintBar mode={hintMode} />
+    </Box>
   )
 }
