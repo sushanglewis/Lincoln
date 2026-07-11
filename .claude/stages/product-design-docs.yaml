@@ -1,0 +1,52 @@
+schema_version: 2.0.0
+id: product-design-docs
+name: Product Design Docs
+description: 'Produces the design-review package based on confirmed
+
+  requirements. May include early OpenSpec drafts.'
+templates: all
+prerequisite_stage: clarify
+next_stage: product-prototype
+human_gate: true
+agent:
+  primary: lincoln-pm
+  reviewers:
+  - lincoln-designer
+  - lincoln-researcher
+  - lincoln-architect
+  handoff_to: lincoln-designer
+skills:
+  required:
+  - superpowers:brainstorming
+  - superpowers:writing-plans
+  optional:
+  - gsd:spec-phase
+  - oh-my-claudecode:plan
+  - openspec:propose
+artifacts:
+  required:
+  - '{process_slug}/designs/{design_id}/design-review.md'
+  - '{process_slug}/designs/{design_id}/scenarios.md'
+  - '{process_slug}/designs/{design_id}/feature-catalog.md'
+  - '{process_slug}/designs/{design_id}/data-model.md'
+  - '{process_slug}/designs/{design_id}/flows.md'
+  - '{process_slug}/designs/{design_id}/feasibility.md'
+context:
+  goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
+
+    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - clarify
+  exit:
+  - check: artifacts_present
+  - check: human_approved

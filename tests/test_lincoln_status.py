@@ -341,18 +341,11 @@ def test_cli_format_markdown(minimal_state_file):
 
 
 # ---------------------------------------------------------------------------
-# Missing skill-routing.yaml handling
+# Missing stage YAML handling
 # ---------------------------------------------------------------------------
 
 
-def test_get_required_skills_missing_file(status_mod, tmp_path, monkeypatch):
-    """Test that missing skill-routing.yaml doesn't crash."""
-    fake_routing = tmp_path / "skill-routing.yaml"
-    monkeypatch.setattr(status_mod, "SKILL_ROUTING_PATH", fake_routing)
-    monkeypatch.setattr(status_mod, "LEGACY_SKILL_ROUTING_PATH", fake_routing)
-    # Also patch stage_loader's constants since get_required_skills delegates there.
-    stage_loader_mod = sys.modules[status_mod.load_skill_routing.__module__]
-    monkeypatch.setattr(stage_loader_mod, "SKILL_ROUTING_PATH", fake_routing)
-    monkeypatch.setattr(stage_loader_mod, "LEGACY_SKILL_ROUTING_PATH", fake_routing)
-    skills = status_mod.get_required_skills("clarify")
+def test_get_required_skills_missing_stage_returns_empty(status_mod):
+    """Test that a missing stage YAML returns empty skill lists."""
+    skills = status_mod.get_required_skills("nonexistent-stage")
     assert skills == {"required": [], "optional": []}

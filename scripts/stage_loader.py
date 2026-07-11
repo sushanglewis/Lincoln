@@ -2,18 +2,18 @@
 """
 Lincoln stage loader / dispatcher.
 
-Loads stage-specific context, runs entry/exit validators, and manages the
-per-process workflow state file at `<process_slug>/workflow-stage.yaml`.
+Loads stage-specific context from `.claude/stages/<stage>.yaml`, runs
+entry/exit validators, and manages the per-process workflow state file at
+`<process_slug>/workflow-stage.yaml`.
 
 Usage:
-    python scripts/stage-loader.py --stage clarify --action load
-    python scripts/stage-loader.py --stage product-design-docs --action validate-entry
-    python scripts/stage-loader.py --stage product-design-docs --action validate-exit
-    python scripts/stage-loader.py --stage clarify --action transition-next
-    python scripts/stage-loader.py --action recover
-    python scripts/stage-loader.py --stage clarify --action approve-gate
-    python scripts/stage-loader.py --action append-node --node-id clarify --status in_progress
-    python scripts/stage-loader.py --stage clarify --action append-node --node-id clarify --status in_progress
+    python scripts/stage_loader.py --stage clarify --action load
+    python scripts/stage_loader.py --stage product-design-docs --action validate-entry
+    python scripts/stage_loader.py --stage product-design-docs --action validate-exit
+    python scripts/stage_loader.py --stage clarify --action transition-next
+    python scripts/stage_loader.py --action recover
+    python scripts/stage_loader.py --stage clarify --action approve-gate
+    python scripts/stage_loader.py --stage clarify --action append-node --node-id clarify --status in_progress
 """
 
 from __future__ import annotations
@@ -35,6 +35,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import yaml
 
+from scripts import lincoln_trace
 from scripts.lincoln_paths import (
     LEGACY_STATE_PATH,
     ROOT_STATE_PATH,
@@ -44,22 +45,13 @@ from scripts.lincoln_paths import (
     resolve_state_path as resolve_lincoln_state_path,
 )
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_PATH = PROJECT_ROOT / ".claude" / "workflows" / "interview-to-knowledge.yaml"
 WORKFLOW_TEMPLATE_DIR = PROJECT_ROOT / ".claude" / "workflows" / "templates"
 DEFAULT_WORKFLOW_PATH = WORKFLOW_PATH
 
-# New default state file with legacy fallback
 STATE_PATH = ROOT_STATE_PATH
-
 STAGES_DIR = PROJECT_ROOT / ".claude" / "stages"
 VALIDATOR_PATH = PROJECT_ROOT / "scripts" / "validate_stage.py"
-
-# New skill routing path with legacy fallback
-SKILL_ROUTING_PATH = PROJECT_ROOT / ".claude" / "skills" / "routing.yaml"
-LEGACY_SKILL_ROUTING_PATH = PROJECT_ROOT / ".claude" / "skill-routing.yaml"
-
-CONTEXT_DIR = PROJECT_ROOT / ".context"
 
 REQUIRED_STATE_KEYS = {
     "schema_version",
@@ -111,7 +103,6 @@ def save_yaml(path: Path, data: Any) -> None:
 def resolve_workflow_path(template_name: str | None = None) -> Path:
     if not template_name:
         return DEFAULT_WORKFLOW_PATH
-    # First check templates directory, then fall back to main workflows directory
     template_path = WORKFLOW_TEMPLATE_DIR / f"{template_name}.yaml"
     if template_path.exists():
         return template_path
@@ -230,6 +221,51 @@ def get_latest_node_for_stage(state: dict[str, Any], stage_id: str) -> dict[str,
     return matching[-1]
 
 
+def load_stage_yaml(stage_id: str) -> dict[str, Any]:
+    """Load the single-YAML stage definition."""
+    path = STAGES_DIR / f"{stage_id}.yaml"
+    if not path.exists():
+        raise FileNotFoundError(f"Stage YAML not found: {path}")
+    return load_yaml(path)
+
+
+def list_stage_ids() -> list[str]:
+    """Return all stage IDs discovered from .claude/stages/*.yaml."""
+    if not STAGES_DIR.exists():
+        return []
+    return sorted(p.stem for p in STAGES_DIR.glob("*.yaml") if p.stem != "stage-manifest")
+
+
+def load_skill_routing() -> dict[str, Any]:
+    """Build skill routing from stage YAMLs for backward compatibility."""
+    routing: dict[str, Any] = {"routing": {}}
+    for stage_id in list_stage_ids():
+        try:
+            stage = load_stage_yaml(stage_id)
+            skills = stage.get("skills", {})
+            routing["routing"][stage_id] = {
+                "required": skills.get("required", []),
+                "optional": skills.get("optional", []),
+                "human_gate": stage.get("human_gate", False),
+            }
+        except Exception:
+            continue
+    return routing
+
+
+def get_stage_skills(_routing_data: dict[str, Any] | None, stage_id: str) -> dict[str, list[str]]:
+    """Extract required/optional skills for a stage from stage YAML."""
+    try:
+        stage = load_stage_yaml(stage_id)
+        skills = stage.get("skills", {})
+        return {
+            "required": skills.get("required", []),
+            "optional": skills.get("optional", []),
+        }
+    except Exception:
+        return {"required": [], "optional": []}
+
+
 def run_validator(
     phase: str,
     check_name: str,
@@ -263,32 +299,68 @@ def run_validator(
     return result.returncode, result.stdout, result.stderr
 
 
-def load_skill_routing() -> dict[str, Any] | None:
-    """Load skill routing from new or legacy path."""
-    path = SKILL_ROUTING_PATH
-    if not path.exists():
-        path = LEGACY_SKILL_ROUTING_PATH
-    if not path.exists():
-        return None
-    try:
-        data = yaml.safe_load(path.read_text(encoding="utf-8"))
-        if isinstance(data, dict):
-            return data
-    except Exception:
-        pass
-    return None
+# ---------------------------------------------------------------------------
+# Context resolution
+# ---------------------------------------------------------------------------
 
 
-def get_stage_skills(routing_data: dict[str, Any] | None, stage_id: str) -> dict[str, list[str]]:
-    """Extract required/optional skills for a stage from routing data."""
-    skills = {"required": [], "optional": []}
-    if routing_data is None:
-        return skills
-    routing = routing_data.get("routing", {})
-    stage_routing = routing.get(stage_id, {})
-    skills["required"] = stage_routing.get("required", [])
-    skills["optional"] = stage_routing.get("optional", [])
-    return skills
+def resolve_stage_context(
+    stage_id: str,
+    state: dict[str, Any],
+    state_file: Path | None = None,
+) -> dict[str, Any]:
+    """Return a deterministic context dict for the current stage.
+
+    Merges:
+      1. stage YAML (identity, agents, skills, artifacts, context, gates)
+      2. workflow template step (for ordering and name override)
+      3. interpolated variables from workflow-stage.yaml
+    """
+    stage = load_stage_yaml(stage_id)
+    template_name = state.get("workflow", {}).get("template")
+    workflow = load_workflow(template_name)
+    workflow_step = find_stage(workflow, stage_id)
+
+    variables = get_variables(state)
+    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
+
+    context = stage.get("context", {})
+    interpolated_context = {
+        key: interpolate(value, variables)
+        for key, value in context.items()
+        if isinstance(value, str)
+    }
+
+    artifacts = stage.get("artifacts", {})
+    required_artifacts = [
+        interpolate_artifact(str(art), state, state_file)
+        for art in artifacts.get("required", [])
+    ]
+    optional_artifacts = [
+        interpolate_artifact(str(art), state, state_file)
+        for art in artifacts.get("optional", [])
+    ]
+
+    agent = stage.get("agent", {})
+    skills = stage.get("skills", {})
+
+    return {
+        "stage_id": stage_id,
+        "stage_name": workflow_step.get("name", stage.get("name", stage_id)),
+        "description": stage.get("description", ""),
+        "human_gate": stage.get("human_gate", False),
+        "next_stage": compute_next_stage(workflow, stage_id),
+        "primary_agent": agent.get("primary"),
+        "review_agents": agent.get("reviewers", []),
+        "handoff_to": agent.get("handoff_to"),
+        "required_skills": skills.get("required", []),
+        "optional_skills": skills.get("optional", []),
+        "required_artifacts": required_artifacts,
+        "optional_artifacts": optional_artifacts,
+        "context": interpolated_context,
+        "context_path": str((STAGES_DIR / f"{stage_id}.yaml").relative_to(PROJECT_ROOT)),
+        "workflow_template": template_name,
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -297,32 +369,8 @@ def get_stage_skills(routing_data: dict[str, Any] | None, stage_id: str) -> dict
 
 
 def action_load(stage_id: str, state: dict[str, Any], state_file: Path | None = None) -> dict[str, Any]:
-    template_name = state.get("workflow", {}).get("template")
-    workflow = load_workflow(template_name)
-    stage_def = find_stage(workflow, stage_id)
-    stage_dir = STAGES_DIR / stage_id
+    context = resolve_stage_context(stage_id, state, state_file)
 
-    if not stage_dir.exists():
-        raise FileNotFoundError(f"Stage directory not found: {stage_dir}")
-
-    context_parts: list[str] = []
-    context_paths: list[str] = []
-    for filename in ["AGENTS.md", "CHECKLIST.md", "SKILLS.md", "PROMPT.md"]:
-        path = stage_dir / filename
-        if path.exists():
-            context_parts.append(path.read_text(encoding="utf-8"))
-            context_paths.append(str(path.relative_to(PROJECT_ROOT)))
-
-    variables = get_variables(state)
-    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
-    context = "\n\n---\n\n".join(context_parts)
-    context = interpolate(context, variables)
-
-    # Load skills from routing.yaml
-    routing_data = load_skill_routing()
-    skills = get_stage_skills(routing_data, stage_id)
-
-    # Determine stage status from nodes (new) or legacy stages
     if _is_legacy_state(state):
         stage_status = state.get("stages", {}).get(stage_id, {}).get("status")
     else:
@@ -330,16 +378,101 @@ def action_load(stage_id: str, state: dict[str, Any], state_file: Path | None = 
         stage_status = latest_node.get("status") if latest_node else state.get("current_run", {}).get("status")
 
     return {
-        "stage_id": stage_id,
-        "stage_name": stage_def.get("name", stage_id),
+        "stage_id": context["stage_id"],
+        "stage_name": context["stage_name"],
         "stage_status": stage_status,
-        "human_gate": stage_def.get("human_gate", False),
-        "next_stage": compute_next_stage(workflow, stage_id),
-        "context": context,
-        "context_paths": context_paths,
-        "required_skills": skills["required"],
-        "optional_skills": skills["optional"],
+        "human_gate": context["human_gate"],
+        "next_stage": context["next_stage"],
+        "context": json.dumps(context["context"], ensure_ascii=False),
+        "context_paths": [context["context_path"]],
+        "required_skills": context["required_skills"],
+        "optional_skills": context["optional_skills"],
     }
+
+
+def _check_artifacts_present(stage_id: str, state: dict[str, Any], state_file: Path | None = None) -> bool:
+    """Check that all required artifacts for the stage exist and are non-empty."""
+    stage = load_stage_yaml(stage_id)
+    artifacts = stage.get("artifacts", {})
+    required = artifacts.get("required", [])
+    if not required:
+        return True
+
+    all_present = True
+    for art in required:
+        path = interpolate_artifact(str(art), state, state_file)
+        target = PROJECT_ROOT / path
+        if not target.exists() or target.stat().st_size == 0:
+            print(f"FAIL: artifact missing or empty: {path}", file=sys.stderr)
+            all_present = False
+        else:
+            print(f"PASS: artifact present: {path}")
+    return all_present
+
+
+def _check_human_approved(stage_id: str, state: dict[str, Any]) -> bool:
+    """Check that the latest node for the stage is marked as approved."""
+    latest_node = get_latest_node_for_stage(state, stage_id)
+    if latest_node is None:
+        print(f"FAIL: no node found for stage '{stage_id}'", file=sys.stderr)
+        return False
+    if bool(latest_node.get("gate_passed")) and latest_node.get("approved_by"):
+        print(f"PASS: human approved for stage '{stage_id}'")
+        return True
+    print(f"FAIL: stage '{stage_id}' not approved", file=sys.stderr)
+    return False
+
+
+def _check_previous_stage_completed(stage_id: str, prev_stage_id: str, state: dict[str, Any]) -> bool:
+    """Check that the prerequisite stage has a completed node."""
+    prev_node = get_latest_node_for_stage(state, prev_stage_id)
+    if prev_node and prev_node.get("status") == "completed":
+        print(f"PASS: previous stage '{prev_stage_id}' completed")
+        return True
+    print(f"FAIL: previous stage '{prev_stage_id}' not completed", file=sys.stderr)
+    return False
+
+
+def _run_gate_check(
+    phase: str,
+    check: dict[str, Any],
+    stage_id: str,
+    state: dict[str, Any],
+    state_file: Path | None = None,
+) -> bool:
+    """Run a single gate check. Returns True if passed."""
+    check_name = check.get("check")
+    raw_args = check.get("args", [])
+    variables = get_variables(state)
+    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
+    args = [
+        interpolate_process_path(interpolate(str(a), variables), state, resolve_state_path(state_file))
+        for a in raw_args
+    ]
+
+    if check_name == "artifacts_present":
+        return _check_artifacts_present(stage_id, state, state_file)
+
+    if check_name in ("human_approved", "gate_review_passed"):
+        return _check_human_approved(stage_id, state)
+
+    if check_name == "previous_stage_completed":
+        if not args:
+            print(f"FAIL: previous_stage_completed requires an argument", file=sys.stderr)
+            return False
+        return _check_previous_stage_completed(stage_id, args[0], state)
+
+    # Structural checks delegated to validate_stage.py
+    exit_code, stdout, stderr = run_validator(phase, check_name, args, state_file)
+    if exit_code == 0:
+        print(f"PASS: {phase} check '{check_name}'")
+        return True
+    print(f"FAIL: {phase} check '{check_name}'", file=sys.stderr)
+    if stdout:
+        print(stdout, file=sys.stderr)
+    if stderr:
+        print(stderr, file=sys.stderr)
+    return False
 
 
 def action_validate(
@@ -348,13 +481,9 @@ def action_validate(
     phase: str,
     state_file: Path | None = None,
 ) -> int:
-    """Run entry/exit checks from the workflow template using validate_stage.py."""
-    template_name = state.get("workflow", {}).get("template")
-    workflow = load_workflow(template_name)
-    stage_def = find_stage(workflow, stage_id)
-    checks = stage_def.get(f"{phase}_checks", [])
-    variables = get_variables(state)
-    variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
+    """Run entry/exit checks from the stage YAML gates."""
+    stage = load_stage_yaml(stage_id)
+    checks = stage.get("gates", {}).get(phase, [])
 
     if _is_legacy_state(state):
         stage_state = state.setdefault("stages", {}).setdefault(stage_id, {})
@@ -366,51 +495,33 @@ def action_validate(
         if "validator_history" not in stage_state:
             stage_state["validator_history"] = []
     else:
-        # For new schema, update current_run status during validation
         if phase == "entry":
             state["current_run"]["status"] = "entry_validating"
         save_state(state, state_file)
 
+    all_passed = True
     for check in checks:
-        check_name = check["check"]
-        raw_args = check.get("args", [])
-        args = [
-            interpolate_process_path(
-                interpolate(str(a), variables),
-                state,
-                resolve_state_path(state_file),
-            )
-            for a in raw_args
-        ]
-        exit_code, stdout, stderr = run_validator(phase, check_name, args, state_file)
-
+        passed = _run_gate_check(phase, check, stage_id, state, state_file)
         if _is_legacy_state(state):
             stage_state["validator_history"].append(
                 {
                     "phase": phase,
-                    "check": check_name,
-                    "exit_code": exit_code,
-                    "stdout": stdout,
-                    "stderr": stderr,
+                    "check": check.get("check"),
+                    "exit_code": 0 if passed else 1,
                     "run_at": now_iso(),
                 }
             )
+        if not passed:
+            all_passed = False
 
-        if exit_code != 0:
-            if _is_legacy_state(state):
-                stage_state["status"] = "validation_failed"
-                stage_state["error_message"] = (
-                    f"{phase} check '{check_name}' failed.\nstdout: {stdout}\nstderr: {stderr}"
-                )
-                stage_state["retry_count"] = stage_state.get("retry_count", 0) + 1
-                save_state(state, state_file)
-            else:
-                state["current_run"]["status"] = "validation_failed"
-                save_state(state, state_file)
-            print(f"FAIL: {phase} check '{check_name}'", file=sys.stderr)
-            print(stdout, file=sys.stderr)
-            print(stderr, file=sys.stderr)
-            return 1
+    if not all_passed:
+        if _is_legacy_state(state):
+            stage_state["status"] = "validation_failed"
+            stage_state["retry_count"] = stage_state.get("retry_count", 0) + 1
+        else:
+            state["current_run"]["status"] = "validation_failed"
+        save_state(state, state_file)
+        return 1
 
     now = now_iso()
     if _is_legacy_state(state):
@@ -431,71 +542,19 @@ def action_validate(
     return 0
 
 
-def action_validate_exit(
-    stage_id: str,
-    state: dict[str, Any],
-    state_file: Path | None = None,
-) -> int:
-    """Run exit checks from stage-manifest.yaml gates.exit."""
-    manifest_path = STAGES_DIR / "stage-manifest.yaml"
-    if not manifest_path.exists():
-        print(f"FAIL: stage-manifest.yaml not found at {manifest_path}", file=sys.stderr)
-        return 1
-
-    manifest = load_yaml(manifest_path)
-    stages = manifest.get("stages", [])
-    stage_def = None
-    for s in stages:
-        if s.get("id") == stage_id:
-            stage_def = s
-            break
-
-    if stage_def is None:
-        print(f"FAIL: stage '{stage_id}' not found in stage-manifest.yaml", file=sys.stderr)
-        return 1
-
-    gates = stage_def.get("gates", {})
-    exit_checks = gates.get("exit", [])
-    if not exit_checks:
-        print(f"PASS: no exit gates defined for '{stage_id}'")
-        action_record_artifacts(stage_id, state, state_file)
-        return 0
-
-    variables = get_variables(state)
-    all_passed = True
-
-    for check in exit_checks:
-        check_name = check.get("check")
-        raw_args = check.get("args", [])
-        args = [interpolate_process_path(interpolate(str(a), variables), state, resolve_state_path(state_file)) for a in raw_args]
-
-        passed = _run_exit_gate_check(check_name, args, stage_id, state)
-        if passed:
-            print(f"PASS: exit check '{check_name}'")
-        else:
-            print(f"FAIL: exit check '{check_name}'", file=sys.stderr)
-            all_passed = False
-
-    if all_passed:
-        action_record_artifacts(stage_id, state, state_file)
-
-    return 0 if all_passed else 1
-
-
 def action_record_artifacts(
     stage_id: str,
     state: dict[str, Any],
     state_file: Path | None = None,
 ) -> list[str]:
-    """Discover existing artifact paths declared by the workflow step and record them in the latest node."""
-    template_name = state.get("workflow", {}).get("template")
-    workflow = load_workflow(template_name)
-    stage_def = find_stage(workflow, stage_id)
+    """Discover existing artifact paths declared by the stage YAML and record them."""
+    stage = load_stage_yaml(stage_id)
     variables = get_variables(state)
     variables.setdefault("process_slug", get_process_slug(state, resolve_state_path(state_file)))
 
     recorded: list[str] = []
-    for art in stage_def.get("artifacts", []):
+    artifacts = stage.get("artifacts", {})
+    for art in artifacts.get("required", []) + artifacts.get("optional", []):
         path = interpolate_artifact(str(art), state, state_file)
         target = PROJECT_ROOT / path
         if target.exists():
@@ -527,45 +586,6 @@ def action_record_artifacts(
     return recorded
 
 
-def _run_exit_gate_check(check_name: str, args: list[str], stage_id: str, state: dict[str, Any]) -> bool:
-    """Execute a single exit gate check. Returns True if passed."""
-    if check_name == "artifact_exists":
-        for path_arg in args:
-            target = PROJECT_ROOT / path_arg
-            if not target.exists():
-                return False
-        return True
-
-    if check_name == "human_approved":
-        latest_node = get_latest_node_for_stage(state, stage_id)
-        if latest_node is None:
-            return False
-        return bool(latest_node.get("gate_passed")) and bool(latest_node.get("approved_by"))
-
-    if check_name == "gate_review_passed":
-        # Same as human_approved for now
-        latest_node = get_latest_node_for_stage(state, stage_id)
-        if latest_node is None:
-            return False
-        return bool(latest_node.get("gate_passed")) and bool(latest_node.get("approved_by"))
-
-    if check_name == "previous_gate_passed":
-        if not args:
-            return False
-        prev_stage_id = args[0]
-        prev_node = get_latest_node_for_stage(state, prev_stage_id)
-        if prev_node is None:
-            return False
-        return bool(prev_node.get("gate_passed"))
-
-    # Unknown check: try running through validator as fallback
-    try:
-        exit_code, _, _ = run_validator("exit", check_name, args, state_file=None)
-        return exit_code == 0
-    except Exception:
-        return False
-
-
 def action_approve_gate(
     stage_id: str,
     state: dict[str, Any],
@@ -583,7 +603,6 @@ def action_approve_gate(
 
     latest_node = get_latest_node_for_stage(state, stage_id)
     if latest_node is None:
-        # Create a new node if none exists
         new_node = {
             "stage_id": stage_id,
             "node_id": f"{stage_id}-{now_iso()}",
@@ -617,7 +636,6 @@ def action_append_node(
 ) -> int:
     """Append a node record to the nodes array."""
     if _is_legacy_state(state):
-        # Legacy: update the stage status in stages dict
         stage_state = state.setdefault("stages", {}).setdefault(stage_id, {})
         stage_state["status"] = status
         if status == "completed":
@@ -645,7 +663,6 @@ def action_append_node(
     }
     state.setdefault("nodes", []).append(node)
 
-    # Update current_run if this is the latest node
     state["current_run"]["current_stage"] = stage_id
     state["current_run"]["status"] = status
 
@@ -664,7 +681,6 @@ def action_transition_next(stage_id: str, state: dict[str, Any], state_file: Pat
         stage_state["status"] = "completed"
         stage_state["completed_at"] = now_iso()
 
-        # Compute duration_seconds from started_at to completed_at
         started_at = stage_state.get("started_at")
         completed_at = stage_state.get("completed_at")
         if started_at and completed_at:
@@ -702,7 +718,6 @@ def action_transition_next(stage_id: str, state: dict[str, Any], state_file: Pat
             state["current_run"]["previous_stage"] = stage_id
             state["current_run"]["status"] = "completed"
     else:
-        # New schema: append a completed node for current stage and a new node for next
         now = now_iso()
         recorded_artifacts = action_record_artifacts(stage_id, state, state_file)
         completed_node = {
@@ -758,33 +773,31 @@ def action_recover(state: dict[str, Any], state_file: Path | None = None) -> dic
             "current_stage": state["current_run"].get("current_stage"),
             "current_status": state["current_run"].get("status"),
         }
-    else:
-        # New schema: derive from nodes array
-        nodes = get_nodes(state)
-        last_completed = None
-        for node in reversed(nodes):
-            if node.get("status") == "completed" and node.get("stage_id") in step_ids:
-                last_completed = node.get("stage_id")
-                break
 
-        current_stage = state["current_run"].get("current_stage")
-        resume_point = current_stage or last_completed
-        if resume_point:
-            # Check if the resume point stage is completed in its latest node
-            latest = get_latest_node_for_stage(state, resume_point)
-            if latest and latest.get("status") == "completed":
-                resume_point = compute_next_stage(workflow, resume_point)
+    nodes = get_nodes(state)
+    last_completed = None
+    for node in reversed(nodes):
+        if node.get("status") == "completed" and node.get("stage_id") in step_ids:
+            last_completed = node.get("stage_id")
+            break
 
-        state["recovery"]["last_validated_checkpoint"] = last_completed
-        state["recovery"]["can_resume_from"] = resume_point
-        save_state(state, state_file)
+    current_stage = state["current_run"].get("current_stage")
+    resume_point = current_stage or last_completed
+    if resume_point:
+        latest = get_latest_node_for_stage(state, resume_point)
+        if latest and latest.get("status") == "completed":
+            resume_point = compute_next_stage(workflow, resume_point)
 
-        return {
-            "last_completed": last_completed,
-            "can_resume_from": resume_point,
-            "current_stage": current_stage,
-            "current_status": state["current_run"].get("status"),
-        }
+    state["recovery"]["last_validated_checkpoint"] = last_completed
+    state["recovery"]["can_resume_from"] = resume_point
+    save_state(state, state_file)
+
+    return {
+        "last_completed": last_completed,
+        "can_resume_from": resume_point,
+        "current_stage": current_stage,
+        "current_status": state["current_run"].get("status"),
+    }
 
 
 def action_status(state: dict[str, Any]) -> dict[str, Any]:
@@ -805,6 +818,11 @@ def action_status(state: dict[str, Any]) -> dict[str, Any]:
 
 def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
     """Generate <process_slug>/handoffs/lincoln-handoff-{stage}.md."""
+    stage = load_stage_yaml(stage_id)
+    workflow = load_workflow(state.get("workflow", {}).get("template"))
+    workflow_step = find_stage(workflow, stage_id)
+def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path) -> str:
+    """Generate <process_slug>/handoffs/lincoln-handoff-{stage}.md and trigger a handoff benchmark report."""
     template_name = state.get("workflow", {}).get("template")
     workflow = load_workflow(template_name)
     stage_def = find_stage(workflow, stage_id)
@@ -826,21 +844,25 @@ def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
     lines.append("")
     lines.append("## Current Stage")
     lines.append(f"- **Stage:** {stage_id}")
-    lines.append(f"- **Name:** {stage_def.get('name', stage_id)}")
+    lines.append(f"- **Name:** {workflow_step.get('name', stage.get('name', stage_id))}")
     if _is_legacy_state(state):
         lines.append(f"- **Status:** {stage_state.get('status', 'unknown')}")
     else:
         lines.append(f"- **Status:** {stage_state.get('status', state.get('current_run', {}).get('status', 'unknown'))}")
     lines.append("")
     lines.append("## Waiting For")
-    lines.append(f"- **Waiting for:** {'human' if stage_def.get('human_gate') and not stage_state.get('gate_passed') else 'agent'}")
+    lines.append(f"- **Waiting for:** {'human' if stage.get('human_gate') and not stage_state.get('gate_passed') else 'agent'}")
     lines.append("")
     lines.append("## Artifacts")
     if artifacts_produced:
         lines.append("### Produced")
         for art in artifacts_produced:
             lines.append(f"- [x] {art}")
-    required = stage_def.get("artifacts", [])
+
+    required = [
+        interpolate_artifact(str(art), state, resolve_state_path(None))
+        for art in stage.get("artifacts", {}).get("required", [])
+    ]
     if required:
         lines.append("### Required")
         for art in required:
@@ -854,19 +876,65 @@ def action_handoff_report(stage_id: str, state: dict[str, Any]) -> str:
     lines.append("*This file is auto-generated by `scripts/stage_loader.py --action handoff-report`*")
 
     content = "\n".join(lines)
-    state_path = resolve_state_path(None)
-    handoff_dir = process_package_root(state=state, state_path=state_path) / "handoffs"
+    project_root = state_file.parents[1]
+    handoff_dir = process_package_root(state=state, state_path=state_file, project_root=project_root) / "handoffs"
     handoff_dir.mkdir(parents=True, exist_ok=True)
     handoff_path = handoff_dir / f"lincoln-handoff-{stage_id}.md"
     handoff_path.write_text(content, encoding="utf-8")
-    return str(handoff_path.relative_to(PROJECT_ROOT))
+
+    # Record a structured handoff event in the session trace so benchmark metrics
+    # can detect handoffs without regex-parsing the original Bash command.
+    lincoln_trace.append_trace_entry(
+        state_file,
+        "LincolnHandoff",
+        {"stage": stage_id},
+        0,
+        stage=stage_id,
+        run_id=state.get("current_run", {}).get("run_id"),
+    )
+
+    # Trigger the handoff benchmark report from the canonical state mutation layer.
+    action_benchmark_report(state_file, "handoff")
+
+    return str(handoff_path.relative_to(project_root))
+
+
+def action_update_last_updated(state_file: Path) -> None:
+    """Update current_run.last_updated_at and persist state."""
+    state = load_state(state_file)
+    state["current_run"]["last_updated_at"] = now_iso()
+    save_state(state, state_file)
+
+
+def action_benchmark_report(state_file: Path, trigger: str) -> dict[str, str] | None:
+    """Generate a benchmark report for the current process state."""
+    from scripts import lincoln_benchmark
+
+    result = lincoln_benchmark.write_benchmark_report(state_file, trigger, PROJECT_ROOT)
+    if result is None:
+        return None
+
+    def _rel(path: Path) -> str:
+        try:
+            return str(path.relative_to(PROJECT_ROOT))
+        except ValueError:
+            return str(path)
+
+    return {
+        "markdown": _rel(result["markdown"]),
+        "json": _rel(result["json"]),
+    }
+
+
+# ---------------------------------------------------------------------------
+# CLI
+# ---------------------------------------------------------------------------
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Lincoln stage loader")
     parser.add_argument("--stage", help="Stage ID")
-    parser.add_argument(
-        "--action",
+    parser.add_argument("--action",
         required=True,
         choices=[
             "load",
@@ -879,6 +947,8 @@ def main() -> int:
             "recover",
             "status",
             "handoff-report",
+            "benchmark-report",
+            "update-last-updated",
         ],
     )
     parser.add_argument("--state-file", type=Path, default=None)
@@ -888,6 +958,7 @@ def main() -> int:
     parser.add_argument("--status", help="Node status for append-node")
     parser.add_argument("--handoff-file", help="Handoff file path for append-node")
     parser.add_argument("--artifacts", help="Comma-separated artifact paths for append-node")
+    parser.add_argument("--trigger", default="manual", help="Trigger type for benchmark-report")
     args = parser.parse_args()
 
     state_file = resolve_state_path(args.state_file)
@@ -903,8 +974,6 @@ def main() -> int:
     if args.action in ("validate-entry", "validate-exit"):
         if not args.stage:
             parser.error("--stage is required for validate-*")
-        if args.action == "validate-exit":
-            return action_validate_exit(args.stage, state, state_file)
         phase = args.action.split("-")[1]
         return action_validate(args.stage, state, phase, state_file)
 
@@ -950,8 +1019,20 @@ def main() -> int:
     if args.action == "handoff-report":
         if not args.stage:
             parser.error("--stage is required for handoff-report")
-        path = action_handoff_report(args.stage, state)
+        path = action_handoff_report(args.stage, state, state_file)
         print(f"Handoff report written to: {path}")
+        return 0
+
+    if args.action == "update-last-updated":
+        action_update_last_updated(state_file)
+        return 0
+
+    if args.action == "benchmark-report":
+        result = action_benchmark_report(state_file, args.trigger)
+        if result is None:
+            print("Benchmark report skipped")
+        else:
+            print(f"Benchmark report written to:\n  {result['markdown']}\n  {result['json']}")
         return 0
 
     return 0

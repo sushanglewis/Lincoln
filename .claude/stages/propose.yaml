@@ -1,0 +1,45 @@
+schema_version: 2.0.0
+id: propose
+name: Propose
+description: 'Generates a complete OpenSpec change proposal including
+
+  proposal.md, design.md, tasks.md, and specs/ directory.'
+templates: all
+prerequisite_stage: tdd-development-plan
+next_stage: split
+human_gate: false
+agent:
+  primary: lincoln-engineer
+  reviewers:
+  - lincoln-qa
+  - lincoln-architect
+  handoff_to: lincoln-pm
+skills:
+  required:
+  - openspec:propose
+  optional:
+  - superpowers:verification-before-completion
+  - oh-my-claudecode:verify
+artifacts:
+  required:
+  - '{process_slug}/openspec/changes/{change_name}/proposal.md'
+  - '{process_slug}/openspec/changes/{change_name}/design.md'
+  - '{process_slug}/openspec/changes/{change_name}/tasks.md'
+  - '{process_slug}/openspec/changes/{change_name}/specs/'
+context:
+  goal: 基于已确认的 TDD 研发计划，调用 OpenSpec CLI 生成标准变更提案 artifact 目录（`{process_slug}/openspec/changes/{change_name}/`），将
+    TDD 计划转化为结构化的 OpenSpec 变更提案，作为后续 GitHub Issues 拆分和研发实现的依据。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - tdd-development-plan
+  exit:
+  - check: artifacts_present

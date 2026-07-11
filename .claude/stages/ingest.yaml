@@ -1,0 +1,40 @@
+schema_version: 2.0.0
+id: ingest
+name: Ingest
+description: 'Ingests raw interview recordings and produces transcripts,
+
+  summaries, and raw insights.'
+templates:
+- interview-to-knowledge
+prerequisite_stage: workflow-router
+next_stage: clarify
+human_gate: false
+agent:
+  primary: lincoln-pm
+  handoff_to: lincoln-pm
+skills:
+  required: []
+  optional:
+  - oh-my-claudecode:deep-interview
+artifacts:
+  required:
+  - '{process_slug}/interviews/{session_id}/metadata.json'
+  - '{process_slug}/interviews/{session_id}/transcript.md'
+  - '{process_slug}/interviews/{session_id}/summary.md'
+  - '{process_slug}/interviews/{session_id}/raw-insights.md'
+context:
+  goal: 将音频访谈录音转写为结构化文本，生成带时间戳的逐字稿、摘要和初始洞察，为后续需求澄清阶段提供输入。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - workflow-router
+  exit:
+  - check: artifacts_present

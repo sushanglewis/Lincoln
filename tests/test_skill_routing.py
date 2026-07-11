@@ -1,11 +1,11 @@
-"""Tests for .claude/skill-routing.yaml."""
+"""Tests for skill routing derived from .claude/stages/*.yaml."""
 from pathlib import Path
 
 import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-SKILL_ROUTING_PATH = ROOT / ".claude" / "skills" / "routing.yaml"
+STAGES_DIR = ROOT / ".claude" / "stages"
 WORKFLOW_PATH = ROOT / ".claude" / "workflows" / "interview-to-knowledge.yaml"
 
 VALID_NAMESPACES = {
@@ -18,9 +18,22 @@ VALID_NAMESPACES = {
 
 
 @pytest.fixture
-def skill_routing():
-    data = yaml.safe_load(SKILL_ROUTING_PATH.read_text(encoding="utf-8"))
-    assert isinstance(data, dict)
+def stage_files():
+    return sorted(p for p in STAGES_DIR.glob("*.yaml") if p.stem != "stage-manifest")
+
+
+@pytest.fixture
+def routing(stage_files):
+    """Build routing table from stage YAMLs."""
+    data = {}
+    for path in stage_files:
+        stage = yaml.safe_load(path.read_text(encoding="utf-8"))
+        skills = stage.get("skills", {})
+        data[stage["id"]] = {
+            "required": skills.get("required", []),
+            "optional": skills.get("optional", []),
+            "human_gate": stage.get("human_gate", False),
+        }
     return data
 
 
@@ -29,13 +42,8 @@ def skill_routing():
 # ---------------------------------------------------------------------------
 
 
-def test_yaml_has_schema_version(skill_routing):
-    assert "schema_version" in skill_routing
-
-
-def test_yaml_has_routing(skill_routing):
-    assert "routing" in skill_routing
-    assert isinstance(skill_routing["routing"], dict)
+def test_routing_has_entries(routing):
+    assert routing, f"No routing entries found under {STAGES_DIR}"
 
 
 # ---------------------------------------------------------------------------
@@ -43,8 +51,7 @@ def test_yaml_has_routing(skill_routing):
 # ---------------------------------------------------------------------------
 
 
-def test_every_stage_has_required_optional_human_gate_notes(skill_routing):
-    routing = skill_routing["routing"]
+def test_every_stage_has_required_optional_human_gate(routing):
     for stage_id, stage_def in routing.items():
         assert "required" in stage_def, f"Stage '{stage_id}' missing 'required'"
         assert isinstance(stage_def["required"], list), f"Stage '{stage_id}' required not a list"
@@ -52,7 +59,6 @@ def test_every_stage_has_required_optional_human_gate_notes(skill_routing):
         assert isinstance(stage_def["optional"], list), f"Stage '{stage_id}' optional not a list"
         assert "human_gate" in stage_def, f"Stage '{stage_id}' missing 'human_gate'"
         assert isinstance(stage_def["human_gate"], bool), f"Stage '{stage_id}' human_gate not a bool"
-        assert "notes" in stage_def, f"Stage '{stage_id}' missing 'notes'"
 
 
 # ---------------------------------------------------------------------------
@@ -60,16 +66,13 @@ def test_every_stage_has_required_optional_human_gate_notes(skill_routing):
 # ---------------------------------------------------------------------------
 
 
-def test_every_interview_workflow_stage_has_routing_entry(skill_routing):
+def test_every_interview_workflow_stage_has_routing_entry(routing):
     workflow = yaml.safe_load(WORKFLOW_PATH.read_text(encoding="utf-8"))
     workflow_steps = workflow.get("workflow", {}).get("steps", [])
     step_ids = {step["id"] for step in workflow_steps}
 
-    routing = skill_routing["routing"]
-    routing_stages = set(routing.keys())
-
-    missing = step_ids - routing_stages
-    assert not missing, f"Workflow stages missing from skill routing: {missing}"
+    missing = step_ids - set(routing.keys())
+    assert not missing, f"Workflow stages missing from routing: {missing}"
 
 
 # ---------------------------------------------------------------------------
@@ -83,8 +86,7 @@ def _extract_namespace(skill_str: str) -> str:
     return skill_str
 
 
-def test_required_skills_use_recognized_namespaces(skill_routing):
-    routing = skill_routing["routing"]
+def test_required_skills_use_recognized_namespaces(routing):
     for stage_id, stage_def in routing.items():
         for skill in stage_def.get("required", []):
             ns = _extract_namespace(skill)
@@ -93,8 +95,7 @@ def test_required_skills_use_recognized_namespaces(skill_routing):
             )
 
 
-def test_optional_skills_use_recognized_namespaces(skill_routing):
-    routing = skill_routing["routing"]
+def test_optional_skills_use_recognized_namespaces(routing):
     for stage_id, stage_def in routing.items():
         for skill in stage_def.get("optional", []):
             ns = _extract_namespace(skill)
@@ -108,26 +109,21 @@ def test_optional_skills_use_recognized_namespaces(skill_routing):
 # ---------------------------------------------------------------------------
 
 
-def test_clarify_has_brainstorming_required(skill_routing):
-    routing = skill_routing["routing"]
+def test_clarify_has_brainstorming_required(routing):
     assert "superpowers:brainstorming" in routing["clarify"]["required"]
 
 
-def test_clarify_has_human_gate(skill_routing):
-    routing = skill_routing["routing"]
+def test_clarify_has_human_gate(routing):
     assert routing["clarify"]["human_gate"] is True
 
 
-def test_implement_has_tdd_required(skill_routing):
-    routing = skill_routing["routing"]
+def test_implement_has_tdd_required(routing):
     assert "superpowers:test-driven-development" in routing["implement"]["required"]
 
 
-def test_implement_has_human_gate(skill_routing):
-    routing = skill_routing["routing"]
+def test_implement_has_human_gate(routing):
     assert routing["implement"]["human_gate"] is True
 
 
-def test_sync_knowledge_has_docs_update_required(skill_routing):
-    routing = skill_routing["routing"]
+def test_sync_knowledge_has_docs_update_required(routing):
     assert "gsd:docs-update" in routing["sync-knowledge"]["required"]

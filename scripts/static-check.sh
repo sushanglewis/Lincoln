@@ -4,6 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+STATIC_CHECK_RESULT="$ROOT/.context/static-check-result.json"
+mkdir -p "$ROOT/.context"
+
 # Prefer project venv if available; otherwise rely on system python3 having pytest/pyyaml.
 if [ -d "$ROOT/.venv" ] && [ -x "$ROOT/.venv/bin/python3" ]; then
     PYTHON="$ROOT/.venv/bin/python3"
@@ -12,6 +15,23 @@ elif [ -d "$ROOT/venv" ] && [ -x "$ROOT/venv/bin/python3" ]; then
 else
     PYTHON="python3"
 fi
+
+# Record a structured pass/fail result so benchmark metrics can consume it
+# instead of regex-scanning the command text.
+write_static_check_result() {
+    local passed="$1"
+    "$PYTHON" - "$passed" <<'PY'
+import sys, json
+from datetime import datetime, timezone
+passed = sys.argv[1] == "true"
+print(json.dumps({
+    "passed": passed,
+    "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+}, ensure_ascii=False))
+PY
+}
+
+trap 'write_static_check_result false > "$STATIC_CHECK_RESULT"' ERR
 
 echo "==> Validate workflow YAML"
 "$PYTHON" -c "import yaml; yaml.safe_load(open('.claude/workflows/interview-to-knowledge.yaml'))"
@@ -51,7 +71,7 @@ if [ -x "scripts/check-skill-dependencies.sh" ]; then
     bash scripts/check-skill-dependencies.sh || true
 fi
 
-echo "==> Validate workflow templates"
+echo "==> Validate workflow templates reference stage YAMLs"
 "$PYTHON" - "$ROOT" <<'PY'
 import sys
 from pathlib import Path
@@ -59,8 +79,12 @@ import yaml
 
 root = Path(sys.argv[1])
 templates_dir = root / ".claude" / "workflows" / "templates"
+main_workflow = root / ".claude" / "workflows" / "interview-to-knowledge.yaml"
 errors = []
-for path in templates_dir.glob("*.yaml"):
+
+for path in list(templates_dir.glob("*.yaml")) + [main_workflow]:
+    if not path.exists():
+        continue
     try:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -72,9 +96,9 @@ for path in templates_dir.glob("*.yaml"):
         if not stage_id:
             errors.append(f"{path.name}: step missing id")
             continue
-        stage_dir = root / ".claude" / "stages" / stage_id
-        if not stage_dir.exists():
-            errors.append(f"{path.name}: missing stage directory {stage_dir}")
+        stage_yaml = root / ".claude" / "stages" / f"{stage_id}.yaml"
+        if not stage_yaml.exists():
+            errors.append(f"{path.name}: missing stage YAML {stage_yaml}")
 
 if errors:
     print("Workflow template issues:")
@@ -82,7 +106,7 @@ if errors:
         print(f"  - {e}")
     sys.exit(1)
 
-print("All workflow templates reference valid stage directories.")
+print("All workflow templates reference valid stage YAMLs.")
 PY
 
 echo "==> Validate JSON schemas are valid JSON"
@@ -202,34 +226,38 @@ if missing:
 print("workflow-stage.yaml schema valid.")
 PY
 
-echo "==> Validate stage directories are complete"
+echo "==> Validate stage YAML files"
 "$PYTHON" - "$ROOT" <<'PY'
 import sys
 from pathlib import Path
 import yaml
 
 root = Path(sys.argv[1])
-workflow = yaml.safe_load((root / ".claude" / "workflows" / "interview-to-knowledge.yaml").read_text(encoding="utf-8"))
-
-missing = []
-for step in workflow["workflow"]["steps"]:
-    stage_dir = root / ".claude" / "stages" / step["id"]
-    if not stage_dir.exists():
-        missing.append(f"Missing directory: {stage_dir}")
+errors = []
+for stage_yaml in sorted((root / ".claude" / "stages").glob("*.yaml")):
+    if stage_yaml.name == "stage-manifest.yaml":
         continue
-    for file in ["AGENTS.md", "CHECKLIST.md", "SKILLS.md", "PROMPT.md"]:
-        if not (stage_dir / file).exists():
-            missing.append(f"Missing {file} in {stage_dir}")
+    try:
+        data = yaml.safe_load(stage_yaml.read_text(encoding="utf-8"))
+    except Exception as exc:
+        errors.append(f"{stage_yaml.name}: YAML parse error: {exc}")
+        continue
+    if not isinstance(data, dict):
+        errors.append(f"{stage_yaml.name}: root is not a mapping")
+        continue
+    for key in ["schema_version", "id", "name", "description", "templates", "prerequisite_stage", "next_stage", "human_gate", "agent", "skills", "artifacts", "context", "gates"]:
+        if key not in data:
+            errors.append(f"{stage_yaml.name}: missing key '{key}'")
 
-if missing:
-    print("Incomplete stage directories:")
-    for m in missing:
-        print(f"  - {m}")
+if errors:
+    print("Stage YAML issues:")
+    for e in errors:
+        print(f"  - {e}")
     sys.exit(1)
-print("All stage directories complete.")
+print("All stage YAML files valid.")
 PY
 
-echo "==> Validate stage-manifest.yaml schema"
+echo "==> Validate stage YAML files against schema"
 "$PYTHON" - "$ROOT" <<'PY'
 import sys
 from pathlib import Path
@@ -237,24 +265,30 @@ import yaml
 import json
 
 root = Path(sys.argv[1])
-schema = json.load(open(root / ".claude" / "schemas" / "stage-definition.schema.json"))
-manifest = yaml.safe_load(open(root / ".claude" / "stages" / "stage-manifest.yaml").read())
+schema_path = root / ".claude" / "schemas" / "stage-definition.schema.json"
+schema = json.loads(schema_path.read_text(encoding="utf-8"))
 
-# Minimal schema validation: check stages is a list with required keys
-if "stages" not in manifest or not isinstance(manifest["stages"], list):
-    print("stage-manifest.yaml missing stages list")
+# Minimal structural validation
+required = set(schema.get("required", []))
+errors = []
+for stage_yaml in sorted((root / ".claude" / "stages").glob("*.yaml")):
+    if stage_yaml.name == "stage-manifest.yaml":
+        continue
+    try:
+        data = yaml.safe_load(stage_yaml.read_text(encoding="utf-8"))
+    except Exception as exc:
+        errors.append(f"{stage_yaml.name}: YAML parse error: {exc}")
+        continue
+    missing = required - set(data.keys())
+    if missing:
+        errors.append(f"{stage_yaml.name}: missing required keys: {', '.join(sorted(missing))}")
+
+if errors:
+    print("Stage schema issues:")
+    for e in errors:
+        print(f"  - {e}")
     sys.exit(1)
-
-for stage in manifest["stages"]:
-    for key in ["id", "name", "description", "human_gate", "template", "prerequisite_stage", "required_artifacts", "required_skills", "primary_agent", "review_agents", "handoff_to", "context_files", "next_stage"]:
-        if key not in stage:
-            print(f"Stage {stage.get('id', '?')} missing key: {key}")
-            sys.exit(1)
-    if "gates" not in stage:
-        print(f"Stage {stage['id']} missing gates")
-        sys.exit(1)
-
-print("stage-manifest.yaml schema valid.")
+print("All stage YAML files match required schema.")
 PY
 
 echo "==> Validate hook scripts are executable"
@@ -269,6 +303,11 @@ echo "All hooks executable."
 echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/stage_loader.py
 "$PYTHON" -m py_compile scripts/lincoln-status.py
+"$PYTHON" -m py_compile scripts/lincoln_trace.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark_eval.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark_report.py
+"$PYTHON" -m py_compile scripts/lincoln_benchmark_metrics.py
 "$PYTHON" -m py_compile scripts/track-artifacts.py
 "$PYTHON" -m py_compile scripts/task_tool_guard.py
 "$PYTHON" -m py_compile scripts/validate_stage.py
@@ -290,5 +329,14 @@ done
 
 echo "==> Run pytest"
 "$PYTHON" -m pytest tests/ -v
+pytest_exit=$?
 
-echo "==> All static checks passed"
+if [ $pytest_exit -eq 0 ]; then
+    write_static_check_result true > "$STATIC_CHECK_RESULT"
+    echo "==> All static checks passed"
+else
+    write_static_check_result false > "$STATIC_CHECK_RESULT"
+    echo "==> Static checks failed"
+fi
+
+exit $pytest_exit

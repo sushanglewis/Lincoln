@@ -1,0 +1,44 @@
+schema_version: 2.0.0
+id: tdd-development-plan
+name: TDD Development Plan
+description: 'Produces tdd-plan.md with red/green/refactor sequences,
+
+  test scenarios, and task slices ready for OpenSpec proposal.'
+templates: all
+prerequisite_stage: product-prototype
+next_stage: propose
+human_gate: false
+agent:
+  primary: lincoln-engineer
+  reviewers:
+  - lincoln-qa
+  - lincoln-architect
+  handoff_to: lincoln-engineer
+skills:
+  required:
+  - superpowers:writing-plans
+  - superpowers:test-driven-development
+  optional:
+  - gsd:plan-phase
+  - gsd:mvp-phase
+  - oh-my-claudecode:plan
+artifacts:
+  required:
+  - '{process_slug}/designs/{design_id}/tdd-plan.md'
+context:
+  goal: 基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划（`tdd-plan.md`），作为从产品设计到
+    OpenSpec 变更提案的桥梁。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - product-prototype
+  exit:
+  - check: artifacts_present

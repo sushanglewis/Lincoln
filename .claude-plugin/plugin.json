@@ -29,6 +29,7 @@
     "./.claude/skills/lincoln-status/",
     "./.claude/skills/lincoln-workflow/",
     "./.claude/skills/lincoln-workflow-router/",
+    "./.claude/skills/lincoln-setup/",
     "./.claude/skills/plan-tdd-development/",
     "./.claude/skills/process-interview/",
     "./.claude/skills/propose-with-openspec/",
@@ -38,6 +39,5 @@
   ],
   "agents": [
     "./.claude/agents/"
-  ],
-  "mcpServers": "./.mcp.json"
+  ]
 }

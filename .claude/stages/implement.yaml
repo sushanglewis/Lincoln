@@ -1,0 +1,60 @@
+schema_version: 2.0.0
+id: implement
+name: Implement
+description: 'Core implementation stage. Engineering executes tasks with TDD
+
+  discipline, code review, and PR submission. Lincoln pauses here
+
+  for human engineering work; test/verify and ship occur within
+
+  this stage or as follow-up PR lifecycle steps.'
+templates: all
+prerequisite_stage: split
+next_stage: sync-knowledge
+human_gate: true
+agent:
+  primary: lincoln-engineer
+  reviewers:
+  - lincoln-qa
+  - lincoln-release-coordinator
+  - lincoln-architect
+  handoff_to: lincoln-knowledge-curator
+skills:
+  required:
+  - superpowers:test-driven-development
+  - superpowers:verification-before-completion
+  optional:
+  - openspec:apply-change
+  - superpowers:subagent-driven-development
+  - superpowers:using-git-worktrees
+  - superpowers:systematic-debugging
+  - superpowers:finishing-a-development-branch
+  - superpowers:requesting-code-review
+  - superpowers:receiving-code-review
+  - gsd:execute-phase
+  - gsd:code-review
+  - gsd:debug
+  - oh-my-claudecode:team
+  - oh-my-claudecode:autopilot
+  - oh-my-claudecode:ralph
+  - oh-my-claudecode:ultrawork
+artifacts:
+  required: []
+context:
+  goal: 人类研发团队基于已创建的 GitHub Issues 进行代码开发并提交 PR。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
+
+    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - split
+  exit:
+  - check: human_approved
