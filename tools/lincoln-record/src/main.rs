@@ -1,3 +1,4 @@
+use anyhow::Context;
 use clap::Parser;
 use lincoln_record::audio::capture::microphone::MicrophoneSource;
 use lincoln_record::audio::devices::{
@@ -5,18 +6,29 @@ use lincoln_record::audio::devices::{
 };
 use lincoln_record::audio::saver::write_source_to_wav;
 use lincoln_record::audio::source::AudioSource;
-use lincoln_record::cli::{Cli, RecordArgs, TranscribeArgs};
+use lincoln_record::cli::{Cli, RecordArgs, TranscribeArgs, WarmupArgs};
+use lincoln_record::config::Config;
+use lincoln_record::model::{default_cache_dir, download_model, resolve_model_path};
 use lincoln_record::output::metadata::{DeviceInfo, FileInfo, SessionMetadata};
 use lincoln_record::output::transcript::format_transcript;
 use lincoln_record::transcription::diarization::diarize_and_merge;
 use lincoln_record::transcription::provider::{
     MockProvider, TranscriptSegment, TranscriptionProvider,
 };
+use lincoln_record::transcription::whisper::WhisperProvider;
 use std::path::PathBuf;
 
 #[tokio::main]
 async fn main() {
     env_logger::init();
+
+    let config = match Config::load() {
+        Ok(config) => config,
+        Err(error) => {
+            log::error!("failed to load config: {:#}", error);
+            std::process::exit(1);
+        }
+    };
 
     let result = match Cli::parse() {
         Cli::Devices => {
@@ -24,7 +36,8 @@ async fn main() {
             Ok(())
         }
         Cli::Record(args) => run_record(args).await,
-        Cli::Transcribe(args) => run_transcribe(args).await,
+        Cli::Transcribe(args) => run_transcribe(args, &config).await,
+        Cli::Warmup(args) => run_warmup(args, &config),
         other => {
             eprintln!("{:?} is not yet implemented", other);
             std::process::exit(1);
@@ -90,7 +103,7 @@ async fn run_record(args: RecordArgs) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
+async fn run_transcribe(args: TranscribeArgs, config: &Config) -> anyhow::Result<()> {
     let session_id = args.session_id.unwrap_or_else(|| {
         args.path
             .file_stem()
@@ -111,8 +124,16 @@ async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
             speaker: None,
             text: "Mock transcription output".to_string(),
         }])),
+        "whisper" => {
+            let model_arg = args.model.as_ref().map(|s| std::path::Path::new(s.as_str()));
+            let model_path = resolve_model_path(model_arg, config)?;
+            Box::new(WhisperProvider::new(
+                model_path,
+                language_choice(args.language.as_deref(), config.transcription.language.as_str()),
+            ))
+        }
         other => anyhow::bail!(
-            "transcription engine '{}' is not yet implemented; use 'mock' for testing",
+            "transcription engine '{}' is not yet implemented; use 'mock' or 'whisper'",
             other
         ),
     };
@@ -139,7 +160,7 @@ async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
         started_at: chrono::Utc::now().to_rfc3339(),
         ended_at: Some(chrono::Utc::now().to_rfc3339()),
         engine: args.engine,
-        model: args.model.unwrap_or_default(),
+        model: args.model.unwrap_or_else(|| config.transcription.model.clone()),
         diarization: args.diarize,
         devices: DeviceInfo {
             microphone: "unknown".to_string(),
@@ -164,6 +185,47 @@ async fn run_transcribe(args: TranscribeArgs) -> anyhow::Result<()> {
 
     println!("Wrote transcript and metadata to {}", session_dir.display());
     Ok(())
+}
+
+fn run_warmup(args: WarmupArgs, config: &Config) -> anyhow::Result<()> {
+    let model_name = args
+        .model
+        .as_deref()
+        .unwrap_or(config.transcription.model.as_str());
+    let engine = args
+        .engine
+        .as_deref()
+        .unwrap_or(config.transcription.engine.as_str());
+    let cache_dir = args
+        .cache_dir
+        .clone()
+        .or_else(|| config.model_cache_dir.clone())
+        .unwrap_or_else(default_cache_dir);
+
+    eprintln!("Warming up {} model '{}' into {}...", engine, model_name, cache_dir.display());
+
+    let path = download_model(model_name, engine, &cache_dir, |downloaded, total| {
+        match total {
+            Some(t) => {
+                let pct = (downloaded as f64 / t as f64) * 100.0;
+                eprint!("\r  downloaded {} / {} bytes ({:.1}%)", downloaded, t, pct);
+            }
+            None => {
+                eprint!("\r  downloaded {} bytes", downloaded);
+            }
+        }
+    })
+    .context("model warmup failed")?;
+
+    eprintln!();
+    println!("Model ready at {}", path.display());
+    Ok(())
+}
+
+fn language_choice(cli: Option<&str>, config: &str) -> Option<String> {
+    cli.filter(|l| *l != "auto")
+        .or_else(|| if config == "auto" { None } else { Some(config) })
+        .map(|s| s.to_string())
 }
 
 fn validate_session_id(session_id: &str) -> anyhow::Result<()> {

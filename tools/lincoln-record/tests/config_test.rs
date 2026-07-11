@@ -7,7 +7,7 @@ fn test_config_defaults() {
     assert_eq!(config.audio.sample_rate, 48000);
     assert_eq!(config.audio.channels, 2);
     assert_eq!(config.transcription.engine, "whisper");
-    assert_eq!(config.transcription.model, "large-v3-turbo");
+    assert_eq!(config.transcription.model, "large-v3");
     assert_eq!(config.transcription.language, "auto");
     assert!(!config.diarization.enabled);
     assert_eq!(config.diarization.hf_token, "");

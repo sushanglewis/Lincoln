@@ -70,6 +70,30 @@ fn test_cli_parses_devices_command() {
 }
 
 #[test]
+fn test_cli_parses_warmup_command() {
+    let cli = Cli::try_parse_from([
+        "lincoln-record",
+        "warmup",
+        "--model",
+        "base",
+        "--engine",
+        "whisper",
+        "--cache-dir",
+        "/tmp/cache",
+    ])
+    .expect("warmup args should parse");
+
+    match cli {
+        Cli::Warmup(args) => {
+            assert_eq!(args.model, Some("base".to_string()));
+            assert_eq!(args.engine, Some("whisper".to_string()));
+            assert_eq!(args.cache_dir, Some(PathBuf::from("/tmp/cache")));
+        }
+        other => panic!("expected Warmup command, got {:?}", other),
+    }
+}
+
+#[test]
 fn test_cli_record_requires_session_id() {
     let result = Cli::try_parse_from(["lincoln-record", "record"]);
     assert!(

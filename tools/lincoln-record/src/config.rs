@@ -1,6 +1,6 @@
 use anyhow::Context;
 use serde::{Deserialize, Serialize};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 /// Top-level configuration for `lincoln-record`.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -13,6 +13,8 @@ pub struct Config {
     pub diarization: DiarizationConfig,
     #[serde(default)]
     pub output: OutputConfig,
+    #[serde(default)]
+    pub model_cache_dir: Option<std::path::PathBuf>,
 }
 
 /// Audio capture and pipeline settings.
@@ -65,9 +67,9 @@ impl Default for AudioConfig {
 impl Default for TranscriptionConfig {
     fn default() -> Self {
         Self {
-            engine: "whisper".to_string(),
-            model: "large-v3-turbo".to_string(),
-            language: "auto".to_string(),
+            engine: default_engine(),
+            model: default_model(),
+            language: default_language(),
         }
     }
 }
@@ -94,6 +96,14 @@ impl Config {
             .with_context(|| format!("failed to parse config: {}", path.display()))?;
         Ok(config)
     }
+
+    /// Load configuration from `~/.lincolnrc`, falling back to defaults.
+    pub fn load() -> anyhow::Result<Self> {
+        let path = dirs::home_dir()
+            .map(|home| home.join(".lincolnrc"))
+            .unwrap_or_else(|| PathBuf::from(".lincolnrc"));
+        Self::load_from_path(path)
+    }
 }
 
 fn default_sample_rate() -> u32 {
@@ -109,7 +119,7 @@ fn default_engine() -> String {
 }
 
 fn default_model() -> String {
-    "large-v3-turbo".to_string()
+    "large-v3".to_string()
 }
 
 fn default_language() -> String {

@@ -16,7 +16,20 @@ pub enum Cli {
     /// List available audio input devices.
     Devices,
     /// Download models and warm up caches.
-    Warmup,
+    Warmup(WarmupArgs),
+}
+
+/// Arguments for the `warmup` subcommand.
+#[derive(Debug, Clone, Parser)]
+pub struct WarmupArgs {
+    #[arg(long, help = "Model name to download")]
+    pub model: Option<String>,
+
+    #[arg(long, help = "Engine name")]
+    pub engine: Option<String>,
+
+    #[arg(long, help = "Output directory for the model cache")]
+    pub cache_dir: Option<PathBuf>,
 }
 
 /// Arguments for the `record` subcommand.
