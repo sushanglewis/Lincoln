@@ -25,71 +25,17 @@ artifacts:
   - '{process_slug}/workflow-stage.yaml'
 context:
   goal: 在会话启动时评估项目上下文，选择最适合的 Lincoln 工作流模板。
-  execution: '## Allowed actions
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
-    - 基于 session-start hook 已加载的状态和仓库结构评估上下文
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    - 向 PM 提出最多 3 个澄清问题
+    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
 
-    - 通过 `scripts/stage_loader.py` 设置 `current_run.workflow_template` 和 `current_stage`
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-
-    ## Skills and tools
-
-    # workflow-router 阶段技能
-
-
-    ## 技能路由
-
-
-    本阶段技能路由定义见 `.claude/skills/routing.yaml`：
-
-    - **required**: `superpowers:bootstrap`
-
-    - **optional**: `gsd:new-project` / `gsd:new-milestone`, `oh-my-claudecode:plan`
-
-    - **human_gate**: 是
-
-
-    ## 主技能
-
-
-    - `lincoln-workflow-router`
-
-
-    ## 辅助工具
-
-
-    - `Read` — 读取 state 和目录
-
-    - `Glob` / `Bash` — 扫描仓库结构
-
-    - `Edit` / `scripts/stage_loader.py` — 更新 `<process_slug>/workflow-stage.yaml`
-
-
-    ## 模板库
-
-
-    位于 `.claude/workflows/templates/`：
-
-
-    - `interview-to-knowledge.yaml`
-
-    - `existing-project-iteration.yaml`
-
-    - `bug-fix.yaml`
-
-    - `design-spike.yaml`
-
-    - `oss-first-design.yaml`'
-  constraints: '## Forbidden actions
-
-    - 在未获 PM 确认前进入任何实施阶段
-
-    - 修改任何阶段产物'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry: []
   exit:
-  - check: artifact_exists
-    args:
-    - '{process_slug}/workflow-stage.yaml'
+  - check: artifacts_present
+  - check: human_approved

@@ -27,109 +27,21 @@ artifacts:
   - '{process_slug}/requirements/{session_id}/user-stories.md'
   - '{process_slug}/requirements/{session_id}/prd.md'
 context:
-  goal: '基于访谈产物（逐字稿、摘要、初始洞察）与人类 PM 进行多轮澄清，形成统一、可追溯、已确认的需求文档，作为后续所有阶段的单一事实来源。
+  goal: 基于访谈产物（逐字稿、摘要、初始洞察）与人类 PM 进行多轮澄清，形成统一、可追溯、已确认的需求文档，作为后续所有阶段的单一事实来源。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    基于访谈产物与人类 PM 多轮澄清，产出统一、已确认的需求文档，作为后续阶段的单一事实来源。'
-  entry: "执行阶段前必须全部通过：\n\n- [ ] **摘要就绪检查**: `summary_ready {session_id}`\n  - `{process_slug}/interviews/{session_id}/summary.md`\
-    \ 存在且非空\n  - 失败时：提示人类先完成 `ingest` 阶段（`claude process-interview <recording-path>`）"
-  execution: "## Allowed actions\n- 读取 `{process_slug}/interviews/{session_id}/` 下的所有产物（transcript.md、summary.md、raw-insights.md）\n\
-    - 创建 `{process_slug}/requirements/{session_id}/` 目录及产物文件\n- 起草、更新 `requirements.md`、`user-stories.md`、`prd.md`\n\
-    - 向人类 PM 提出澄清问题（每轮最多 3 个）\n- 根据人类回答更新需求文档\n- 在人类直接编辑文件后，通过 `workflow-continue`\
-    \ 恢复并重新读取文件\n- 在 `requirements.md` 中添加 `<!-- status: approved -->` 标记\n\n## Side-effect\
-    \ strategy\n- 所有产物写入 `{process_slug}/requirements/{session_id}/` 目录\n- 每次更新需求文档后，保留修改痕迹或变更说明\n\
-    - 不修改 `{process_slug}/interviews/` 目录中的任何文件\n- 人类可直接编辑 `requirements.md`，Agent\
-    \ 通过 `workflow-continue` 恢复时重新读取\n\n## During execution\n- [ ] 外部计划已检查（如存在）：调用\
-    \ `gsd-import`\n- [ ] 已调用 `superpowers:brainstorming` 探索 ≥2 种需求视角\n- [ ] Brainstorming\
-    \ HARD-GATE 通过：PM 已确认方向\n- [ ] 读取 `{process_slug}/interviews/{session_id}/transcript.md`\n\
-    - [ ] 读取 `{process_slug}/interviews/{session_id}/summary.md`\n- [ ] 读取 `{process_slug}/interviews/{session_id}/raw-insights.md`\n\
-    - [ ] 创建目录 `{process_slug}/requirements/{session_id}/`\n- [ ] 起草初始 `requirements.md`，包含以下章节：\n\
-    \  - 背景\n  - 问题\n  - 用户\n  - 方案\n  - 验收标准\n  - 非目标\n  - 开放问题\n- [ ] 识别 1-3 个模糊点或缺失细节\n\
-    - [ ] 每轮向人类 PM 提出最多 3 个澄清问题\n- [ ] 根据人类回答更新 `requirements.md`\n- [ ] 展示变更部分给人类确认\n\
-    - [ ] 重复澄清直到 PM 确认需求清晰\n- [ ] 生成 `user-stories.md`\n- [ ] 生成 `prd.md`\n- [ ] 在\
-    \ `requirements.md` 中添加 `<!-- status: approved -->` 标记\n\n## Failure recovery\n\
-    - 准入校验失败：提示人类先完成 `ingest` 阶段\n- 人类未确认：暂停，等待人类输入 `confirm` 或编辑文件后运行 `workflow-continue`\n\
-    - 退出校验失败（需求不完整）：根据校验器反馈补充缺失章节，重新校验\n- 人类直接编辑文件后：运行 `workflow-continue`，Agent 重新读取文件并继续\n\
-    \n## Skills and tools\n# Clarify 阶段技能与工具\n\n## 技能路由\n\n本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n\
-    - **required**: `superpowers:brainstorming`\n- **optional**: `gsd:import`, `gsd:discuss-phase`,\
-    \ `oh-my-claudecode:deep-interview`, `openspec:explore`\n- **human_gate**: 是\n\
-    \n## 主技能命令\n\n- **命令**: `clarify-requirements`\n- **来源**: `.claude/skills/`\n\
-    - **参数**:\n  - `session_id` (必填): 访谈会话 ID，如 `2026-06-27-stakeholder`\n- **提示文件**:\
-    \ `.claude/skills/clarify-{process_slug}/requirements/prompts/main.md`\n\n## 辅助子技能\n\
-    \n- `superpowers:brainstorming` — 在起草需求前探索 2-3 种需求/方案视角，并列出 trade-offs。\n  **限制**：仅在人类\
-    \ PM 批准某一方向后才能继续写 `requirements.md`。\n- `gsd:import` — 当存在外部需求文档或计划时，先调用以检测与项目已有决策的冲突。\n\
-    \  用法：`Skill(\"gsd-import\", args=\"--from <path>\")`。\n\n## human_gate 子技能规则\n\
-    \n在 `clarify` 阶段，即使使用了 `brainstorming` 也不得绕过人类确认。\nPM 必须输入 `confirm` 或在 `requirements.md`\
-    \ 中写入 `<!-- status: approved -->` 后才能进入 `product-design-docs`。\n\n## 辅助技能\n\n\
-    - `workflow-continue` — 人类修改文件后恢复被暂停的工作流\n  - 人类可直接编辑 `requirements.md` 后运行此命令\n\
-    \  - Agent 重新读取文件并继续澄清流程\n- `draft-product-design` — 下一阶段命令（需求确认后执行）\n\n## 校验器使用\n\
-    \n- **校验器路径**: `scripts/validate_stage.py`\n- **使用方式**:\n  ```bash\n  # 准入校验\n\
-    \  python scripts/validate_stage.py \\\n    --phase entry --check summary_ready\
-    \ --args {session_id}\n\n  # 退出校验\n  python scripts/validate_stage.py \\\n   \
-    \ --phase exit --check requirements_has_background_problem_solution_acceptance\
-    \ --args {session_id}\n\n  python scripts/validate_stage.py \\\n    --phase exit\
-    \ --check human_approved --args {session_id}\n  ```\n\n## 允许的工具\n\n根据 `skill.yaml`\
-    \ 的 `tools` 列表，本阶段可用：\n\n| 工具 | 用途 |\n|------|------|\n| `Read` | 读取访谈产物、需求文档\
-    \ |\n| `Grep` | 在逐字稿中搜索关键词、时间戳 |\n| `Glob` | 查找访谈产物文件 |\n| `Bash` | 创建目录、文件操作\
-    \ |\n| `Edit` | 更新需求文档（补充章节、修改内容） |\n| `Write` | 创建初始需求文档、user-stories.md、prd.md\
-    \ |\n\n## 人类交互规则\n\n| 规则 | 说明 |\n|------|------|\n| 每轮最多 3 个问题 | 避免信息过载，保持对话聚焦\
-    \ |\n| 展示变更部分 | 每次更新文档后，向人类展示修改了哪些部分 |\n| 支持直接编辑 | 人类可直接编辑 `requirements.md`，编辑后运行\
-    \ `workflow-continue` |\n| 确认门槛 | 必须获得显式确认（`confirm` / \"确认\" / `<!-- status:\
-    \ approved -->`） |\n| 可追溯性 | 每个需求必须引用访谈时间戳 `(来源: HH:MM:SS)` |\n\n## 需求文档模板\n\n\
-    `requirements.md` 必须包含以下章节：\n\n```markdown\n# 需求文档\n\n## 背景\n\n## 问题\n\n## 用户\n\
-    \n## 方案\n\n## 验收标准\n\n## 非目标\n\n## 开放问题\n\n<!-- status: approved -->\n```\n\n\
-    ## 错误处理\n\n| 错误场景 | 处理方式 |\n|---------|---------|\n| 访谈产物不存在 | 暂停，提示人类先完成 `ingest`\
-    \ 阶段 |\n| 人类回答模糊 | 追问澄清，不猜测 |\n| 需求冲突 | 暂停，向人类报告冲突点，等待决策 |\n| 退出校验失败（章节缺失） | 自动补充缺失章节，重新校验\
-    \ |\n| 退出校验失败（未确认） | 暂停，等待人类确认 |\n| 人类直接编辑后运行 continue | 重新读取文件，检查审批标记，继续或提示 |\n\
-    \n## 产物规范\n\n- 所有文档使用中文\n- Markdown 使用统一 frontmatter 格式\n- 需求项必须关联访谈时间戳\n- `requirements.md`\
-    \ 确认后必须包含 `<!-- status: approved -->` 标记\n- `user-stories.md` 和 `prd.md` 从已确认的需求派生，保持一致性\n\
-    \n## Execution instructions\n1. **读取完整提示文件**: `.claude/skills/clarify-{process_slug}/requirements/prompts/main.md`\n\
-    \   - 该文件包含详细的澄清步骤、人类交互规则和产物格式\n   - 按照提示文件中的步骤 1-9 执行\n\n2. **阶段状态感知**:\n   -\
-    \ 当前阶段状态由 session-start hook 自动加载，必要时读取 `<process_slug>/workflow-stage.yaml`\n\
-    \   - 若本阶段已有 `completed` 节点，检查是否需要重新澄清（人类要求时）\n   - 若当前节点状态为 `validation_failed`，根据\
-    \ `error_message` 修复后重试\n   - 若人类运行 `workflow-continue`，重新读取 `requirements.md`\
-    \ 并从中断处继续\n\n3. **变量替换**:\n   - 使用 `state.variables.session_id` 作为会话标识\n   - 读取\
-    \ `{process_slug}/interviews/{session_id}/` 下的 transcript.md、summary.md、raw-insights.md\n\
-    \n## Human interaction flow\n1. 起草初始 `requirements.md` 并展示给人类\n2. 识别 1-3 个模糊点，每轮提出最多\
-    \ 3 个问题\n3. 根据回答更新文档，展示变更部分\n4. 重复直到 PM 显式确认（`confirm` / \"确认\"）\n5. 添加 `<!--\
-    \ status: approved -->` 标记\n\n## Completion actions\n1. 运行退出校验器验证产物完整性和人类确认状态\n\
-    2. 通过 `scripts/stage_loader.py --stage clarify --action transition-next` 推进阶段（节点追加模式）\n\
-    3. 向人类汇报：\n   - 需求已锁定\n   - 产物存放路径\n   - 下一阶段入口：`product-design-docs`（将在需求确认后自动准入）"
-  exit: "阶段完成后必须全部通过：\n\n- [ ] **需求完整性检查**: `requirements_has_background_problem_solution_acceptance\
-    \ {session_id}`\n  - `requirements.md` 存在且包含以下章节：\n    - 背景 / Background\n   \
-    \ - 问题 / Problem\n    - 用户 / Users / Personas\n    - 方案 / Proposed Solution /\
-    \ Solution\n    - 验收标准 / Acceptance Criteria\n  - 失败时：补充缺失章节\n\n- [ ] **人类确认检查**:\
-    \ `human_approved {session_id}`\n  - `requirements.md` 中包含 `<!-- status: approved\
-    \ -->` 或 `[x] PM 已确认`\n  - 失败时：工作流暂停，等待人类确认\n\n## Artifact verification\n- [ ]\
-    \ `{process_slug}/requirements/{session_id}/requirements.md` — 非空，包含所有必要章节，含审批标记\n\
-    - [ ] `{process_slug}/requirements/{session_id}/user-stories.md` — 非空，从已确认需求派生\n\
-    - [ ] `{process_slug}/requirements/{session_id}/prd.md` — 非空，从已确认需求派生\n- [ ] 每个需求项关联访谈时间戳（如\
-    \ `(来源: 00:03:22)`）"
-  constraints: "## Forbidden actions\n- **禁止跳过人类确认**：未获得人类 PM 显式确认（如输入 \"confirm\"\
-    \ 或 \"确认\"）不得进入下一阶段\n- **禁止一次提出超过 3 个问题**\n- **禁止在需求未确认时直接生成设计文档或 OpenSpec artifact**\n\
-    - **禁止将 TaskCreate/TaskUpdate 当作消息占位符**：本阶段必须直接向人类 PM 发送澄清问题/文档草案，不得用任务工具拆分或延迟“发消息”动作\n\
-    - 禁止修改 `{process_slug}/interviews/` 目录下的原始产物\n- 禁止绕过校验继续工作流\n- 禁止在 requirements.md\
-    \ 中遗漏来源时间戳\n\n## Human confirmation\n本阶段 **有** `human_gate: true`，为强制人类确认阶段。\n\
-    \n- 人类确认方式：\n  - 在对话中输入 `confirm` 或 \"确认\"\n  - 或直接在 `requirements.md` 中添加 `<!--\
-    \ status: approved -->` 标记后运行 `workflow-continue`\n- 未获得确认时，工作流必须暂停，不得自动进入下一阶段\n\
-    - 确认后添加审批标记到 `requirements.md`\n\n## Key reminders\n- **人类确认不可跳过**：未获得显式确认不得进入下一阶段\n\
-    - **每轮最多 3 个问题**：避免信息过载\n- **可追溯性**：每个需求必须关联访谈时间戳 `(来源: HH:MM:SS)`\n- **支持直接编辑**：人类可编辑\
-    \ `requirements.md` 后运行 `workflow-continue`\n- **不修改原始产物**：`{process_slug}/interviews/`\
-    \ 目录只读"
+    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - ingest
   exit:
-  - check: artifact_exists
-    args:
-    - '{process_slug}/requirements/{session_id}/requirements.md'
-  - check: artifact_exists
-    args:
-    - '{process_slug}/requirements/{session_id}/user-stories.md'
-  - check: artifact_exists
-    args:
-    - '{process_slug}/requirements/{session_id}/prd.md'
+  - check: artifacts_present
   - check: human_approved
-  - check: gate_review_passed

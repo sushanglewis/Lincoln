@@ -33,115 +33,17 @@ artifacts:
   - knowledge/04-decisions/{decision_id}.md
 context:
   goal: PR 合并后，将代码变更、Issue 讨论、设计决策沉淀到项目 Obsidian 知识库，确保业务知识和技术知识双轨保存，形成可追溯的知识资产。
-  execution: "## Allowed actions\n- 读取 `.github/lincoln-sync-queue/pr-{pr_number}.yaml`\
-    \ 获取同步任务信息\n- 读取 `.github/openspec-config.yml` 获取目标仓库信息\n- 使用 GitHub MCP 获取 Issue\
-    \ 和 PR 详情\n- 读取相关需求文档、OpenSpec 设计文档\n- 审查合并的 PR diff\n- 创建/更新 Obsidian 知识库文档：\n\
-    \  - `knowledge/01-interviews/<session_id>.md`\n  - `knowledge/02-requirements/<requirement_id>.md`\n\
-    \  - `knowledge/03-features/<feature_slug>.md`\n  - `knowledge/04-decisions/<decision_id>.md`\n\
-    - 更新 `knowledge/00-index.md`\n- 使用 Obsidian wikilinks（`[[...]]`）建立文档关联\n- 检查与已有知识的冲突\n\
-    - 调用 validator 执行入口/退出校验\n\n## Side-effect strategy\n- 知识文档的更新应为增量更新，保留已有内容\n\
-    - 如需要修改人类已编辑的内容，应在文档中记录变更说明\n- 不删除已有的知识文档，只追加或更新\n- sync-queue 文件处理完成后，将其状态更新为\
-    \ `completed`\n\n## Skills and tools\n# sync-knowledge 阶段技能与工具\n\n## 技能路由\n\n\
-    本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n- **required**: `gsd:docs-update`\n\
-    - **optional**: `gsd:forensics`, `gsd:milestone-summary`, `openspec:sync-specs`,\
-    \ `oh-my-claudecode:wiki`, `oh-my-claudecode:writer-memory`, `superpowers:verification-before-completion`\n\
-    - **human_gate**: 否\n\n## 主技能命令\n\n```\nclaude sync-to-knowledge <issue_number>\
-    \ <pr_number>\n```\n\n对应 `interview-workflow` skill 中的 `sync-to-knowledge` 命令。\n\
-    \n参数：\n- `issue_number`: GitHub Issue 编号\n- `pr_number`: GitHub PR 编号\n\n## 辅助子技能\n\
-    \n- `gsd-docs-update` — 生成或更新经代码库验证的知识文档。\n  用法：`Skill(\"gsd-docs-update\")`（可带\
-    \ `--force` 或 `--verify-only`）。\n- `gsd-forensics` — 若 `sync-knowledge` 失败，先调用进行失败复盘，再重试。\n\
-    \  用法：`Skill(\"gsd-forensics\")`。\n\n## 约束\n\n`gsd-docs-update` 的输出需要与 `knowledge/`\
-    \ 目录结构对齐；生成后检查是否与已有知识冲突。\n\n## GitHub MCP 使用\n\n本阶段使用 GitHub MCP 获取 Issue 和 PR\
-    \ 信息：\n\n- **获取 Issue 详情**：`mcp__plugin_ecc_github__get_issue`\n  - 参数：`owner`,\
-    \ `repo`, `issue_number`\n  - 用于提取关联的需求和 OpenSpec 变更信息\n- **获取 PR 详情**：`mcp__plugin_ecc_github__get_pull_request`\n\
-    \  - 参数：`owner`, `repo`, `pull_number`\n  - 用于获取 PR 描述、合并状态\n- **获取 PR 文件变更**：`mcp__plugin_ecc_github__get_pull_request_files`\n\
-    \  - 用于审查代码变更，提取技术实现信息\n- **获取 PR 评论**：`mcp__plugin_ecc_github__get_pull_request_comments`\n\
-    \  - 用于提取设计决策和讨论记录\n\n## Validator 使用\n\n入口校验：\n```bash\npython scripts/validate_stage.py\
-    \ \\\n  --phase entry \\\n  --check pr_merged \\\n  --args <pr_number>\n\npython\
-    \ scripts/validate_stage.py \\\n  --phase entry \\\n  --check issue_exists \\\n\
-    \  --args <issue_number>\n```\n\n退出校验：\n```bash\npython scripts/validate_stage.py\
-    \ \\\n  --phase exit \\\n  --check feature_doc_has_business_and_technical_sections\
-    \ \\\n  --args <feature_slug>\n\npython scripts/validate_stage.py \\\n  --phase\
-    \ exit \\\n  --check feature_doc_has_links \\\n  --args <feature_slug>\n\npython\
-    \ scripts/validate_stage.py \\\n  --phase exit \\\n  --check no_conflict_with_existing_knowledge\
-    \ \\\n  --args <feature_slug>\n```\n\n## 错误处理\n\n| 错误场景 | 处理方式 |\n|---------|---------|\n\
-    | sync-queue 文件不存在 | 暂停，报告错误，提示人类检查 PR 是否已合并 |\n| sync-queue 文件状态不是 `pending`\
-    \ | 检查是否已处理过，如已处理则跳过；否则暂停 |\n| Issue 在 linked-issues.yaml 中不存在 | 暂停，报告错误，提示人类检查\
-    \ split 阶段是否完成 |\n| GitHub API 获取失败 | 重试一次，仍失败则暂停 |\n| 知识冲突检测失败 | 暂停，报告冲突详情，等待人类处理\
-    \ |\n| 功能文档缺少业务/技术章节 | 补充缺失内容后重新校验 |\n| 功能文档 wikilinks 不足 | 补充关联链接后重新校验 |\n\n\
-    ## 输入文件\n\n- `.github/lincoln-sync-queue/pr-{pr_number}.yaml` — 同步队列文件\n- `.github/openspec-config.yml`\
-    \ — 目标仓库配置\n- `.github/linked-issues.yaml` — Issue 映射关系\n- `{process_slug}/requirements/<session_id>/requirements.md`\
-    \ — 需求文档\n- `{process_slug}/openspec/changes/<change_name>/design.md` — OpenSpec\
-    \ 设计文档\n- `{process_slug}/openspec/changes/<change_name>/tasks.md` — OpenSpec\
-    \ 任务列表\n\n## 输出文件\n\n- `knowledge/03-features/<feature_slug>.md` — 功能知识文档\n- `knowledge/02-requirements/<requirement_id>.md`\
-    \ — 需求知识文档\n- `knowledge/01-interviews/<session_id>.md` — 访谈知识文档\n- `knowledge/04-decisions/<decision_id>.md`\
-    \ — 决策知识文档（如适用）\n- `knowledge/00-index.md` — 知识库索引\n- 更新后的 `.github/lincoln-sync-queue/pr-{pr_number}.yaml`（状态改为\
-    \ `completed`）"
-  exit: '- [ ] 运行退出校验：`python scripts/validate_stage.py --phase exit --check feature_doc_has_business_and_technical_sections
-    --args <feature_slug>`
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
-    - [ ] 运行退出校验：`python scripts/validate_stage.py --phase exit --check feature_doc_has_links
-    --args <feature_slug>`
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    - [ ] 运行退出校验：`python scripts/validate_stage.py --phase exit --check no_conflict_with_existing_knowledge
-    --args <feature_slug>`
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-    - [ ] 确认功能文档包含至少 3 个 wikilinks
-
-    - [ ] 确认功能文档包含 `业务知识` 和 `技术知识` 两个章节
-
-
-    ## Artifact verification
-
-    - [ ] `knowledge/03-features/<feature_slug>.md` 已创建/更新
-
-    - [ ] `knowledge/02-requirements/<requirement_id>.md` 已创建/更新
-
-    - [ ] `knowledge/01-interviews/<session_id>.md` 已创建/更新
-
-    - [ ] `knowledge/04-decisions/<decision_id>.md` 已创建/更新（如适用）
-
-    - [ ] `knowledge/00-index.md` 已更新
-
-    - [ ] `.github/lincoln-sync-queue/pr-{pr_number}.yaml` 状态已更新为 `completed`'
-  constraints: '## Forbidden actions
-
-    - **禁止**创建没有业务知识和技术知识双轨内容的功能文档
-
-    - **禁止**创建没有来源链接（访谈、需求、Issue、PR）的知识文档
-
-    - **禁止**覆盖人类编辑而不记录变更
-
-    - **禁止**在发现知识冲突时自动覆盖，必须暂停等待人类处理
-
-    - **禁止**跳过校验标记阶段为完成
-
-
-    ## Human confirmation
-
-    - 本阶段 **无** `human_gate`
-
-    - 但发现知识冲突时必须暂停并等待人类处理
-
-    - 完成后向人类汇报知识库更新摘要'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - implement
   exit:
-  - check: artifact_exists
-    args:
-    - .github/lincoln-sync-queue/pr-{pr_number}.yaml
-  - check: artifact_exists
-    args:
-    - knowledge/01-interviews/{session_id}.md
-  - check: artifact_exists
-    args:
-    - knowledge/02-requirements/{requirement_id}.md
-  - check: artifact_exists
-    args:
-    - knowledge/03-features/{feature_slug}.md
-  - check: artifact_exists
-    args:
-    - knowledge/04-decisions/{decision_id}.md
+  - check: artifacts_present

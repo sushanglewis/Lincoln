@@ -24,66 +24,17 @@ artifacts:
   - '{process_slug}/docs/research/{change_name}-oss-options.md'
 context:
   goal: 在设计阶段探索开源方案，避免从零造轮子，并为实现提供参考。
-  execution: '## Allowed actions
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
-    - 使用 WebSearch/GitHub MCP 搜索开源项目
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    - 阅读项目 README、license、发布历史
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-    - 生成 `{process_slug}/docs/research/{change_name}-oss-options.md`
-
-
-    ## Skills and tools
-
-    # explore-opensource 阶段技能
-
-
-    ## 技能路由
-
-
-    本阶段技能路由定义见 `.claude/skills/routing.yaml`：
-
-    - **required**: （无 — 由 `lincoln-explore-opensource` 内联技能主导）
-
-    - **optional**: `gsd:explore`
-
-    - **human_gate**: 否
-
-
-    ## 主技能
-
-
-    - `lincoln-explore-opensource`
-
-
-    ## 辅助工具
-
-
-    - `WebSearch` — 搜索候选项目
-
-    - GitHub MCP / `mcp__plugin_ecc_github__search_repositories` — GitHub 搜索
-
-    - `Read` / `WebFetch` — 阅读 README 和文档
-
-    - `Write` — 生成研究报告'
-  constraints: '## Forbidden actions
-
-    - 下载或执行第三方代码
-
-    - 自动选择最终方案（必须 PM 确认）
-
-    - 阻塞设计流程：搜索失败时降级为简短摘要并继续
-
-
-    ## Human confirmation
-
-    PM 必须确认推荐方案或明确要求继续自行设计。'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - clarify
   exit:
-  - check: artifact_exists
-    args:
-    - '{process_slug}/docs/research/{change_name}-oss-options.md'
+  - check: artifacts_present

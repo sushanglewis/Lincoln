@@ -26,74 +26,17 @@ artifacts:
   - knowledge/00-index.md
 context:
   goal: 为已有源码项目构建功能知识库，使后续 PM 迭代能基于事实。
-  execution: '## Allowed actions
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
-    - 读取源码、README、CHANGELOG
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    - 调用 `lincoln-build-codebase-knowledge`
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-    - 生成/更新 `knowledge/` 下的 Markdown 文件
-
-
-    ## Skills and tools
-
-    # build-codebase-knowledge 阶段技能
-
-
-    ## 技能路由
-
-
-    本阶段技能路由定义见 `.claude/skills/routing.yaml`：
-
-    - **required**: （无 — 由 `lincoln-build-codebase-knowledge` 内联技能主导）
-
-    - **optional**: `gsd:map-codebase`
-
-    - **human_gate**: 否
-
-
-    ## 主技能
-
-
-    - `lincoln-build-codebase-knowledge`
-
-
-    ## 辅助工具
-
-
-    - `scripts/build-codebase-knowledge.py` — 扫描代码库结构
-
-    - `Read` / `Glob` / `Bash` — 读取源码和文档
-
-    - `Edit` / `Write` — 生成知识文档
-
-
-    ## 输出位置
-
-
-    - `knowledge/00-index.md`
-
-    - `knowledge/03-features/existing-*.md`
-
-    - `knowledge/05-glossary/00-index.md`'
-  constraints: '## Forbidden actions
-
-    - 修改源码
-
-    - 生成未经验证的假设
-
-    - 跳过 PM 确认直接标记完成
-
-
-    ## Human confirmation
-
-    PM 必须确认 `knowledge/00-index.md` 中的功能列表后，阶段才能标记完成。'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - workflow-router
   exit:
-  - check: artifact_exists
-    args:
-    - knowledge/00-index.md
+  - check: artifacts_present

@@ -29,71 +29,21 @@ artifacts:
   - '{process_slug}/designs/{design_id}/fields.md'
   - '{process_slug}/designs/{design_id}/prototype.pen'
 context:
-  goal: 将已确认的产品设计文档转化为可交互的 Pencil 原型和开发可用的 UI/字段规格文档。产出包括：字段规格、UI 规格和 `.pen` 原型文件。PM
-    可直接在 Pencil 中查看和修改原型。
-  execution: "## Side-effect strategy\n- `.pen` 文件只能通过 Pencil MCP 工具或 Pencil 应用操作\n\
-    - 字段规格和 UI 规格以 Markdown 形式写入，便于开发者直接阅读\n- 原型修改后，开发者应以 PM 确认保存后的 `.pen` 文件作为最终开发参照\n\
-    - 所有产物写入 `{process_slug}/designs/<design_id>/` 目录\n\n## During execution\n- [\
-    \ ] 已询问 PM 是否需要 `superpowers:brainstorming` 视觉探索\n- [ ] 已按需创建隔离工作区（`superpowers:using-git-worktrees`）\n\
-    - [ ] 已读取 `{process_slug}/designs/<design_id>/` 下的全部设计文档\n- [ ] `fields.md` 已创建，包含：字段名、数据类型、必填/选填、校验规则、默认值、文案、错误状态、来源数据对象\n\
-    - [ ] `ui-spec.md` 已创建，包含：目标用户流、界面列表、交互说明、组件状态、空/加载/错误状态、无障碍说明、实现约束\n- [ ] `prototype.pen`\
-    \ 已创建或更新（仅通过 Pencil MCP 工具）\n- [ ] 使用 Pencil 工具前已调用 `get_editor_state(include_schema:\
-    \ true)` 获取 schema\n- [ ] 使用 `snapshot_layout` 检查并修复了裁剪或重叠元素\n- [ ] 控件状态完整：默认、悬停/聚焦（如适用）、禁用、空、加载、错误、成功\n\
-    - [ ] 未使用普通文件工具读取或修改 `.pen` 文件\n\n## Skills and tools\n# SKILLS.md - 产品原型阶段\n\n\
-    ## 技能路由\n\n本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n- **required**: `superpowers:brainstorming`\n\
-    - **optional**: `gsd:ui-phase`, `superpowers:using-git-worktrees`, `oh-my-claudecode:designer`\n\
-    - **human_gate**: 是\n\n## 主要技能命令\n\n- `claude build-product-prototype <session_id>\
-    \ <design_id>`\n  - 基于已确认设计文档生成字段规格、UI 规格和 Pencil 原型\n  - 参数：\n    - `session_id`:\
-    \ 访谈会话 ID，如 `2026-06-27-stakeholder`\n    - `design_id`: 产品设计 ID（kebab-case），如\
-    \ `checkout-redesign`\n  - 完整 prompt 文件：`.claude/skills/build-product-prototype/prompts/main.md`\n\
-    \n## 辅助技能\n\n- `claude workflow-continue`\n  - 当人类 PM 修改文件后，恢复被暂停的工作流\n- `superpowers:brainstorming`\
-    \ — 在创建 Pencil 原型前提供视觉 companion，探索 UI/UX 选项。\n  **限制**：必须先询问 PM 是否需要视觉探索，未经同意不得生成原型。\n\
-    - `superpowers:using-git-worktrees` — 若原型开发可能污染主分支，调用以创建隔离工作区。\n\n## human_gate\
-    \ 子技能规则\n\n`brainstorming` 的视觉方案必须经 PM 确认，且 `ui-spec.md` 中必须包含 `<!-- prototype-status:\
-    \ approved -->` 或 `[x] PM 已确认原型` 才能进入 `tdd-development-plan`。\n\n## 校验器使用\n\n\
-    - 入口校验：`python scripts/validate_stage.py --phase entry --check product_design_approved\
-    \ --args <design_id>`\n- 出口校验：`python scripts/validate_stage.py --phase exit --check\
-    \ prototype_artifact_complete --args <design_id>`\n- 校验失败时：停止 loop、报告失败项、给出修复建议、等待人类处理\n\
-    \n## MCP 工具\n\n### Pencil MCP（核心）\n\n- `pencil__get_editor_state` - 获取当前编辑器状态和\
-    \ schema（操作 `.pen` 前必须调用）\n- `pencil__batch_design` - 生成或修改设计节点\n- `pencil__batch_get`\
-    \ - 读取设计节点信息\n- `pencil__snapshot_layout` - 检查布局问题（裁剪、重叠）\n- `pencil__get_screenshot`\
-    \ - 获取截图（仅作为辅助审阅材料）\n- `pencil__export_nodes` - 导出节点为图片（可选）\n- `pencil__export_html`\
-    \ - 导出为 HTML（可选，非主要审批产物）\n\n### 标准文件工具（仅限 Markdown 规格文件）\n\n- `Read` - 读取设计文档和已生成的规格文件\n\
-    - `Write` - 创建 `fields.md` 和 `ui-spec.md`\n- `Edit` - 修改规格文件\n\n## 错误处理\n\n- 设计文档未批准：暂停工作流，提示用户先完成\
-    \ `product-design-docs` 阶段\n- Pencil 工具调用失败：检查 schema 是否已获取，重试或报告错误\n- 布局问题（裁剪/重叠）：使用\
-    \ `snapshot_layout` 定位问题，通过 `batch_design` 修复\n- 校验失败：根据校验器输出补充缺失内容，重新校验\n- `.pen`\
-    \ 文件损坏：通过 Pencil 工具重新生成，绝不使用普通文件工具修复\n\n## 重要提醒\n\n- `.pen` 文件是加密格式，**绝对禁止**使用\
-    \ Read、Write、Edit、Grep 等普通文件工具操作\n- 所有 `.pen` 操作必须通过 Pencil MCP 工具完成\n- 人类 PM\
-    \ 可直接在 Pencil 应用中修改并保存 `.pen` 文件\n\n## Execution instructions\n1. 读取 `.claude/skills/build-product-prototype/prompts/main.md`\
-    \ 获取完整执行步骤\n2. 确认 `{process_slug}/designs/<design_id>/design-review.md` 已获批准\n\
-    3. 读取 `{process_slug}/designs/<design_id>/` 下的全部设计文档\n4. 创建 `fields.md`（字段规格）和\
-    \ `ui-spec.md`（UI 规格）\n5. 使用 Pencil MCP 工具创建或更新 `prototype.pen`：\n   - 操作前调用 `get_editor_state(include_schema:\
-    \ true)` 获取 schema\n   - 使用 `batch_design` 生成原型内容\n   - 使用 `snapshot_layout` 检查并修复布局问题\n\
-    6. 请人类 PM 在 Pencil 中打开并审阅 `prototype.pen`\n7. PM 确认后，在 `ui-spec.md` 添加 `<!-- prototype-status:\
-    \ approved -->`\n8. 提示用户运行：`claude plan-tdd-development <session_id> <design_id>`"
-  exit: '## Artifact verification
+  goal: 将已确认的产品设计文档转化为可交互的 Pencil 原型和开发可用的 UI/字段规格文档。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
-    - [ ] 字段规格完整，可直接用于开发
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    - [ ] UI 规格完整，覆盖所有界面和状态
+    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
 
-    - [ ] Pencil 原型布局无裁剪或重叠问题
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-    - [ ] 原型可在 Pencil 应用中正常打开和编辑'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - product-design-docs
   exit:
-  - check: artifact_exists
-    args:
-    - '{process_slug}/designs/{design_id}/ui-spec.md'
-  - check: artifact_exists
-    args:
-    - '{process_slug}/designs/{design_id}/fields.md'
-  - check: artifact_exists
-    args:
-    - '{process_slug}/designs/{design_id}/prototype.pen'
+  - check: artifacts_present
   - check: human_approved
-  - check: gate_review_passed

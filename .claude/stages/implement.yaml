@@ -41,83 +41,20 @@ skills:
 artifacts:
   required: []
 context:
-  goal: 人类研发团队基于已创建的 GitHub Issues 进行代码开发并提交 PR。本阶段以人类为主导，Agent 仅在人类请求时提供辅助。
-  execution: "## Side-effect strategy\n- Agent 不直接修改代码仓库\n- 所有 Agent 辅助的修改必须经过人类确认后才能应用\n\
-    - PR 合并后，由自动化流程（或人类手动）触发 `sync-knowledge` 阶段\n\n## Skills and tools\n# implement\
-    \ 阶段技能与工具\n\n## 技能路由\n\n本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n- **required**:\
-    \ `superpowers:test-driven-development`, `superpowers:verification-before-completion`\n\
-    - **optional**: `openspec:apply-change`, `superpowers:subagent-driven-development`,\
-    \ `superpowers:using-git-worktrees`, `superpowers:systematic-debugging`, `superpowers:finishing-a-development-branch`,\
-    \ `superpowers:requesting-code-review`, `superpowers:receiving-code-review`, `gsd:execute-phase`,\
-    \ `gsd:code-review`, `gsd:debug`, `oh-my-claudecode:team`, `oh-my-claudecode:autopilot`,\
-    \ `oh-my-claudecode:ralph`, `oh-my-claudecode:ultrawork`\n- **human_gate**: 是\n\
-    \n## 主技能命令\n\n本阶段无专门的 Agent 主动技能命令，由人类主导执行。\n\nAgent 辅助时可使用的技能：\n\n```\n# 代码审查（人类请求时）\n\
-    claude /code-review\n\n# 安全审查（人类请求时）\nclaude /security-review\n```\n\n## GitHub\
-    \ MCP 使用\n\n人类完成 PR 合并后，Agent 可使用 GitHub MCP 获取信息：\n\n- **获取 PR 详情**：`mcp__plugin_ecc_github__get_pull_request`\n\
-    \  - 参数：`owner`, `repo`, `pull_number`\n- **获取 PR 文件变更**：`mcp__plugin_ecc_github__get_pull_request_files`\n\
-    \  - 用于代码审查辅助\n- **获取 PR 评论**：`mcp__plugin_ecc_github__get_pull_request_comments`\n\
-    \  - 用于审查意见汇总\n- **更新 Issue**：`mcp__plugin_ecc_github__update_issue`\n  - 参数：`owner`,\
-    \ `repo`, `issue_number`, `state`\n  - 人类请求时协助更新 Issue 状态\n\n## Validator 使用\n\
-    \n入口校验：\n```bash\npython scripts/validate_stage.py \\\n  --phase entry \\\n  --check\
-    \ issues_ready \\\n  --args <session_id>\n```\n\n## 错误处理\n\n| 错误场景 | 处理方式 |\n\
-    |---------|---------|\n| Issues 未就绪 | 暂停，提示人类先完成 `split` 阶段 |\n| PR 审查发现问题 | Agent\
-    \ 提供建议，人类决定是否修改 |\n| 合并冲突 | Agent 协助分析冲突，人类手动解决 |\n| 测试失败 | Agent 协助分析失败原因，人类修复代码\
-    \ |\n| sync-queue 文件创建失败 | 提示人类手动创建，或重试 |\n\n## 输入文件\n\n- `.github/linked-issues.yaml`\
-    \ — Issue 映射关系\n- GitHub Issues — 研发任务\n- `{process_slug}/requirements/<session_id>/requirements.md`\
-    \ — 需求文档（参考）\n- `{process_slug}/openspec/changes/<change_name>/` — OpenSpec 设计文档（参考）\n\
-    \n## 输出文件\n\n- 合并的 PR（由人类创建）\n- `.github/lincoln-sync-queue/pr-{pr_number}.yaml`\
-    \ — 触发 sync-knowledge 的队列文件\n\n## 按需调用的子技能\n\n本阶段由人类研发团队主导，Agent 仅在收到明确请求时调用以下技能：\n\
-    \n| 场景 | 调用技能 |\n|------|----------|\n| 需要隔离工作区 | `superpowers:using-git-worktrees`\
-    \ |\n| 需要 Agent 分任务实现 | `superpowers:subagent-driven-development` |\n| 需要 TDD\
-    \ 指导 | `superpowers:test-driven-development` |\n| 遇到 bug/测试失败 | `superpowers:systematic-debugging`\
-    \ |\n| 完成实现后处理 PR | `superpowers:finishing-a-development-branch` |\n| 需要代码审查 |\
-    \ `superpowers:requesting-code-review` |\n| 收到审查意见 | `superpowers:receiving-code-review`\
-    \ |\n| 任何“完成”声明前 | `superpowers:verification-before-completion` |\n\n## human_gate\
-    \ 规则\n\n- Agent **不得主动**调用任何实施类子技能。\n- 所有子技能调用必须基于人类显式请求（如“帮我用 TDD 实现这个 issue”）。\n\
-    - PR 合并作为人类确认事件，触发 `sync-knowledge`。"
-  exit: '- [ ] PR 已合并到主分支
+  goal: 人类研发团队基于已创建的 GitHub Issues 进行代码开发并提交 PR。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
-    - [ ] `.github/lincoln-sync-queue/pr-{pr_number}.yaml` 已创建（由 CI 或人类手动创建）
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    - [ ] 确认 Issue 状态已更新为 `closed`
+    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
 
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-    ## Artifact verification
-
-    - [ ] 合并的 PR 包含关联的 Issue 引用
-
-    - [ ] 代码变更符合需求文档中的验收标准
-
-    - [ ] 测试覆盖率达到项目最低要求（默认 80%）'
-  constraints: '## Forbidden actions
-
-    - **禁止**主动创建或修改代码文件（除非人类明确请求）
-
-    - **禁止**主动提交 PR（除非人类明确请求）
-
-    - **禁止**绕过人类确认合并代码
-
-    - **禁止将 TaskCreate/TaskUpdate 当作消息占位符**：本阶段以人类为主导，Agent 必须直接向人类发送辅助结果/问题，不得用任务工具拆分“发消息”动作
-
-    - **禁止**修改 `.github/linked-issues.yaml` 中的映射关系
-
-    - **禁止**删除或修改已创建的 GitHub Issues
-
-    - **禁止**跳过校验标记阶段为完成
-
-
-    ## Human confirmation
-
-    - 本阶段 **有** `human_gate`（workflow YAML 中标记为 `true`）
-
-    - PR 合并是人类确认本阶段完成的关键事件
-
-    - PR 合并后，应触发 `sync-knowledge` 阶段'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - split
   exit:
   - check: human_approved
-  - check: gate_review_passed

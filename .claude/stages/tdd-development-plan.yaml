@@ -26,137 +26,19 @@ artifacts:
   required:
   - '{process_slug}/designs/{design_id}/tdd-plan.md'
 context:
-  goal: '基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划（`tdd-plan.md`），作为从产品设计到
-    OpenSpec 变更提案的桥梁。该计划必须足够详细，使工程师无需额外产品决策即可执行。
+  goal: 基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划（`tdd-plan.md`），作为从产品设计到
+    OpenSpec 变更提案的桥梁。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
+    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
-    基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划，作为产品设计与 OpenSpec 变更提案之间的桥梁。'
-  entry: "执行阶段前必须全部通过：\n\n- [ ] **原型就绪检查**: `prototype_ready {design_id}`\n  - `{process_slug}/designs/{design_id}/ui-spec.md`\
-    \ 包含 `<!-- prototype-status: approved -->` 或 `[x] PM 已确认原型`\n  - 失败时：提示人类先完成 `product-prototype`\
-    \ 阶段\n\n- [ ] **原型产物完整性检查**: `prototype_artifact_complete {design_id}`\n  - `{process_slug}/designs/{design_id}/prototype.pen`\
-    \ 存在且非空\n  - `{process_slug}/designs/{design_id}/fields.md` 存在且包含必要章节（字段、校验、错误状态）\n\
-    \  - `{process_slug}/designs/{design_id}/ui-spec.md` 存在且包含必要章节（界面、交互、状态）\n  -\
-    \ 失败时：提示人类补充缺失的原型产物"
-  execution: "## Allowed actions\n- 读取 `{process_slug}/designs/{design_id}/` 下的所有设计产物：\n\
-    \  - `design-review.md`、`scenarios.md`、`feature-catalog.md`\n  - `data-model.md`、`flows.md`、`feasibility.md`\n\
-    \  - `fields.md`、`ui-spec.md`、`prototype.pen`\n- 读取 `{process_slug}/requirements/{session_id}/requirements.md`\
-    \ 作为需求来源\n- 使用 Pencil 工具检查 `prototype.pen` 的视觉结构（如需）\n- 创建 `{process_slug}/designs/{design_id}/tdd-plan.md`\n\
-    - 在 `tdd-plan.md` 中添加 `<!-- status: ready-for-openspec -->` 标记\n\n## Side-effect\
-    \ strategy\n- 唯一产物：`{process_slug}/designs/{design_id}/tdd-plan.md`\n- 不修改任何已有设计文档或需求文档\n\
-    - 不创建 `{process_slug}/openspec/changes/` 目录（留给 `propose` 阶段）\n- 人类可直接编辑 `tdd-plan.md`，编辑后运行\
-    \ `workflow-continue`\n\n## During execution\n- [ ] 已调用 `superpowers:writing-plans`\
-    \ 规划文档结构\n- [ ] 计划头部声明了 required sub-skill `superpowers:test-driven-development`\n\
-    - [ ] 每个任务切片包含红/绿/重构步骤\n- [ ] 读取 `{process_slug}/requirements/{session_id}/requirements.md`（需求来源）\n\
-    - [ ] 读取 `{process_slug}/designs/{design_id}/design-review.md`（设计评审）\n- [ ] 读取\
-    \ `{process_slug}/designs/{design_id}/scenarios.md`（场景）\n- [ ] 读取 `{process_slug}/designs/{design_id}/feature-catalog.md`（功能清单）\n\
-    - [ ] 读取 `{process_slug}/designs/{design_id}/data-model.md`（数据模型）\n- [ ] 读取 `{process_slug}/designs/{design_id}/flows.md`（流程图）\n\
-    - [ ] 读取 `{process_slug}/designs/{design_id}/feasibility.md`（可行性分析）\n- [ ] 读取\
-    \ `{process_slug}/designs/{design_id}/fields.md`（字段规格）\n- [ ] 读取 `{process_slug}/designs/{design_id}/ui-spec.md`（UI\
-    \ 规格）\n- [ ] 检查 `{process_slug}/designs/{design_id}/prototype.pen`（如需视觉结构，使用 Pencil\
-    \ 工具）\n- [ ] 创建 `{process_slug}/designs/{design_id}/tdd-plan.md`，包含以下章节：\n  -\
-    \ 来源链接（指向需求、设计文档、字段、UI 规格、原型）\n  - 验收标准映射\n  - 测试场景（按用户工作流分组）\n  - 红/绿/重构实现序列\n\
-    \  - 单元、集成、契约、UI、回归测试边界\n  - 数据 fixtures 和验证用例\n  - 任务切片（适合 OpenSpec tasks 和 GitHub\
-    \ Issues）\n  - 风险、依赖项和范围外项\n- [ ] 在 `tdd-plan.md` 末尾添加 `<!-- status: ready-for-openspec\
-    \ -->` 标记\n\n## Failure recovery\n- 准入校验失败（原型未确认）：提示人类先完成 `product-prototype`\
-    \ 阶段\n- 准入校验失败（产物缺失）：提示人类补充缺失的原型产物\n- 退出校验失败（章节缺失）：根据校验器反馈补充缺失章节，重新校验\n- 人类直接编辑文件后：运行\
-    \ `workflow-continue`，Agent 重新读取文件并重新校验\n\n## Skills and tools\n# TDD 研发计划阶段技能与工具\n\
-    \n## 技能路由\n\n本阶段技能路由定义见 `.claude/skills/routing.yaml`：\n- **required**: `superpowers:writing-plans`,\
-    \ `superpowers:test-driven-development`\n- **optional**: `gsd:plan-phase`, `gsd:mvp-phase`,\
-    \ `oh-my-claudecode:plan`\n- **human_gate**: 否\n\n## 主技能命令\n\n- **命令**: `plan-tdd-development`\n\
-    - **来源**: `.claude/skills/`\n- **参数**:\n  - `session_id` (必填): 访谈会话 ID，如 `2026-06-27-stakeholder`\n\
-    \  - `design_id` (必填): 产品设计 ID，如 `checkout-redesign`\n- **提示文件**: `.claude/skills/plan-tdd-development/prompts/main.md`\n\
-    \n## 辅助技能\n\n- `workflow-continue` — 人类修改 `tdd-plan.md` 后恢复被暂停的工作流\n  - 人类可直接编辑\
-    \ `tdd-plan.md` 后运行此命令\n  - Agent 重新读取文件并重新校验\n- `propose-with-openspec` — 下一阶段命令（TDD\
-    \ 计划就绪后执行）\n\n## 校验器使用\n\n- **校验器路径**: `scripts/validate_stage.py`\n- **使用方式**:\n\
-    \  ```bash\n  # 准入校验（原型就绪）\n  python scripts/validate_stage.py \\\n    --phase\
-    \ entry --check prototype_ready --args {design_id}\n\n  # 准入校验（原型产物完整）\n  python\
-    \ scripts/validate_stage.py \\\n    --phase entry --check prototype_artifact_complete\
-    \ --args {design_id}\n\n  # 退出校验（TDD 计划完整）\n  python scripts/validate_stage.py\
-    \ \\\n    --phase exit --check tdd_plan_complete --args {design_id}\n  ```\n\n\
-    ## 允许的工具\n\n根据 `skill.yaml` 的 `tools` 列表，本阶段可用：\n\n| 工具 | 用途 |\n|------|------|\n\
-    | `Read` | 读取设计文档、需求文档、原型文件 |\n| `Grep` | 在设计文档中搜索关键词、验收标准 |\n| `Glob` | 查找设计产物文件\
-    \ |\n| `Bash` | 创建目录、检查文件状态 |\n| `Edit` | 不适用（本阶段只创建新文件） |\n| `Write` | 创建 `tdd-plan.md`\
-    \ |\n\n## Pencil 工具使用\n\n如需检查 `prototype.pen` 的视觉结构：\n\n| 工具 | 用途 |\n|------|------|\n\
-    | `pencil/get_editor_state` | 获取当前编辑器状态和 schema |\n| `pencil/batch_get` | 读取原型节点结构\
-    \ |\n| `pencil/snapshot_layout` | 检查布局结构 |\n\n> 注意：`.pen` 文件只能通过 Pencil 工具处理，不使用普通文件读取或编辑。\n\
-    \n## 辅助子技能\n\n- `superpowers:writing-plans` — 将 `tdd-plan.md` 写成 bite-sized 可执行计划，明确文件路径、命令与验收标准。\n\
-    - `superpowers:test-driven-development` — 强制每个任务遵循红/绿/重构：先写失败测试，再写最小程序，再重构。\n\
-    \  要求：计划头部必须声明 `> **Required sub-skill:** Use superpowers:test-driven-development\
-    \ for all implementation`。\n\n## 产物规范\n\n`tdd-plan.md` 必须包含以下章节：\n\n```markdown\n\
-    # TDD 研发计划\n\n## 来源链接\n\n## 验收标准映射\n\n## 测试场景\n\n## 红/绿/重构序列\n\n## 测试边界\n\n##\
-    \ 数据 Fixtures\n\n## 任务切片\n\n## 风险与依赖\n\n## 范围外\n\n<!-- status: ready-for-openspec\
-    \ -->\n```\n\n## 错误处理\n\n| 错误场景 | 处理方式 |\n|---------|---------|\n| 原型未确认 | 暂停，提示人类先完成\
-    \ `product-prototype` 阶段 |\n| 设计产物缺失 | 暂停，提示人类补充缺失产物 |\n| 退出校验失败（章节缺失） | 自动补充缺失章节，重新校验\
-    \ |\n| 退出校验失败（引用缺失） | 补充对设计产物的引用，重新校验 |\n| 人类直接编辑后运行 continue | 重新读取文件，重新校验 |\n\
-    \n## 关键规则\n\n- 计划必须可执行：工程师无需额外产品决策即可按此开发\n- 每个任务切片必须映射回设计产物和验收标准\n- 不生成 OpenSpec\
-    \ artifact（留给 `propose` 阶段）\n- 所有测试场景必须覆盖验收标准\n- 红/绿/重构序列必须具体到可执行的步骤\n\n## Execution\
-    \ instructions\n1. **读取完整提示文件**: `.claude/skills/plan-tdd-development/prompts/main.md`\n\
-    \   - 该文件包含详细的 TDD 计划生成步骤和格式要求\n   - 按照提示文件中的步骤 1-5 执行\n\n2. **阶段状态感知**:\n   -\
-    \ 当前阶段状态由 session-start hook 自动加载，必要时读取 `<process_slug>/workflow-stage.yaml`\n\
-    \   - 若本阶段已有 `completed` 节点，检查是否需要重新生成（人类要求时）\n   - 若当前节点状态为 `validation_failed`，根据\
-    \ `error_message` 修复后重试\n   - 若人类运行 `workflow-continue`，重新读取 `tdd-plan.md` 并重新校验\n\
-    \n3. **变量替换**:\n   - 使用 `state.variables.session_id` 作为会话标识\n   - 使用 `state.variables.design_id`\
-    \ 作为设计标识\n\n## Completion actions\n1. 运行退出校验器验证 `tdd-plan.md` 完整性和引用完整性\n2. 通过\
-    \ `scripts/stage_loader.py --stage tdd-development-plan --action transition-next`\
-    \ 推进阶段（节点追加模式）\n3. 向人类汇报：\n   - TDD 计划已生成\n   - 产物存放路径：`{process_slug}/designs/{design_id}/tdd-plan.md`\n\
-    \   - 下一阶段入口：`propose`（运行 `claude propose-with-openspec <session_id> <design_id>\
-    \ <change_name>`）"
-  exit: "阶段完成后必须全部通过：\n\n- [ ] **TDD 计划完整性检查**: `tdd_plan_complete {design_id}`\n\
-    \  - `{process_slug}/designs/{design_id}/tdd-plan.md` 存在且非空\n  - 包含以下章节：\n   \
-    \ - 验收映射 / Acceptance mapping / 验收标准映射\n    - 测试场景 / Test scenarios\n    - 红/绿/重构\
-    \ / Red/Green/Refactor / 红绿重构\n    - 任务切片 / Task slices\n    - 回归范围 / Regression\n\
-    \  - 包含对以下产物的引用：\n    - `{process_slug}/requirements/{session_id}/requirements.md`\n\
-    \    - `{process_slug}/designs/{design_id}/design-review.md`\n    - `{process_slug}/designs/{design_id}/fields.md`\n\
-    \    - `{process_slug}/designs/{design_id}/ui-spec.md`\n    - `{process_slug}/designs/{design_id}/prototype.pen`\n\
-    \  - 失败时：根据校验器反馈补充缺失章节或引用\n\n## Artifact verification\n- [ ] `{process_slug}/designs/{design_id}/tdd-plan.md`\
-    \ — 非空，包含所有必要章节和引用\n- [ ] 每个测试场景映射回至少一个设计文档和验收标准\n- [ ] 每个任务切片可追溯到设计产物和验收标准\n\
-    - [ ] 包含 `<!-- status: ready-for-openspec -->` 标记"
-  constraints: '## Forbidden actions
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
-    - **禁止在原型未确认时生成 TDD 计划**
-
-    - **禁止在此阶段生成 OpenSpec artifact**（`{process_slug}/openspec/changes/` 下的任何文件）
-
-    - **禁止绕过原型审批标记**
-
-    - 禁止修改 `{process_slug}/designs/{design_id}/` 下已有的设计文档
-
-    - 禁止修改 `{process_slug}/requirements/` 目录下的需求文档
-
-    - 禁止绕过校验继续工作流
-
-
-    ## Human confirmation
-
-    本阶段 **无** `human_gate: true`，为 Agent 自主执行阶段。
-
-
-    - 但产物质量由 `tdd_plan_complete` 退出校验严格把关
-
-    - 校验失败时暂停，等待人类修复或指示
-
-    - 人类可直接编辑 `tdd-plan.md` 后运行 `workflow-continue`
-
-    - 隐式确认：通过退出校验即视为可进入下一阶段
-
-
-    ## Key reminders
-
-    - **原型必须已确认**：未确认原型不得生成 TDD 计划
-
-    - **不生成 OpenSpec artifact**：本阶段只产出 `tdd-plan.md`，OpenSpec 文件留给 `propose` 阶段
-
-    - **计划必须可执行**：每个任务切片必须具体到工程师无需额外产品决策即可执行
-
-    - **可追溯性**：每个测试场景必须映射回设计文档和验收标准
-
-    - **支持直接编辑**：人类可编辑 `tdd-plan.md` 后运行 `workflow-continue`'
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
 gates:
   entry:
-  - check: previous_gate_passed
+  - check: previous_stage_completed
     args:
     - product-prototype
   exit:
-  - check: artifact_exists
-    args:
-    - '{process_slug}/designs/{design_id}/tdd-plan.md'
+  - check: artifacts_present
