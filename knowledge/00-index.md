@@ -8,11 +8,11 @@ Feature process artifacts stay in `<process_slug>/` and are not merged to `main`
 
 ### 需求
 
-- [[p0-lincoln-framework]] — P0 Lincoln 整体框架需求
+- [[p0-lc-framework]] — P0 Lincoln 整体框架需求
 
 ### 功能
 
-- [[p0-lincoln-overall-framework]] — P0 Lincoln 整体框架实现
+- [[p0-lc-overall-framework]] — P0 Lincoln 整体框架实现
 
 ### 决策
 

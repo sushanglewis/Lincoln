@@ -1,5 +1,5 @@
 ---
-name: lincoln-release-coordinator
+name: lc-release-coordinator
 description: Release and main-merge hygiene specialist for Lincoln feature branches
 extends:
   - agents/default.md

@@ -1,9 +1,9 @@
 ---
-name: lincoln-status
+name: lc-status
 description: 查看当前 Lincoln 分支的阶段状态、等待对象、推荐技能和下一步动作
 triggers:
   - "查看 Lincoln 状态"
-  - "lincoln-status"
+  - "lc-status"
   - "当前阶段"
 inputs: []
 outputs:
@@ -13,7 +13,7 @@ required_tools:
   - Bash
 ---
 
-# lincoln-status
+# lc-status
 
 调用 `python scripts/lincoln-status.py --format markdown` 输出当前 Lincoln 分支状态。
 

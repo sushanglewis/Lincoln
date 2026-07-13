@@ -54,7 +54,7 @@ if [[ "${LINCOLN_SKIP_TRACE:-}" != "1" ]]; then
             --tool "$TOOL_NAME" \
             --args-json "$TOOL_ARGS" \
             --exit-code "$EXIT_CODE" \
-            2>>"$ROOT/.context/lincoln-trace-errors.log" || true
+            2>>"$ROOT/.context/lc-trace-errors.log" || true
     fi
 fi
 

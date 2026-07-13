@@ -1,11 +1,11 @@
 ---
-name: lincoln-setup
+name: lc-setup
 description: |
   Lincoln 环境初始化 skill。用于在仓库首次打开或依赖发生变化时，
   检查、安装并配置 Lincoln 所需的外部 skills、CLI 工具、插件以及仓库配置。
 ---
 
-# lincoln-setup
+# lc-setup
 
 ## 触发条件
 
@@ -26,7 +26,7 @@ description: |
 
 ## 调用方式
 
-优先使用 Skill 工具调用 `lincoln-setup`；如果环境不支持，可运行等效命令：
+优先使用 Skill 工具调用 `lc-setup`；如果环境不支持，可运行等效命令：
 
 ```bash
 python scripts/lincoln-setup.py bootstrap
@@ -47,7 +47,7 @@ python scripts/lincoln-setup.py bootstrap          # 完整流程
 - `~/.claude/skills/` 下的外部 skill 目录。
 - 安装到 PATH 的 CLI 工具。
 - 更新后的 `.github/openspec-config.yml`。
-- 写入 `.context/lincoln-setup-state.yaml` 的 setup 完成状态。
+- 写入 `.context/lc-setup-state.yaml` 的 setup 完成状态。
 - 初始化后的项目目录结构（products、oss、knowledge 等）。
 
 ## 约束
@@ -55,7 +55,7 @@ python scripts/lincoln-setup.py bootstrap          # 完整流程
 - 不得跳过用户确认擅自安装全局工具。
 - 遇到不支持的平台或安装失败时，给出清晰的手动替代命令。
 - 安装完成后汇报状态：依赖是否就绪、配置是否写入、下一步动作。
-- 如果 `.context/lincoln-setup-state.yaml` 已标记完成且依赖检查通过，可跳过重复安装。
+- 如果 `.context/lc-setup-state.yaml` 已标记完成且依赖检查通过，可跳过重复安装。
 
 ## Prompts
 

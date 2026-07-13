@@ -1,5 +1,5 @@
 ---
-name: lincoln-pm
+name: lc-pm
 description: 产品经理角色模板，用于需求澄清、产品设计等 human_gate 阶段
 extends:
   - agents/default.md
@@ -20,7 +20,7 @@ extends:
 
 - `superpowers:brainstorming`：需求/设计探索
 - `superpowers:writing-plans`：文档结构化
-- `lincoln-workflow-router`：需要选择工作流模板时
+- `lc-workflow-router`：需要选择工作流模板时
 
 ## 产物规范
 

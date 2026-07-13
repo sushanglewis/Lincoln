@@ -95,7 +95,7 @@ def load_trace(process_root: Path, process_slug: str) -> list[dict[str, Any]]:
         return []
 
     entries: dict[tuple[str, str], dict[str, Any]] = {}
-    for trace_file in sorted(trace_dir.glob("lincoln-trace*.jsonl")):
+    for trace_file in sorted(trace_dir.glob("lc-trace*.jsonl")):
         try:
             text = trace_file.read_text(encoding="utf-8")
         except Exception as exc:

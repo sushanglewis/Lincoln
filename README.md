@@ -132,7 +132,7 @@ python scripts/lincoln-status.py --format table
 python scripts/stage_loader.py --stage <current-stage> --action handoff-report
 ```
 
-生成 `.context/lincoln-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档，包含当前阶段、已确认产物、待解决问题、下一角色、推荐技能。
+生成 `.context/lc-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档，包含当前阶段、已确认产物、待解决问题、下一角色、推荐技能。
 
 阶段通过人类确认后：
 
@@ -280,6 +280,33 @@ Lincoln 支持以 Claude Code 插件形式安装。清单文件位于 `.claude-p
 - `.claude-plugin/marketplace.json` — Marketplace 注册信息。
 
 安装方式取决于你使用的 Claude Code 插件管理器（例如 oh-my-claudecode）。通常将本仓库作为插件源引用即可。
+
+---
+
+## 多 harness 支持(codex / opencode)
+
+Lincoln 的端到端逻辑(角色契约、阶段工作流、`lc-*` 命令)可适配到 codex 与 opencode。`.claude/` 是唯一事实源,各 harness 产物由 `scripts/lincoln_harness_adapter.py` 按 `.claude/harnesses/<name>.yaml` manifest 派生,**不要手改生成产物**。
+
+安装时生成(或在 bootstrap 时加 `--harness`):
+
+```bash
+# 生成 codex 适配(AGENTS.md + ~/.codex/prompts/lc-*.md)
+python3 scripts/lincoln-setup.py generate-harness --harness codex
+
+# 生成 opencode 适配(.opencode/agent/*.md + .opencode/command/lc-*.md)
+python3 scripts/lincoln-setup.py generate-harness --harness opencode
+
+# bootstrap 一步到位
+python3 scripts/lincoln-setup.py bootstrap --harness codex --harness opencode
+```
+
+生成产物不入 git(`.opencode/`、`AGENTS.md` 已加入 `.gitignore`)。CI 经 `scripts/check-harness-drift.sh`(已接入 `static-check.sh`)校验 manifest 可生成、本地产物未漂移。
+
+门控与 CI 从轻:阶段推进统一经 `python3 scripts/stage_loader.py --stage <stage> --action validate-entry/validate-exit`,已写入各 harness 的命令模板;human_gate 仍需人类 PM 显式确认。
+
+### 命令命名迁移:`lincoln-*` → `lc-*`(破坏性)
+
+技能/命令入口已从 `lincoln-*` 统一重命名为 `lc-*`(如 `lincoln-status` → `lc-status`)。`lincoln-setup.py` 运行时会检测 `~/.claude/skills/` 下的旧目录并打印迁移提示;确认无本地改动后手动删除旧目录即可。脚本文件名(`scripts/lincoln-status.py` 等)保持不变。
 
 ---
 

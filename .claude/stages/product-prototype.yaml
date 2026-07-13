@@ -11,11 +11,11 @@ prerequisite_stage: product-design-docs
 next_stage: tdd-development-plan
 human_gate: true
 agent:
-  primary: lincoln-designer
+  primary: lc-designer
   reviewers:
-  - lincoln-pm
-  - lincoln-frontend-engineer
-  handoff_to: lincoln-engineer
+  - lc-pm
+  - lc-frontend-engineer
+  handoff_to: lc-engineer
 skills:
   required:
   - superpowers:brainstorming

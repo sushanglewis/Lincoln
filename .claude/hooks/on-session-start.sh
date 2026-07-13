@@ -31,7 +31,7 @@ if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
     echo "[Lincoln] Checking dependencies..."
     if ! "$PYTHON" "$ROOT/scripts/lincoln-setup.py" check --root "$ROOT" > /dev/null 2>&1; then
         SETUP_COMPLETE="false"
-        if [[ -f "$ROOT/.context/lincoln-setup-state.yaml" ]]; then
+        if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
             if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
                 SETUP_COMPLETE="true"
             fi
@@ -44,7 +44,7 @@ if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
             echo "请立即执行以下操作，并在每一步完成后向用户简要汇报："
             echo ""
             echo "1. 调用 Lincoln setup skill："
-            echo "   请使用 Skill 工具调用 lincoln-setup skill，或运行等效命令："
+            echo "   请使用 Skill 工具调用 lc-setup skill，或运行等效命令："
             echo "   python scripts/lincoln-setup.py bootstrap"
             echo ""
             echo "2. 该命令会："

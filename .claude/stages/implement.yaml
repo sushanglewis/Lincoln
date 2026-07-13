@@ -13,12 +13,12 @@ prerequisite_stage: split
 next_stage: sync-knowledge
 human_gate: true
 agent:
-  primary: lincoln-engineer
+  primary: lc-engineer
   reviewers:
-  - lincoln-qa
-  - lincoln-release-coordinator
-  - lincoln-architect
-  handoff_to: lincoln-knowledge-curator
+  - lc-qa
+  - lc-release-coordinator
+  - lc-architect
+  handoff_to: lc-knowledge-curator
 skills:
   required:
   - superpowers:test-driven-development

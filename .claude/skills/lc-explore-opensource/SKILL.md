@@ -1,5 +1,5 @@
 ---
-name: lincoln-explore-opensource
+name: lc-explore-opensource
 description: Use during product design when the requirement can be solved or informed by existing open-source projects.
 version: 1.0.0
 ---

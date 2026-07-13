@@ -801,7 +801,7 @@ def action_recover(state: dict[str, Any], state_file: Path | None = None) -> dic
 
 
 def action_status(state: dict[str, Any]) -> dict[str, Any]:
-    """Return status report by delegating to lincoln-status logic."""
+    """Return status report by delegating to lc-status logic."""
     import importlib.util
     status_path = PROJECT_ROOT / "scripts" / "lincoln-status.py"
     spec = importlib.util.spec_from_file_location("lincoln_status", status_path)
@@ -813,11 +813,11 @@ def action_status(state: dict[str, Any]) -> dict[str, Any]:
         from lincoln_status import build_status_report
         return build_status_report(state)
     except ImportError:
-        raise RuntimeError("Could not import lincoln-status module")
+        raise RuntimeError("Could not import lc-status module")
 
 
 def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path) -> str:
-    """Generate <process_slug>/handoffs/lincoln-handoff-{stage}.md and trigger a handoff benchmark report."""
+    """Generate <process_slug>/handoffs/lc-handoff-{stage}.md and trigger a handoff benchmark report."""
     template_name = state.get("workflow", {}).get("template")
     workflow = load_workflow(template_name)
     stage_def = find_stage(workflow, stage_id)
@@ -874,7 +874,7 @@ def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path
     project_root = state_file.parents[1]
     handoff_dir = process_package_root(state=state, state_path=state_file, project_root=project_root) / "handoffs"
     handoff_dir.mkdir(parents=True, exist_ok=True)
-    handoff_path = handoff_dir / f"lincoln-handoff-{stage_id}.md"
+    handoff_path = handoff_dir / f"lc-handoff-{stage_id}.md"
     handoff_path.write_text(content, encoding="utf-8")
 
     # Record a structured handoff event in the session trace so benchmark metrics

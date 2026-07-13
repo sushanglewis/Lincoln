@@ -39,7 +39,7 @@ RESERVED_PROCESS_DIRS = {
 
 def slugify(value: str) -> str:
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", value.strip()).strip("-").lower()
-    return slug or "lincoln-process"
+    return slug or "lc-process"
 
 
 def validate_slug(value: str) -> str:

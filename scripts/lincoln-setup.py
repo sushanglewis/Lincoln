@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Lincoln setup CLI — invoked by Claude, not by end users directly.
 
-This script is the implementation backend for the `lincoln-setup` skill.
+This script is the implementation backend for the `lc-setup` skill.
 It discovers missing dependencies from `.claude/skills/dependencies.yaml`,
 installs external skills/CLIs, and initializes repository configuration.
 
@@ -31,11 +31,11 @@ _PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-from scripts import lincoln_dependency_manager
+from scripts import lincoln_dependency_manager, lincoln_harness_adapter
 
 
-# Steps tracked in `.context/lincoln-setup-state.yaml`.
-_SETUP_STATE_PATH = Path(".context") / "lincoln-setup-state.yaml"
+# Steps tracked in `.context/lc-setup-state.yaml`.
+_SETUP_STATE_PATH = Path(".context") / "lc-setup-state.yaml"
 
 
 def confirm(prompt: str, auto_yes: bool = False) -> bool:
@@ -155,6 +155,23 @@ def run_check(args: argparse.Namespace) -> int:
     return 1 if required_missing else 0
 
 
+def detect_legacy_skills(skills_dir: Path) -> list[str]:
+    """Return old `lincoln-*` skill dir names left over from before the lc-* rename."""
+    if not skills_dir.is_dir():
+        return []
+    return sorted(p.name for p in skills_dir.iterdir() if p.is_dir() and p.name.startswith("lincoln-"))
+
+
+def _warn_legacy_skills(skills_dir: Path) -> None:
+    legacy = detect_legacy_skills(skills_dir)
+    if not legacy:
+        return
+    print("\n⚠️ 检测到旧版技能目录(已重命名为 lc-* 系列,不再维护):")
+    for name in legacy:
+        print(f"   - {skills_dir / name}")
+    print("   迁移方式:确认无本地改动后手动删除上述目录,重新运行 lc-setup。")
+
+
 def run_install_skills(args: argparse.Namespace) -> int:
     """Install missing external skills and plugins."""
     root = Path(args.root).resolve()
@@ -167,6 +184,7 @@ def run_install_skills(args: argparse.Namespace) -> int:
         return 1
 
     skills_dir = Path.home() / ".claude" / "skills"
+    _warn_legacy_skills(skills_dir)
     missing = lincoln_dependency_manager.check_skills(manifest, root, skills_dir)
 
     if not missing:
@@ -350,7 +368,7 @@ def run_init_project(args: argparse.Namespace) -> int:
 
 
 def run_mark_step(args: argparse.Namespace) -> int:
-    """Record a setup step status in .context/lincoln-setup-state.yaml."""
+    """Record a setup step status in .context/lc-setup-state.yaml."""
     root = Path(args.root).resolve()
     _mark_step(root, args.step, args.status)
     print(f"✅ Marked step '{args.step}' as '{args.status}'.")
@@ -398,7 +416,46 @@ def run_bootstrap(args: argparse.Namespace) -> int:
     if code != 0:
         return code
 
+    # 5. Generate harness adapter artifacts (optional).
+    if getattr(args, "harness", None):
+        print("\n==> Generating harness adapter artifacts...")
+        code = run_generate_harness(args)
+        if code != 0:
+            return code
+
     print("\n🎉 Lincoln bootstrap completed.")
+    return 0
+
+
+def _add_harness_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument(
+        "--harness",
+        action="append",
+        default=None,
+        help="Generate harness adapter artifacts (codex|opencode; repeatable)",
+    )
+    p.add_argument("--project-dir", default=None, help="Target project dir (default: --root)")
+    p.add_argument("--home-dir", default=None, help="Target home dir (default: real home)")
+
+
+def run_generate_harness(args: argparse.Namespace) -> int:
+    """Generate codex/opencode artifacts from .claude/ via harness manifests."""
+    root = Path(args.root).resolve()
+    project_dir = Path(args.project_dir).resolve() if args.project_dir else root
+    home_dir = Path(args.home_dir).resolve() if args.home_dir else Path.home()
+    harnesses = args.harness or []
+    for name in harnesses:
+        try:
+            if getattr(args, "dry_run", False):
+                print(f"[dry-run] would generate harness '{name}' into {project_dir} / {home_dir}")
+                continue
+            written = lincoln_harness_adapter.generate(root, name, project_dir, home_dir)
+            print(f"✅ Harness '{name}': {len(written)} artifacts generated.")
+            for path in written:
+                print(f"   - {path}")
+        except lincoln_harness_adapter.HarnessAdapterError as exc:
+            print(f"❌ Harness '{name}' failed: {exc}", file=sys.stderr)
+            return 2
     return 0
 
 
@@ -412,7 +469,7 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
 
 def main(args: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        prog="lincoln-setup",
+        prog="lc-setup",
         description="Lincoln dependency and configuration setup backend.",
     )
 
@@ -449,6 +506,13 @@ def main(args: list[str] | None = None) -> int:
     boot_p.add_argument("--owner", default=None, help="GitHub repository owner")
     boot_p.add_argument("--name", default=None, help="GitHub repository name")
     boot_p.add_argument("--branch", default="main", help="Default branch (default: main)")
+    _add_harness_args(boot_p)
+
+    harness_p = subparsers.add_parser(
+        "generate-harness", help="Generate codex/opencode adapter artifacts"
+    )
+    _add_common_args(harness_p)
+    _add_harness_args(harness_p)
 
     parsed = parser.parse_args(args)
 
@@ -461,6 +525,7 @@ def main(args: list[str] | None = None) -> int:
         "mark-step": run_mark_step,
         "is-setup-complete": run_is_setup_complete,
         "bootstrap": run_bootstrap,
+        "generate-harness": run_generate_harness,
     }
 
     return handlers[parsed.command](parsed)

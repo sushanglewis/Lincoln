@@ -84,7 +84,7 @@ issue-21/
 python3 scripts/stage_loader.py --stage <current_stage> --action handoff-report
 ```
 
-更新 `.context/lincoln-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档。人类 PM 确认后：
+更新 `.context/lc-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档。人类 PM 确认后：
 
 ```bash
 python3 scripts/stage_loader.py --stage <current_stage> --action approve-gate
@@ -106,7 +106,8 @@ python3 scripts/stage_loader.py --stage <current_stage> --action approve-gate
 - 通过 `Skill` 工具调用技能，技能名来自 `.claude/skills/routing.yaml`。
 - 不得用技能调用替代 `human_gate`。
 - 实施类技能（如 `subagent-driven-development`、`executing-plans`）必须在 PM 明确批准后才能调用。
-- `lincoln-workflow-router` 仅在 `{process_slug}/workflow-stage.yaml` 中 `current_run.workflow_template` 为空时触发。
+- `lc-workflow-router` 仅在 `{process_slug}/workflow-stage.yaml` 中 `current_run.workflow_template` 为空时触发。
+- 技能/命令入口统一为 `lc-*` 前缀(旧 `lincoln-*` 已移除);codex/opencode 适配产物由 `scripts/lincoln_harness_adapter.py` 从 `.claude/` 派生,不要手改生成文件,改动事实源后运行 `python3 scripts/lincoln-setup.py generate-harness --harness <name>`。
 
 ## 核心原则
 

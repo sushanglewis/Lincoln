@@ -9,11 +9,11 @@ prerequisite_stage: tdd-development-plan
 next_stage: split
 human_gate: false
 agent:
-  primary: lincoln-engineer
+  primary: lc-engineer
   reviewers:
-  - lincoln-qa
-  - lincoln-architect
-  handoff_to: lincoln-pm
+  - lc-qa
+  - lc-architect
+  handoff_to: lc-pm
 skills:
   required:
   - openspec:propose

@@ -21,11 +21,11 @@ def write_tdd_plan(root: Path, design_id: str, ready: bool = False):
     tdd = base / "tdd-plan.md"
     tdd.write_text(
         "# TDD Plan\n\n"
-        "- Source: lincoln-test/requirements/2026-06-27-stakeholder/requirements.md\n"
-        f"- Source: lincoln-test/designs/{design_id}/design-review.md\n"
-        f"- Source: lincoln-test/designs/{design_id}/fields.md\n"
-        f"- Source: lincoln-test/designs/{design_id}/ui-spec.md\n"
-        f"- Source: lincoln-test/designs/{design_id}/prototype.pen\n\n"
+        "- Source: lc-test/requirements/2026-06-27-stakeholder/requirements.md\n"
+        f"- Source: lc-test/designs/{design_id}/design-review.md\n"
+        f"- Source: lc-test/designs/{design_id}/fields.md\n"
+        f"- Source: lc-test/designs/{design_id}/ui-spec.md\n"
+        f"- Source: lc-test/designs/{design_id}/prototype.pen\n\n"
         "## 验收映射\n## 测试场景\n## 红/绿/重构\n## 任务切片\n## 回归范围\n"
         f"{'<!-- status: ready-for-openspec -->' if ready else ''}\n"
     )

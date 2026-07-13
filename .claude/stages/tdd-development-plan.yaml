@@ -9,11 +9,11 @@ prerequisite_stage: product-prototype
 next_stage: propose
 human_gate: false
 agent:
-  primary: lincoln-engineer
+  primary: lc-engineer
   reviewers:
-  - lincoln-qa
-  - lincoln-architect
-  handoff_to: lincoln-engineer
+  - lc-qa
+  - lc-architect
+  handoff_to: lc-engineer
 skills:
   required:
   - superpowers:writing-plans

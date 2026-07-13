@@ -1,5 +1,5 @@
 ---
-name: lincoln-knowledge-curator
+name: lc-knowledge-curator
 description: Durable knowledge curator for accepted Lincoln feature work
 extends:
   - agents/default.md

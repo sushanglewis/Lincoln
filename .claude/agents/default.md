@@ -1,5 +1,5 @@
 ---
-name: lincoln-default
+name: lc-default
 description: Lincoln universal agent contract. Injected as system prompt.
 ---
 

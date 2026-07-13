@@ -1,5 +1,5 @@
 ---
-name: lincoln-workflow-router
+name: lc-workflow-router
 description: Use at the start of a Lincoln session to assess repository context and select the most appropriate workflow template.
 version: 1.0.0
 ---

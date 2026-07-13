@@ -9,11 +9,11 @@ prerequisite_stage: propose
 next_stage: implement
 human_gate: false
 agent:
-  primary: lincoln-pm
+  primary: lc-pm
   reviewers:
-  - lincoln-engineer
-  - lincoln-qa
-  handoff_to: lincoln-engineer
+  - lc-engineer
+  - lc-qa
+  handoff_to: lc-engineer
 skills:
   required:
   - superpowers:dispatching-parallel-agents

@@ -46,7 +46,7 @@ def process_slug() -> str:
             return get_process_slug(state, state_file)
         except Exception:
             pass
-    return "lincoln-process"
+    return "lc-process"
 
 
 def process_root() -> Path:

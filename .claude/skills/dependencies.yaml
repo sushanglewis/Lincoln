@@ -85,20 +85,20 @@ skills:
       Recommended local Whisper implementation.
       Alternatives: openai-whisper (`pip install openai-whisper`) or OpenAI API.
 
-  lincoln-explore-opensource:
+  lc-explore-opensource:
     source: inline
     type: skill
-    path: .claude/skills/lincoln-explore-opensource
+    path: .claude/skills/lc-explore-opensource
 
-  lincoln-build-codebase-knowledge:
+  lc-build-codebase-knowledge:
     source: inline
     type: skill
-    path: .claude/skills/lincoln-build-codebase-knowledge
+    path: .claude/skills/lc-build-codebase-knowledge
 
-  lincoln-workflow-router:
+  lc-workflow-router:
     source: inline
     type: skill
-    path: .claude/skills/lincoln-workflow-router
+    path: .claude/skills/lc-workflow-router
 
   # oh-my-claudecode — optional multi-agent orchestration layer, installed by default
   oh-my-claudecode:

@@ -7,7 +7,7 @@ workflow:
   steps:
     - id: workflow-router
       name: 工作流路由
-      action: lincoln-workflow-router
+      action: lc-workflow-router
       artifacts:
         - "{process_slug}/workflow-stage.yaml"
 
@@ -16,7 +16,7 @@ workflow:
       description: 基于现有源码生成功能知识文档
       entry_checks:
         - check: codebase_not_yet_documented
-      action: lincoln-build-codebase-knowledge
+      action: lc-build-codebase-knowledge
       artifacts:
         - knowledge/03-features/
         - knowledge/00-index.md

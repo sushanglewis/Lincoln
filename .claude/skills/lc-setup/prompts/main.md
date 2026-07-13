@@ -12,7 +12,7 @@ python scripts/lincoln-setup.py check
 
 - 列出所有缺失的 skills、CLI 工具、插件。
 - 区分 required 与 optional/default_install。
-- 如果检查通过且 `.context/lincoln-setup-state.yaml` 已标记完成，直接汇报“环境已就绪”，跳过剩余步骤。
+- 如果检查通过且 `.context/lc-setup-state.yaml` 已标记完成，直接汇报“环境已就绪”，跳过剩余步骤。
 
 ## 2. 安装外部 skills
 

@@ -1,5 +1,5 @@
 ---
-name: lincoln-qa
+name: lc-qa
 description: QA and acceptance specialist for Lincoln validation and release readiness
 extends:
   - agents/default.md

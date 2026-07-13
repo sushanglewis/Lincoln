@@ -77,10 +77,10 @@ def sample_manifest():
                     "linux": "git clone --branch main ...",
                 },
             },
-            "lincoln-status": {
+            "lc-status": {
                 "source": "inline",
                 "type": "skill",
-                "path": ".claude/skills/lincoln-status",
+                "path": ".claude/skills/lc-status",
                 "required": True,
             },
         },
@@ -131,7 +131,7 @@ def test_check_skills_returns_missing_external_skills(tmp_path, sample_manifest)
     skills_dir = tmp_path / "skills"
     skills_dir.mkdir()
     # Create the inline skill file so only external skills are reported missing.
-    inline_path = tmp_path / ".claude" / "skills" / "lincoln-status"
+    inline_path = tmp_path / ".claude" / "skills" / "lc-status"
     (inline_path / "SKILL.md").parent.mkdir(parents=True)
     (inline_path / "SKILL.md").write_text("# skill", encoding="utf-8")
     # Don't create superpowers or gsd directories
@@ -140,7 +140,7 @@ def test_check_skills_returns_missing_external_skills(tmp_path, sample_manifest)
     names = {m["name"] for m in missing}
     assert "superpowers" in names
     assert "gsd" in names
-    assert "lincoln-status" not in names  # inline skill present in repo
+    assert "lc-status" not in names  # inline skill present in repo
     assert "oh-my-claudecode" in names  # default_install plugin
 
 
@@ -157,7 +157,7 @@ def test_check_skills_skips_present_skills(tmp_path, sample_manifest):
 
 def test_check_skills_inline_skill_missing(tmp_path, sample_manifest):
     missing = check_skills(sample_manifest, tmp_path, tmp_path / "skills")
-    inline = [m for m in missing if m["name"] == "lincoln-status"]
+    inline = [m for m in missing if m["name"] == "lc-status"]
     assert len(inline) == 1
     assert inline[0]["type"] == "skill"
     assert "inline" in inline[0]["source"]

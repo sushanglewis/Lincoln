@@ -4,8 +4,8 @@
 
 - **决策编号**: DEC-001
 - **日期**: 2026-07-11
-- **相关需求**: [[p0-lincoln-framework]]
-- **相关功能**: [[p0-lincoln-overall-framework]]
+- **相关需求**: [[p0-lc-framework]]
+- **相关功能**: [[p0-lc-overall-framework]]
 - **状态**: 已采纳
 
 ---
@@ -48,7 +48,7 @@
 
 ## 相关链接
 
-- [[p0-lincoln-overall-framework]]
-- [[p0-lincoln-framework]]
+- [[p0-lc-overall-framework]]
+- [[p0-lc-framework]]
 - `.claude/stages/stage-manifest.yaml`
 - `.claude/schemas/stage-definition.schema.json`

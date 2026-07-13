@@ -11,9 +11,9 @@ prerequisite_stage: implement
 next_stage: null
 human_gate: false
 agent:
-  primary: lincoln-knowledge-curator
+  primary: lc-knowledge-curator
   reviewers:
-  - lincoln-release-coordinator
+  - lc-release-coordinator
 skills:
   required:
   - gsd:docs-update

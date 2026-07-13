@@ -11,7 +11,7 @@ from scripts import lincoln_trace
 
 
 def _write_state(tmp_path: Path, state: dict) -> Path:
-    slug = state.get("current_run", {}).get("variables", {}).get("process_slug", "lincoln-test")
+    slug = state.get("current_run", {}).get("variables", {}).get("process_slug", "lc-test")
     path = tmp_path / slug / "workflow-stage.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
@@ -27,7 +27,7 @@ def minimal_state(tmp_path):
             "current_run": {
                 "run_id": "run-123",
                 "current_stage": "clarify",
-                "variables": {"process_slug": "lincoln-test"},
+                "variables": {"process_slug": "lc-test"},
             },
         },
     )
@@ -106,7 +106,7 @@ def test_append_trace_entry_writes_jsonl(minimal_state):
         0,
     )
     assert trace_file is not None
-    assert trace_file.name == "lincoln-trace.jsonl"
+    assert trace_file.name == "lc-trace.jsonl"
 
     lines = trace_file.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 1
@@ -140,7 +140,7 @@ def test_append_trace_entry_uses_agent_id(minimal_state, monkeypatch, tmp_path):
     monkeypatch.delenv("LINCOLN_TRACE_FILE", raising=False)
     monkeypatch.setenv("LINCOLN_AGENT_ID", "agent-42")
     trace_file = lincoln_trace.append_trace_entry(minimal_state, "Bash", {"command": "x"}, 0)
-    assert trace_file.name == "lincoln-trace-agent-42.jsonl"
+    assert trace_file.name == "lc-trace-agent-42.jsonl"
 
 
 def test_append_trace_entry_parses_string_args(minimal_state):
@@ -157,7 +157,7 @@ def test_append_trace_entry_parses_string_args(minimal_state):
 def test_append_trace_entry_multiple_are_atomic(minimal_state):
     for i in range(5):
         lincoln_trace.append_trace_entry(minimal_state, "Bash", {"command": f"cmd{i}"}, 0)
-    trace_file = minimal_state.parent / ".trace" / "lincoln-trace.jsonl"
+    trace_file = minimal_state.parent / ".trace" / "lc-trace.jsonl"
     lines = trace_file.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 5
     assert all(json.loads(line)["tool"] == "Bash" for line in lines)
@@ -176,7 +176,7 @@ def test_main_cli(minimal_state):
     ]
     assert lincoln_trace.main(argv) == 0
     entry = json.loads(
-        (minimal_state.parent / ".trace" / "lincoln-trace.jsonl")
+        (minimal_state.parent / ".trace" / "lc-trace.jsonl")
         .read_text(encoding="utf-8")
         .strip()
         .splitlines()[0]

@@ -7,7 +7,7 @@ workflow:
   steps:
     - id: workflow-router
       name: 工作流路由
-      action: lincoln-workflow-router
+      action: lc-workflow-router
 
     - id: clarify
       name: 需求澄清
@@ -21,7 +21,7 @@ workflow:
 
     - id: explore-opensource
       name: 开源方案探索
-      action: lincoln-explore-opensource
+      action: lc-explore-opensource
       artifacts:
         - "{process_slug}/docs/research/{change_name}-oss-options.md"
       exit_checks:

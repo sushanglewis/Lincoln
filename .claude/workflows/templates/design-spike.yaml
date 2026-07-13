@@ -7,7 +7,7 @@ workflow:
   steps:
     - id: workflow-router
       name: 工作流路由
-      action: lincoln-workflow-router
+      action: lc-workflow-router
 
     - id: clarify
       name: 需求澄清

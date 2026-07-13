@@ -12,10 +12,10 @@ prerequisite_stage: clarify
 next_stage: product-design-docs
 human_gate: false
 agent:
-  primary: lincoln-researcher
+  primary: lc-researcher
   reviewers:
-  - lincoln-engineer
-  handoff_to: lincoln-pm
+  - lc-engineer
+  handoff_to: lc-pm
 skills:
   required: []
   optional: []

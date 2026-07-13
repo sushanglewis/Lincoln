@@ -110,7 +110,7 @@ def process_slug() -> str:
 
     if default_process_slug:
         return default_process_slug(PROJECT_ROOT)
-    return "lincoln-process"
+    return "lc-process"
 
 
 def process_root() -> Path:

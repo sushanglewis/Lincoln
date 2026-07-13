@@ -62,7 +62,7 @@
 1. 在本目录（或 `templates/` 子目录）创建 `<workflow-name>.yaml`。
 2. 遵循 [`workflow-template.schema.json`](../schemas/workflow-template.schema.json) 的字段约定。
 3. 更新本 README 的**快速路由表**和**模板详解**。
-4. 如需在 `lincoln-workflow-router` 中暴露该模板，同步更新 `.claude/skills/lincoln-workflow-router/` 中的路由逻辑。
+4. 如需在 `lc-workflow-router` 中暴露该模板，同步更新 `.claude/skills/lc-workflow-router/` 中的路由逻辑。
 
 ## 相关文件
 

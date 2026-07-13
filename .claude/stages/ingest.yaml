@@ -10,8 +10,8 @@ prerequisite_stage: workflow-router
 next_stage: clarify
 human_gate: false
 agent:
-  primary: lincoln-pm
-  handoff_to: lincoln-pm
+  primary: lc-pm
+  handoff_to: lc-pm
 skills:
   required: []
   optional:

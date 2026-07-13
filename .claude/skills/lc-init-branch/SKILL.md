@@ -1,9 +1,9 @@
 ---
-name: lincoln-init-branch
+name: lc-init-branch
 description: 基于 GitHub issue 初始化 Lincoln issue work package 和 feature branch
 triggers:
   - "初始化 Lincoln 分支"
-  - "lincoln-init-branch"
+  - "lc-init-branch"
   - "创建 Lincoln feature branch"
   - "初始化 issue 工作包"
 inputs:
@@ -29,7 +29,7 @@ required_tools:
   - Write
 ---
 
-# lincoln-init-branch
+# lc-init-branch
 
 PM 在 Conductor 中基于 GitHub issue 初始化 workspace 后，调用此 skill 创建对应的过程包：
 

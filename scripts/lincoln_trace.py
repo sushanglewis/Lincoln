@@ -197,9 +197,9 @@ def _resolve_trace_file(state: dict[str, Any] | None, state_path: Path | None) -
 
     agent_id = os.environ.get("LINCOLN_AGENT_ID")
     if agent_id:
-        return trace_dir / f"lincoln-trace-{agent_id}.jsonl"
+        return trace_dir / f"lc-trace-{agent_id}.jsonl"
 
-    return trace_dir / "lincoln-trace.jsonl"
+    return trace_dir / "lc-trace.jsonl"
 
 
 def _get_run_id(state: dict[str, Any] | None, run_id: str | None) -> str:

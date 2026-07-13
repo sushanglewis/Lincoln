@@ -55,6 +55,113 @@ def tmp_project(tmp_path):
     return root
 
 
+def _write_harness_files(root: Path) -> None:
+    """Add minimal harness manifests + an agent source to a tmp project."""
+    agents = root / ".claude" / "agents"
+    agents.mkdir(parents=True, exist_ok=True)
+    (agents / "default.md").write_text(
+        "---\ndescription: Default agent\n---\n\nDefault body.\n", encoding="utf-8"
+    )
+    harnesses = root / ".claude" / "harnesses"
+    harnesses.mkdir(parents=True, exist_ok=True)
+    (harnesses / "command-map.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "commands": {
+                    "lc-status": {
+                        "description": "Show status",
+                        "action": "python3 scripts/lincoln-status.py",
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    (harnesses / "opencode.yaml").write_text(
+        yaml.safe_dump(
+            {
+                "name": "opencode",
+                "capabilities": {"hooks": False, "skills": False, "agents": True, "commands": True},
+                "command_map_source": "command-map.yaml",
+                "targets": [
+                    {
+                        "kind": "agent",
+                        "source": ".claude/agents/*.md",
+                        "output": "{project}/.opencode/agent/{name}.md",
+                        "scope": "project",
+                        "transform": "frontmatter",
+                    },
+                    {
+                        "kind": "command",
+                        "source": "command_map",
+                        "output": "{project}/.opencode/command/{name}.md",
+                        "scope": "project",
+                        "transform": "command-template",
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
+def test_generate_harness_subcommand_writes_artifacts(setup_mod, tmp_project, tmp_path, capsys):
+    _write_harness_files(tmp_project)
+    home = tmp_path / "home"
+    code = setup_mod.main(
+        [
+            "generate-harness",
+            "--root",
+            str(tmp_project),
+            "--harness",
+            "opencode",
+            "--project-dir",
+            str(tmp_project),
+            "--home-dir",
+            str(home),
+        ]
+    )
+    assert code == 0
+    assert (tmp_project / ".opencode" / "agent" / "default.md").exists()
+    assert (tmp_project / ".opencode" / "command" / "lc-status.md").exists()
+    out = capsys.readouterr().out
+    assert "opencode" in out
+
+
+def test_bootstrap_harness_flag_generates_after_steps(setup_mod, tmp_project, tmp_path):
+    _write_harness_files(tmp_project)
+    home = tmp_path / "home"
+    with (
+        patch.object(setup_mod, "run_install_skills", return_value=0),
+        patch.object(setup_mod, "run_install_clis", return_value=0),
+        patch.object(setup_mod, "run_init_repo_config", return_value=0),
+        patch.object(setup_mod, "run_init_project", return_value=0),
+    ):
+        code = setup_mod.main(
+            [
+                "bootstrap",
+                "--root",
+                str(tmp_project),
+                "--harness",
+                "opencode",
+                "--project-dir",
+                str(tmp_project),
+                "--home-dir",
+                str(home),
+            ]
+        )
+    assert code == 0
+    assert (tmp_project / ".opencode" / "agent" / "default.md").exists()
+
+
+def test_detect_legacy_skills_flags_old_dirs(setup_mod, tmp_path):
+    skills_dir = tmp_path / "skills"
+    (skills_dir / "lincoln-status").mkdir(parents=True)
+    (skills_dir / "lc-status").mkdir()
+    legacy = setup_mod.detect_legacy_skills(skills_dir)
+    assert legacy == ["lincoln-status"]
+
+
 def test_cli_check_subcommand_prints_status(setup_mod, tmp_project, capsys):
     dep_mod = setup_mod.lincoln_dependency_manager
     with patch.object(
@@ -312,7 +419,7 @@ def test_cli_mark_step_writes_state(setup_mod, tmp_project):
     exit_code = setup_mod.main(
         ["mark-step", "--root", str(tmp_project), "--step", "init_project"]
     )
-    state_file = tmp_project / ".context" / "lincoln-setup-state.yaml"
+    state_file = tmp_project / ".context" / "lc-setup-state.yaml"
     assert exit_code == 0
     assert state_file.exists()
     data = yaml.safe_load(state_file.read_text(encoding="utf-8"))

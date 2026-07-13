@@ -1,5 +1,5 @@
 ---
-name: lincoln-engineer
+name: lc-engineer
 description: 研发工程师角色模板，用于 TDD 计划、实现、测试阶段
 extends:
   - agents/default.md

@@ -75,7 +75,7 @@ def _linear_id(state: dict[str, Any]) -> str:
 def _trace_files(process_dir: Path, project_root: Path) -> list[str]:
     return sorted(
         str(p.relative_to(project_root))
-        for p in (process_dir / ".trace").glob("lincoln-trace*.jsonl")
+        for p in (process_dir / ".trace").glob("lc-trace*.jsonl")
         if p.exists()
     )
 
@@ -120,7 +120,7 @@ def _build_payload(
 
 def _atomic_write(path: Path, data: bytes) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-lincoln-benchmark-")
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=".tmp-lc-benchmark-")
     try:
         with os.fdopen(fd, "wb") as fh:
             fh.write(data)
@@ -142,8 +142,8 @@ def _write_report_files(
     payload: dict[str, Any],
 ) -> dict[str, Path]:
     timestamp = generated_at.replace(":", "").replace("-", "").replace("T", "-")[:15]
-    md_path = benchmark_dir / f"lincoln-benchmark-{trigger}-{timestamp}.md"
-    json_path = benchmark_dir / f"lincoln-benchmark-{trigger}-{timestamp}.json"
+    md_path = benchmark_dir / f"lc-benchmark-{trigger}-{timestamp}.md"
+    json_path = benchmark_dir / f"lc-benchmark-{trigger}-{timestamp}.json"
     _atomic_write(md_path, markdown.encode("utf-8"))
     _atomic_write(json_path, json.dumps(payload, ensure_ascii=False, indent=2).encode("utf-8"))
     return {"markdown": md_path, "json": json_path}
@@ -151,7 +151,7 @@ def _write_report_files(
 
 def _recent_session_stop_exists(benchmark_dir: Path) -> bool:
     latest = 0.0
-    for existing in benchmark_dir.glob("lincoln-benchmark-session_stop-*.json"):
+    for existing in benchmark_dir.glob("lc-benchmark-session_stop-*.json"):
         try:
             mtime = existing.stat().st_mtime
             if mtime > latest:

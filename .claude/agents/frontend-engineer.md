@@ -1,5 +1,5 @@
 ---
-name: lincoln-frontend-engineer
+name: lc-frontend-engineer
 description: Lincoln 前端工程师角色，用于原型实现、UI 评审与前端技术把关
 extends:
   - agents/default.md

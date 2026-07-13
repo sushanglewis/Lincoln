@@ -276,7 +276,7 @@ def test_entry_exit_compliance_warn_when_checks_missing(audit_mod, completed_sta
 def test_audit_finds_process_handoff(audit_mod, tmp_path, monkeypatch):
     handoff_dir = tmp_path / "feature-xyz" / "handoffs"
     handoff_dir.mkdir(parents=True)
-    handoff_file = handoff_dir / "lincoln-handoff-clarify.md"
+    handoff_file = handoff_dir / "lc-handoff-clarify.md"
     handoff_file.write_text("# Handoff\n", encoding="utf-8")
 
     def fake_process_root(**kwargs):

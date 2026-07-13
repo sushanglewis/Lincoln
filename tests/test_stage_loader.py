@@ -139,13 +139,13 @@ def test_handoff_report_generates_benchmark_and_handoff_trace(minimal_state_file
     project_root = minimal_state_file.parent.parent
     process_dir = project_root / process_slug
 
-    handoff_file = process_dir / "handoffs" / "lincoln-handoff-clarify.md"
+    handoff_file = process_dir / "handoffs" / "lc-handoff-clarify.md"
     assert handoff_file.exists()
 
-    benchmark_files = list((process_dir / "benchmark").glob("lincoln-benchmark-handoff-*.json"))
+    benchmark_files = list((process_dir / "benchmark").glob("lc-benchmark-handoff-*.json"))
     assert len(benchmark_files) >= 1
 
-    trace_file = process_dir / ".trace" / "lincoln-trace.jsonl"
+    trace_file = process_dir / ".trace" / "lc-trace.jsonl"
     assert trace_file.exists()
     entries = [json.loads(line) for line in trace_file.read_text(encoding="utf-8").strip().splitlines()]
     handoff_entries = [e for e in entries if e.get("category") == "handoff"]

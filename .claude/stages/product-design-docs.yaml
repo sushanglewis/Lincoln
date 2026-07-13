@@ -9,12 +9,12 @@ prerequisite_stage: clarify
 next_stage: product-prototype
 human_gate: true
 agent:
-  primary: lincoln-pm
+  primary: lc-pm
   reviewers:
-  - lincoln-designer
-  - lincoln-researcher
-  - lincoln-architect
-  handoff_to: lincoln-designer
+  - lc-designer
+  - lc-researcher
+  - lc-architect
+  handoff_to: lc-designer
 skills:
   required:
   - superpowers:brainstorming

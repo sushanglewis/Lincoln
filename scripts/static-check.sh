@@ -313,6 +313,7 @@ echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/validate_stage.py
 "$PYTHON" -m py_compile scripts/lincoln_paths.py
 "$PYTHON" -m py_compile scripts/check-main-merge-hygiene.py
+"$PYTHON" -m py_compile scripts/lincoln_harness_adapter.py
 
 echo "==> Check main merge hygiene"
 "$PYTHON" scripts/check-main-merge-hygiene.py || true
@@ -323,9 +324,13 @@ bash -n scripts/init-project.sh
 bash -n scripts/list-active-lincoln-branches.sh
 bash -n scripts/check-skill-dependencies.sh
 bash -n scripts/sync-external-agents.sh
+bash -n scripts/check-harness-drift.sh
 for hook in "$ROOT/.claude/hooks/"*.sh; do
     bash -n "$hook"
 done
+
+echo "==> Check harness drift"
+bash scripts/check-harness-drift.sh
 
 echo "==> Run pytest"
 "$PYTHON" -m pytest tests/ -v

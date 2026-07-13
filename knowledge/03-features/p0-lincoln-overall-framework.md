@@ -3,7 +3,7 @@
 ## 元信息
 
 - **来源访谈**: —
-- **来源需求**: [[p0-lincoln-framework]]
+- **来源需求**: [[p0-lc-framework]]
 - **GitHub Issue**: [#33](https://github.com/sushanglewis/Lincoln/issues/33)
 - **实现 PR**: [#38](https://github.com/sushanglewis/Lincoln/pull/38)
 - **状态**: 已合并
@@ -111,7 +111,7 @@ PR #38 将 Lincoln 从分散的 stage 文件夹重构为单 YAML stage 框架，
 
 ## 相关链接
 
-- [[p0-lincoln-framework]]
+- [[p0-lc-framework]]
 - [[stage-yaml-refactor]]
 - [Issue #33](https://github.com/sushanglewis/Lincoln/issues/33)
 - [PR #38](https://github.com/sushanglewis/Lincoln/pull/38)

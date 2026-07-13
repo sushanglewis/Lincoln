@@ -9,10 +9,10 @@ prerequisite_stage: null
 next_stage: null
 human_gate: true
 agent:
-  primary: lincoln-pm
+  primary: lc-pm
   reviewers:
-  - lincoln-release-coordinator
-  handoff_to: lincoln-pm
+  - lc-release-coordinator
+  handoff_to: lc-pm
 skills:
   required:
   - superpowers:bootstrap

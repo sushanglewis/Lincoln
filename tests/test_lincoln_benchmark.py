@@ -10,7 +10,7 @@ from scripts import lincoln_benchmark, lincoln_benchmark_metrics
 
 
 def _write_state(tmp_path: Path, state: dict) -> Path:
-    slug = state.get("current_run", {}).get("variables", {}).get("process_slug", "lincoln-test")
+    slug = state.get("current_run", {}).get("variables", {}).get("process_slug", "lc-test")
     path = tmp_path / slug / "workflow-stage.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
@@ -31,7 +31,7 @@ def base_state(tmp_path):
                 "status": "in_progress",
                 "issue_number": "27",
                 "variables": {
-                    "process_slug": "lincoln-test",
+                    "process_slug": "lc-test",
                     "session_id": "2026-07-10-test",
                     "design_id": "test-design",
                     "change_name": "test-change",
@@ -91,10 +91,10 @@ def test_load_trace_merges_child_files(base_state):
     trace_dir.mkdir(exist_ok=True)
     parent = _trace_entry("Bash", "bash", "cmd1", sequence_id="s1")
     child = _trace_entry("Write", "write", "child.md", sequence_id="s2")
-    (trace_dir / "lincoln-trace.jsonl").write_text(json.dumps(parent) + "\n", encoding="utf-8")
-    (trace_dir / "lincoln-trace-agent-x.jsonl").write_text(json.dumps(child) + "\n", encoding="utf-8")
+    (trace_dir / "lc-trace.jsonl").write_text(json.dumps(parent) + "\n", encoding="utf-8")
+    (trace_dir / "lc-trace-agent-x.jsonl").write_text(json.dumps(child) + "\n", encoding="utf-8")
 
-    trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lincoln-test")
+    trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lc-test")
     assert len(trace) == 2
     tools = {e["tool"] for e in trace}
     assert tools == {"Bash", "Write"}
@@ -104,10 +104,10 @@ def test_load_trace_dedups_by_sequence_id(base_state):
     trace_dir = base_state.parent / ".trace"
     trace_dir.mkdir(exist_ok=True)
     entry = _trace_entry("Bash", "bash", "x", sequence_id="dup")
-    (trace_dir / "lincoln-trace.jsonl").write_text(
+    (trace_dir / "lc-trace.jsonl").write_text(
         json.dumps(entry) + "\n" + json.dumps(entry) + "\n", encoding="utf-8"
     )
-    trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lincoln-test")
+    trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lc-test")
     assert len(trace) == 1
 
 
@@ -355,18 +355,18 @@ def test_main_cli(base_state):
         "--trigger", "manual",
     ]
     assert main(argv) == 0
-    files = list((base_state.parent / "benchmark").glob("lincoln-benchmark-manual-*.json"))
+    files = list((base_state.parent / "benchmark").glob("lc-benchmark-manual-*.json"))
     assert len(files) >= 1
 
 
 def test_load_trace_skips_malformed_lines(base_state):
     trace_dir = base_state.parent / ".trace"
     trace_dir.mkdir(exist_ok=True)
-    (trace_dir / "lincoln-trace.jsonl").write_text(
+    (trace_dir / "lc-trace.jsonl").write_text(
         "not json\n" + json.dumps(_trace_entry("Bash", "bash", "x", sequence_id="s1")) + "\n",
         encoding="utf-8",
     )
-    trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lincoln-test")
+    trace = lincoln_benchmark.load_trace(base_state.parent.parent, "lc-test")
     assert len(trace) == 1
 
 

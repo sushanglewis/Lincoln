@@ -1,5 +1,5 @@
 ---
-name: lincoln-researcher
+name: lc-researcher
 description: OSS research specialist for Lincoln design and feasibility stages
 extends:
   - agents/default.md

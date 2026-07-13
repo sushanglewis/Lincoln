@@ -23,7 +23,7 @@ def _write_state(tmp_path, state):
 
 def _write_process_state(tmp_path, state):
     """Place the state file inside a process package, e.g. <slug>/workflow-stage.yaml."""
-    slug = state.get("current_run", {}).get("variables", {}).get("process_slug", "lincoln-test")
+    slug = state.get("current_run", {}).get("variables", {}).get("process_slug", "lc-test")
     path = tmp_path / slug / "workflow-stage.yaml"
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
@@ -116,7 +116,7 @@ def process_package_state(tmp_path):
             "current_stage": "clarify",
             "previous_stage": "ingest",
             "status": "in_progress",
-            "variables": {"process_slug": "lincoln-test", "session_id": "", "design_id": ""},
+            "variables": {"process_slug": "lc-test", "session_id": "", "design_id": ""},
         },
         "nodes": [
             {
@@ -224,7 +224,7 @@ def test_pre_tool_use_blocks_state_file_write(process_package_state):
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lincoln-test/workflow-stage.yaml"}',
+        '{"file_path": "lc-test/workflow-stage.yaml"}',
     )
     assert result.returncode == 1
     assert "workflow state must be updated through stage_loader" in result.stderr
@@ -235,7 +235,7 @@ def test_pre_tool_use_allows_process_package_artifact(process_package_state):
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lincoln-test/requirements/test/requirements.md"}',
+        '{"file_path": "lc-test/requirements/test/requirements.md"}',
     )
     assert result.returncode == 0
 
@@ -274,7 +274,7 @@ def test_pre_tool_use_derives_status_from_current_stage_node(process_package_sta
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lincoln-test/requirements/test/requirements.md"}',
+        '{"file_path": "lc-test/requirements/test/requirements.md"}',
     )
     assert result.returncode == 1
     assert "Entry checks" in result.stderr
@@ -285,7 +285,7 @@ def test_pre_tool_use_blocks_plain_pen_access(dialogue_in_progress_state):
         "pre-tool-use.sh",
         dialogue_in_progress_state,
         "Read",
-        '{"file_path": "lincoln-test/designs/test/prototype.pen"}',
+        '{"file_path": "lc-test/designs/test/prototype.pen"}',
     )
     assert result.returncode == 1
     assert ".pen files must be handled through Pencil tools" in result.stderr
@@ -494,7 +494,7 @@ def test_guard_blocks_when_dialogue_override_contains_stage(dialogue_in_progress
 
 def _trace_file(state_file):
     slug = state_file.parent.name
-    return state_file.parent.parent / slug / ".trace" / "lincoln-trace.jsonl"
+    return state_file.parent.parent / slug / ".trace" / "lc-trace.jsonl"
 
 
 def _last_trace_entry(state_file):
@@ -510,7 +510,7 @@ def test_post_tool_use_writes_trace_for_write(process_package_state):
         "post-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lincoln-test/requirements/test/requirements.md", "content": "x"}',
+        '{"file_path": "lc-test/requirements/test/requirements.md", "content": "x"}',
         "0",
     )
     assert result.returncode == 0
@@ -543,7 +543,7 @@ def test_post_tool_use_skips_read_trace(process_package_state):
         "post-tool-use.sh",
         process_package_state,
         "Read",
-        '{"file_path": "lincoln-test/requirements/test/requirements.md"}',
+        '{"file_path": "lc-test/requirements/test/requirements.md"}',
         "0",
     )
     assert result.returncode == 0
@@ -556,7 +556,7 @@ def test_post_tool_use_skips_trace_when_lincoln_skip_trace_set(process_package_s
         "post-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lincoln-test/requirements/test/requirements.md", "content": "x"}',
+        '{"file_path": "lc-test/requirements/test/requirements.md", "content": "x"}',
         "0",
     )
     assert result.returncode == 0
@@ -584,7 +584,7 @@ def test_post_tool_use_trace_records_failed_exit_code(process_package_state):
 def _benchmark_files(state_file, trigger):
     slug = state_file.parent.name
     benchmark_dir = state_file.parent.parent / slug / "benchmark"
-    return sorted(benchmark_dir.glob(f"lincoln-benchmark-{trigger}-*.json"))
+    return sorted(benchmark_dir.glob(f"lc-benchmark-{trigger}-*.json"))
 
 
 def test_on_stop_triggers_session_stop_benchmark(process_package_state):
