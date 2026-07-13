@@ -6,23 +6,23 @@ workflow:
 current_run:
   run_id: 20260713144558-5baa539c
   branch: issue-47
-  current_stage: product-design-docs
-  status: in_progress
+  current_stage: implement
+  status: not_started
   started_at: '2026-07-13T14:45:58Z'
-  last_updated_at: '2026-07-13T15:35:54Z'
+  last_updated_at: '2026-07-13T15:52:16Z'
   issue_number: '47'
   variables:
     process_slug: issue-47
     session_id: 2026-07-13-issue-47
     design_id: issue-47
     issue_number: '47'
-    change_name: ''
+    change_name: multi-harness-adapter
     pr_number: ''
     feature_slug: ''
-  change_name: ''
+  change_name: multi-harness-adapter
   pr_number: ''
   feature_slug: ''
-  previous_stage: clarify
+  previous_stage: split
 artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
   - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,\n  and replace placeholders ({issue_number},\
   \ {session_id}, {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
@@ -85,9 +85,9 @@ nodes:
   node_id: product-design-docs-2026-07-13T15:35:54Z
   status: in_progress
   started_at: '2026-07-13T15:35:54Z'
-  completed_at: null
-  gate_passed: false
-  approved_by: null
+  completed_at: '2026-07-13T15:38:52Z'
+  gate_passed: true
+  approved_by: human-pm
   artifacts:
   - issue-47/designs/issue-47/data-model.md
   - issue-47/designs/issue-47/design-review.md
@@ -95,6 +95,91 @@ nodes:
   - issue-47/designs/issue-47/feature-catalog.md
   - issue-47/designs/issue-47/flows.md
   - issue-47/designs/issue-47/scenarios.md
+  handoff_file: null
+- stage_id: product-design-docs
+  node_id: product-design-docs-completed
+  status: completed
+  started_at: '2026-07-13T15:38:52Z'
+  completed_at: '2026-07-13T15:38:52Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-47/designs/issue-47/design-review.md
+  - issue-47/designs/issue-47/scenarios.md
+  - issue-47/designs/issue-47/feature-catalog.md
+  - issue-47/designs/issue-47/data-model.md
+  - issue-47/designs/issue-47/flows.md
+  - issue-47/designs/issue-47/feasibility.md
+  handoff_file: null
+- node_id: product-prototype-2026-07-13T15:44:53Z
+  stage_id: product-prototype
+  status: completed
+  started_at: '2026-07-13T15:44:53Z'
+  completed_at: '2026-07-13T15:44:53Z'
+  gate_passed: true
+  approved_by: human-pm
+  artifacts: []
+  handoff_file: null
+  skip_reason: Non-UI tooling issue; PM approved skipping prototype stage (2026-07-13).
+- stage_id: tdd-development-plan
+  node_id: tdd-development-plan-2026-07-13T15:47:54Z
+  status: in_progress
+  started_at: '2026-07-13T15:47:54Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-47/designs/issue-47/tdd-plan.md
+  handoff_file: null
+- stage_id: tdd-development-plan
+  node_id: tdd-development-plan-completed
+  status: completed
+  started_at: '2026-07-13T15:47:54Z'
+  completed_at: '2026-07-13T15:47:54Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-47/designs/issue-47/tdd-plan.md
+  handoff_file: null
+- stage_id: propose
+  node_id: propose-2026-07-13T15:50:33Z
+  status: in_progress
+  started_at: '2026-07-13T15:50:33Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-47/openspec/changes/multi-harness-adapter/proposal.md
+  handoff_file: null
+- stage_id: propose
+  node_id: propose-completed
+  status: completed
+  started_at: '2026-07-13T15:50:34Z'
+  completed_at: '2026-07-13T15:50:34Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-47/openspec/changes/multi-harness-adapter/proposal.md
+  handoff_file: null
+- stage_id: split
+  node_id: split-2026-07-13T15:52:16Z
+  status: in_progress
+  started_at: '2026-07-13T15:52:16Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - .github/linked-issues.yaml
+  handoff_file: null
+- stage_id: split
+  node_id: split-completed
+  status: completed
+  started_at: '2026-07-13T15:52:16Z'
+  completed_at: '2026-07-13T15:52:16Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .github/linked-issues.yaml
   handoff_file: null
 recovery:
   last_validated_checkpoint: ''

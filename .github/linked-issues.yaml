@@ -1,23 +1,22 @@
 # Linked GitHub Issues for Lincoln OpenSpec change
-# Session: 2026-06-28-stakeholder-checkout
-# Change: lincoln-tui-recorder
+# Session: 2026-07-13-issue-47
+# Change: multi-harness-adapter
+# Note: PM decided single-issue delivery on branch issue-47; slices below are
+# task slices within issue #47, not separate GitHub issues.
 
 issues:
-  - issue_number: 3
-    title: "lincoln-cli: CLI entry, args parsing, and ~/.lincolnrc config loading"
-    capability: lincoln-cli
-    source: openspec/changes/lincoln-tui-recorder/specs/lincoln-cli.md
-  - issue_number: 4
-    title: "lincoln-tui: Recording screen, audio meter, and key handlers"
-    capability: lincoln-tui
-    source: openspec/changes/lincoln-tui-recorder/design.md
-  - issue_number: 5
-    title: "lincoln-recording-backend: Spawn record-interview and save artifacts"
-    capability: lincoln-recording-backend
-    source: openspec/changes/lincoln-tui-recorder/tasks.md
-  - issue_number: 6
-    title: "lincoln-workflow-integration: Trigger process-interview after recording"
-    capability: lincoln-workflow-integration
-    source: openspec/changes/lincoln-tui-recorder/tasks.md
+  - issue_number: 47
+    title: "Lincoln 多 harness 适配(codex/opencode)+ lc-* 命令统一"
+    capability: multi-harness-adapter
+    source: issue-47/openspec/changes/multi-harness-adapter/proposal.md
+    slices:
+      - id: slice-1
+        title: "适配生成器核心 + harness manifest + 轻量门控模板"
+      - id: slice-2
+        title: "opencode 适配(.opencode/agent + command/lc-*)"
+      - id: slice-3
+        title: "codex 适配(AGENTS.md + ~/.codex/prompts,含 spike 验证)"
+      - id: slice-4
+        title: "lc-* 重命名 + 安装集成 + CI 漂移校验 + 文档"
 
-requirements_file: requirements/2026-06-28-stakeholder-checkout/requirements.md
+requirements_file: issue-47/requirements/2026-07-13-issue-47/requirements.md
