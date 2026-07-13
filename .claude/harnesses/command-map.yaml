@@ -1,0 +1,27 @@
+# lc-* 命令单一事实源(Single source of truth)
+# 三个 harness manifest(claude-code.yaml / codex.yaml / opencode.yaml)通过
+# command_map_source: command-map.yaml 引用本文件。
+# 新增/修改命令只需改这里,CI 漂移校验保证三端一致。
+
+commands:
+  lc-status:
+    description: 显示当前 Lincoln 阶段状态与下一步动作
+    action: python3 scripts/lincoln-status.py
+  lc-setup:
+    description: 安装/检查 Lincoln 依赖并生成 harness 适配产物
+    action: python3 scripts/lincoln-setup.py
+  lc-init-branch:
+    description: 初始化 issue 工作包(分支 + workflow-stage.yaml)
+    action: bash scripts/init-lincoln-branch.sh
+    args_hint: --issue-number <N>
+  lc-validate:
+    description: 运行当前阶段的准入校验(validate-entry)
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action validate-entry
+  lc-handoff:
+    description: 生成阶段 handoff 报告
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action handoff-report
+  lc-benchmark:
+    description: 运行 Lincoln benchmark 报告(可选模块)
+    action: python3 scripts/lincoln_benchmark_report.py

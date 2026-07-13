@@ -1,0 +1,29 @@
+# codex harness manifest
+# 生成:AGENTS.md(项目根,角色契约 + lc-* 命令清单 + 轻量门控)
+#       ~/.codex/prompts/lc-*.md(用户级斜杠命令)
+# spike 备注:codex 官方 docs 对 prompts frontmatter 描述不完整(网络受限),
+# 采用稳妥约定:prompt 文件为纯 markdown 正文;若真实 CLI 验证不符,
+# 移除 prompts target,命令说明已在 AGENTS.md 内联(回退方案零成本)。
+
+name: codex
+
+capabilities:
+  hooks: false
+  skills: false
+  agents: true        # 经 AGENTS.md 拼接承载
+  commands: true
+
+command_map_source: command-map.yaml
+
+targets:
+  - kind: agents-md
+    source: .claude/agents/*.md
+    output: "{project}/AGENTS.md"
+    scope: project
+    transform: concat
+
+  - kind: command
+    source: command_map
+    output: "{home}/.codex/prompts/{name}.md"
+    scope: home
+    transform: command-template

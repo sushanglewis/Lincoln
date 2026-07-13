@@ -1,0 +1,15 @@
+# claude-code harness manifest(原生端,无需生成产物)
+# 作用:声明能力 + 引用共享 command-map,供 CI 校验三端命令键集一致。
+# Claude Code 的 agents/skills/commands 直接以 .claude/ 为事实源,targets 为空。
+
+name: claude-code
+
+capabilities:
+  hooks: true
+  skills: true
+  agents: true
+  commands: true
+
+command_map_source: command-map.yaml
+
+targets: []

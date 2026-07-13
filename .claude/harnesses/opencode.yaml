@@ -1,0 +1,29 @@
+# opencode harness manifest
+# 生成:.opencode/agent/*.md(角色)+ .opencode/command/lc-*.md(命令)
+# spike 结论(Context7 /anomalyco/opencode):
+#   agent frontmatter 字段:description/mode/model/temperature/tools/permission
+#   command 文件:frontmatter(description/agent/model)+ 正文模板($ARGUMENTS)
+
+name: opencode
+
+capabilities:
+  hooks: false        # 用插件(.opencode/plugin)替代,本版本从轻不生成
+  skills: false       # 以 agent/command 提示词承载
+  agents: true
+  commands: true
+
+command_map_source: command-map.yaml
+
+targets:
+  - kind: agent
+    source: .claude/agents/*.md
+    output: "{project}/.opencode/agent/{name}.md"
+    scope: project
+    transform: frontmatter
+    fields: [description, mode, model, permission, tools]
+
+  - kind: command
+    source: command_map
+    output: "{project}/.opencode/command/{name}.md"
+    scope: project
+    transform: command-template
