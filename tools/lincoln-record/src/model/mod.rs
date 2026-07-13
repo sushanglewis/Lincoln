@@ -4,6 +4,7 @@ use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 
 const HUGGINGFACE_BASE: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main";
+const HF_MIRROR_BASE: &str = "https://hf-mirror.com/ggerganov/whisper.cpp/resolve/main";
 
 /// Known Whisper model names and their published filenames.
 fn model_filename(name: &str) -> Option<&str> {
@@ -110,6 +111,12 @@ pub fn manual_download_url(name: &str) -> String {
     model_url(name).unwrap_or_else(|| format!("{}/ggml-{}.bin", HUGGINGFACE_BASE, name))
 }
 
+fn mirror_download_url(name: &str) -> String {
+    model_filename(name)
+        .map(|file| format!("{}/{}", HF_MIRROR_BASE, file))
+        .unwrap_or_else(|| format!("{}/ggml-{}.bin", HF_MIRROR_BASE, name))
+}
+
 /// Validate that a model name is known.
 pub fn validate_model_name(name: &str) -> Result<()> {
     if model_filename(name).is_some() {
@@ -126,6 +133,7 @@ pub fn validate_model_name(name: &str) -> Result<()> {
 ///
 /// Progress is reported via `progress(downloaded_bytes, total_bytes_hint)`.
 /// If the model file already exists, it is returned immediately.
+/// If the primary HuggingFace host is unreachable, falls back to hf-mirror.com.
 pub fn download_model<F>(
     name: &str,
     engine: &str,
@@ -147,8 +155,26 @@ where
     std::fs::create_dir_all(parent)
         .with_context(|| format!("failed to create cache directory: {}", parent.display()))?;
 
-    let url = manual_download_url(name);
-    let mut response = ureq::get(&url)
+    let urls = [manual_download_url(name), mirror_download_url(name)];
+    let mut last_error: Option<anyhow::Error> = None;
+
+    for url in urls {
+        match download_from_url(&url, &dest, &mut progress) {
+            Ok(()) => return Ok(dest),
+            Err(error) => {
+                last_error = Some(error.context(format!("failed to download from: {}", url)));
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| anyhow::anyhow!("download failed")))
+}
+
+fn download_from_url<F>(url: &str, dest: &Path, progress: &mut F) -> Result<()>
+where
+    F: FnMut(usize, Option<u64>),
+{
+    let mut response = ureq::get(url)
         .call()
         .with_context(|| format!("failed to start download from: {}", url))?;
 
@@ -178,10 +204,10 @@ where
     file.flush().context("failed to flush downloaded model")?;
     drop(file);
 
-    std::fs::rename(&temp, &dest)
+    std::fs::rename(&temp, dest)
         .with_context(|| format!("failed to move downloaded model to: {}", dest.display()))?;
 
-    Ok(dest)
+    Ok(())
 }
 
 #[cfg(test)]
@@ -210,5 +236,13 @@ mod tests {
         assert_eq!(result.unwrap(), dest);
 
         std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn mirror_url_matches_hf_mirror_host() {
+        assert_eq!(
+            mirror_download_url("base"),
+            "https://hf-mirror.com/ggerganov/whisper.cpp/resolve/main/ggml-base.bin"
+        );
     }
 }
