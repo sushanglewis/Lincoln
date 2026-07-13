@@ -9,13 +9,17 @@
 Lincoln 的 hooks 通常会在你第一次打开仓库时自动触发安装。如果 Claude 没有自动开始，请复制下面的提示词发送给 Claude：
 
 > 请帮我完成 Lincoln 的初始化安装：
-> 1. 检查当前仓库的 Lincoln 环境，列出所有缺失的依赖。
-> 2. 安装外部 skills：superpowers（v1.2.0）、gsd（v2.0.1）到 `~/.claude/skills/`，并确保 ref 正确。
-> 3. 安装 CLI 工具：openspec、gh、ffmpeg、以及一个 Whisper 实现（优先 faster-whisper）。
-> 4. 安装 oh-my-claudecode 插件。
-> 5. 交互式配置 `.github/openspec-config.yml`（询问我 GitHub owner 和 repo name）。
-> 6. 运行 `scripts/init-project.sh` 完成项目初始化。
-> 7. 完成后汇报状态。
+> 1. 先问我两个问题，并根据回答决定安装范围：
+>    - 是否需要**录音转写**能力（访谈录音 → 文字稿）？需要才安装 ffmpeg 和 Whisper。
+>    - 是否需要运行 **benchmark**（Lincoln 基准评测）？
+> 2. 检查当前仓库的 Lincoln 环境，列出所有缺失的依赖。
+> 3. 安装外部 skills：superpowers、gsd（均跟踪上游仓库 main 分支）到 `~/.claude/skills/`，并确保 ref 正确。
+> 4. 安装 CLI 工具：openspec、gh；仅当我需要录音转写时，再安装 ffmpeg 和一个 Whisper 实现（优先 faster-whisper）。
+> 5. 安装 oh-my-claudecode 插件。
+> 6. 交互式配置 `.github/openspec-config.yml`（询问我 GitHub owner 和 repo name）。
+> 7. 运行 `scripts/init-project.sh` 完成项目初始化。
+> 8. 如果我需要 benchmark，介绍 `scripts/lincoln_benchmark.py` 的用法。
+> 9. 完成后汇报状态。
 >
 > 安装任何全局工具或写入配置前，请先向我确认。
 
@@ -248,13 +252,15 @@ Lincoln 提供两个配套工具：
 
 - `python3`（≥3.10 推荐）
 - `node` ≥ 20（用于 `tools/lincoln/`）
-- `ffmpeg`
-- `faster-whisper` 或 OpenAI Whisper API key
 - `gh` CLI（已登录）
 - `openspec` CLI：`npm install -g @fission-ai/openspec`
+- `ffmpeg`（可选，仅录音转写需要）
+- `faster-whisper` 或 OpenAI Whisper API key（可选，仅录音转写需要）
 - Pencil 应用或 Pencil MCP（用于 `.pen` 原型）
 - `ecc` CLI（来自 everything-claude-code）
 - Obsidian（可选，用于可视化浏览 vault）
+
+Benchmark（可选）：`scripts/lincoln_benchmark.py` 提供 Lincoln 工作流的基准评测入口，需要时运行 `python3 scripts/lincoln_benchmark.py --help` 查看用法。
 
 此外，Lincoln 依赖若干外部 skill/CLI，清单见 `.claude/skills/dependencies.yaml`。初始化或升级后请让 Claude 运行：
 

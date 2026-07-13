@@ -38,11 +38,13 @@ python scripts/lincoln-setup.py install-clis
 ```
 
 - 默认逐个询问用户确认。
+- **先问用户是否需要录音转写能力**；只有需要时才安装 ffmpeg 与 Whisper 实现。
 - 需要处理的 CLI 包括：
   - `openspec`：基于 Node.js，运行 `npm install -g @fission-ai/openspec`
   - `gh`：macOS 用 `brew install gh`，Linux 用包管理器
-  - `ffmpeg`：macOS 用 `brew install ffmpeg`
-  - Whisper 实现：优先 `faster-whisper`；如果失败，提供 `openai-whisper` 或 OpenAI API key 选项
+  - `ffmpeg`（可选，仅录音转写需要）：macOS 用 `brew install ffmpeg`
+  - Whisper 实现（可选，仅录音转写需要）：优先 `faster-whisper`；如果失败，提供 `openai-whisper` 或 OpenAI API key 选项
+- 顺带询问用户是否需要 benchmark；需要时介绍 `scripts/lincoln_benchmark.py` 的用法。
 - 安装失败后，给出对应平台的手动安装命令。
 
 ## 4. 配置仓库信息
