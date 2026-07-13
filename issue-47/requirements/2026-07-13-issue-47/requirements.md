@@ -1,6 +1,6 @@
 # 需求文档: 2026-07-13-issue-47
 
-<!-- status: draft -->
+<!-- status: approved -->
 
 ## 背景
 
@@ -35,12 +35,12 @@ Lincoln 目前仅以 Claude Code 插件形态分发:`.claude/` 下的 agents、h
 3. **`lc-*` 命令统一**:建立命令映射表(如 `lincoln-status` → `lc-status`),三个 harness 暴露一致的 `lc-*` 命令集;迁移策略见 PRD。
 4. **可验证**:每个 harness 的适配产物有结构校验(测试),安装后 `lc-status` 可运行并正确汇报阶段状态。
 
-## 待 PM 确认的开放问题
+## 开放问题(PM 已于 2026-07-13 决策)
 
-- [ ] codex 的目标形态:仅 `AGENTS.md` + prompts 目录,还是也适配其 MCP/工具配置?
-- [ ] opencode 适配的目标版本/配置格式(opencode.json vs 目录式 agents/commands)?
-- [ ] `lc-*` 是**重命名**(破坏性,旧名移除)还是**新增别名**(旧名保留一个版本)?
-- [ ] 生成时机:仅安装时生成,还是也提供 `lc-generate`/CI 校验(检测 `.claude/` 与派生产物漂移)?
+- [x] codex 的目标形态 → **设计阶段先做 spike 验证**(AGENTS.md + prompts 为候选起点,以 spike 结论为准)。
+- [x] opencode 适配的目标版本/配置格式 → **设计阶段先做 spike 验证**(目录式 agents/commands 为候选起点,以 spike 结论为准)。
+- [x] `lc-*` 命名 → **直接重命名**(破坏性,旧名不保留;配套迁移说明)。
+- [x] 生成时机 → **安装时生成 + CI 漂移校验**(检测 `.claude/` 与派生产物不一致即失败)。
 
 ## 验收标准
 

@@ -6,10 +6,10 @@ workflow:
 current_run:
   run_id: 20260713144558-5baa539c
   branch: issue-47
-  current_stage: clarify
-  status: in_progress
+  current_stage: product-design-docs
+  status: not_started
   started_at: '2026-07-13T14:45:58Z'
-  last_updated_at: '2026-07-13T14:52:44Z'
+  last_updated_at: '2026-07-13T15:10:31Z'
   issue_number: '47'
   variables:
     process_slug: issue-47
@@ -22,7 +22,7 @@ current_run:
   change_name: ''
   pr_number: ''
   feature_slug: ''
-  previous_stage: ingest
+  previous_stage: clarify
 artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
   - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,\n  and replace placeholders ({issue_number},\
   \ {session_id}, {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
@@ -61,13 +61,25 @@ nodes:
   node_id: clarify-2026-07-13T14:52:44Z
   status: in_progress
   started_at: '2026-07-13T14:52:44Z'
-  completed_at: null
-  gate_passed: false
-  approved_by: null
+  completed_at: '2026-07-13T15:10:31Z'
+  gate_passed: true
+  approved_by: human-pm
   artifacts:
   - issue-47/requirements/2026-07-13-issue-47/prd.md
   - issue-47/requirements/2026-07-13-issue-47/requirements.md
   - issue-47/requirements/2026-07-13-issue-47/user-stories.md
+  handoff_file: null
+- stage_id: clarify
+  node_id: clarify-completed
+  status: completed
+  started_at: '2026-07-13T15:10:31Z'
+  completed_at: '2026-07-13T15:10:31Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-47/requirements/2026-07-13-issue-47/requirements.md
+  - issue-47/requirements/2026-07-13-issue-47/user-stories.md
+  - issue-47/requirements/2026-07-13-issue-47/prd.md
   handoff_file: null
 recovery:
   last_validated_checkpoint: ''
