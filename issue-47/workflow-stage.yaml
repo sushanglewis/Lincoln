@@ -1,0 +1,41 @@
+schema_version: 2.0.0
+workflow:
+  name: interview-to-knowledge
+  version: 1.0.0
+  template: interview-to-knowledge
+current_run:
+  run_id: 20260713144558-5baa539c
+  branch: issue-47
+  current_stage: ingest
+  status: in_progress
+  started_at: '2026-07-13T14:45:58Z'
+  last_updated_at: '2026-07-13T14:45:58Z'
+  issue_number: '47'
+  variables:
+    process_slug: issue-47
+    session_id: 2026-07-13-issue-47
+    design_id: issue-47
+    issue_number: '47'
+    change_name: ''
+    pr_number: ''
+    feature_slug: ''
+  change_name: ''
+  pr_number: ''
+  feature_slug: ''
+artifact_guidance: "This issue work package holds all artifacts produced while resolving\
+  \ the issue.\n\nHow to use templates:\n- Copy a `.tpl` file from the relevant directory,\
+  \ remove the `.tpl` extension,\n  and replace placeholders ({issue_number}, {session_id},\
+  \ {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/`\
+  \ for clarified needs,\n  `interviews/` for recorded session outputs, `openspec/`\
+  \ for implementation proposals,\n  `docs/` for research and decision records, and\
+  \ `recordings/` for raw input files only.\n- When a stage completes, run `scripts/stage_loader.py\
+  \ --stage <stage> --action record-artifacts`\n  to persist produced artifact paths\
+  \ back into this workflow-stage.yaml.\n\nApproval convention:\n- Add `<!-- status:\
+  \ approved -->` or `[x] PM 已确认<文档类型>` to mark a document\n  as reviewed by the human\
+  \ PM before handoff.\n"
+nodes: []
+recovery:
+  last_validated_checkpoint: ''
+  can_resume_from: ingest
+  abort_reason: null
+  abort_at: null
