@@ -7,9 +7,9 @@ current_run:
   run_id: 20260713144558-5baa539c
   branch: issue-47
   current_stage: product-design-docs
-  status: not_started
+  status: in_progress
   started_at: '2026-07-13T14:45:58Z'
-  last_updated_at: '2026-07-13T15:10:31Z'
+  last_updated_at: '2026-07-13T15:35:54Z'
   issue_number: '47'
   variables:
     process_slug: issue-47
@@ -80,6 +80,21 @@ nodes:
   - issue-47/requirements/2026-07-13-issue-47/requirements.md
   - issue-47/requirements/2026-07-13-issue-47/user-stories.md
   - issue-47/requirements/2026-07-13-issue-47/prd.md
+  handoff_file: null
+- stage_id: product-design-docs
+  node_id: product-design-docs-2026-07-13T15:35:54Z
+  status: in_progress
+  started_at: '2026-07-13T15:35:54Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-47/designs/issue-47/data-model.md
+  - issue-47/designs/issue-47/design-review.md
+  - issue-47/designs/issue-47/feasibility.md
+  - issue-47/designs/issue-47/feature-catalog.md
+  - issue-47/designs/issue-47/flows.md
+  - issue-47/designs/issue-47/scenarios.md
   handoff_file: null
 recovery:
   last_validated_checkpoint: ''
