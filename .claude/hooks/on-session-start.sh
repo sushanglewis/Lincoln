@@ -48,7 +48,7 @@ if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
             echo "   python scripts/lincoln-setup.py bootstrap"
             echo ""
             echo "2. 该命令会："
-            echo "   - 检查并安装外部 skills（superpowers v1.2.0、gsd v2.0.1）到 ~/.claude/skills/"
+            echo "   - 检查并安装外部 skills（superpowers、gsd，跟踪上游 main 分支）到 ~/.claude/skills/"
             echo "   - 安装 CLI 工具：openspec、gh、ffmpeg、faster-whisper"
             echo "   - 安装 oh-my-claudecode 插件"
             echo "   - 交互式配置 .github/openspec-config.yml"

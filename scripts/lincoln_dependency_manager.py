@@ -165,6 +165,14 @@ def _run_command(args: list[str], **kwargs: Any) -> subprocess.CompletedProcess[
     )
 
 
+def _resolve_remote_sha(target: Path, ref: str) -> str:
+    """Resolve a remote ref (branch or tag) to a commit SHA; empty on failure."""
+    proc = _run_command(["git", "-C", str(target), "ls-remote", "origin", ref])
+    if proc.returncode != 0 or not proc.stdout.strip():
+        return ""
+    return proc.stdout.split()[0]
+
+
 def install_skill(
     name: str,
     source: str,
@@ -190,17 +198,21 @@ def install_skill(
         describe_proc = _run_command(
             ["git", "-C", str(target), "describe", "--tags", "--exact-match"]
         )
-        current_ref = describe_proc.stdout.strip() if describe_proc.returncode == 0 else ""
-        if not current_ref:
-            rev_proc = _run_command(["git", "-C", str(target), "rev-parse", "HEAD"])
-            current_ref = rev_proc.stdout.strip() if rev_proc.returncode == 0 else ""
-
-        if current_ref == ref:
+        current_tag = describe_proc.stdout.strip() if describe_proc.returncode == 0 else ""
+        if current_tag == ref:
             result["skipped"] = True
             return result
 
+        rev_proc = _run_command(["git", "-C", str(target), "rev-parse", "HEAD"])
+        local_sha = rev_proc.stdout.strip() if rev_proc.returncode == 0 else ""
+        remote_sha = _resolve_remote_sha(target, ref)
+        if remote_sha and local_sha == remote_sha:
+            result["skipped"] = True
+            return result
+
+        current_ref = current_tag or local_sha
         if dry_run:
-            result["error"] = f"Would checkout {name} from {current_ref} to {ref}."
+            result["error"] = f"Would update {name} from {current_ref} to {ref}."
             return result
 
         fetch_proc = _run_command(["git", "-C", str(target), "fetch", "origin", ref])
@@ -208,7 +220,7 @@ def install_skill(
             result["error"] = f"Failed to fetch {ref}: {fetch_proc.stderr.strip()}"
             return result
 
-        checkout_proc = _run_command(["git", "-C", str(target), "checkout", ref])
+        checkout_proc = _run_command(["git", "-C", str(target), "checkout", "FETCH_HEAD"])
         if checkout_proc.returncode != 0:
             result["error"] = f"Failed to checkout {ref}: {checkout_proc.stderr.strip()}"
             return result

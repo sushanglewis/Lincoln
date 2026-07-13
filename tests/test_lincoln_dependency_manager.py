@@ -31,16 +31,18 @@ def sample_manifest():
         "schema_version": "1.0.0",
         "skills": {
             "superpowers": {
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "type": "skill",
                 "required": True,
+                "license": "MIT",
             },
             "gsd": {
-                "source": "https://github.com/sushanglewis/gsd-skills.git",
-                "ref": "v2.0.1",
+                "source": "https://github.com/gsd-build/get-shit-done.git",
+                "ref": "main",
                 "type": "skill",
                 "required": True,
+                "license": "MIT",
             },
             "openspec": {
                 "source": "https://github.com/Fission-AI/openspec.git",
@@ -64,14 +66,15 @@ def sample_manifest():
                 },
             },
             "oh-my-claudecode": {
-                "source": "https://github.com/sushanglewis/oh-my-claudecode.git",
-                "ref": "v1.0.0",
+                "source": "https://github.com/Yeachan-Heo/oh-my-claudecode.git",
+                "ref": "main",
                 "type": "plugin",
                 "required": False,
                 "default_install": True,
+                "license": "MIT",
                 "platforms": {
-                    "macos": "git clone --branch v1.0.0 ...",
-                    "linux": "git clone --branch v1.0.0 ...",
+                    "macos": "git clone --branch main ...",
+                    "linux": "git clone --branch main ...",
                 },
             },
             "lincoln-status": {
@@ -170,7 +173,7 @@ def test_get_install_command_for_cli(sample_manifest):
 def test_get_install_command_for_skill(sample_manifest):
     superpowers = sample_manifest["skills"]["superpowers"]
     assert "git clone" in get_install_command(superpowers, "macos")
-    assert "v1.2.0" in get_install_command(superpowers, "macos")
+    assert "--branch main" in get_install_command(superpowers, "macos")
 
 
 @patch("scripts.lincoln_dependency_manager.subprocess.run")
@@ -181,8 +184,8 @@ def test_install_skill_clones_when_missing(mock_run, tmp_path):
 
     result = install_skill(
         "superpowers",
-        "https://github.com/sushanglewis/claude-superpowers.git",
-        "v1.2.0",
+        "https://github.com/obra/superpowers.git",
+        "main",
         skills_dir,
     )
 
@@ -192,7 +195,7 @@ def test_install_skill_clones_when_missing(mock_run, tmp_path):
     args = mock_run.call_args[0][0]
     assert args[0] == "git"
     assert "--branch" in args
-    assert "v1.2.0" in args
+    assert "main" in args
 
 
 @patch("scripts.lincoln_dependency_manager.subprocess.run")
@@ -219,6 +222,108 @@ def test_install_skill_skips_when_already_at_ref(mock_run, tmp_path):
 
     assert result["installed"] is False
     assert result["skipped"] is True
+
+
+@patch("scripts.lincoln_dependency_manager.subprocess.run")
+def test_install_skill_skips_when_branch_head_matches_remote(mock_run, tmp_path):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "superpowers"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# skill", encoding="utf-8")
+
+    def fake_run(cmd, **kwargs):
+        if "describe" in cmd:
+            return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="no tags")
+        if "rev-parse" in cmd:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="abc123\n")
+        if "ls-remote" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout="abc123\trefs/heads/main\n"
+            )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="")
+
+    mock_run.side_effect = fake_run
+
+    result = install_skill(
+        "superpowers",
+        "https://github.com/obra/superpowers.git",
+        "main",
+        skills_dir,
+    )
+
+    assert result["installed"] is False
+    assert result["skipped"] is True
+    called_cmds = [c[0][0] for c in mock_run.call_args_list]
+    assert not any("fetch" in cmd for cmd in called_cmds)
+
+
+@patch("scripts.lincoln_dependency_manager.subprocess.run")
+def test_install_skill_fetches_when_branch_head_differs(mock_run, tmp_path):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "superpowers"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# skill", encoding="utf-8")
+
+    def fake_run(cmd, **kwargs):
+        if "describe" in cmd:
+            return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="no tags")
+        if "rev-parse" in cmd:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="abc123\n")
+        if "ls-remote" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout="def456\trefs/heads/main\n"
+            )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="")
+
+    mock_run.side_effect = fake_run
+
+    result = install_skill(
+        "superpowers",
+        "https://github.com/obra/superpowers.git",
+        "main",
+        skills_dir,
+    )
+
+    assert result["installed"] is True
+    called_cmds = [c[0][0] for c in mock_run.call_args_list]
+    assert any("fetch" in cmd for cmd in called_cmds)
+    checkout_cmd = next(cmd for cmd in called_cmds if "checkout" in cmd)
+    assert "FETCH_HEAD" in checkout_cmd
+
+
+@patch("scripts.lincoln_dependency_manager.subprocess.run")
+def test_install_skill_dry_run_when_branch_head_differs(mock_run, tmp_path):
+    skills_dir = tmp_path / "skills"
+    skill_dir = skills_dir / "superpowers"
+    skill_dir.mkdir(parents=True)
+    (skill_dir / "SKILL.md").write_text("# skill", encoding="utf-8")
+
+    def fake_run(cmd, **kwargs):
+        if "describe" in cmd:
+            return subprocess.CompletedProcess(args=cmd, returncode=1, stdout="", stderr="no tags")
+        if "rev-parse" in cmd:
+            return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="abc123\n")
+        if "ls-remote" in cmd:
+            return subprocess.CompletedProcess(
+                args=cmd, returncode=0, stdout="def456\trefs/heads/main\n"
+            )
+        return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="")
+
+    mock_run.side_effect = fake_run
+
+    result = install_skill(
+        "superpowers",
+        "https://github.com/obra/superpowers.git",
+        "main",
+        skills_dir,
+        dry_run=True,
+    )
+
+    assert result["installed"] is False
+    assert result["skipped"] is False
+    assert result["error"]
+    called_cmds = [c[0][0] for c in mock_run.call_args_list]
+    assert not any("fetch" in cmd for cmd in called_cmds)
 
 
 @patch("scripts.lincoln_dependency_manager.subprocess.run")

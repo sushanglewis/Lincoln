@@ -102,8 +102,8 @@ PR #38 将 Lincoln 从分散的 stage 文件夹重构为单 YAML stage 框架，
 
 ### 依赖
 
-- `superpowers` v1.2.0（brainstorming 等通用技能）
-- `gsd` v2.0.1（import / discuss-phase 等流程技能）
+- `superpowers`（上游 obra/superpowers，main 分支；brainstorming 等通用技能）
+- `gsd`（上游 gsd-build/get-shit-done，main 分支；import / discuss-phase 等流程技能）
 - `openspec` v0.5.0（变更提案）
 - `oh-my-claudecode`（可选，deep-interview）
 

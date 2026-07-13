@@ -33,8 +33,8 @@ def tmp_project(tmp_path):
         "schema_version": "1.0.0",
         "skills": {
             "superpowers": {
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "type": "skill",
                 "required": True,
             },
@@ -66,8 +66,8 @@ def test_cli_check_subcommand_prints_status(setup_mod, tmp_project, capsys):
                 "type": "skill",
                 "required": True,
                 "default_install": True,
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "install_command": "git clone ...",
             }
         ],
@@ -105,8 +105,8 @@ def test_cli_install_skills_dry_run(setup_mod, tmp_project):
                 "type": "skill",
                 "required": True,
                 "default_install": True,
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "install_command": "git clone ...",
             }
         ],
@@ -136,8 +136,8 @@ def test_cli_install_skills_asks_for_confirmation_by_default(setup_mod, tmp_proj
                 "type": "skill",
                 "required": True,
                 "default_install": True,
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "install_command": "git clone ...",
             }
         ],
@@ -165,8 +165,8 @@ def test_cli_install_skills_with_yes_flag(setup_mod, tmp_project):
                 "type": "skill",
                 "required": True,
                 "default_install": True,
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "install_command": "git clone ...",
             }
         ],
@@ -257,8 +257,8 @@ def test_cli_bootstrap_runs_all_steps(setup_mod, tmp_project):
                 "type": "skill",
                 "required": True,
                 "default_install": True,
-                "source": "https://github.com/sushanglewis/claude-superpowers.git",
-                "ref": "v1.2.0",
+                "source": "https://github.com/obra/superpowers.git",
+                "ref": "main",
                 "install_command": "git clone ...",
             }
         ],

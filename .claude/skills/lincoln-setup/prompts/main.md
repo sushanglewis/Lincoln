@@ -24,8 +24,8 @@ python scripts/lincoln-setup.py install-skills
 
 - 默认会逐个询问用户确认。如果用户明确说“全部安装”，可追加 `--yes`。
 - 该命令会：
-  - 将 `superpowers`（v1.2.0）clone 到 `~/.claude/skills/superpowers`
-  - 将 `gsd`（v2.0.1）clone 到 `~/.claude/skills/gsd`
+  - 将 `superpowers`（上游 obra/superpowers，main 分支）clone 到 `~/.claude/skills/superpowers`
+  - 将 `gsd`（上游 gsd-build/get-shit-done，main 分支）clone 到 `~/.claude/skills/gsd`
   - 安装 `oh-my-claudecode` 插件（如声明为 default_install）
 - 如果目标目录已存在且 ref 匹配，自动跳过；如果 ref 不匹配或工作区 dirty，先向用户说明再决定。
 

@@ -6,10 +6,11 @@ description: |
 
 skills:
   superpowers:
-    source: https://github.com/sushanglewis/claude-superpowers.git
-    ref: v1.2.0
+    source: https://github.com/obra/superpowers.git
+    ref: main
     type: skill
     required: true
+    license: MIT
     required_skills:
       - superpowers:brainstorming
       - superpowers:writing-plans
@@ -25,10 +26,11 @@ skills:
       - superpowers:writing-skills
 
   gsd:
-    source: https://github.com/sushanglewis/gsd-skills.git
-    ref: v2.0.1
+    source: https://github.com/gsd-build/get-shit-done.git
+    ref: main
     type: skill
     required: true
+    license: MIT
     required_skills:
       - gsd-import
       - gsd-docs-update
@@ -99,14 +101,15 @@ skills:
 
   # oh-my-claudecode — optional multi-agent orchestration layer, installed by default
   oh-my-claudecode:
-    source: https://github.com/sushanglewis/oh-my-claudecode.git
-    ref: v1.0.0
+    source: https://github.com/Yeachan-Heo/oh-my-claudecode.git
+    ref: main
     type: plugin
     required: false
     default_install: true
+    license: MIT
     platforms:
-      macos: git clone --branch v1.0.0 --single-branch --depth 1 https://github.com/sushanglewis/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
-      linux: git clone --branch v1.0.0 --single-branch --depth 1 https://github.com/sushanglewis/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
+      macos: git clone --branch main --single-branch --depth 1 https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
+      linux: git clone --branch main --single-branch --depth 1 https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
     install_note: Optional but recommended. Installed as a skill under ~/.claude/skills/.
     recommended_skills:
       - oh-my-claudecode:plan
