@@ -1,7 +1,7 @@
 import { Box, Text } from 'ink'
 import React from 'react'
 
-export type HintKey = 'idle' | 'recording' | 'stopped' | 'cancelled' | 'error'
+export type HintKey = 'idle' | 'recording' | 'stopped' | 'cancelled' | 'error' | 'menu'
 
 export interface HintBarProps {
   mode: HintKey
@@ -13,6 +13,7 @@ const HINTS: Record<HintKey, string> = {
   stopped: '[any key] exit',
   cancelled: '[q] exit',
   error: '[q] exit',
+  menu: '[↑↓] select  [enter] confirm  [esc] back',
 }
 
 export function HintBar({ mode }: HintBarProps) {

@@ -6,6 +6,8 @@ export interface SpawnRecorderOptions {
   workspaceRoot: string
   sessionId: string
   lincolnRecordPath?: string
+  mic?: string | null
+  model?: string | null
 }
 
 export interface RecorderProcess {
@@ -96,6 +98,8 @@ export function spawnRecorder(options: SpawnRecorderOptions): RecorderProcess {
     workspaceRoot,
     sessionId,
     lincolnRecordPath = 'lincoln-record',
+    mic,
+    model,
   } = options
 
   const args: string[] = [
@@ -105,6 +109,14 @@ export function spawnRecorder(options: SpawnRecorderOptions): RecorderProcess {
     '--output',
     workspaceRoot,
   ]
+
+  if (mic) {
+    args.push('--mic', mic)
+  }
+
+  if (model) {
+    args.push('--model', model)
+  }
 
   const child = spawn(lincolnRecordPath, args, {
     cwd: workspaceRoot,

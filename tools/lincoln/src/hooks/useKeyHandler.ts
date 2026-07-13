@@ -1,6 +1,7 @@
 import { useInput } from 'ink'
 
 export interface KeyHandlerOptions {
+  enabled?: boolean
   onRecord?: () => void
   onStop?: () => void
   onCancel?: () => void
@@ -11,6 +12,7 @@ export interface KeyHandlerOptions {
 }
 
 export function useKeyHandler({
+  enabled = true,
   onRecord,
   onStop,
   onCancel,
@@ -19,11 +21,12 @@ export function useKeyHandler({
   onModel,
   onAnyKey,
 }: KeyHandlerOptions) {
-  useInput((input, key) => {
-    if (key.escape || input === 'q' || input === 'Q') {
-      onQuit?.()
-      return
-    }
+  useInput(
+    (input, key) => {
+      if (key.escape || input === 'q' || input === 'Q') {
+        onQuit?.()
+        return
+      }
 
     if (key.ctrl && input === 'c') {
       onQuit?.()
@@ -53,6 +56,8 @@ export function useKeyHandler({
         return
     }
 
-    onAnyKey?.()
-  })
+      onAnyKey?.()
+    },
+    { isActive: enabled },
+  )
 }

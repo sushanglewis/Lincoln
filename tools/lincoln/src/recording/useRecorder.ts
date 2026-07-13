@@ -30,6 +30,8 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
     workspaceRoot,
     sessionId,
     lincolnRecordPath,
+    mic,
+    model,
   } = options
   const [state, setState] = useState<RecorderState>({
     status: 'idle',
@@ -64,6 +66,8 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
         workspaceRoot,
         sessionId,
         lincolnRecordPath,
+        mic,
+        model,
       })
       recorderRef.current = recorder
 
@@ -102,7 +106,7 @@ export function useRecorder(options: UseRecorderOptions): RecorderController {
       const message = error instanceof Error ? error.message : String(error)
       setState(s => ({ ...s, status: 'error', errorMessage: message }))
     }
-  }, [workspaceRoot, sessionId, lincolnRecordPath, clearRecordingInterval])
+  }, [workspaceRoot, sessionId, lincolnRecordPath, mic, model, clearRecordingInterval])
 
   const stop = useCallback(async () => {
     const recorder = recorderRef.current
