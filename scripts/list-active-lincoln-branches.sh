@@ -10,13 +10,14 @@ set -euo pipefail
 #   --waiting-for-me <role>  Filter by waiting_for role (pm|agent|agent-fix|next-role)
 #
 # Output:
-#   Calls lincoln-status.py --format table for each remote lincoln/* branch.
+#   Calls lincoln-status.py --format table for each remote issue-* branch
+#   (legacy lincoln/* branches are also listed).
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT"
 
-REMOTE="${1:-origin}"
+REMOTE=""
 FILTER_ROLE=""
 
 # Parse optional --waiting-for-me flag
@@ -32,11 +33,13 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+REMOTE="${REMOTE:-origin}"
 
 echo "==> Fetching remote branches from $REMOTE"
-git fetch "$REMOTE" 'lincoln/*:refs/remotes/'"$REMOTE"'/lincoln/*' 2>/dev/null || true
+git fetch "$REMOTE" '+refs/heads/issue-*:refs/remotes/'"$REMOTE"'/issue-*' 2>/dev/null || true
+git fetch "$REMOTE" '+refs/heads/lincoln/*:refs/remotes/'"$REMOTE"'/lincoln/*' 2>/dev/null || true
 
-BRANCHES=$(git branch -r --list "$REMOTE/lincoln/*" 2>/dev/null || true)
+BRANCHES=$(git branch -r --list "$REMOTE/issue-*" --list "$REMOTE/lincoln/*" 2>/dev/null || true)
 
 if [[ -z "$BRANCHES" ]]; then
     echo "No active Lincoln branches found."
@@ -49,9 +52,15 @@ for ref in $BRANCHES; do
     # Extract branch name without remote prefix
     branch="${ref#$REMOTE/}"
 
-    # Call lincoln-status.py for this branch
-    status_json=$(git show "$ref:.claude/workflow-state.yaml" 2>/dev/null | \
-        python3 "$ROOT/scripts/lincoln-status.py" --format json --state-file /dev/stdin 2>/dev/null || true)
+    # Prefer the issue work-package state file; fall back to the legacy path.
+    state_yaml=$(git show "$ref:$branch/workflow-stage.yaml" 2>/dev/null || \
+        git show "$ref:.claude/workflow-state.yaml" 2>/dev/null || true)
+
+    status_json=""
+    if [[ -n "$state_yaml" ]]; then
+        status_json=$(printf '%s' "$state_yaml" | \
+            python3 "$ROOT/scripts/lincoln-status.py" --format json --state-file /dev/stdin 2>/dev/null || true)
+    fi
 
     if [[ -z "$status_json" ]]; then
         printf "%-50s %-22s %-20s %-15s\n" "$branch" "unknown" "no-state-file" ""

@@ -157,7 +157,8 @@ if [[ "$CURRENT_BRANCH" == "main" ]]; then
     git checkout -b "$BRANCH_NAME"
     CURRENT_BRANCH="$BRANCH_NAME"
 elif [[ -n "$ISSUE_NUMBER" && "$CURRENT_BRANCH" != "issue-$ISSUE_NUMBER" && "$CURRENT_BRANCH" != issue-$ISSUE_NUMBER-* ]]; then
-    echo "WARNING: current branch '$CURRENT_BRANCH' does not match issue $ISSUE_NUMBER"
+    echo "WARNING: current branch '$CURRENT_BRANCH' does not match the 'issue-$ISSUE_NUMBER' naming convention"
+    echo "         (see README.md 分支级工作流与阶段状态: issue ↔ branch ↔ PR must correspond end-to-end)."
     echo "         Continuing anyway; ensure this is the intended feature branch."
 fi
 

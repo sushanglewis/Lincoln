@@ -98,6 +98,8 @@ issue-21/
 
 `issue-21/workflow-stage.yaml` 是人类、Agent 之间共享的阶段交接协议；`.claude/templates/issue-package/workflow-stage.yaml` 只是生成它的模板。
 
+**跨成员、跨 Agent 协作**：分支名必须严格使用 `issue-<number>` 约定。任何成员或 Agent 收到上游节点的 handoff 时，按分支名即可定位对应 issue 与工作包（`{process_slug}/workflow-stage.yaml`），从而保障从需求到最终验收，issue、branch、PR 端到端一一对应。可用 `scripts/list-active-lincoln-branches.sh` 查看所有活跃 issue 分支的阶段状态与等待对象。
+
 > 全部模板的详细说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。工作流模板是场景参考，人类可以基于当前场景要求 Agent 按某个固定 workflow 执行，不强制自动路由。
 
 ---
