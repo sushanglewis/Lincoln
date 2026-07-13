@@ -165,7 +165,7 @@ for manifest_path in sorted(agents_dir.glob("*.manifest.yaml")):
             capture_output=True,
         )
         subprocess.run(
-            ["git", "sparse-checkout", "set", *sparse_paths],
+            ["git", "sparse-checkout", "set", "--no-cone", *sparse_paths],
             cwd=repo_dir,
             check=True,
             capture_output=True,

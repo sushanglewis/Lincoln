@@ -305,6 +305,26 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 
 ---
 
+## License 与第三方致谢
+
+Lincoln 本体以 [MIT License](LICENSE) 发布,Copyright (c) 2026 苏尚lewis (sushanglewis)。
+
+Lincoln 引用以下开源项目作为外部 skills、插件与 CLI 依赖(声明见 [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml),均按其各自许可证使用):
+
+| 项目 | 来源 | 用途 | 许可证 |
+|---|---|---|---|
+| superpowers | [obra/superpowers](https://github.com/obra/superpowers) | 通用技能(brainstorming、TDD 等) | MIT |
+| gsd | [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) | 流程技能(import、docs-update 等) | MIT |
+| oh-my-claudecode | [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 可选多智能体编排插件 | MIT |
+| openspec | [Fission-AI/openspec](https://github.com/Fission-AI/openspec) | 变更提案 CLI | MIT |
+| gh | [cli/cli](https://github.com/cli/cli) | GitHub CLI | MIT |
+| ffmpeg | [FFmpeg](https://ffmpeg.org/) | 可选,录音转写 | LGPL/GPL(见官网) |
+| faster-whisper | [SYSTRAN/faster-whisper](https://github.com/SYSTRAN/faster-whisper) | 可选,本地语音转写 | MIT |
+
+外部 agent 定义由 `scripts/sync-external-agents.sh` 按 manifest 同步,来源与许可证见 [`.claude/agents/external/NOTICES.md`](.claude/agents/external/NOTICES.md)(everything-claude-code、oh-my-claudecode、wshobson/agents,均为 MIT)。
+
+---
+
 ## 了解更多
 
 - [OpenSpec 文档](https://github.com/Fission-AI/openspec)
