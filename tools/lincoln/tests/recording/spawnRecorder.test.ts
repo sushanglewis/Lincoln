@@ -10,10 +10,6 @@ describe('spawnRecorder', () => {
     child = new EventEmitter()
     child.pid = 12345
     child.kill = vi.fn()
-    child.stdin = Object.assign(new EventEmitter(), {
-      write: vi.fn(),
-      end: vi.fn(),
-    })
     child.stdout = new EventEmitter()
     child.stderr = new EventEmitter()
     spawnMock = vi.fn(() => child)
@@ -24,100 +20,66 @@ describe('spawnRecorder', () => {
     vi.doUnmock('node:child_process')
   })
 
-  test('spawns record-interview with correct args', async () => {
+  test('spawns lincoln-record record with correct args', async () => {
     const { spawnRecorder: spawnRecorderMocked } = await import('../../src/recording/spawnRecorder')
     spawnRecorderMocked({
       workspaceRoot: '/workspace',
       sessionId: '2026-06-28-test',
-      topic: '测试',
-      designId: 'checkout-redesign',
-      branch: 'main',
-      recordInterviewPath: '/usr/local/bin/record-interview',
+      lincolnRecordPath: '/usr/local/bin/lincoln-record',
     })
 
     expect(spawnMock).toHaveBeenCalledWith(
-      '/usr/local/bin/record-interview',
+      '/usr/local/bin/lincoln-record',
       [
+        'record',
+        '--session-id',
         '2026-06-28-test',
-        '--no-confirm',
-        '--topic',
-        '测试',
-        '--design-id',
-        'checkout-redesign',
-        '--branch',
-        'main',
+        '--output',
+        '/workspace',
       ],
       expect.objectContaining({ cwd: '/workspace', stdio: ['pipe', 'pipe', 'pipe'] }),
     )
   })
 
-  test('emits ready when metadata prepared message appears', async () => {
+  test('emits ready immediately after spawn', async () => {
     const { spawnRecorder: spawnRecorderMocked } = await import('../../src/recording/spawnRecorder')
     const recorder = spawnRecorderMocked({
       workspaceRoot: '/workspace',
       sessionId: '2026-06-28-test',
-      recordInterviewPath: '/usr/local/bin/record-interview',
     })
 
     const readyHandler = vi.fn()
     recorder.on('ready', readyHandler)
-    child.stdout.emit('data', Buffer.from('Metadata prepared: interviews/2026-06-28-test/metadata.json\n'))
 
+    await new Promise((resolve) => setImmediate(resolve))
     expect(readyHandler).toHaveBeenCalled()
   })
 
-  test('stop resolves on clean exit after sending newline', async () => {
+  test('stop sends SIGINT and resolves on exit', async () => {
     const { spawnRecorder: spawnRecorderMocked } = await import('../../src/recording/spawnRecorder')
     const recorder = spawnRecorderMocked({
       workspaceRoot: '/workspace',
       sessionId: '2026-06-28-test',
-      recordInterviewPath: '/usr/local/bin/record-interview',
     })
 
     const stopPromise = recorder.stop()
-    expect(child.stdin.write).toHaveBeenCalledWith('\n')
-    expect(child.stdin.end).toHaveBeenCalled()
+    expect(child.kill).toHaveBeenCalledWith('SIGINT')
     child.emit('exit', 0, null)
 
     await expect(stopPromise).resolves.toBeUndefined()
   })
 
-  test('stop resolves when child exits with non-zero code', async () => {
+  test('cancel sends SIGKILL and resolves on exit', async () => {
     const { spawnRecorder: spawnRecorderMocked } = await import('../../src/recording/spawnRecorder')
     const recorder = spawnRecorderMocked({
       workspaceRoot: '/workspace',
       sessionId: '2026-06-28-test',
-      recordInterviewPath: '/usr/local/bin/record-interview',
     })
-
-    const exitHandler = vi.fn()
-    recorder.on('exit', exitHandler)
-
-    const stopPromise = recorder.stop()
-    expect(child.stdin.write).toHaveBeenCalledWith('\n')
-    expect(child.stdin.end).toHaveBeenCalled()
-    child.emit('exit', 1, null)
-
-    await expect(stopPromise).resolves.toBeUndefined()
-    expect(exitHandler).toHaveBeenCalledWith(1, null)
-  })
-
-  test('cancel resolves when child exits after signal', async () => {
-    const { spawnRecorder: spawnRecorderMocked } = await import('../../src/recording/spawnRecorder')
-    const recorder = spawnRecorderMocked({
-      workspaceRoot: '/workspace',
-      sessionId: '2026-06-28-test',
-      recordInterviewPath: '/usr/local/bin/record-interview',
-    })
-
-    const exitHandler = vi.fn()
-    recorder.on('exit', exitHandler)
 
     const cancelPromise = recorder.cancel()
     expect(child.kill).toHaveBeenCalledWith('SIGKILL')
     child.emit('exit', null, 'SIGTERM')
 
     await expect(cancelPromise).resolves.toBeUndefined()
-    expect(exitHandler).toHaveBeenCalledWith(null, 'SIGTERM')
   })
 })

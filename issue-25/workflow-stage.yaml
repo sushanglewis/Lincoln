@@ -1,0 +1,262 @@
+schema_version: 2.0.0
+workflow:
+  name: oss-first-design
+  version: 1.0.0
+  template: oss-first-design
+current_run:
+  run_id: 20260709154736-48f5cebe
+  branch: issue-25
+  current_stage: implement
+  status: in_progress
+  started_at: '2026-07-09T15:47:36Z'
+  last_updated_at: '2026-07-11T14:30:00Z'
+  issue_number: '25'
+  variables:
+    process_slug: issue-25
+    session_id: 2026-07-09-recording-replacement
+    design_id: recording-replacement
+    issue_number: '25'
+    change_name: recording-replacement
+    pr_number: ''
+    feature_slug: recording-replacement
+  change_name: recording-replacement
+  pr_number: ''
+  feature_slug: recording-replacement
+  previous_stage: split
+artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
+  - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,\n  and replace placeholders ({issue_number},\
+  \ {session_id}, {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
+  \  `interviews/` for recorded session outputs, `openspec/` for implementation proposals,\n  `docs/` for research and decision\
+  \ records, and `recordings/` for raw input files only.\n- When a stage completes, run `scripts/stage_loader.py --stage <stage>\
+  \ --action record-artifacts`\n  to persist produced artifact paths back into this workflow-stage.yaml.\n\nApproval convention:\n\
+  - Add `<!-- status: approved -->` or `[x] PM 已确认<文档类型>` to mark a document\n  as reviewed by the human PM before handoff.\n"
+nodes:
+- stage_id: clarify
+  node_id: clarify-2026-07-09T15:52:42Z
+  status: in_progress
+  started_at: '2026-07-09T15:52:42Z'
+  completed_at: '2026-07-09T15:56:04Z'
+  gate_passed: true
+  approved_by: PM
+  artifacts:
+  - issue-25/requirements/2026-07-09-recording-replacement/requirements.md
+  handoff_file: null
+- stage_id: clarify
+  node_id: clarify-completed
+  status: completed
+  started_at: '2026-07-09T15:59:16Z'
+  completed_at: '2026-07-09T15:59:16Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/requirements/2026-07-09-recording-replacement/requirements.md
+  handoff_file: null
+- stage_id: explore-opensource
+  node_id: explore-opensource-2026-07-09T16:01:46Z
+  status: in_progress
+  started_at: '2026-07-09T16:01:46Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-25/docs/research/recording-replacement-oss-options.md
+  handoff_file: null
+- stage_id: explore-opensource
+  node_id: explore-opensource-completed
+  status: completed
+  started_at: '2026-07-09T16:04:01Z'
+  completed_at: '2026-07-09T16:04:01Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/docs/research/recording-replacement-oss-options.md
+  handoff_file: null
+- stage_id: product-design-docs
+  node_id: product-design-docs-2026-07-10T00:20:27Z
+  status: in_progress
+  started_at: '2026-07-10T00:20:27Z'
+  completed_at: '2026-07-10T00:26:24Z'
+  gate_passed: true
+  approved_by: PM
+  artifacts:
+  - issue-25/designs/recording-replacement/design-review.md
+  handoff_file: null
+- stage_id: product-design-docs
+  node_id: product-design-docs-completed
+  status: completed
+  started_at: '2026-07-10T00:27:26Z'
+  completed_at: '2026-07-10T00:27:26Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/designs/recording-replacement/design-review.md
+  handoff_file: null
+- stage_id: tdd-development-plan
+  node_id: tdd-development-plan-2026-07-10T00:28:58Z
+  status: in_progress
+  started_at: '2026-07-10T00:28:58Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-25/designs/recording-replacement/tdd-plan.md
+  handoff_file: null
+- stage_id: tdd-development-plan
+  node_id: tdd-development-plan-completed
+  status: completed
+  started_at: '2026-07-10T00:33:27Z'
+  completed_at: '2026-07-10T00:33:27Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/designs/recording-replacement/tdd-plan.md
+  handoff_file: null
+- stage_id: propose
+  node_id: propose-2026-07-10T00:34:18Z
+  status: in_progress
+  started_at: '2026-07-10T00:34:18Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - issue-25/openspec/changes/recording-replacement/
+  handoff_file: null
+- stage_id: propose
+  node_id: propose-completed
+  status: completed
+  started_at: '2026-07-10T00:35:09Z'
+  completed_at: '2026-07-10T00:35:09Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-25/openspec/changes/recording-replacement/
+  handoff_file: null
+- stage_id: split
+  node_id: split-2026-07-10T04:51:20Z
+  status: in_progress
+  started_at: '2026-07-10T04:51:20Z'
+  completed_at: '2026-07-10T04:52:06Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .github/linked-issues.yaml
+  handoff_file: null
+- stage_id: split
+  node_id: split-completed
+  status: completed
+  started_at: '2026-07-10T04:52:33Z'
+  completed_at: '2026-07-10T04:52:33Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .github/linked-issues.yaml
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-2026-07-10T04:53:26Z
+  status: in_progress
+  started_at: '2026-07-10T04:53:26Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts: []
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase1-2026-07-10
+  status: completed
+  started_at: '2026-07-10T04:54:10Z'
+  completed_at: '2026-07-10T05:10:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - tools/lincoln-record/Cargo.toml
+  - tools/lincoln-record/src/main.rs
+  - tools/lincoln-record/src/lib.rs
+  - tools/lincoln-record/src/cli.rs
+  - tools/lincoln-record/src/config.rs
+  - tools/lincoln-record/src/audio/mod.rs
+  - tools/lincoln-record/src/audio/devices.rs
+  - tools/lincoln-record/tests/cli_args.rs
+  - tools/lincoln-record/tests/config_test.rs
+  - tools/lincoln-record/tests/devices_test.rs
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase2-2026-07-11
+  status: completed
+  started_at: '2026-07-10T17:42:55Z'
+  completed_at: '2026-07-11T12:00:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - tools/lincoln-record/src/audio/source.rs
+  - tools/lincoln-record/src/audio/resampler.rs
+  - tools/lincoln-record/src/audio/saver.rs
+  - tools/lincoln-record/src/audio/capture/microphone.rs
+  - tools/lincoln-record/src/main.rs
+  - tools/lincoln-record/tests/integration_tests.rs
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase3-2026-07-11
+  status: completed
+  started_at: '2026-07-10T18:04:26Z'
+  completed_at: '2026-07-11T13:00:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - tools/lincoln-record/src/transcription/provider.rs
+  - tools/lincoln-record/src/transcription/diarization.rs
+  - tools/lincoln-record/src/output/transcript.rs
+  - tools/lincoln-record/src/output/metadata.rs
+  - tools/lincoln-record/tests/transcription_tests.rs
+  - tools/lincoln-record/src/main.rs
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase4-2026-07-11
+  status: completed
+  started_at: '2026-07-11T13:00:00Z'
+  completed_at: '2026-07-11T14:00:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - tools/lincoln-record/diarize/diarize.py
+  - tools/lincoln-record/diarize/merge.py
+  - tools/lincoln-record/tests/diarization_tests.rs
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase5-2026-07-11
+  status: completed
+  started_at: '2026-07-11T14:00:00Z'
+  completed_at: '2026-07-11T14:20:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - tools/lincoln/src/recording/spawnRecorder.ts
+  - tools/lincoln/src/recording/useRecorder.ts
+  - tools/lincoln/src/components/RecordingApp.tsx
+  - tools/lincoln/tests/recording/spawnRecorder.test.ts
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-phase6-2026-07-11
+  status: completed
+  started_at: '2026-07-11T14:20:00Z'
+  completed_at: '2026-07-11T14:30:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - tools/record-interview/README.md
+  - .claude/skills/process-interview/SKILL.md
+  - .github/linked-issues.yaml
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-completed-2026-07-11
+  status: completed
+  started_at: '2026-07-11T14:30:00Z'
+  completed_at: '2026-07-11T14:30:00Z'
+  gate_passed: true
+  approved_by: system
+  artifacts: []
+  handoff_file: null
+recovery:
+  last_validated_checkpoint: implement
+  can_resume_from: implement
+  abort_reason: null
+  abort_at: null

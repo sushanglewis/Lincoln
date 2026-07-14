@@ -1,12 +1,20 @@
-import { Box, Text, useApp } from 'ink'
-import React, { useState } from 'react'
+import { Box, useApp } from 'ink'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { CancelledScreen } from './CancelledScreen'
-import { RecordingScreen } from './RecordingScreen'
-import { ReadyScreen } from './ReadyScreen'
-import { StopConfirmation } from './StopConfirmation'
+import { StatusPanel } from './StatusPanel'
+import { LogView, type LogEntry } from './LogView'
+import { HintBar } from './HintBar'
+import { DevicesMenu } from './DevicesMenu'
+import { ModelMenu } from './ModelMenu'
 import { useKeyHandler } from '../hooks/useKeyHandler'
 import { useRecorder } from '../recording/useRecorder'
+import { listDevices } from '../devices/listDevices'
+import { defaultModelCacheDir, listModelStatuses, type ModelStatus } from '../models/models'
+import { runWarmup } from '../models/runWarmup'
+import type { WarmupProgress } from '../models/warmupProgress'
+import type { DeviceList } from '../devices/parseDevices'
+
+type AppMode = 'main' | 'devices' | 'model'
 
 export interface RecordingAppProps {
   workspaceRoot: string
@@ -15,12 +23,15 @@ export interface RecordingAppProps {
   designId: string
   branch: string
   audioMeterStyle?: 'bar' | 'dot' | 'wave'
-  recordInterviewPath?: string
+  lincolnRecordPath?: string
+  listDevicesFn?: () => Promise<DeviceList>
+  listModelStatusesFn?: () => Promise<ModelStatus[]>
+  runWarmupFn?: (model: string, onProgress: (p: WarmupProgress) => void) => Promise<string>
 }
 
-type AppPhase = 'ready' | 'recording' | 'cancelled'
-
-const MENU_OPTION_COUNT = 2
+function createLogId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
 
 export function RecordingApp({
   workspaceRoot,
@@ -29,102 +40,172 @@ export function RecordingApp({
   designId,
   branch,
   audioMeterStyle = 'bar',
-  recordInterviewPath,
+  lincolnRecordPath,
+  listDevicesFn,
+  listModelStatusesFn,
+  runWarmupFn,
 }: RecordingAppProps) {
   const { exit } = useApp()
-  const [phase, setPhase] = useState<AppPhase>('ready')
-  const [selectedIndex, setSelectedIndex] = useState(0)
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [mode, setMode] = useState<AppMode>('main')
+  const [mic, setMic] = useState<string | null>(null)
+  const [model, setModel] = useState<string | null>(null)
+
+  const addLog = useCallback((message: string, type: LogEntry['type'] = 'info') => {
+    setLogs(prev => [...prev, { id: createLogId(), message, type }])
+  }, [])
+
   const { state, start, stop, cancel } = useRecorder({
     workspaceRoot,
     sessionId,
-    topic,
-    designId,
-    branch,
-    recordInterviewPath,
+    lincolnRecordPath,
+    mic,
+    model,
     startOnMount: false,
   })
 
-  const handleExit = () => {
+  useEffect(() => {
+    switch (state.status) {
+      case 'recording':
+        addLog('Recording started.', 'info')
+        break
+      case 'stopped':
+        addLog(`Saved to ${workspaceRoot}/${sessionId}/audio.wav`, 'success')
+        addLog(`Run: claude process-interview ${sessionId}`, 'command')
+        break
+      case 'cancelled':
+        addLog('Recording cancelled. No files were saved.', 'error')
+        break
+      case 'error':
+        addLog(`Recording error: ${state.errorMessage ?? 'unknown error'}`, 'error')
+        break
+    }
+  }, [state.status, state.errorMessage, addLog, workspaceRoot, sessionId])
+
+  const handleQuit = useCallback(() => {
     exit()
-  }
+  }, [exit])
+
+  const handleRecord = useCallback(() => {
+    if (state.status === 'idle') {
+      start()
+    }
+  }, [state.status, start])
+
+  const handleStop = useCallback(() => {
+    if (state.status === 'recording') {
+      stop().catch(() => {})
+    }
+  }, [state.status, stop])
+
+  const handleCancel = useCallback(() => {
+    if (state.status === 'recording') {
+      cancel().catch(() => {})
+    }
+  }, [state.status, cancel])
+
+  const handleDevices = useCallback(() => {
+    if (state.status === 'idle') {
+      setMode('devices')
+    }
+  }, [state.status])
+
+  const handleModel = useCallback(() => {
+    if (state.status === 'idle') {
+      setMode('model')
+    }
+  }, [state.status])
+
+  const handleDeviceSelect = useCallback(
+    (device: string) => {
+      setMic(device)
+      addLog(`Input device: ${device}`, 'success')
+      setMode('main')
+    },
+    [addLog],
+  )
+
+  const handleModelSelect = useCallback(
+    (name: string) => {
+      setModel(name)
+      addLog(`Model: ${name}`, 'success')
+      setMode('main')
+    },
+    [addLog],
+  )
+
+  const handleMenuClose = useCallback(() => {
+    setMode('main')
+  }, [])
+
+  const isTerminal = state.status === 'stopped' || state.status === 'cancelled' || state.status === 'error'
 
   useKeyHandler({
-    onStop: () => {
-      if (phase === 'ready') {
-        if (selectedIndex === 0) {
-          setPhase('recording')
-          start()
-        } else {
-          setPhase('cancelled')
-          handleExit()
-        }
-      } else if (state.status === 'recording') {
-        stop()
-      }
-    },
-    onCancel: () => {
-      if (phase === 'ready') {
-        setPhase('cancelled')
-      } else if (state.status === 'recording') {
-        cancel()
-      }
-      handleExit()
-    },
-    onUp: () => {
-      if (phase === 'ready') {
-        setSelectedIndex(index => (index - 1 + MENU_OPTION_COUNT) % MENU_OPTION_COUNT)
-      }
-    },
-    onDown: () => {
-      if (phase === 'ready') {
-        setSelectedIndex(index => (index + 1) % MENU_OPTION_COUNT)
-      }
-    },
+    enabled: mode === 'main',
+    onRecord: handleRecord,
+    onStop: handleStop,
+    onCancel: handleCancel,
+    onQuit: handleQuit,
+    onDevices: handleDevices,
+    onModel: handleModel,
+    onAnyKey: isTerminal ? handleQuit : undefined,
   })
 
-  if (phase === 'cancelled' || state.status === 'cancelled') {
-    return <CancelledScreen />
-  }
+  const hintMode = useMemo(() => {
+    if (mode !== 'main') return 'menu'
+    if (state.status === 'idle') return 'idle'
+    if (state.status === 'recording') return 'recording'
+    if (state.status === 'stopped') return 'stopped'
+    if (state.status === 'cancelled') return 'cancelled'
+    return 'error'
+  }, [mode, state.status])
 
-  if (state.status === 'stopped') {
-    return (
-      <StopConfirmation
-        sessionId={sessionId}
-        workspaceRoot={workspaceRoot}
-        onConfirm={handleExit}
-      />
-    )
-  }
+  const devicesLoader = useCallback(
+    () => (listDevicesFn ?? (() => listDevices(lincolnRecordPath)))(),
+    [listDevicesFn, lincolnRecordPath],
+  )
 
-  if (state.status === 'error') {
-    return (
-      <Box flexDirection="column" padding={1}>
-        <Text bold color="red">Recording error</Text>
-        <Text>{state.errorMessage}</Text>
-      </Box>
-    )
-  }
+  const modelsLoader = useCallback(
+    () => (listModelStatusesFn ?? (() => Promise.resolve(listModelStatuses(defaultModelCacheDir()))))(),
+    [listModelStatusesFn],
+  )
 
-  if (phase === 'ready') {
-    return (
-      <ReadyScreen
+  const warmupRunner = useCallback(
+    (name: string, onProgress: (p: WarmupProgress) => void) =>
+      runWarmupFn
+        ? runWarmupFn(name, onProgress)
+        : runWarmup({ model: name, lincolnRecordPath, onProgress }),
+    [runWarmupFn, lincolnRecordPath],
+  )
+
+  return (
+    <Box flexDirection="column" borderStyle="round" borderColor="gray" height={24}>
+      <StatusPanel
         sessionId={sessionId}
         topic={topic}
         designId={designId}
         branch={branch}
-        selectedIndex={selectedIndex}
+        status={state.status}
+        duration={state.duration}
       />
-    )
-  }
-
-  return (
-    <RecordingScreen
-      sessionId={sessionId}
-      topic={topic}
-      designId={designId}
-      duration={state.duration}
-      amplitude={state.amplitude}
-      audioMeterStyle={audioMeterStyle}
-    />
+      {mode === 'devices' && (
+        <DevicesMenu
+          listDevicesFn={devicesLoader}
+          onSelect={handleDeviceSelect}
+          onClose={handleMenuClose}
+        />
+      )}
+      {mode === 'model' && (
+        <ModelMenu
+          listModelStatusesFn={modelsLoader}
+          runWarmupFn={warmupRunner}
+          onSelect={handleModelSelect}
+          onClose={handleMenuClose}
+        />
+      )}
+      <LogView logs={logs} />
+      <Box flexGrow={1} />
+      <HintBar mode={hintMode} />
+    </Box>
   )
 }

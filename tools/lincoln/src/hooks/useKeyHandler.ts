@@ -1,36 +1,63 @@
 import { useInput } from 'ink'
 
 export interface KeyHandlerOptions {
-  onStop: () => void
-  onCancel: () => void
-  onUp?: () => void
-  onDown?: () => void
+  enabled?: boolean
+  onRecord?: () => void
+  onStop?: () => void
+  onCancel?: () => void
+  onQuit?: () => void
+  onDevices?: () => void
+  onModel?: () => void
+  onAnyKey?: () => void
 }
 
-export function useKeyHandler({ onStop, onCancel, onUp, onDown }: KeyHandlerOptions) {
-  useInput((input, key) => {
-    if (key.return || input === '\r' || input === '\n') {
-      onStop()
-      return
-    }
-
-    if (input === 'q' || input === 'Q' || key.escape) {
-      onCancel()
-      return
-    }
-
-    if (key.upArrow) {
-      onUp?.()
-      return
-    }
-
-    if (key.downArrow) {
-      onDown?.()
-      return
-    }
+export function useKeyHandler({
+  enabled = true,
+  onRecord,
+  onStop,
+  onCancel,
+  onQuit,
+  onDevices,
+  onModel,
+  onAnyKey,
+}: KeyHandlerOptions) {
+  useInput(
+    (input, key) => {
+      if (key.escape || input === 'q' || input === 'Q') {
+        onQuit?.()
+        return
+      }
 
     if (key.ctrl && input === 'c') {
-      onCancel()
+      onQuit?.()
+      return
     }
-  })
+
+    switch (input) {
+      case 'r':
+      case 'R':
+        onRecord?.()
+        return
+      case 's':
+      case 'S':
+        onStop?.()
+        return
+      case 'c':
+      case 'C':
+        onCancel?.()
+        return
+      case 'd':
+      case 'D':
+        onDevices?.()
+        return
+      case 'm':
+      case 'M':
+        onModel?.()
+        return
+    }
+
+      onAnyKey?.()
+    },
+    { isActive: enabled },
+  )
 }

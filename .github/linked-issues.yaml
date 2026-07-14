@@ -21,3 +21,65 @@ issues:
     source: openspec/changes/lincoln-tui-recorder/tasks.md
 
 requirements_file: requirements/2026-06-28-stakeholder-checkout/requirements.md
+
+---
+# Linked GitHub Issues for recording-replacement (LEW-17 / #25)
+# Generated during split stage. Issue numbers below are local placeholders
+# because this environment cannot reach github.com; replace with real issue
+# IDs once network access is available.
+
+parent:
+  issue_number: 25
+  title: "Replace Lincoln in-house recording tools with OSS-first local CLI recorder"
+
+sub_issues:
+  - issue_number: 25-phase-1
+    title: "Phase 1: lincoln-record CLI skeleton and configuration"
+    status: completed
+    accepts:
+      - tools/lincoln-record/src/cli.rs
+      - tools/lincoln-record/src/config.rs
+      - tools/lincoln-record/src/audio/devices.rs
+      - tools/lincoln-record/tests/cli_args.rs
+      - tools/lincoln-record/tests/config_test.rs
+      - tools/lincoln-record/tests/devices_test.rs
+  - issue_number: 25-phase-2
+    title: "Phase 2: Audio capture and checkpoint saving"
+    status: completed
+    accepts:
+      - tools/lincoln-record/src/audio/source.rs
+      - tools/lincoln-record/src/audio/resampler.rs
+      - tools/lincoln-record/src/audio/saver.rs
+      - tools/lincoln-record/src/audio/capture/microphone.rs
+      - tools/lincoln-record/src/main.rs
+      - tools/lincoln-record/tests/integration_tests.rs
+  - issue_number: 25-phase-3
+    title: "Phase 3: Local transcription providers"
+    status: completed
+    accepts:
+      - tools/lincoln-record/src/transcription/provider.rs
+      - tools/lincoln-record/src/transcription/diarization.rs
+      - tools/lincoln-record/src/output/transcript.rs
+      - tools/lincoln-record/src/output/metadata.rs
+      - tools/lincoln-record/tests/transcription_tests.rs
+  - issue_number: 25-phase-4
+    title: "Phase 4: Speaker diarization sidecar"
+    status: completed
+    accepts:
+      - tools/lincoln-record/diarize/diarize.py
+      - tools/lincoln-record/diarize/merge.py
+      - tools/lincoln-record/tests/diarization_tests.rs
+  - issue_number: 25-phase-5
+    title: "Phase 5: Lincoln-standard output and adapter"
+    status: completed
+    accepts:
+      - tools/lincoln/src/recording/spawnRecorder.ts
+      - tools/lincoln/src/recording/useRecorder.ts
+      - tools/lincoln/src/components/RecordingApp.tsx
+      - tools/lincoln/tests/recording/spawnRecorder.test.ts
+  - issue_number: 25-phase-6
+    title: "Phase 6: Deprecate record-interview and update docs"
+    status: completed
+    accepts:
+      - tools/record-interview/README.md
+      - .claude/skills/process-interview/SKILL.md
