@@ -25,9 +25,6 @@ function TestApp() {
   const { state } = useRecorder({
     workspaceRoot: '/workspace',
     sessionId: '2026-06-28-test',
-    topic: '',
-    designId: '',
-    branch: '',
   })
   return <Text>{state.status}</Text>
 }
@@ -37,9 +34,6 @@ function TestAppWithRerender({ startOnMount }: { startOnMount?: boolean } = {}) 
   const { state } = useRecorder({
     workspaceRoot: '/workspace',
     sessionId: '2026-06-28-test',
-    topic: '',
-    designId: '',
-    branch: '',
     startOnMount,
   })
 

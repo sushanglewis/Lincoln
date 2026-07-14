@@ -1,5 +1,7 @@
 # Lincoln Record Interview CLI
 
+> **Deprecated**: this tool is replaced by `tools/lincoln-record`. Use `lincoln-record record --session-id <id>` instead. This package will be removed once the new recorder is stable.
+
 在当前 Lincoln workspace 内录制访谈音频并触发 `process-interview`。
 
 ## 安装依赖
