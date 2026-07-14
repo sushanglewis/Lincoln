@@ -1,0 +1,23 @@
+---
+schema_version: 2.0.0
+workflow:
+  name: ""
+  version: 1.0.0
+  template: ""
+current_run:
+  run_id: ""
+  branch: ""
+  current_stage: not_started
+  status: not_started
+  started_at: ""
+  last_updated_at: ""
+  execution_mode: solo
+  variables:
+    process_slug: ".context"
+    session_id: ""
+nodes: []
+recovery:
+  last_validated_checkpoint: ""
+  can_resume_from: ""
+  abort_reason: null
+  abort_at: null

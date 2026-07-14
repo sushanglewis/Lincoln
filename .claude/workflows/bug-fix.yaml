@@ -1,7 +1,8 @@
 workflow:
-  name: design-spike
+  name: bug-fix
   version: 1.0.0
-  description: 仅做方案预研，不进入研发实现
+  description: 基于明确 issue/bug 的快速修复工作流
+  execution_mode: solo
   engine: everything-claude-code
 
   steps:
@@ -20,7 +21,7 @@ workflow:
         - check: human_approved
 
     - id: product-design-docs
-      name: 产品设计文档
+      name: 轻量设计文档
       human_gate: true
       action: draft-product-design
       artifacts:
@@ -29,17 +30,40 @@ workflow:
         - check: design_docs_complete
         - check: design_docs_human_approved
 
-    - id: product-prototype
-      name: 产品原型
-      human_gate: true
-      action: build-product-prototype
+    - id: tdd-development-plan
+      name: TDD 研发计划
+      action: plan-tdd-development
       artifacts:
-        - "{process_slug}/designs/{design_id}/prototype.pen"
+        - "{process_slug}/designs/{design_id}/tdd-plan.md"
       exit_checks:
-        - check: prototype_artifact_complete
+        - check: tdd_plan_complete
+
+    - id: propose
+      name: OpenSpec 提案
+      action: propose-with-openspec
+      cli_command: "openspec propose {change_name}"
+      artifacts:
+        - "{process_slug}/openspec/changes/{change_name}/"
+      exit_checks:
+        - check: openspec_artifact_complete
+        - check: tasks_extracted
+
+    - id: split
+      name: 拆分到 GitHub
+      action: split-to-github
+      artifacts:
+        - .github/linked-issues.yaml
+      exit_checks:
+        - check: issues_created
+        - check: tasks_link_back_to_issues
+
+    - id: implement
+      name: 研发实现
+      human_gate: true
 
     - id: sync-knowledge
       name: 同步到知识库
+      trigger: on_pr_merge
       action: sync-to-knowledge
       artifacts:
         - knowledge/03-features/{feature_slug}.md

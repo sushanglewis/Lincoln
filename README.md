@@ -80,7 +80,10 @@ scripts/init-lincoln-branch.sh --issue-number 21 \
 - `--session-id`：访谈/需求会话 ID，格式 `YYYY-MM-DD-descriptive-name`；省略时默认生成。
 - `--design-id`：设计主题 ID，kebab-case；省略时默认生成。
 - `--process-slug`：工作包目录名，默认 `issue-<number>`。
+- `--workflow`：工作流名称（`.claude/workflows/` 下），默认 `interview-to-knowledge`。
 - `--push`：初始化后推送分支到远程。
+
+> 也可以直接通过 `lc-wf-*` 命令启动工作流（`python3 scripts/lincoln_workflow.py`）：`lc-wf-list` 列出所有工作流；team 工作流等价于调用本脚本，solo 工作流则在 `.context/workflow/` 生成 session 级实例（gitignored，不跨成员共享）。详见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
 
 执行后会在分支上生成：
 
@@ -241,7 +244,7 @@ Lincoln 提供两个配套工具：
 │   ├── workflows/                      # SOP 工作流模板
 │   │   └── README.md（工作流索引）       # ← 路由到这里看所有模板
 │   ├── settings.json                   # Claude Code 项目设置
-├── .context/                           # 交接文档（gitignored）
+├── .context/                           # session 级临时文件（gitignored），含 solo 工作流实例 .context/workflow/<name>.yaml
 ├── .github/                            # issue 模板、Actions、OpenSpec 配置
 ├── scripts/                            # 初始化、状态、审计工具
 ├── tests/                              # pytest 测试套件

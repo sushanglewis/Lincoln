@@ -42,14 +42,18 @@ scripts/init-lincoln-branch.sh --issue-number <number>
 
 ## 模板 vs 实例：状态文件
 
-必须区分以下两个文件：
+必须区分以下文件：
 
 | 文件 | 性质 | 用途 |
 |------|------|------|
 | `.claude/templates/issue-package/workflow-stage.yaml` | **模板** | 只读。`init-lincoln-branch.sh` 复制它并填入 issue 专属信息。 |
-| `{process_slug}/workflow-stage.yaml` | **实例** | issue 运行时的真实状态文件，人类-human、人类-Agent、Agent-Agent 之间共享的阶段交接协议。 |
+| `.claude/templates/solo-workflow-context.yaml` | **模板** | 只读。`scripts/lincoln_workflow.py start`（solo 模式）渲染它生成 session 实例。 |
+| `{process_slug}/workflow-stage.yaml` | **实例（team）** | issue 运行时的真实状态文件，人类-human、人类-Agent、Agent-Agent 之间共享的阶段交接协议。 |
+| `.context/workflow/<name>.yaml` | **实例（solo）** | session 级 solo 工作流状态文件，gitignored，跟随 conductor workspace/session 生命周期，不跨成员共享。 |
 
-Agent 只应读取和更新 **实例** `{process_slug}/workflow-stage.yaml`，不应直接修改模板。
+工作流通过 `lc-wf-*` 命令（底层 `scripts/lincoln_workflow.py`）启动：`lc-wf-list` 列出所有工作流及其 `execution_mode`；solo 工作流生成 `.context/workflow/<name>.yaml`，team 工作流转发 `init-lincoln-branch.sh` 生成 `{process_slug}/workflow-stage.yaml`。Agent 只应读取和更新**实例**文件，不应直接修改模板。
+
+状态解析优先级（`scripts/lincoln_paths.resolve_state_path`）：显式参数/`LINCOLN_STATE_FILE` > team issue-package > solo `.context/workflow/` > `.claude/` 回退。solo 实例由 `.claude/hooks/on-session-start.sh` 在会话启动时自动注入上下文。
 
 ## Issue 工作包
 

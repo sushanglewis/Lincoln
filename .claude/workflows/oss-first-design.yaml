@@ -1,27 +1,14 @@
 workflow:
-  name: existing-project-iteration
+  name: oss-first-design
   version: 1.0.0
-  description: 已有源码项目的 Lincoln 迭代工作流
+  description: 先探索开源方案，再进行产品设计
+  execution_mode: solo
   engine: everything-claude-code
 
   steps:
     - id: workflow-router
       name: 工作流路由
       action: lc-workflow-router
-      artifacts:
-        - "{process_slug}/workflow-stage.yaml"
-
-    - id: build-codebase-knowledge
-      name: 构建代码知识库
-      description: 基于现有源码生成功能知识文档
-      entry_checks:
-        - check: codebase_not_yet_documented
-      action: lc-build-codebase-knowledge
-      artifacts:
-        - knowledge/03-features/
-        - knowledge/00-index.md
-      exit_checks:
-        - check: codebase_knowledge_ready
 
     - id: clarify
       name: 需求澄清
@@ -32,6 +19,14 @@ workflow:
       exit_checks:
         - check: requirements_has_background_problem_solution_acceptance
         - check: human_approved
+
+    - id: explore-opensource
+      name: 开源方案探索
+      action: lc-explore-opensource
+      artifacts:
+        - "{process_slug}/docs/research/{change_name}-oss-options.md"
+      exit_checks:
+        - check: oss_research_complete
 
     - id: product-design-docs
       name: 产品设计文档

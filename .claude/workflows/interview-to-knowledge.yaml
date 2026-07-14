@@ -2,6 +2,7 @@ workflow:
   name: interview-to-knowledge
   version: 1.0.0
   description: 从访谈录音到 GitHub Issues 再到 Obsidian 知识库沉淀的标准工作流
+  execution_mode: team
   loop:
     engine: everything-claude-code
     state_file: "{process_slug}/workflow-stage.yaml"

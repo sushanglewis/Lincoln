@@ -8,7 +8,7 @@ version: 1.0.0
 
 ## Purpose
 
-Inspects the current project context and chooses a workflow template from `.claude/workflows/templates/`.
+Inspects the current project context and chooses a workflow template from `.claude/workflows/`.
 
 ## When to Use
 

@@ -223,9 +223,6 @@ PY
 
     # Load workflow template summary
     WORKFLOW_FILE="$ROOT/.claude/workflows/${WORKFLOW_TEMPLATE}.yaml"
-    if [[ ! -f "$WORKFLOW_FILE" ]]; then
-        WORKFLOW_FILE="$ROOT/.claude/workflows/templates/${WORKFLOW_TEMPLATE}.yaml"
-    fi
     if [[ -f "$WORKFLOW_FILE" ]]; then
         echo "=== Workflow Template ($WORKFLOW_TEMPLATE) ==="
         echo "File: ${WORKFLOW_FILE#$ROOT/}"

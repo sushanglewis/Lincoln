@@ -26,10 +26,14 @@ def test_missing_template_raises():
 
 def test_all_templates_have_valid_yaml():
     root = Path(__file__).resolve().parents[1]
-    templates_dir = root / ".claude" / "workflows" / "templates"
-    for path in templates_dir.glob("*.yaml"):
+    workflows_dir = root / ".claude" / "workflows"
+    assert not (workflows_dir / "templates").exists(), "templates/ subdir should be flattened"
+    paths = list(workflows_dir.glob("*.yaml"))
+    assert len(paths) >= 5
+    for path in paths:
         data = yaml.safe_load(path.read_text(encoding="utf-8"))
         assert "workflow" in data
         assert "steps" in data["workflow"]
+        assert data["workflow"]["execution_mode"] in ("solo", "team")
         for step in data["workflow"]["steps"]:
             assert "id" in step

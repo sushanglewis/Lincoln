@@ -46,7 +46,7 @@ from scripts.lincoln_paths import (
 )
 
 WORKFLOW_PATH = PROJECT_ROOT / ".claude" / "workflows" / "interview-to-knowledge.yaml"
-WORKFLOW_TEMPLATE_DIR = PROJECT_ROOT / ".claude" / "workflows" / "templates"
+WORKFLOW_TEMPLATE_DIR = PROJECT_ROOT / ".claude" / "workflows"
 DEFAULT_WORKFLOW_PATH = WORKFLOW_PATH
 
 STATE_PATH = ROOT_STATE_PATH
@@ -106,10 +106,7 @@ def resolve_workflow_path(template_name: str | None = None) -> Path:
     template_path = WORKFLOW_TEMPLATE_DIR / f"{template_name}.yaml"
     if template_path.exists():
         return template_path
-    main_path = PROJECT_ROOT / ".claude" / "workflows" / f"{template_name}.yaml"
-    if main_path.exists():
-        return main_path
-    raise FileNotFoundError(f"Workflow template not found: {template_path} or {main_path}")
+    raise FileNotFoundError(f"Workflow template not found: {template_path}")
 
 
 def load_workflow(template_name: str | None = None) -> dict[str, Any]:

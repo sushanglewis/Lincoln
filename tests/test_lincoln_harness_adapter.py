@@ -191,6 +191,22 @@ def test_concat_appends_command_listing(fake_repo, tmp_path):
     assert "Default agent contract." in text
 
 
+def test_real_command_map_registers_lc_wf_commands():
+    """The shared command-map.yaml must register one lc-wf-* command per workflow."""
+    root = Path(__file__).resolve().parents[1]
+    command_map = yaml.safe_load(
+        (root / ".claude" / "harnesses" / "command-map.yaml").read_text(encoding="utf-8")
+    )
+    commands = command_map["commands"]
+    workflow_names = sorted(p.stem for p in (root / ".claude" / "workflows").glob("*.yaml"))
+    for name in workflow_names:
+        key = f"lc-wf-{name}"
+        assert key in commands, f"missing command-map entry: {key}"
+        assert commands[key]["action"] == "python3 scripts/lincoln_workflow.py"
+    assert "lc-wf-list" in commands
+    assert all(k.startswith("lc-") for k in commands)
+
+
 def test_generated_gate_clause_included(fake_repo, tmp_path):
     """Lightweight gate: generated command templates must mention stage_loader validation."""
     manifest = _basic_manifest()

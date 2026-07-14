@@ -5,7 +5,7 @@ set -euo pipefail
 # The work package is scoped to the issue and lives on the feature branch only.
 #
 # Usage:
-#   scripts/init-lincoln-branch.sh --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push] [--no-commit] [--auto]
+#   scripts/init-lincoln-branch.sh --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--workflow <name>] [--push] [--no-commit] [--auto]
 #
 # Legacy usage (non-issue-driven):
 #   scripts/init-lincoln-branch.sh <session-id> <design-id> [--process-slug <slug>] [--push]
@@ -28,6 +28,7 @@ PUSH=""
 PROCESS_SLUG=""
 NO_COMMIT=""
 AUTO=""
+WORKFLOW_NAME=""
 
 # Detect legacy positional invocation
 if [[ "${1:-}" != --* && $# -ge 2 ]]; then
@@ -74,6 +75,14 @@ while [[ $# -gt 0 ]]; do
             AUTO="1"
             shift
             ;;
+        --workflow)
+            WORKFLOW_NAME="${2:-}"
+            if [[ -z "$WORKFLOW_NAME" ]]; then
+                echo "ERROR: --workflow requires a value"
+                exit 1
+            fi
+            shift 2
+            ;;
         --process-slug)
             PROCESS_SLUG="${2:-}"
             if [[ -z "$PROCESS_SLUG" ]]; then
@@ -84,7 +93,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         *)
             echo "ERROR: unknown argument: $1"
-            echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push] [--no-commit] [--auto]"
+            echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--workflow <name>] [--push] [--no-commit] [--auto]"
             exit 1
             ;;
     esac
@@ -98,7 +107,7 @@ fi
 
 # Require issue number for issue-driven initialization
 if [[ -z "$ISSUE_NUMBER" && ( -z "$SESSION_ID" || -z "$DESIGN_ID" ) ]]; then
-    echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--push] [--no-commit] [--auto]"
+    echo "Usage: $(basename "$0") --issue-number <number> [--session-id <id>] [--design-id <id>] [--process-slug <slug>] [--workflow <name>] [--push] [--no-commit] [--auto]"
     exit 1
 fi
 
@@ -180,32 +189,44 @@ mkdir -p "$PROCESS_ROOT"
 cp -R "$TEMPLATE_ROOT/"* "$PROCESS_ROOT/"
 
 # Initialize workflow-stage.yaml for this issue
-python3 - "$ISSUE_NUMBER" "$SESSION_ID" "$DESIGN_ID" "$BRANCH_NAME" "$RUN_ID" "$ROOT" "$PROCESS_SLUG" <<'PY'
+python3 - "$ISSUE_NUMBER" "$SESSION_ID" "$DESIGN_ID" "$BRANCH_NAME" "$RUN_ID" "$ROOT" "$PROCESS_SLUG" "$WORKFLOW_NAME" <<'PY'
 import sys
 from pathlib import Path
 import yaml
 
-issue_number, session_id, design_id, branch_name, run_id, root_path, process_slug = sys.argv[1:8]
+issue_number, session_id, design_id, branch_name, run_id, root_path, process_slug, workflow_name = sys.argv[1:9]
 root = Path(root_path)
 state_path = root / process_slug / "workflow-stage.yaml"
 
+workflow_name = workflow_name or "interview-to-knowledge"
+workflow_path = root / ".claude" / "workflows" / f"{workflow_name}.yaml"
+if not workflow_path.is_file():
+    sys.exit(f"ERROR: workflow not found: {workflow_path}")
+workflow_data = yaml.safe_load(workflow_path.read_text(encoding="utf-8")).get("workflow", {})
+steps = workflow_data.get("steps", [])
+first_stage = steps[0].get("id", "ingest") if steps else "ingest"
+
 template_path = root / ".claude" / "templates" / "issue-package" / "workflow-stage.yaml"
 state = yaml.safe_load(template_path.read_text(encoding="utf-8"))
+state["workflow"]["name"] = workflow_data.get("name", workflow_name)
+state["workflow"]["version"] = workflow_data.get("version", "1.0.0")
+state["workflow"]["template"] = workflow_name
 state["current_run"]["run_id"] = run_id
 state["current_run"]["branch"] = branch_name
 state["current_run"]["started_at"] = __import__("datetime").datetime.now(__import__("datetime").timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 state["current_run"]["last_updated_at"] = state["current_run"]["started_at"]
-state["current_run"]["current_stage"] = "ingest"
+state["current_run"]["current_stage"] = first_stage
 state["current_run"]["status"] = "in_progress"
 state["current_run"]["issue_number"] = issue_number
+state["current_run"]["execution_mode"] = "team"
 state["current_run"]["variables"]["session_id"] = session_id
 state["current_run"]["variables"]["design_id"] = design_id
 state["current_run"]["variables"]["issue_number"] = issue_number
 state["current_run"]["variables"]["process_slug"] = process_slug
-state["recovery"]["can_resume_from"] = "ingest"
+state["recovery"]["can_resume_from"] = first_stage
 
 state_path.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
-print(f"Initialized workflow-stage.yaml for issue #{issue_number} on branch {branch_name}")
+print(f"Initialized workflow-stage.yaml for issue #{issue_number} on branch {branch_name} (workflow: {workflow_name}, first stage: {first_stage})")
 PY
 
 # Add gitkeep files for empty directories to ensure they are tracked

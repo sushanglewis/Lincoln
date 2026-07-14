@@ -16,6 +16,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 LEGACY_STATE_PATH = PROJECT_ROOT / ".claude" / "workflow-state.yaml"
 ROOT_STATE_PATH = PROJECT_ROOT / ".claude" / "workflow-stage.yaml"
 STATE_FILENAME = "workflow-stage.yaml"
+SOLO_STATE_DIR = ".context/workflow"
+SOLO_PROCESS_SLUG = ".context"
 
 RESERVED_PROCESS_DIRS = {
     ".claude",
@@ -89,6 +91,15 @@ def discover_process_state_paths(project_root: Path = PROJECT_ROOT) -> list[Path
     return sorted(paths, key=lambda p: p.stat().st_mtime, reverse=True)
 
 
+def discover_solo_state_paths(project_root: Path = PROJECT_ROOT) -> list[Path]:
+    """Find session-scoped solo workflow instances under .context/workflow/."""
+    solo_dir = project_root / SOLO_STATE_DIR
+    if not solo_dir.is_dir():
+        return []
+    paths = [p for p in solo_dir.glob("*.yaml") if p.is_file()]
+    return sorted(paths, key=lambda p: p.stat().st_mtime, reverse=True)
+
+
 def resolve_state_path(path: Path | None = None, project_root: Path = PROJECT_ROOT) -> Path:
     """Resolve canonical process state, falling back to legacy root state files."""
     env_path = os.environ.get("LINCOLN_STATE_FILE")
@@ -105,6 +116,9 @@ def resolve_state_path(path: Path | None = None, project_root: Path = PROJECT_RO
     discovered = discover_process_state_paths(project_root)
     if discovered:
         return discovered[0]
+    solo = discover_solo_state_paths(project_root)
+    if solo:
+        return solo[0]
     if ROOT_STATE_PATH.exists():
         return ROOT_STATE_PATH
     if LEGACY_STATE_PATH.exists():
@@ -120,7 +134,10 @@ def get_process_slug(state: dict[str, Any] | None = None, state_path: Path | Non
     if state:
         variables = state.get("current_run", {}).get("variables", {})
         if variables.get("process_slug"):
-            return validate_slug(str(variables["process_slug"]))
+            raw = str(variables["process_slug"])
+            if raw == SOLO_PROCESS_SLUG:
+                return raw
+            return validate_slug(raw)
     if state_path and state_path.name == STATE_FILENAME and state_path.parent != PROJECT_ROOT / ".claude":
         return validate_slug(state_path.parent.name)
     return default_process_slug(PROJECT_ROOT)
@@ -136,7 +153,10 @@ def process_package_root(
     state_path: Path | None = None,
     project_root: Path = PROJECT_ROOT,
 ) -> Path:
-    return project_root / validate_slug(process_slug or get_process_slug(state, state_path))
+    slug = process_slug or get_process_slug(state, state_path)
+    if slug == SOLO_PROCESS_SLUG:
+        return project_root / SOLO_PROCESS_SLUG
+    return project_root / validate_slug(slug)
 
 
 def is_process_state_path(path: Path, project_root: Path = PROJECT_ROOT) -> bool:

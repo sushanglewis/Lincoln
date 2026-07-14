@@ -8,11 +8,13 @@
   "properties": {
     "workflow": {
       "type": "object",
-      "required": ["name", "version", "description", "steps"],
+      "required": ["name", "version", "description", "execution_mode", "steps"],
       "properties": {
         "name": { "type": "string" },
         "version": { "type": "string" },
         "description": { "type": "string" },
+        "execution_mode": { "type": "string", "enum": ["solo", "team"] },
+        "engine": { "type": "string" },
         "loop": {
           "type": "object",
           "properties": {

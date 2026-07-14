@@ -25,3 +25,27 @@ commands:
   lc-benchmark:
     description: 运行 Lincoln benchmark 报告(可选模块)
     action: python3 scripts/lincoln_benchmark_report.py
+  lc-wf-list:
+    description: 列出所有已注册的 Lincoln workflow 及其执行模式(solo/team)
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: list
+  lc-wf-interview-to-knowledge:
+    description: 启动访谈到知识库完整 SOP(team 模式,需 --issue-number)
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: --workflow interview-to-knowledge --issue-number <N> start
+  lc-wf-bug-fix:
+    description: 启动 bug 快速修复工作流(solo 模式,实例写入 .context/workflow/)
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: --workflow bug-fix start
+  lc-wf-design-spike:
+    description: 启动方案预研工作流(solo 模式,实例写入 .context/workflow/)
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: --workflow design-spike start
+  lc-wf-existing-project-iteration:
+    description: 启动已有项目迭代工作流(solo 模式,实例写入 .context/workflow/)
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: --workflow existing-project-iteration start
+  lc-wf-oss-first-design:
+    description: 启动开源方案优先设计工作流(solo 模式,实例写入 .context/workflow/)
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: --workflow oss-first-design start
