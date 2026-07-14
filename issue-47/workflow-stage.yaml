@@ -6,10 +6,10 @@ workflow:
 current_run:
   run_id: 20260713144558-5baa539c
   branch: issue-47
-  current_stage: implement
-  status: validation_failed
+  current_stage: sync-knowledge
+  status: not_started
   started_at: '2026-07-13T14:45:58Z'
-  last_updated_at: '2026-07-13T16:31:09Z'
+  last_updated_at: '2026-07-14T00:21:37Z'
   issue_number: '47'
   variables:
     process_slug: issue-47
@@ -22,7 +22,7 @@ current_run:
   change_name: multi-harness-adapter
   pr_number: ''
   feature_slug: ''
-  previous_stage: split
+  previous_stage: implement
 artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
   - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,\n  and replace placeholders ({issue_number},\
   \ {session_id}, {design_id}, {change_name}).\n- Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
@@ -185,9 +185,18 @@ nodes:
   node_id: implement-2026-07-13T16:31:09Z
   status: in_progress
   started_at: '2026-07-13T16:31:09Z'
-  completed_at: null
-  gate_passed: false
-  approved_by: null
+  completed_at: '2026-07-14T00:20:54Z'
+  gate_passed: true
+  approved_by: human-pm
+  artifacts: []
+  handoff_file: null
+- stage_id: implement
+  node_id: implement-completed
+  status: completed
+  started_at: '2026-07-14T00:21:37Z'
+  completed_at: '2026-07-14T00:21:37Z'
+  gate_passed: true
+  approved_by: system
   artifacts: []
   handoff_file: null
 recovery:
