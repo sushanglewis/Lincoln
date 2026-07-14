@@ -179,14 +179,12 @@ fi
 
 BRANCH_NAME="$CURRENT_BRANCH"
 PROCESS_ROOT="$PROCESS_SLUG"
-TEMPLATE_ROOT="$ROOT/.claude/templates/issue-package"
 
-# Create branch-scoped process package directories from template.
+# Create branch-scoped process package directories.
+# Document templates stay read-only in .claude/templates/issue-package/; agents
+# reference them on demand instead of copying .tpl files into the package.
 echo "==> Creating Lincoln issue work package: $PROCESS_ROOT/"
 mkdir -p "$PROCESS_ROOT"
-
-# Copy template tree, preserving directory structure
-cp -R "$TEMPLATE_ROOT/"* "$PROCESS_ROOT/"
 
 # Initialize workflow-stage.yaml for this issue
 python3 - "$ISSUE_NUMBER" "$SESSION_ID" "$DESIGN_ID" "$BRANCH_NAME" "$RUN_ID" "$ROOT" "$PROCESS_SLUG" "$WORKFLOW_NAME" <<'PY'
@@ -234,6 +232,9 @@ for dir in "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PR
     mkdir -p "$dir"
     touch "$dir/.gitkeep"
 done
+
+# Generate the package document index (documents.yaml) in the package root
+python3 "$ROOT/scripts/lincoln_documents.py" --state-file "$PROCESS_ROOT/workflow-stage.yaml"
 
 if [[ -n "$NO_COMMIT" ]]; then
     echo "==> Skipping git commit (--no-commit requested)"

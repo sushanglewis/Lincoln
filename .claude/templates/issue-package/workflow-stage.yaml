@@ -27,13 +27,18 @@ artifact_guidance: |
   This issue work package holds all artifacts produced while resolving the issue.
 
   How to use templates:
-  - Copy a `.tpl` file from the relevant directory, remove the `.tpl` extension,
-    and replace placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).
+  - Document templates live read-only under `.claude/templates/issue-package/`.
+    Do NOT copy `.tpl` files into this package. When a stage needs a document,
+    read the matching `.tpl` file there as a format reference and author the
+    document directly in the appropriate package directory, replacing
+    placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).
   - Use `designs/` for product design docs, `requirements/` for clarified needs,
     `interviews/` for recorded session outputs, `openspec/` for implementation proposals,
     `docs/` for research and decision records, and `recordings/` for raw input files only.
   - When a stage completes, run `scripts/stage_loader.py --stage <stage> --action record-artifacts`
-    to persist produced artifact paths back into this workflow-stage.yaml.
+    to persist produced artifact paths back into this workflow-stage.yaml; this also
+    refreshes `documents.yaml`, the document index in the package root. Read that
+    index first to learn which documents exist and their approval status.
 
   Approval convention:
   - Add `<!-- status: approved -->` or `[x] PM 已确认<文档类型>` to mark a document

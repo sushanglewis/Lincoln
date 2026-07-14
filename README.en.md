@@ -1,0 +1,402 @@
+# Lincoln — AI-Native R&D Workflow & Product-Engineering Collaboration System
+
+> [中文](README.md) | English
+
+> **What is Lincoln?** Lincoln is an AI-Native R&D workflow system built on **Conductor + Claude Code + OpenSpec + GitHub + Obsidian**. It runs on **stages** for rhythm, **gates** for quality, and **repeatable SOPs** as its backbone — chaining requirements clarification, product design, prototyping, TDD planning, OpenSpec proposals, task splitting, implementation, and knowledge-base distillation into one human-AI collaborative pipeline.
+>
+> It works for **vibe-coding developers and indie makers** iterating with an Agent on local projects, and for **product, design, engineering, and QA teams** collaborating across roles with GitHub issues as the unit of work. **Conductor** is the recommended environment (other IDEs/CLIs work too), and role contracts, `lc-*` commands, and stage workflows can be derived for **codex / opencode** via multi-harness adaptation.
+
+## Vision
+
+Lincoln exists to serve indie developers and product-engineering teams — helping them use agents, skills, and plugins more appropriately at every stage of the product R&D lifecycle, while following more disciplined development processes, code management, and knowledge distillation.
+
+- **Whole lifecycle, not a point tool**: from requirements clarification, product design, prototyping, and TDD planning to implementation and acceptance, every stage has explicit role, skill, and artifact contracts — agents step in at the right moments instead of replacing human judgment.
+- **Disciplined, not bureaucratic**: stage gates, human gates, branch hygiene, and the dual-track knowledge model (process documents stay on the branch, durable knowledge merges to the vault) keep collaboration traceable, handoff-ready, and auditable.
+- **Low-invasion and pluggable**: Lincoln blends into your project as a harness plugin — skills, hooks, workflow templates, and multi-harness adapters all extend along one meta-model, without asking you to reshape your project around it.
+
+## First time here? Let Claude install it for you
+
+Lincoln's hooks usually trigger installation automatically when you first open the repo. If Claude doesn't start on its own, copy this prompt and send it to Claude:
+
+> Please help me complete the Lincoln initial setup:
+> 1. Ask me two questions first and decide the install scope based on my answers:
+>    - Do I need **recording transcription** (interview audio → transcript)? Only install ffmpeg and the transcription CLI if yes.
+>    - Do I need to run the **benchmark** (Lincoln benchmark evaluation)?
+> 2. Check the Lincoln environment in this repo and list all missing dependencies.
+> 3. Install external skills: superpowers, gsd (both tracking upstream main) into `~/.claude/skills/`, ensuring correct refs.
+> 4. Install CLI tools: openspec, gh; only if I need recording transcription, also install ffmpeg and build `tools/lincoln-record/` (the Rust local recording & transcription CLI).
+> 5. Install the oh-my-claudecode plugin.
+> 6. Interactively configure `.github/openspec-config.yml` (ask me for the GitHub owner and repo name).
+> 7. Run `scripts/init-project.sh` to finish project initialization.
+> 8. If I need the benchmark, explain how to use `scripts/lincoln_benchmark.py`.
+> 9. Report status when done.
+>
+> Ask for my confirmation before installing any global tool or writing config.
+
+If you only need the [lightweight solo path](#quick-start), you can skip `gh`, `ffmpeg`, the transcription CLI, and `.github/openspec-config.yml` — keeping just `python3`, a Claude Code environment, and Lincoln's own hooks.
+
+> **Where do I start?**
+> - **Vibe-coding / indie maker** (personal projects, AI pair programming): jump to the lightweight solo path in [Quick Start](#quick-start).
+> - **Team collaborator** (product, design, engineering, QA, driven by GitHub issues): jump to the team issue path in [Quick Start](#quick-start).
+> - **Framework developer / contributor** (extending agents, skills, hooks, workflow templates): read [Framework Docs](#framework-docs), [`CLAUDE.md`](CLAUDE.md), and [Extending & Contributing to Lincoln](#extending--contributing-to-lincoln).
+
+## Quick Start
+
+Lincoln offers two entry paths — pick whichever fits you.
+
+### Path A: Lightweight solo path (vibe-coding / indie maker)
+
+If you already have a local project, or just an idea you want to iterate on quickly with an Agent, you can start directly from a workflow template — no GitHub issue required.
+
+1. Open the project repo in Conductor.
+2. Ask Claude to run:
+   ```bash
+   python scripts/lincoln-setup.py check
+   ```
+3. Pick a template for your scenario:
+   - **Existing source code, want the Agent to understand it before iterating**: use `existing-project-iteration`
+   - **Just an idea, want to explore a solution/prototype first**: use `design-spike`
+4. Tell Claude:
+   - If you chose `existing-project-iteration`:
+     > Please use Lincoln's `existing-project-iteration` template to help me understand the current codebase and plan the next feature iteration.
+   - If you chose `design-spike`:
+     > Please use Lincoln's `design-spike` template to help me clarify this idea and produce a design review and prototype.
+5. If you later decide to adopt the team flow or need GitHub issue tracking, run:
+   ```bash
+   scripts/init-lincoln-branch.sh --issue-number <number> ...
+   ```
+   to create a new issue work package, then manually move the confirmed requirements/design artifacts from your solo path into the new `issue-<number>/` directory.
+
+> Solo-path artifacts land in the work-package directory chosen automatically by the template (e.g. workspace name or repo name): codebase-knowledge artifacts go to `knowledge/`, while design, requirements, and research artifacts go to `<process_slug>/designs/`, `<process_slug>/requirements/`, and `<process_slug>/docs/research/` respectively.
+
+### Path B: Team issue path (default)
+
+On GitHub, click **Use this template** to create your project repo, then clone it into a local Conductor workspace.
+
+#### Initialize an issue work package
+
+Every requirement maps to one GitHub issue and one Lincoln feature branch. `scripts/init-lincoln-branch.sh` creates a branch from the issue number and generates the issue-specific work-package directory (initializing `workflow-stage.yaml` and the document index `documents.yaml`; the `.tpl` templates under `.claude/templates/issue-package/` stay read-only and are no longer copied into the package — agents consult them for format and author documents directly):
+
+```bash
+# Run on the main branch (an issue-<number> branch is created automatically)
+scripts/init-lincoln-branch.sh --issue-number 21 \
+  --session-id 2026-07-08-stakeholder \
+  --design-id checkout-redesign \
+  --push
+```
+
+Parameters:
+- `--issue-number`: GitHub issue number, required.
+- `--session-id`: interview/requirements session ID, format `YYYY-MM-DD-descriptive-name`; auto-generated if omitted.
+- `--design-id`: design topic ID, kebab-case; auto-generated if omitted.
+- `--process-slug`: work-package directory name, defaults to `issue-<number>`.
+- `--workflow`: workflow name (under `.claude/workflows/`), defaults to `interview-to-knowledge`.
+- `--push`: push the branch to remote after initialization.
+
+> You can also start workflows directly via `lc-wf-*` commands (`python3 scripts/lincoln_workflow.py`): `lc-wf-list` lists all workflows; team workflows are equivalent to calling this script, while solo workflows create session-scoped instances under `.context/workflow/` (gitignored, not shared across members). See [`.claude/workflows/README.md`](.claude/workflows/README.md).
+
+After running, the branch contains:
+
+```
+issue-<N>/
+├── workflow-stage.yaml          # issue runtime state & handoff protocol
+├── documents.yaml               # document index: per-stage artifacts & human-approval status (auto-generated)
+├── recordings/                  # raw recordings (gitignored)
+├── interviews/<session-id>/     # transcripts, summaries, raw insights
+├── requirements/<session-id>/   # requirements docs, user stories, PRD
+├── designs/<design-id>/         # design review, scenarios, data model, flows, prototype, TDD plan
+├── openspec/changes/            # OpenSpec change proposals
+├── docs/research/               # OSS research notes, decision records
+└── handoffs/                    # stage handoff documents
+```
+
+`issue-<N>/workflow-stage.yaml` is the stage handoff protocol shared between humans and Agents; `.claude/templates/issue-package/workflow-stage.yaml` is only the template used to generate it. `issue-<N>/documents.yaml` is the package document index, refreshed automatically by `scripts/lincoln_documents.py` on every state save, recording each artifact's stage, gate, and human-confirmation status — an Agent reads it first to learn which documents already exist in the package.
+
+**Cross-member, cross-Agent collaboration**: branch names must strictly follow the `issue-<number>` convention. When any member or Agent receives a handoff from an upstream node, the branch name alone locates the issue and its work package (`{process_slug}/workflow-stage.yaml`), keeping issue, branch, and PR in end-to-end one-to-one correspondence from requirements to final acceptance. Use `scripts/list-active-lincoln-branches.sh` to view the stage status and waiting-on of all active issue branches.
+
+> Full template documentation lives in [`.claude/workflows/README.md`](.claude/workflows/README.md). Workflow templates are scenario references: a human may ask the Agent to follow a specific workflow for the current scenario — automatic routing is not enforced.
+
+---
+
+## Natural-Language Interaction
+
+Lincoln is an AI-Native workflow — **you never need to type commands in a terminal**. Describe your intent in plain language and the Agent translates it into the right script and runs it for you; you can also invoke skills explicitly with `/lc-*` in your agent harness:
+
+| You say | Agent does |
+|---------|------------|
+| "Start working on issue 55" | `/lc-wf-interview-to-knowledge` (or `/lc-init-branch`) sets up the branch and work package |
+| "What's the status?" | `/lc-status` reports current stage, waiting-on, and next step |
+| "Submit this stage's artifacts" | `/lc-submit` records artifacts and refreshes `documents.yaml` |
+| "Approved" | `/lc-approve` marks the current gate (human PM only) |
+| "Generate the handoff" | `/lc-handoff` writes the handoff document |
+| "Move to the next stage" | Agent checks the gate, then transitions |
+
+The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying commands (`scripts/stage_loader.py`, etc.) are always executed by the Agent — users never need to know them.
+
+## What's New (v1.2.0)
+
+- **Issue-driven work packages**: `scripts/init-lincoln-branch.sh --issue-number ...` creates an issue-specific branch and `{process_slug}/` work package, so process documents no longer pollute `main`.
+- **Templated work packages**: `.claude/templates/issue-package/` provides a unified directory structure and read-only `.tpl` reference templates (no longer copied into the package at init; agents consult them on demand).
+- **Package document index**: `{process_slug}/documents.yaml` is refreshed automatically by `scripts/lincoln_documents.py` on every state save, recording per-stage artifacts and their gate / human-confirmation status.
+- **Main merge-hygiene check**: `scripts/check-main-merge-hygiene.py` (the CI gate for PRs → main) rejects every file under any directory containing `workflow-stage.yaml`, preventing issue work packages from being merged into main by mistake.
+- **Instantiated state files**: runtime state lives in `{process_slug}/workflow-stage.yaml`, not `.claude/workflow-stage.yaml`.
+- **Unified workflow entry `lc-wf-*`**: [`.claude/workflows/README.md`](.claude/workflows/README.md) maintains all SOP templates; `lc-wf-*` commands (backed by `scripts/lincoln_workflow.py`) unify how solo / team `execution_mode` workflows start.
+- **Local recording & transcription CLI**: `tools/lincoln-record/` (Rust + whisper-rs/Metal + speaker diarization) provides local recording and transcription, alongside the redesigned `tools/lincoln/` TUI; the old `tools/record-interview/` is deprecated.
+- **Multi-harness adaptation**: role contracts, `lc-*` commands, and stage workflows can be derived for codex / opencode — see [Multi-harness support](#multi-harness-support-codex--opencode) below.
+- **Claude Code plugin packaging**: a new `.claude-plugin/` manifest allows installing Lincoln as a Claude Code plugin.
+
+---
+
+## Workflow Status & Handoff
+
+### Check the current branch status
+
+```bash
+python scripts/lincoln-status.py --format table
+```
+
+Output includes: current stage, waiting-on, loaded context, recommended skills, artifact status, next action. Supports `--format json|table|markdown`.
+
+### Generate a handoff document
+
+When pausing or switching collaborators:
+
+```bash
+python scripts/stage_loader.py --stage <current-stage> --action handoff-report
+```
+
+Generates `.context/lc-handoff-<stage>.md` or `{process_slug}/handoffs/` documents containing the current stage, confirmed artifacts, open questions, next role, and recommended skills.
+
+After a stage passes human confirmation:
+
+```bash
+python scripts/stage_loader.py --stage <current-stage> --action approve-gate
+```
+
+Marks that stage's gate as approved.
+
+### List all in-flight Lincoln branches
+
+```bash
+scripts/list-active-lincoln-branches.sh
+# Only branches waiting on me
+scripts/list-active-lincoln-branches.sh --waiting-for-me
+```
+
+### Audit workflow health
+
+```bash
+python scripts/lincoln-audit.py --format markdown
+```
+
+Outputs a PASS/WARN/FAIL report covering state consistency, artifact completeness, gate compliance, skill coverage, and anomaly detection.
+
+---
+
+## Framework Docs
+
+Lincoln's core definitions are inlined in `.claude/`:
+
+- [`.claude/stages/stage-manifest.yaml`](.claude/stages/stage-manifest.yaml) — registry and capability boundaries for Stages, Gates, Artifacts, and Roles.
+- [`.claude/skills/routing.yaml`](.claude/skills/routing.yaml) — maps external skills and Lincoln-native skills per stage.
+- [`.claude/workflows/README.md`](.claude/workflows/README.md) — index and routing notes for all SOP workflow templates.
+- [`.claude/schemas/`](.claude/schemas/) — JSON Schemas for `workflow-stage`, `stage-definition`, and `workflow-template`.
+- [`CLAUDE.md`](CLAUDE.md) — Agent startup self-check, human-gate rules, handoff protocol, skill invocation rules.
+
+---
+
+## Branch-Level Workflow & Stage State
+
+- Each requirement uses its own Lincoln feature branch (named `issue-<N>`, where N is the GitHub issue number).
+- Stage state is committed with the branch, stored in `{process_slug}/workflow-stage.yaml`.
+- Process documents (`recordings/`, `interviews/`, `requirements/`, `designs/`, `openspec/`, `docs/research/`) travel with the feature branch and are **never merged to `main`**.
+- The current owner pushes the feature branch after advancing stages locally; downstream roles check out the same branch to continue.
+- Every stage has its own context under `.claude/stages/<stage-id>/` (`AGENTS.md`, `CHECKLIST.md`, `SKILLS.md`, `PROMPT.md`).
+
+At Agent startup, `.claude/hooks/on-session-start.sh` automatically resolves `{process_slug}/workflow-stage.yaml`, loads the current stage context, reads handoff documents, and injects recommended skills — no need to manually read README then CLAUDE.md.
+
+---
+
+## Workflow Overview
+
+### Full team pipeline
+
+```
+Interview recording → Transcript & summary → Requirements clarification → Product design → Pencil prototype → TDD development plan → OpenSpec proposal → GitHub Issues → Implementation → PR merge → Obsidian knowledge base
+```
+
+### Lightweight solo pipeline (vibe-coding)
+
+```
+Idea / local code → Requirements clarification → Design review → TDD plan → Implementation → Local verification → Knowledge sync
+```
+
+The solo path can skip interview recordings, OpenSpec proposals, and GitHub issue splitting, iterating directly with the Agent on the project at hand; when upgrading to team collaboration, fill in the intermediate stages.
+
+For template selection details see [`.claude/workflows/README.md`](.claude/workflows/README.md).
+
+---
+
+## Tools
+
+Lincoln ships three companion tools:
+
+- `tools/lincoln/` — Ink/React-based TUI recording frontend (the `lincoln` CLI).
+- `tools/lincoln-record/` — Rust local recording & transcription CLI (whisper-rs + Metal acceleration, speaker diarization); recommended for local interview transcription. Models are downloaded via the hf-mirror.com mirror.
+- `tools/record-interview/` — the old Python recording backend, **deprecated**, kept for historical reference only.
+
+Install and usage instructions live in each directory's README or `--help`.
+
+---
+
+## Directory Structure
+
+```
+.
+├── issue-<number>/                     # issue work package (team/collaboration; solo vibe-coding may start with the template-chosen package directory and migrate later)
+│   ├── workflow-stage.yaml             # issue runtime state & handoff protocol
+│   ├── documents.yaml                  # document index: per-stage artifacts & human-approval status (auto-generated)
+│   ├── recordings/                     # raw audio (gitignored)
+│   ├── interviews/<session-id>/        # transcripts & summaries
+│   ├── requirements/<session-id>/      # requirements documents
+│   ├── designs/<design-id>/            # design docs, Pencil prototype, TDD plan
+│   ├── openspec/changes/               # OpenSpec change proposals
+│   ├── docs/research/                  # research & decision records
+│   └── handoffs/                       # stage handoff documents
+├── knowledge/                          # project-level Obsidian vault (merged to main)
+├── products/                           # product code placeholder
+├── oss/                                # open-source candidate tracking
+├── .claude/                            # Claude Code system-prompt layer (auto-loaded)
+│   ├── agents/                         # Agent role templates
+│   ├── hooks/                          # lifecycle hooks (wired by settings.json)
+│   ├── schemas/                        # JSON Schema validation
+│   ├── skills/                         # native skills (incl. routing.yaml, dependencies.yaml)
+│   ├── stages/                         # stage contexts
+│   ├── templates/issue-package/        # issue work-package templates
+│   ├── workflows/                      # SOP workflow templates
+│   │   └── README.md (workflow index)   # ← route here for all templates
+│   ├── settings.json                   # Claude Code project settings
+├── .context/                           # session-scoped temp files (gitignored), incl. solo workflow instances .context/workflow/<name>.yaml
+├── .github/                            # issue templates, Actions, OpenSpec config
+├── scripts/                            # initialization, status, audit tools
+├── tests/                              # pytest test suite
+└── tools/                              # lincoln TUI + lincoln-record (Rust) + record-interview (deprecated)
+```
+
+---
+
+## Dependencies
+
+- `python3` (≥3.10 recommended)
+- `node` ≥ 20 (for `tools/lincoln/`)
+- `gh` CLI (authenticated)
+- `openspec` CLI: `npm install -g @fission-ai/openspec`
+- `ffmpeg` (optional, only for recording transcription)
+- Rust toolchain (`cargo`, optional, only to build the `tools/lincoln-record/` local transcription CLI; local transcription is provided by the bundled whisper-rs — no Python Whisper dependency needed)
+- Pencil app or Pencil MCP (for `.pen` prototypes)
+- `ecc` CLI (from everything-claude-code)
+- Obsidian (optional, for browsing the vault visually)
+
+Benchmark (optional): `scripts/lincoln_benchmark.py` is the entry point for benchmarking Lincoln workflows; run `python3 scripts/lincoln_benchmark.py --help` for usage.
+
+Lincoln also depends on several external skills/CLIs — see `.claude/skills/dependencies.yaml`. After installing or upgrading, ask Claude to run:
+
+```bash
+python scripts/lincoln-setup.py check
+```
+
+---
+
+## Installing as a Claude Code Plugin
+
+Lincoln can be installed as a Claude Code plugin. Manifests live in `.claude-plugin/`:
+
+- `.claude-plugin/plugin.json` — plugin metadata and skill entry points.
+- `.claude-plugin/marketplace.json` — marketplace registration info.
+
+The install method depends on your Claude Code plugin manager (e.g. oh-my-claudecode). Usually, referencing this repo as a plugin source is enough.
+
+---
+
+## Multi-harness support (codex / opencode)
+
+Lincoln's end-to-end logic (role contracts, stage workflows, `lc-*` commands) can be adapted to codex and opencode. `.claude/` is the single source of truth; harness artifacts are derived by `scripts/lincoln_harness_adapter.py` from `.claude/harnesses/<name>.yaml` manifests — **never edit generated artifacts by hand**.
+
+Generate at install time (or pass `--harness` during bootstrap):
+
+```bash
+# Generate the codex adaptation (AGENTS.md + ~/.codex/prompts/lc-*.md)
+python3 scripts/lincoln-setup.py generate-harness --harness codex
+
+# Generate the opencode adaptation (.opencode/agent/*.md + .opencode/command/lc-*.md)
+python3 scripts/lincoln-setup.py generate-harness --harness opencode
+
+# Bootstrap in one step
+python3 scripts/lincoln-setup.py bootstrap --harness codex --harness opencode
+```
+
+Generated artifacts are not committed to git (`.opencode/` and `AGENTS.md` are in `.gitignore`). CI verifies via `scripts/check-harness-drift.sh` (wired into `static-check.sh`) that manifests can be generated and local artifacts haven't drifted.
+
+Gates and CI stay lightweight: stage progression always goes through `python3 scripts/stage_loader.py --stage <stage> --action validate-entry/validate-exit`, already written into each harness's command templates; human_gate stages still require explicit human PM confirmation.
+
+### Command naming migration: `lincoln-*` → `lc-*` (breaking)
+
+Skill/command entry points have been renamed from `lincoln-*` to `lc-*` (e.g. `lincoln-status` → `lc-status`). When `lincoln-setup.py` runs, it detects old directories under `~/.claude/skills/` and prints a migration hint; after confirming there are no local changes, delete the old directories manually. Script file names (`scripts/lincoln-status.py` etc.) are unchanged.
+
+---
+
+## Conventions & Constraints
+
+- At Agent startup, `.claude/hooks/on-session-start.sh` automatically loads the current stage context — no need to traverse every file manually.
+- Behavioral contracts live in [`CLAUDE.md`](CLAUDE.md); stage-level context lives in `.claude/stages/<stage-id>/`.
+- `human_gate: true` stages require explicit final human confirmation before proceeding.
+- Stage exit validation runs via `scripts/validate_stage.py`.
+
+---
+
+## Extending & Contributing to Lincoln
+
+Lincoln's `.claude/` is an open system-prompt layer — contributions built on the same meta-model are welcome:
+
+- **Agent role templates** (`.claude/agents/`): define new role behaviors and contexts for specific scenarios.
+- **Skills** (`.claude/skills/`): package methodology sub-skills or Lincoln-native skills.
+- **Hooks lifecycle extensions** (`.claude/hooks/`): inject custom logic at session start, before/after tool calls, etc.
+- **Workflow templates** (`.claude/workflows/`): define complete stage sequences from requirements input to knowledge distillation for different scenarios.
+
+Before submitting a PR, please consult:
+
+- [`CLAUDE.md`](CLAUDE.md) — Agent contract, human-gate rules, and artifact conventions.
+- [`.claude/workflows/README.md`](.claude/workflows/README.md) — steps for adding a workflow template.
+- [`.claude/stages/stage-manifest.yaml`](.claude/stages/stage-manifest.yaml) — registry of stages, gates, artifacts, and roles.
+- [`.claude/skills/routing.yaml`](.claude/skills/routing.yaml) — stage-to-skill mapping.
+- [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml) — external skill and CLI dependency manifest.
+
+> Tip: when adding a workflow template, also update the quick-routing table and template details in `.claude/workflows/README.md`; when adding skills or hooks, ensure compatibility with `.claude/settings.json` and `dependencies.yaml`, and add the necessary validation and tests.
+
+---
+
+## License & Third-Party Acknowledgments
+
+Lincoln itself is released under the [MIT License](LICENSE), Copyright (c) 2026 苏尚lewis (sushanglewis).
+
+Lincoln references the following open-source projects as external skills, plugins, and CLI dependencies (declared in [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml), each used under its own license):
+
+| Project | Source | Purpose | License |
+|---|---|---|---|
+| superpowers | [obra/superpowers](https://github.com/obra/superpowers) | general skills (brainstorming, TDD, etc.) | MIT |
+| gsd | [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) | process skills (import, docs-update, etc.) | MIT |
+| oh-my-claudecode | [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | optional multi-agent orchestration plugin | MIT |
+| openspec | [Fission-AI/openspec](https://github.com/Fission-AI/openspec) | change proposal CLI | MIT |
+| gh | [cli/cli](https://github.com/cli/cli) | GitHub CLI | MIT |
+| ffmpeg | [FFmpeg](https://ffmpeg.org/) | optional, recording transcription | LGPL/GPL (see website) |
+| whisper-rs | [tazz4843/whisper-rs](https://github.com/tazz4843/whisper-rs) | optional, local speech transcription for `tools/lincoln-record/` (whisper.cpp bindings) | MIT |
+
+External agent definitions are synced by `scripts/sync-external-agents.sh` per manifest; sources and licenses are listed in [`.claude/agents/external/NOTICES.md`](.claude/agents/external/NOTICES.md) (everything-claude-code, oh-my-claudecode, wshobson/agents — all MIT).
+
+---
+
+## Learn More
+
+- [OpenSpec docs](https://github.com/Fission-AI/openspec)
+- [Obsidian WikiLinks](https://help.obsidian.md/Linking+notes+and+files/Internal+links)
+- [`.claude/workflows/README.md`](.claude/workflows/README.md) — overview of Lincoln workflow templates

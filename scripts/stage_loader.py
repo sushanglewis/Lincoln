@@ -36,6 +36,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import yaml
 
 from scripts import lincoln_trace
+from scripts.lincoln_documents import write_documents_index
 from scripts.lincoln_paths import (
     LEGACY_STATE_PATH,
     ROOT_STATE_PATH,
@@ -149,6 +150,7 @@ def save_state(state: dict[str, Any], path: Path | None = None) -> None:
     path = resolve_state_path(path)
     state["current_run"]["last_updated_at"] = now_iso()
     save_yaml(path, state)
+    write_documents_index(state, path)
 
 
 def resolve_state_path(path: Path | None = None) -> Path:

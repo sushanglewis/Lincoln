@@ -28,3 +28,23 @@ def test_allows_durable_assets():
         "knowledge/03-features/checkout.md",
         "scripts/stage_loader.py",
     ]) == []
+
+
+def test_rejects_every_file_inside_process_package_dir(tmp_path, monkeypatch):
+    package = tmp_path / "issue-52"
+    package.mkdir()
+    (package / "workflow-stage.yaml").write_text("schema_version: 1\n", encoding="utf-8")
+    monkeypatch.setattr(merge_hygiene, "ROOT", tmp_path)
+    bad = merge_hygiene.violations([
+        "issue-52/README.md",
+        "issue-52/notes.md",
+        "issue-52/documents.yaml",
+        "issue-52/handoffs/lc-handoff-ingest.md",
+    ])
+    assert len(bad) == 4
+
+
+def test_allows_files_in_dir_without_state_file(tmp_path, monkeypatch):
+    (tmp_path / "misc").mkdir()
+    monkeypatch.setattr(merge_hygiene, "ROOT", tmp_path)
+    assert merge_hygiene.violations(["misc/notes.md"]) == []

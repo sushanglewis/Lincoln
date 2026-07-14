@@ -9,7 +9,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from scripts.lincoln_paths import RESERVED_PROCESS_DIRS
+from scripts.lincoln_paths import RESERVED_PROCESS_DIRS, STATE_FILENAME
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 ROOT_PROCESS_DIRS = {
@@ -31,14 +33,18 @@ PROCESS_SUBPATHS = {
 
 ALLOWED_ROOT_PREFIXES = (
     ".claude/",
+    ".claude-plugin/",
     ".conductor/",
     ".github/",
     "CLAUDE.md",
+    "LICENSE",
     "README.md",
+    "RELEASE.md",
     "knowledge/",
     "oss/README.md",
     "oss/projects.yaml",
     "products/",
+    "requirements.txt",
     "scripts/",
     "tests/",
     "tools/",
@@ -57,6 +63,13 @@ def changed_paths(base: str) -> list[str]:
     return [line.strip() for line in result.stdout.splitlines() if line.strip()]
 
 
+def is_process_package_dir(top_dir: str) -> bool:
+    """A directory is a Lincoln process package if it contains workflow-stage.yaml."""
+    if top_dir in RESERVED_PROCESS_DIRS or top_dir in ROOT_PROCESS_DIRS:
+        return False
+    return (ROOT / top_dir / STATE_FILENAME).is_file()
+
+
 def is_process_package_path(path: str) -> bool:
     parts = Path(path).parts
     if not parts:
@@ -64,6 +77,9 @@ def is_process_package_path(path: str) -> bool:
     top = parts[0]
     if top in RESERVED_PROCESS_DIRS or top in ROOT_PROCESS_DIRS:
         return False
+    # Reject every file inside a process package directory, not only known subpaths.
+    if is_process_package_dir(top):
+        return True
     if len(parts) == 2 and parts[1] == "workflow-stage.yaml":
         return True
     rest = "/".join(parts[1:])

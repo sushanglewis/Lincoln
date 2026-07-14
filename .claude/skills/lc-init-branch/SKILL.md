@@ -34,8 +34,8 @@ required_tools:
 PM 在 Conductor 中基于 GitHub issue 初始化 workspace 后，调用此 skill 创建对应的过程包：
 
 1. 若当前在 `main`，切出 `issue-{number}` feature branch；若已处于 feature branch，则使用该分支。
-2. 从 `.claude/templates/issue-package/` 复制完整模板到 `{process_slug}/`。
-3. 写入 `{process_slug}/workflow-stage.yaml`，设置 `issue_number`、`session_id`、`design_id`、`process_slug`。
+2. 创建 `{process_slug}/` 目录结构（`.gitkeep` 占位），`.tpl` 模板只读保留在 `.claude/templates/issue-package/` 供 Agent 按需参考生成文档，不复制进工作包。
+3. 写入 `{process_slug}/workflow-stage.yaml`，设置 `issue_number`、`session_id`、`design_id`、`process_slug`，并自动生成 `{process_slug}/documents.yaml` 文档索引。
 4. Commit 初始过程包，可选 `--push` 到远程。
 
 示例：

@@ -12,7 +12,7 @@
 - `skills/` — Lincoln 原生技能与外部技能路由（`routing.yaml`、`dependencies.yaml`）。
 - `stages/` — 阶段上下文（`AGENTS.md`、`CHECKLIST.md`、`SKILLS.md`、`PROMPT.md`）。
 - `workflows/` — SOP 工作流模板定义与索引 [`README.md`](.claude/workflows/README.md)。
-- `templates/issue-package/` — issue 工作包模板（只读，用于初始化）。
+- `templates/issue-package/` — issue 工作包模板（只读；init 仅读取 `workflow-stage.yaml` 初始化实例，其余 `.tpl` 供 Agent 按需参考生成文档，不复制进工作包）。
 - `schemas/` — JSON Schema 校验。
 - `hooks/` — 生命周期 hooks，由 `.claude/settings.json` 自动挂接。
 
@@ -57,11 +57,12 @@ scripts/init-lincoln-branch.sh --issue-number <number>
 
 ## Issue 工作包
 
-每个 issue 对应一个分支（如 `issue-21`）和一个工作包目录（默认 `{process_slug}=issue-21`）：
+每个 issue 对应一个分支（命名约定 `issue-<N>`，N 为 GitHub issue 编号）和一个工作包目录（默认 `{process_slug}=issue-<N>`）：
 
 ```
-issue-21/
+issue-<N>/
 ├── workflow-stage.yaml          # 阶段状态与 handoff 协议
+├── documents.yaml               # 文档索引：各阶段产物与 human 确认状态（自动生成）
 ├── recordings/                  # 原始录音（只读）
 ├── interviews/<session-id>/
 ├── requirements/<session-id>/
@@ -71,7 +72,7 @@ issue-21/
 └── handoffs/
 ```
 
-过程文档随 feature 分支传递，不合并到 `main`。Agent 在任何阶段产生的产物都应写入 `{process_slug}/` 下的对应目录，并可通过 `scripts/stage_loader.py --stage <stage> --action record-artifacts` 将产物路径持久化回 `{process_slug}/workflow-stage.yaml`。
+过程文档随 feature 分支传递，不合并到 `main`。Agent 在任何阶段产生的产物都应写入 `{process_slug}/` 下的对应目录，并可通过 `scripts/stage_loader.py --stage <stage> --action record-artifacts` 将产物路径持久化回 `{process_slug}/workflow-stage.yaml`。每次状态保存都会自动刷新工作包根目录的 `documents.yaml` 文档索引（由 `scripts/lincoln_documents.py` 生成），Agent 开始工作前应先读它了解工作包内已有文档及其 human 确认状态。文档模板（`.tpl`）只读地保留在 `.claude/templates/issue-package/` 下，初始化时不再复制进工作包；Agent 需要生成文档时参考对应 `.tpl` 格式直接在工作包目录内撰写。
 
 ## Human Gate Rules
 
@@ -122,6 +123,7 @@ python3 scripts/stage_loader.py --stage <current_stage> --action approve-gate
 5. **不修改原始录音**：`{process_slug}/recordings/` 中的文件只读。
 6. **Pencil 原型受控处理**：`.pen` 文件只能通过 Pencil 应用或 Pencil 工具处理。
 7. **只更新实例状态**：永远不要直接修改 `.claude/templates/issue-package/workflow-stage.yaml`。
+8. **自然语言优先**：Lincoln 是 AI-Native 工作流，人类用自然语言或 `/lc-*` 技能表达意图即可，永远不应被要求亲自在终端输入 `python3 scripts/...` 命令；所有脚本调用由 Agent 代为执行并翻译结果。
 
 ## 沟通风格
 

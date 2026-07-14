@@ -22,6 +22,14 @@ commands:
     description: 生成阶段 handoff 报告
     action: python3 scripts/stage_loader.py
     args_hint: --stage <current_stage> --action handoff-report
+  lc-submit:
+    description: 提交当前阶段产物(写入 workflow-stage.yaml 并刷新 documents.yaml)
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action record-artifacts
+  lc-approve:
+    description: 人类 PM 确认当前阶段 gate 通过(仅 human_gate 阶段)
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action approve-gate
   lc-benchmark:
     description: 运行 Lincoln benchmark 报告(可选模块)
     action: python3 scripts/lincoln_benchmark_report.py
