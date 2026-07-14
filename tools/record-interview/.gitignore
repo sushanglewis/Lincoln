@@ -1,6 +1,0 @@
-.coverage
-build/
-*.egg-info/
-__pycache__/
-*.pyc
-.pytest_cache/

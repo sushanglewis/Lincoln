@@ -2,13 +2,7 @@
 
 > [中文](README.md) | English
 
-> **What is Lincoln?** Lincoln is an AI-Native R&D workflow system built on **Conductor + Claude Code + OpenSpec + GitHub + Obsidian**. It runs on **stages** for rhythm, **gates** for quality, and **repeatable SOPs** as its backbone — chaining requirements clarification, product design, prototyping, TDD planning, OpenSpec proposals, task splitting, implementation, and knowledge-base distillation into one human-AI collaborative pipeline.
->
-> It works for **vibe-coding developers and indie makers** iterating with an Agent on local projects, and for **product, design, engineering, and QA teams** collaborating across roles with GitHub issues as the unit of work. **Conductor** is the recommended environment (other IDEs/CLIs work too), and role contracts, `lc-*` commands, and stage workflows can be derived for **codex / opencode** via multi-harness adaptation.
-
-## Vision
-
-Lincoln exists to serve indie developers and product-engineering teams — helping them use agents, skills, and plugins more appropriately at every stage of the product R&D lifecycle, while following more disciplined development processes, code management, and knowledge distillation.
+> **What is Lincoln?** Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, code hosting, knowledge management, skills, plugins, and automation** — dedicated to serving indie developers and product-engineering teams, helping them use agents, skills, and plugins more appropriately at every stage of the product R&D lifecycle, while following more disciplined development processes, code management, and knowledge distillation. It runs on **stages** for rhythm, **gates** for quality, and **repeatable SOPs** as its backbone, chaining requirements clarification, product design, prototyping, TDD planning, OpenSpec proposals, task splitting, implementation, and knowledge-base distillation into one human-AI collaborative pipeline; it works for **vibe-coding developers and indie makers** iterating with an Agent on local projects, and for **product, design, engineering, and QA teams** collaborating across roles with GitHub issues as the unit of work. **Conductor** is the recommended environment (other IDEs/CLIs work too), and role contracts, `lc-*` commands, and stage workflows can be derived for **codex / opencode** via multi-harness adaptation.
 
 - **Whole lifecycle, not a point tool**: from requirements clarification, product design, prototyping, and TDD planning to implementation and acceptance, every stage has explicit role, skill, and artifact contracts — agents step in at the right moments instead of replacing human judgment.
 - **Disciplined, not bureaucratic**: stage gates, human gates, branch hygiene, and the dual-track knowledge model (process documents stay on the branch, durable knowledge merges to the vault) keep collaboration traceable, handoff-ready, and auditable.
@@ -141,7 +135,7 @@ The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying
 - **Main merge-hygiene check**: `scripts/check-main-merge-hygiene.py` (the CI gate for PRs → main) rejects every file under any directory containing `workflow-stage.yaml`, preventing issue work packages from being merged into main by mistake.
 - **Instantiated state files**: runtime state lives in `{process_slug}/workflow-stage.yaml`, not `.claude/workflow-stage.yaml`.
 - **Unified workflow entry `lc-wf-*`**: [`.claude/workflows/README.md`](.claude/workflows/README.md) maintains all SOP templates; `lc-wf-*` commands (backed by `scripts/lincoln_workflow.py`) unify how solo / team `execution_mode` workflows start.
-- **Local recording & transcription CLI**: `tools/lincoln-record/` (Rust + whisper-rs/Metal + speaker diarization) provides local recording and transcription, alongside the redesigned `tools/lincoln/` TUI; the old `tools/record-interview/` is deprecated.
+- **Local recording & transcription CLI**: `tools/lincoln-record/` (Rust + whisper-rs/Metal + speaker diarization) provides local recording and transcription, alongside the redesigned `tools/lincoln/` TUI.
 - **Multi-harness adaptation**: role contracts, `lc-*` commands, and stage workflows can be derived for codex / opencode — see [Multi-harness support](#multi-harness-support-codex--opencode) below.
 - **Claude Code plugin packaging**: a new `.claude-plugin/` manifest allows installing Lincoln as a Claude Code plugin.
 
@@ -239,11 +233,10 @@ For template selection details see [`.claude/workflows/README.md`](.claude/workf
 
 ## Tools
 
-Lincoln ships three companion tools:
+Lincoln ships two companion tools:
 
 - `tools/lincoln/` — Ink/React-based TUI recording frontend (the `lincoln` CLI).
 - `tools/lincoln-record/` — Rust local recording & transcription CLI (whisper-rs + Metal acceleration, speaker diarization); recommended for local interview transcription. Models are downloaded via the hf-mirror.com mirror.
-- `tools/record-interview/` — the old Python recording backend, **deprecated**, kept for historical reference only.
 
 Install and usage instructions live in each directory's README or `--help`.
 
@@ -280,7 +273,7 @@ Install and usage instructions live in each directory's README or `--help`.
 ├── .github/                            # issue templates, Actions, OpenSpec config
 ├── scripts/                            # initialization, status, audit tools
 ├── tests/                              # pytest test suite
-└── tools/                              # lincoln TUI + lincoln-record (Rust) + record-interview (deprecated)
+└── tools/                              # lincoln TUI + lincoln-record (Rust)
 ```
 
 ---

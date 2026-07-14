@@ -114,14 +114,12 @@ claude process-interview 2026-06-28-checkout-interview
 lincoln [session-id] [options]
 
 Options:
-  --topic                 访谈主题
-  --design-id             设计 ID
-  --branch                Lincoln feature 分支名
-  --workspace-root        工作区根目录（默认当前目录）
-  --audio-meter-style     音量条样式：bar | dot | wave（默认 bar）
-  --config                配置文件路径
-  --record-interview-path record-interview 可执行文件路径
-  --help                  显示帮助
+  --topic       访谈主题
+  --design-id   设计 ID
+  --branch      Lincoln feature 分支名
+  --session-id  显式指定 session ID
+  --no-tui      不使用终端 UI 运行
+  --help, -h    显示帮助
 ```
 
 ## 开发
@@ -178,22 +176,17 @@ tools/lincoln/
 └── README.md
 ```
 
-## 与 record-interview 的关系
+## 与 lincoln-record 的关系
 
-Lincoln TUI 本身不直接调用 ffmpeg。它通过子进程启动 `tools/record-interview` Python CLI，由后者完成：
-
-- 检测并录制系统音频
-- 生成 `metadata.json`
-- 保存录音文件到 `recordings/`
+Lincoln TUI 本身不直接访问音频设备。它通过子进程启动 `tools/lincoln-record` Rust CLI，由后者完成本地录音与转写（whisper-rs + Metal 加速、说话人分离）。
 
 TUI 只负责呈现界面和管理用户输入。停止录音后，TUI 打印命令，由用户手动触发 `claude process-interview`，避免嵌套 Claude Code 会话。
 
 ## 依赖
 
 - Node.js >= 20
-- `record-interview`（Python 后端，需单独安装）
+- `lincoln-record`（Rust 本地录音转写 CLI，见 `tools/lincoln-record/`，需用 cargo 构建）
 - `claude` CLI（用于后续 `process-interview` 步骤）
-- `ffmpeg`（由 record-interview 使用）
 
 ## 许可证
 

@@ -2,13 +2,7 @@
 
 > 中文 | [English](README.en.md)
 
-> **Lincoln 是什么？** Lincoln 是一个基于 **Conductor + Claude Code + OpenSpec + GitHub + Obsidian** 的 AI-Native 研发工作流体系。它以**阶段**为节奏、以**门控**为质量保障、以**可重复 SOP** 为骨架，把需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、任务拆分、研发实现和知识库沉淀串成一条可人机协作的流水线。
->
-> 它既适合 **vibe-coding 开发者、独立 maker** 在本地项目上与 Agent 结对迭代；也适合 **产品、设计、研发、QA** 团队以 GitHub issue 为单元进行多角色协作。优先推荐在 **Conductor** 中使用（也可接入其他 IDE/CLI），角色契约、`lc-*` 命令与阶段工作流可多 harness 派生到 **codex / opencode**。
-
-## 愿景
-
-Lincoln 致力于服务所有独立开发者和产研团队，帮助他们在产研全流程的各个阶段更恰当地使用 Agent、Skills 与插件，并遵循更规范化的研发流程、代码管理与知识沉淀。
+> **Lincoln 是什么？** Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、技能、插件与自动化程序**的 AI-Native 研发工作流体系，致力于服务所有独立开发者和产研团队，帮助他们在产研全流程的各个阶段更恰当地使用 Agent、Skills 与插件，并遵循更规范化的研发流程、代码管理与知识沉淀。它以**阶段**为节奏、以**门控**为质量保障、以**可重复 SOP** 为骨架，把需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、任务拆分、研发实现和知识库沉淀串成一条可人机协作的流水线；既适合 **vibe-coding 开发者、独立 maker** 在本地项目上与 Agent 结对迭代，也适合 **产品、设计、研发、QA** 团队以 GitHub issue 为单元进行多角色协作。优先推荐在 **Conductor** 中使用（也可接入其他 IDE/CLI），角色契约、`lc-*` 命令与阶段工作流可多 harness 派生到 **codex / opencode**。
 
 - **全流程，而非单点工具**：从需求澄清、产品设计、原型、TDD 计划到实现与验收，每个阶段都有明确的角色、技能与产物约定——Agent 在恰当的节点介入，而不是替代人的判断。
 - **规范化，但不繁琐**：阶段门控、human gate、分支卫生，以及"过程文档留分支、耐用知识入 vault"的双轨机制，让协作可追溯、可交接、可审计。
@@ -141,7 +135,7 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 - **main 合并卫生检查**：`scripts/check-main-merge-hygiene.py`（PR → main 的 CI 门禁）将任何含 `workflow-stage.yaml` 的工作包目录下所有文件拒之门外，杜绝 issue 工作包被错误并入 main。
 - **状态文件实例化**：运行时状态保存在 `{process_slug}/workflow-stage.yaml`，而非 `.claude/workflow-stage.yaml`。
 - **工作流统一入口 `lc-wf-*`**：[`.claude/workflows/README.md`](.claude/workflows/README.md) 集中维护所有 SOP 模板；`lc-wf-*` 命令（底层 `scripts/lincoln_workflow.py`）统一 solo / team 两种 `execution_mode` 的启动方式。
-- **本地录音转写 CLI**：`tools/lincoln-record/`（Rust + whisper-rs/Metal + 说话人分离）提供本地录音与转写，配套重新设计的 `tools/lincoln/` TUI；旧 `tools/record-interview/` 已废弃。
+- **本地录音转写 CLI**：`tools/lincoln-record/`（Rust + whisper-rs/Metal + 说话人分离）提供本地录音与转写，配套重新设计的 `tools/lincoln/` TUI。
 - **多 harness 适配**：角色契约、`lc-*` 命令与阶段工作流可派生到 codex / opencode，详见下文 [多 harness 支持](#多-harness-支持codex--opencode)。
 - **Claude Code 插件化**：新增 `.claude-plugin/` 清单，支持作为 Claude Code 插件安装。
 
@@ -239,11 +233,10 @@ Agent 启动时，`.claude/hooks/on-session-start.sh` 会自动解析 `{process_
 
 ## 工具
 
-Lincoln 提供三个配套工具：
+Lincoln 提供两个配套工具：
 
 - `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端（`lincoln` CLI）。
 - `tools/lincoln-record/` — Rust 本地录音转写 CLI（whisper-rs + Metal 加速、说话人分离），推荐用于访谈录音的本地转写；模型经 hf-mirror.com 镜像下载。
-- `tools/record-interview/` — 旧 Python 录音后端，**已废弃**，仅保留作历史参考。
 
 安装与使用说明见各自目录下的 README 或 `--help`。
 
@@ -280,7 +273,7 @@ Lincoln 提供三个配套工具：
 ├── .github/                            # issue 模板、Actions、OpenSpec 配置
 ├── scripts/                            # 初始化、状态、审计工具
 ├── tests/                              # pytest 测试套件
-└── tools/                              # lincoln TUI + lincoln-record（Rust）+ record-interview（已废弃）
+└── tools/                              # lincoln TUI + lincoln-record（Rust）
 ```
 
 ---
