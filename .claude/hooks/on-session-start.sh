@@ -26,8 +26,8 @@ echo ""
 echo "=== Lincoln Session Start ==="
 echo ""
 
-# 1. Dependency check + first-run prompt
-if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
+# 1. Dependency check + first-run prompt (LINCOLN_SKIP_DEP_CHECK=1 seals this off for tests)
+if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
     echo "[Lincoln] Checking dependencies..."
     if ! "$PYTHON" "$ROOT/scripts/lincoln-setup.py" check --root "$ROOT" > /dev/null 2>&1; then
         SETUP_COMPLETE="false"
@@ -65,6 +65,26 @@ if [[ -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
     fi
     echo ""
 fi
+
+# Print the cold-start opening guidance block (fresh repo / unclear issue branch).
+print_opening_guidance() {
+    echo ""
+    echo "=== Lincoln 开场引导 ==="
+    echo ""
+    echo "Lincoln 当前没有可驱动的工作状态。请立即执行开场引导流程，再开始任何工作："
+    echo ""
+    echo "1. 摸排：概览级侦察（顶层结构 / README 前 100 行 / knowledge 索引 / 开放 issues / 用户首条消息），"
+    echo "   只读操作 ≤ 8 次，不读源码实现，不做深度扫描（禁用 lc-build-codebase-knowledge）。"
+    echo "2. 判断：输出处境评估（角色 / 流程位置 / 问题 / 目标 / Johari 象限初判 + 置信度）。"
+    echo "3. 询问和确认：展示判断，按认知象限设计确认动作，每轮 ≤ 3 个问题。"
+    echo "4. 有策略的开展：每个目标有明确验收标准、执行路径确定后，再路由到对应工作流。"
+    echo ""
+    echo "完整流程: .claude/skills/lc-workflow-router/prompts/intake-prompt.md"
+    echo "确认完成前不做实现性工作；如需初始化 issue 工作包，由你（Agent）代为执行脚本，不让用户敲命令。"
+    echo ""
+    echo "=== End Lincoln 开场引导 ==="
+    echo ""
+}
 
 # 2. Determine state file (process package preferred, legacy fallback)
 STATE_FILE=$("$PYTHON" - "$ROOT" "$STATE_FILE" <<'PY'
@@ -107,14 +127,14 @@ print(resolve_state_path(None, root))
 PY
 )
         else
-            echo "Current branch looks like an issue branch but issue number is unclear. To initialize, run:"
-            echo "  scripts/init-lincoln-branch.sh --issue-number <issue-number>"
+            echo "Current branch looks like an issue branch but issue number is unclear."
+            print_opening_guidance
             echo "=== End Lincoln Session Start ==="
             echo ""
             exit 0
         fi
     else
-        echo "Run: scripts/init-lincoln-branch.sh --issue-number <issue-number>"
+        print_opening_guidance
         echo "=== End Lincoln Session Start ==="
         echo ""
         exit 0
@@ -240,6 +260,8 @@ PY
         echo "=== End Workflow Template ==="
         echo ""
     fi
+else
+    NEEDS_OPENING_GUIDANCE="true"
 fi
 
 # 5. Load Conductor / OMC context
@@ -296,6 +318,25 @@ if [[ -n "$STATUS_OUTPUT" ]]; then
     echo "=== Lincoln Status Summary ==="
     echo "$STATUS_OUTPUT"
     echo "=== End Lincoln Status Summary ==="
+    echo ""
+fi
+
+# 8. Opening guidance for a work package that has not started yet
+if [[ "${NEEDS_OPENING_GUIDANCE:-}" == "true" ]]; then
+    echo "=== Lincoln 开场引导 ==="
+    echo ""
+    echo "工作包已就绪但尚未启动（current_stage: not_started）。请先完成开场确认，再进入第一阶段："
+    echo ""
+    echo "1. 摸排：轻量侦察（README 前 100 行 / ${PROCESS_SLUG:-工作包}/documents.yaml / 开放 issues / 用户首条消息），"
+    echo "   只读操作 ≤ 8 次，不读源码实现，不做深度扫描。"
+    echo "2. 判断：展示处境评估（角色 / 流程位置 / 问题 / 目标 / Johari 象限初判 + 置信度）。"
+    echo "3. 询问和确认：按认知象限设计确认动作，每轮 ≤ 3 个问题。"
+    echo "4. 确认目标与验收标准后，由你（Agent）代为运行 validate-entry 进入第一阶段："
+    echo "   python3 scripts/stage_loader.py --stage <第一阶段> --action validate-entry"
+    echo ""
+    echo "完整流程: .claude/skills/lc-workflow-router/prompts/intake-prompt.md"
+    echo ""
+    echo "=== End Lincoln 开场引导 ==="
     echo ""
 fi
 

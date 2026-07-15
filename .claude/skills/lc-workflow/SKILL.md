@@ -38,6 +38,6 @@ Lincoln 辅助 skill 会在会话启动、状态查询、分支初始化、hando
 - `lc-init-branch`：初始化 feature branch 过程文档
 - `lc-build-codebase-knowledge`：扫描代码库构建业务/技术知识
 - `lc-explore-opensource`：探索开源方案与技术框架
-- `lc-workflow-router`：在会话开始时评估并选择工作流模板
+- `lc-workflow-router`：在会话开始时执行开场引导（摸排 → 判断 → Johari 确认）并选择工作流模板
 
 如果用户明确指定了阶段，直接调用对应 skill。

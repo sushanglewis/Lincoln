@@ -30,9 +30,10 @@
 
 Agent 启动后应：
 
-1. 简要汇报当前阶段、已加载上下文、推荐技能、等待对象、下一步动作。
-2. 运行 `python3 scripts/stage_loader.py --stage <current_stage> --action validate-entry` 进行准入校验。
-3. 根据当前阶段和上下文继续工作。
+1. 检查 hook 输出中是否包含「=== Lincoln 开场引导 ===」块：若有，先执行开场引导流程（`.claude/skills/lc-workflow-router/prompts/intake-prompt.md`：摸排 → 判断 → Johari 确认），经人类确认目标与执行路径后再继续。
+2. 简要汇报当前阶段、已加载上下文、推荐技能、等待对象、下一步动作。
+3. 运行 `python3 scripts/stage_loader.py --stage <current_stage> --action validate-entry` 进行准入校验。
+4. 根据当前阶段和上下文继续工作。
 
 如果 `.claude/workflow-stage.yaml` 存在但 `{process_slug}/workflow-stage.yaml` 不存在，说明需要迁移或初始化 issue 工作包；请提示人类运行：
 
@@ -111,7 +112,7 @@ python3 scripts/stage_loader.py --stage <current_stage> --action approve-gate
 - 通过 `Skill` 工具调用技能，当前阶段可用技能由 `.claude/stages/<current_stage>.yaml` 的 `skills` 字段定义。
 - 不得用技能调用替代 `human_gate`。
 - 实施类技能（如 `subagent-driven-development`、`executing-plans`）必须在 PM 明确批准后才能调用。
-- `lc-workflow-router` 仅在 `{process_slug}/workflow-stage.yaml` 中 `current_run.workflow_template` 为空时触发。
+- `lc-workflow-router` 在两种时机触发：(a) 会话开场引导（hook 注入开场引导块，或 `current_stage: not_started`）时先执行 intake 流程；(b) `{process_slug}/workflow-stage.yaml` 中 `current_run.workflow_template` 为空时选择工作流模板。
 - 技能/命令入口统一为 `lc-*` 前缀(旧 `lincoln-*` 已移除);codex/opencode 适配产物由 `scripts/lincoln_harness_adapter.py` 从 `.claude/` 派生,不要手改生成文件,改动事实源后运行 `python3 scripts/lincoln-setup.py generate-harness --harness <name>`。
 
 ## 核心原则

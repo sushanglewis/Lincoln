@@ -38,15 +38,23 @@ If you only need the [lightweight solo path](#quick-start), you can skip `gh`, `
 
 Lincoln offers two entry paths — pick whichever fits you.
 
+### Just open it and say what you need
+
+When you open the repo in Conductor / Claude Code, if Lincoln has no drivable work state (fresh repo, or a work package that hasn't started), the Agent automatically enters opening guidance:
+
+1. **Recon**: the Agent does an overview-level sweep of the repo (top-level structure, README, knowledge index, open issues) — no source reading, no deep scans.
+2. **Judgment**: the Agent assesses your situation — role, position in the process, most likely problem and goal — with a confidence level.
+3. **Ask & confirm**: the Agent designs confirmation moves around the Johari window, at most 3 questions per round: for known-knowns it paraphrases to confirm; for known-unknowns it supplies background directly; for unknown-knowns it shows you artifacts already in the repo; for unknown-unknowns it probes with concrete scenarios.
+4. **Strategic execution**: only when every goal has explicit acceptance criteria and a determined execution path does the Agent start real work.
+
+It won't interrupt work already in progress — the Agent simply continues the current stage. The two paths below describe the full first-time flow.
+
 ### Path A: Lightweight solo path (vibe-coding / indie maker)
 
 If you already have a local project, or just an idea you want to iterate on quickly with an Agent, you can start directly from a workflow template — no GitHub issue required.
 
 1. Open the project repo in Conductor.
-2. Ask Claude to run:
-   ```bash
-   python scripts/lincoln-setup.py check
-   ```
+2. Tell Claude "check the Lincoln environment" — the Agent runs the environment check and lists missing dependencies.
 3. Pick a template for your scenario:
    - **Existing source code, want the Agent to understand it before iterating**: use `existing-project-iteration`
    - **Just an idea, want to explore a solution/prototype first**: use `design-spike`
@@ -55,11 +63,7 @@ If you already have a local project, or just an idea you want to iterate on quic
      > Please use Lincoln's `existing-project-iteration` template to help me understand the current codebase and plan the next feature iteration.
    - If you chose `design-spike`:
      > Please use Lincoln's `design-spike` template to help me clarify this idea and produce a design review and prototype.
-5. If you later decide to adopt the team flow or need GitHub issue tracking, run:
-   ```bash
-   scripts/init-lincoln-branch.sh --issue-number <number> ...
-   ```
-   to create a new issue work package, then manually move the confirmed requirements/design artifacts from your solo path into the new `issue-<number>/` directory.
+5. If you later decide to adopt the team flow or need GitHub issue tracking, tell the Agent "start working on issue <N>" — it creates a new issue work package, and you hand the confirmed requirements/design artifacts from your solo path to it for filing into the new `issue-<number>/` directory.
 
 > Solo-path artifacts land in the work-package directory chosen automatically by the template (e.g. workspace name or repo name): codebase-knowledge artifacts go to `knowledge/`, while design, requirements, and research artifacts go to `<process_slug>/designs/`, `<process_slug>/requirements/`, and `<process_slug>/docs/research/` respectively.
 
@@ -69,25 +73,17 @@ On GitHub, click **Use this template** to create your project repo, then clone i
 
 #### Initialize an issue work package
 
-Every requirement maps to one GitHub issue and one Lincoln feature branch. `scripts/init-lincoln-branch.sh` creates a branch from the issue number and generates the issue-specific work-package directory (initializing `workflow-stage.yaml` and the document index `documents.yaml`; the `.tpl` templates under `.claude/templates/issue-package/` stay read-only and are no longer copied into the package — agents consult them for format and author documents directly):
+Every requirement maps to one GitHub issue and one Lincoln feature branch. Tell the Agent "start working on issue <N>" — it creates a branch from the issue number and generates the issue-specific work-package directory (initializing `workflow-stage.yaml` and the document index `documents.yaml`; the `.tpl` templates under `.claude/templates/issue-package/` stay read-only and are no longer copied into the package — agents consult them for format and author documents directly).
 
-```bash
-# Run on the main branch (an issue-<number> branch is created automatically)
-scripts/init-lincoln-branch.sh --issue-number <N> \
-  --session-id 2026-07-08-stakeholder \
-  --design-id checkout-redesign \
-  --push
-```
+You can also provide finer preferences, and the Agent translates them into the corresponding init parameters:
 
-Parameters:
-- `--issue-number`: GitHub issue number, required.
-- `--session-id`: interview/requirements session ID, format `YYYY-MM-DD-descriptive-name`; auto-generated if omitted.
-- `--design-id`: design topic ID, kebab-case; auto-generated if omitted.
-- `--process-slug`: work-package directory name, defaults to `issue-<number>`.
-- `--workflow`: workflow name (under `.claude/workflows/`), defaults to `interview-to-knowledge`.
-- `--push`: push the branch to remote after initialization.
+- Interview/requirements session ID (format `YYYY-MM-DD-descriptive-name`; auto-generated if omitted)
+- Design topic ID (kebab-case; auto-generated if omitted)
+- Work-package directory name (defaults to `issue-<number>`)
+- Workflow template (under `.claude/workflows/`; defaults to `interview-to-knowledge`)
+- Whether to push the branch to remote after initialization
 
-> You can also start workflows directly via `lc-wf-*` commands (`python3 scripts/lincoln_workflow.py`): `lc-wf-list` lists all workflows; team workflows are equivalent to calling this script, while solo workflows create session-scoped instances under `.context/workflow/` (gitignored, not shared across members). See [`.claude/workflows/README.md`](.claude/workflows/README.md).
+> You can also start workflows via `lc-wf-*` skills: tell the Agent "list all workflows" or "start issue <N> with interview-to-knowledge". Team workflows are equivalent to initializing an issue work package, while solo workflows create session-scoped instances under `.context/workflow/` (gitignored, not shared across members). See [`.claude/workflows/README.md`](.claude/workflows/README.md).
 
 After running, the branch contains:
 
@@ -104,9 +100,9 @@ issue-<N>/
 └── handoffs/                    # stage handoff documents
 ```
 
-`issue-<N>/workflow-stage.yaml` is the stage handoff protocol shared between humans and Agents; `.claude/templates/issue-package/workflow-stage.yaml` is only the template used to generate it. `issue-<N>/documents.yaml` is the package document index, refreshed automatically by `scripts/lincoln_documents.py` on every state save, recording each artifact's stage, gate, and human-confirmation status — an Agent reads it first to learn which documents already exist in the package.
+`issue-<N>/workflow-stage.yaml` is the stage handoff protocol shared between humans and Agents; `.claude/templates/issue-package/workflow-stage.yaml` is only the template used to generate it. `issue-<N>/documents.yaml` is the package document index, refreshed automatically on every state save, recording each artifact's stage, gate, and human-confirmation status — an Agent reads it first to learn which documents already exist in the package.
 
-**Cross-member, cross-Agent collaboration**: branch names must strictly follow the `issue-<number>` convention. When any member or Agent receives a handoff from an upstream node, the branch name alone locates the issue and its work package (`{process_slug}/workflow-stage.yaml`), keeping issue, branch, and PR in end-to-end one-to-one correspondence from requirements to final acceptance. Use `scripts/list-active-lincoln-branches.sh` to view the stage status and waiting-on of all active issue branches.
+**Cross-member, cross-Agent collaboration**: branch names must strictly follow the `issue-<number>` convention. When any member or Agent receives a handoff from an upstream node, the branch name alone locates the issue and its work package (`{process_slug}/workflow-stage.yaml`), keeping issue, branch, and PR in end-to-end one-to-one correspondence from requirements to final acceptance. Tell the Agent "list all active Lincoln branches" to view the stage status and waiting-on of all active issue branches.
 
 > Full template documentation lives in [`.claude/workflows/README.md`](.claude/workflows/README.md). Workflow templates are scenario references: a human may ask the Agent to follow a specific workflow for the current scenario — automatic routing is not enforced.
 
@@ -124,8 +120,11 @@ Lincoln is an AI-Native workflow — **you never need to type commands in a term
 | "Approved" | `/lc-stage` marks the current gate after explicit human-PM approval |
 | "Generate the handoff" | `/lc-handoff` writes the handoff document |
 | "Move to the next stage" | Agent checks the gate, then transitions |
+| "Check the Lincoln environment" | `/lc-setup` checks dependencies and lists what's missing |
+| "List all active branches" | Agent lists the stage status and waiting-on of all issue branches |
+| "Audit workflow health" | Agent outputs a PASS/WARN/FAIL health report |
 
-The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying commands (`scripts/stage_loader.py`, etc.) are always executed by the Agent — users never need to know them.
+The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying scripts are always executed by the Agent — users never need to know them.
 
 ## What's New (v1.2.0)
 
@@ -139,51 +138,31 @@ The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying
 - **Multi-harness adaptation**: role contracts, `lc-*` commands, and stage workflows can be derived for codex / opencode — see [Multi-harness support](#multi-harness-support-codex--opencode) below.
 - **Claude Code plugin packaging**: a new `.claude-plugin/` manifest allows installing Lincoln as a Claude Code plugin.
 
+## What's New (Unreleased)
+
+- **Session opening guidance**: when Lincoln has no drivable work state (fresh repo or a work package that hasn't started), the session-start hook injects opening guidance — the Agent does an overview-level recon first (≤ 8 read-only operations, no source reading), presents a situation judgment (role / process position / problem / goal + confidence), confirms via the Johari window (≤ 3 questions per round), and starts work only once every goal has explicit acceptance criteria and a determined execution path; the README has switched to natural-language-only entry points to match.
+
 ---
 
 ## Workflow Status & Handoff
 
 ### Check the current branch status
 
-```bash
-python scripts/lincoln-status.py --format table
-```
-
-Output includes: current stage, waiting-on, loaded context, recommended skills, artifact status, next action. Supports `--format json|table|markdown`.
+Tell the Agent "what's the status" — it reports: current stage, waiting-on, loaded context, recommended skills, artifact status, next action. When you need machine-readable output, ask for JSON or Markdown format.
 
 ### Generate a handoff document
 
-When pausing or switching collaborators:
+When pausing or switching collaborators, tell the Agent "generate the handoff" — it produces `.context/lc-handoff-<stage>.md` or `{process_slug}/handoffs/` documents containing the current stage, confirmed artifacts, open questions, next role, and recommended skills.
 
-```bash
-python scripts/stage_loader.py --stage <current-stage> --action handoff-report
-```
-
-Generates `.context/lc-handoff-<stage>.md` or `{process_slug}/handoffs/` documents containing the current stage, confirmed artifacts, open questions, next role, and recommended skills.
-
-After a stage passes human confirmation:
-
-```bash
-python scripts/stage_loader.py --stage <current-stage> --action approve-gate
-```
-
-Marks that stage's gate as approved.
+After a stage passes human confirmation, tell the Agent "approved" — it marks that stage's gate as approved.
 
 ### List all in-flight Lincoln branches
 
-```bash
-scripts/list-active-lincoln-branches.sh
-# Only branches waiting on me
-scripts/list-active-lincoln-branches.sh --waiting-for-me
-```
+Tell the Agent "list all active Lincoln branches"; to see only the branches waiting on you, say "which branches are waiting on me".
 
 ### Audit workflow health
 
-```bash
-python scripts/lincoln-audit.py --format markdown
-```
-
-Outputs a PASS/WARN/FAIL report covering state consistency, artifact completeness, gate compliance, skill coverage, and anomaly detection.
+Tell the Agent "audit workflow health" — it outputs a PASS/WARN/FAIL report covering state consistency, artifact completeness, gate compliance, skill coverage, and anomaly detection.
 
 ---
 
@@ -289,13 +268,9 @@ Install and usage instructions live in each directory's README or `--help`.
 - `ecc` CLI (from everything-claude-code)
 - Obsidian (optional, for browsing the vault visually)
 
-Benchmark (optional): `scripts/lincoln_benchmark.py` is the entry point for benchmarking Lincoln workflows; run `python3 scripts/lincoln_benchmark.py --help` for usage.
+Benchmark (optional): Lincoln ships a workflow-benchmarking entry point — when you need it, tell the Agent "run the benchmark" to learn the usage.
 
-Lincoln also depends on several external skills/CLIs — see `.claude/skills/dependencies.yaml`. After installing or upgrading, ask Claude to run:
-
-```bash
-python scripts/lincoln-setup.py check
-```
+Lincoln also depends on several external skills/CLIs — see `.claude/skills/dependencies.yaml`. After installing or upgrading, tell the Agent "check the Lincoln environment".
 
 ---
 
@@ -312,28 +287,17 @@ The install method depends on your Claude Code plugin manager (e.g. oh-my-claude
 
 ## Multi-harness support (codex / opencode)
 
-Lincoln's end-to-end logic (role contracts, stage workflows, `lc-*` commands) can be adapted to codex and opencode. `.claude/` is the single source of truth; harness artifacts are derived by `scripts/lincoln_harness_adapter.py` from `.claude/harnesses/<name>.yaml` manifests — **never edit generated artifacts by hand**.
+Lincoln's end-to-end logic (role contracts, stage workflows, `lc-*` commands) can be adapted to codex and opencode. `.claude/` is the single source of truth; harness artifacts are derived by the adapter from `.claude/harnesses/<name>.yaml` manifests — **never edit generated artifacts by hand**.
 
-Generate at install time (or pass `--harness` during bootstrap):
+Tell the Agent "generate the codex adaptation" or "generate the opencode adaptation" (or say "generate both harness adaptations at install time" to do it in one step). Generated artifacts: for codex, `AGENTS.md` and `~/.codex/prompts/lc-*.md`; for opencode, `.opencode/agent/*.md` and `.opencode/command/lc-*.md`.
 
-```bash
-# Generate the codex adaptation (AGENTS.md + ~/.codex/prompts/lc-*.md)
-python3 scripts/lincoln-setup.py generate-harness --harness codex
+Generated artifacts are not committed to git (`.opencode/` and `AGENTS.md` are in `.gitignore`). CI verifies that manifests can be generated and local artifacts haven't drifted.
 
-# Generate the opencode adaptation (.opencode/agent/*.md + .opencode/command/lc-*.md)
-python3 scripts/lincoln-setup.py generate-harness --harness opencode
-
-# Bootstrap in one step
-python3 scripts/lincoln-setup.py bootstrap --harness codex --harness opencode
-```
-
-Generated artifacts are not committed to git (`.opencode/` and `AGENTS.md` are in `.gitignore`). CI verifies via `scripts/check-harness-drift.sh` (wired into `static-check.sh`) that manifests can be generated and local artifacts haven't drifted.
-
-Gates and CI stay lightweight: stage progression always goes through `python3 scripts/stage_loader.py --stage <stage> --action validate-entry/validate-exit`, already written into each harness's command templates; human_gate stages still require explicit human PM confirmation.
+Gates and CI stay lightweight: stage progression is always performed by the Agent through stage validation, already written into each harness's command templates; human_gate stages still require explicit human PM confirmation.
 
 ### Command naming migration: `lincoln-*` → `lc-*` (breaking)
 
-Skill/command entry points have been renamed from `lincoln-*` to `lc-*` (e.g. `lincoln-status` → `lc-status`). When `lincoln-setup.py` runs, it detects old directories under `~/.claude/skills/` and prints a migration hint; after confirming there are no local changes, delete the old directories manually. Script file names (`scripts/lincoln-status.py` etc.) are unchanged.
+Skill/command entry points have been renamed from `lincoln-*` to `lc-*` (e.g. `lincoln-status` → `lc-status`). The environment check (tell the Agent "check the Lincoln environment") scans for old directories under `~/.claude/skills/` and prints a migration hint; after confirming there are no local changes, delete the old directories manually. Underlying script file names are unchanged and transparent to the Agent.
 
 ---
 

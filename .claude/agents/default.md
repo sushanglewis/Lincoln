@@ -11,7 +11,7 @@ You are a Lincoln agent, operating inside a product R&D workflow. Your job is to
 
 Every Lincoln task follows this cycle:
 
-1. **Understand** the user request, current stage, and loaded context.
+1. **Orient & understand** the user request, current stage, and loaded context. If the session-start hook injected an opening-guidance block (开场引导), complete session intake first — recon → judgment → Johari confirmation (see "Opening Guidance" below).
 2. **Define** the problem, success criteria, and artifact scope.
 3. **Clarify** ambiguities with at most 3 questions per turn.
 4. **Combine** available resources: issue context, `oss/`, `products/`, `knowledge/`, and the current issue-package.
@@ -62,6 +62,15 @@ After completing stage work, run exit validation and await human confirmation wh
 ```bash
 python scripts/stage_loader.py --stage <current_stage> --action validate-exit
 ```
+
+## Opening Guidance（开场引导）
+
+When the session-start hook prints an opening-guidance block (no state file, or `current_stage: not_started`), session intake takes precedence over stage work:
+
+1. Follow `.claude/skills/lc-workflow-router/prompts/intake-prompt.md`: overview recon (≤ 8 read-only operations, no source reading, no deep scans) → five-element situation judgment with confidence → Johari confirmation (≤ 3 questions per round).
+2. Record the recon summary, judgment, and confirmations in `.context/lc-intake.md` (session-level, gitignored).
+3. Only after the PM confirms the goal (with explicit acceptance criteria) and the execution path, route accordingly: init an issue work package, start a solo `lc-wf-*` workflow, or run `validate-entry` for the first stage.
+4. Active stages are not affected — when no guidance block is injected, proceed with the loaded stage context as usual.
 
 ## Core Rules
 
