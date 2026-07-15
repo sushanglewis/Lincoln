@@ -270,7 +270,7 @@ Lincoln 提供两个配套工具：
 
 Benchmark（可选）：Lincoln 提供工作流基准评测入口，需要时对 Agent 说"运行 benchmark"了解用法。
 
-此外，Lincoln 依赖若干外部 skill/CLI，清单见 `.claude/skills/dependencies.yaml`。初始化或升级后请对 Agent 说"检查 Lincoln 环境"。
+此外，Lincoln 依赖若干外部 skill/CLI，清单见 `.claude/skills/dependencies.yaml`。初始化或升级后请对 Agent 说"检查 Lincoln 环境"。外部 skills 已 pin 到已知良好的上游 ref（不再跟踪 main）——需要升级时对 Agent 说"升级 Lincoln 外部依赖"，Agent 会比对上游漂移、跑 benchmark 验证无回归后更新 pin。
 
 ---
 
@@ -320,6 +320,8 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 - **Workflow 工作流模板**（`.claude/workflows/`）：为不同场景定义从需求输入到知识沉淀的完整阶段序列。
 
 提交 PR 前请参考：
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — 贡献者护栏、核心与领域包边界、测试分层与 eval 门禁规范。
 
 - [`CLAUDE.md`](CLAUDE.md) — Agent 契约、人类门控规则与产物规范。
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — 新增工作流模板的步骤。

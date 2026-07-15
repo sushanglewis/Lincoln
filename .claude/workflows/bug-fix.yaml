@@ -8,10 +8,12 @@ workflow:
   steps:
     - id: workflow-router
       name: 工作流路由
+      description: 会话开场引导后，选择最适合当前场景的工作流模板
       action: lc-workflow-router
 
     - id: clarify
       name: 需求澄清
+      description: 与人类 PM 多轮澄清，形成统一需求文档
       human_gate: true
       action: clarify-requirements
       artifacts:
@@ -22,6 +24,7 @@ workflow:
 
     - id: product-design-docs
       name: 轻量设计文档
+      description: 产出设计文档（场景、功能目录、数据模型、流程、可行性）
       human_gate: true
       action: draft-product-design
       artifacts:
@@ -32,6 +35,7 @@ workflow:
 
     - id: tdd-development-plan
       name: TDD 研发计划
+      description: 产出 TDD 研发计划（验收映射、测试场景、任务切片）
       action: plan-tdd-development
       artifacts:
         - "{process_slug}/designs/{design_id}/tdd-plan.md"
@@ -40,6 +44,7 @@ workflow:
 
     - id: propose
       name: OpenSpec 提案
+      description: 生成 OpenSpec 变更提案
       action: propose-with-openspec
       cli_command: "openspec propose {change_name}"
       artifacts:
@@ -50,6 +55,7 @@ workflow:
 
     - id: split
       name: 拆分到 GitHub
+      description: 将 OpenSpec 任务拆分为 GitHub Issues
       action: split-to-github
       artifacts:
         - .github/linked-issues.yaml
@@ -59,10 +65,12 @@ workflow:
 
     - id: implement
       name: 研发实现
+      description: 按 TDD 实施并完成验证
       human_gate: true
 
     - id: sync-knowledge
       name: 同步到知识库
+      description: 将业务与技术知识沉淀到 Obsidian vault
       trigger: on_pr_merge
       action: sync-to-knowledge
       artifacts:

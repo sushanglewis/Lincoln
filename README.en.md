@@ -270,7 +270,7 @@ Install and usage instructions live in each directory's README or `--help`.
 
 Benchmark (optional): Lincoln ships a workflow-benchmarking entry point — when you need it, tell the Agent "run the benchmark" to learn the usage.
 
-Lincoln also depends on several external skills/CLIs — see `.claude/skills/dependencies.yaml`. After installing or upgrading, tell the Agent "check the Lincoln environment".
+Lincoln also depends on several external skills/CLIs — see `.claude/skills/dependencies.yaml`. After installing or upgrading, tell the Agent "check the Lincoln environment". External skills are pinned to known-good upstream refs (no longer tracking main) — to upgrade, tell the Agent "upgrade Lincoln's external dependencies"; it compares upstream drift, verifies there is no behavior regression via the benchmark, then updates the pin.
 
 ---
 
@@ -320,6 +320,8 @@ Lincoln's `.claude/` is an open system-prompt layer — contributions built on t
 - **Workflow templates** (`.claude/workflows/`): define complete stage sequences from requirements input to knowledge distillation for different scenarios.
 
 Before submitting a PR, please consult:
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor guardrails, core vs domain-package boundary, test layering, and the eval gate norm.
 
 - [`CLAUDE.md`](CLAUDE.md) — Agent contract, human-gate rules, and artifact conventions.
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — steps for adding a workflow template.
