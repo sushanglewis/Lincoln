@@ -9,8 +9,8 @@
 `.claude/` 是 Lincoln 在 Claude Code 机制下的**抽象系统提示层**，包含：
 
 - `agents/` — Agent 角色模板（default、pm、designer、engineer、qa、researcher 等）。
-- `skills/` — Lincoln 原生技能与外部技能路由（`routing.yaml`、`dependencies.yaml`）。
-- `stages/` — 阶段上下文（`AGENTS.md`、`CHECKLIST.md`、`SKILLS.md`、`PROMPT.md`）。
+- `skills/` — Lincoln 原生技能与外部技能依赖清单（`dependencies.yaml`）；阶段到技能的映射由 `.claude/stages/<stage-id>.yaml` 的 `skills` 字段派生。
+- `stages/` — 阶段上下文（每个阶段一个 `<stage-id>.yaml`，角色、技能、门控与产物约定内联其中）。
 - `workflows/` — SOP 工作流模板定义与索引 [`README.md`](.claude/workflows/README.md)。
 - `templates/issue-package/` — issue 工作包模板（只读；init 仅读取 `workflow-stage.yaml` 初始化实例，其余 `.tpl` 供 Agent 按需参考生成文档，不复制进工作包）。
 - `schemas/` — JSON Schema 校验。
@@ -24,7 +24,7 @@
 
 1. 依赖检测（`.claude/skills/dependencies.yaml`）。
 2. 解析当前分支的 `{process_slug}/workflow-stage.yaml`。若不存在则回退到 legacy `.claude/workflow-state.yaml`。
-3. 读取 `current_run.current_stage` 并加载 `.claude/stages/<current_stage>/` 下的 `AGENTS.md`、`CHECKLIST.md`、`SKILLS.md`、`PROMPT.md`。
+3. 读取 `current_run.current_stage` 并加载 `.claude/stages/<current_stage>.yaml`（角色、技能、门控与上下文内联其中）。
 4. 读取上一个 node 的 handoff 文档。
 5. 输出 Lincoln 状态摘要。
 
@@ -108,7 +108,7 @@ python3 scripts/stage_loader.py --stage <current_stage> --action approve-gate
 
 ## Skill Invocation Rules
 
-- 通过 `Skill` 工具调用技能，技能名来自 `.claude/skills/routing.yaml`。
+- 通过 `Skill` 工具调用技能，当前阶段可用技能由 `.claude/stages/<current_stage>.yaml` 的 `skills` 字段定义。
 - 不得用技能调用替代 `human_gate`。
 - 实施类技能（如 `subagent-driven-development`、`executing-plans`）必须在 PM 明确批准后才能调用。
 - `lc-workflow-router` 仅在 `{process_slug}/workflow-stage.yaml` 中 `current_run.workflow_template` 为空时触发。
@@ -135,6 +135,5 @@ python3 scripts/stage_loader.py --stage <current_stage> --action approve-gate
 
 - [`README.md`](README.md) — 用户快速开始指南。
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — 工作流模板索引。
-- [`.claude/stages/stage-manifest.yaml`](.claude/stages/stage-manifest.yaml) — 阶段注册表。
-- [`.claude/skills/routing.yaml`](.claude/skills/routing.yaml) — 技能路由。
+- [`.claude/stages/`](.claude/stages/) — 阶段注册表与技能路由（每个阶段一个 `<stage-id>.yaml`，其 `skills` 字段派生阶段到技能的映射）。
 - [`.claude/agents/default.md`](.claude/agents/default.md) — Agent 行为总则。

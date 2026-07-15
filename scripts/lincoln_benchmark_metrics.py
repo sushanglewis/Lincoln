@@ -50,19 +50,25 @@ def _parse_iso(value: str) -> datetime:
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
 
 
-def _load_stage_manifest(project_root: Path) -> dict[str, Any]:
-    path = project_root / ".claude" / "stages" / "stage-manifest.yaml"
-    if not path.exists():
-        return {}
-    return load_yaml(path) or {}
-
-
-def _stage_primary_agents(manifest: dict[str, Any]) -> dict[str, str]:
-    return {
-        s.get("id"): s.get("primary_agent", "")
-        for s in manifest.get("stages", [])
-        if s.get("id")
-    }
+def _load_primary_agents(project_root: Path) -> dict[str, str]:
+    """Build stage_id -> primary agent mapping from the actual stage definitions."""
+    stages_dir = project_root / ".claude" / "stages"
+    agents: dict[str, str] = {}
+    if not stages_dir.is_dir():
+        return agents
+    for path in sorted(stages_dir.glob("*.yaml")):
+        try:
+            data = load_yaml(path)
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        stage_id = data.get("id") or path.stem
+        agent = data.get("agent")
+        primary = agent.get("primary", "") if isinstance(agent, dict) else ""
+        if stage_id and primary:
+            agents[str(stage_id)] = str(primary)
+    return agents
 
 
 def _stage_order_from_trace(trace: list[dict[str, Any]]) -> list[str]:
@@ -730,10 +736,6 @@ def _compute_outcome_metrics(trace: list[dict[str, Any]], state: dict[str, Any])
         "time_to_pr_seconds": _delta_seconds(first_clarify_ts, first_pr_ts),
         "time_to_merge_seconds": _delta_seconds(first_clarify_ts, merged_ts),
     }
-
-
-def _load_primary_agents(project_root: Path) -> dict[str, str]:
-    return _stage_primary_agents(_load_stage_manifest(project_root))
 
 
 def _outcome_confidence(outcome: dict[str, Any], merged_ts: str | None) -> dict[str, str]:
