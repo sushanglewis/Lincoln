@@ -398,6 +398,25 @@ def test_run_audit_parses_checks_key(tmp_path):
     assert counts == {"PASS": 2}
 
 
+def test_load_primary_agents_reads_stage_files(tmp_path):
+    stages_dir = tmp_path / ".claude" / "stages"
+    stages_dir.mkdir(parents=True)
+    (stages_dir / "clarify.yaml").write_text(
+        "id: clarify\nagent:\n  primary: lc-pm\n  reviewers:\n  - lc-qa\n",
+        encoding="utf-8",
+    )
+    (stages_dir / "implement.yaml").write_text(
+        "id: implement\nagent:\n  primary: lc-engineer\n",
+        encoding="utf-8",
+    )
+    agents = lincoln_benchmark_metrics._load_primary_agents(tmp_path)
+    assert agents == {"clarify": "lc-pm", "implement": "lc-engineer"}
+
+
+def test_load_primary_agents_missing_stages_dir_returns_empty(tmp_path):
+    assert lincoln_benchmark_metrics._load_primary_agents(tmp_path) == {}
+
+
 def test_run_audit_returns_none_when_script_missing(tmp_path):
     assert lincoln_benchmark_metrics._run_audit(tmp_path) is None
 

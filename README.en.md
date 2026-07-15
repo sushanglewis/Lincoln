@@ -73,7 +73,7 @@ Every requirement maps to one GitHub issue and one Lincoln feature branch. `scri
 
 ```bash
 # Run on the main branch (an issue-<number> branch is created automatically)
-scripts/init-lincoln-branch.sh --issue-number 21 \
+scripts/init-lincoln-branch.sh --issue-number <N> \
   --session-id 2026-07-08-stakeholder \
   --design-id checkout-redesign \
   --push

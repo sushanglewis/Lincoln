@@ -73,7 +73,7 @@ Lincoln 提供两种启动方式，选择适合你的即可。
 
 ```bash
 # 在 main 分支上运行（会自动切出 issue-<number> 分支）
-scripts/init-lincoln-branch.sh --issue-number 21 \
+scripts/init-lincoln-branch.sh --issue-number <N> \
   --session-id 2026-07-08-stakeholder \
   --design-id checkout-redesign \
   --push
