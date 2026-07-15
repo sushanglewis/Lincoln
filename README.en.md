@@ -120,8 +120,8 @@ Lincoln is an AI-Native workflow — **you never need to type commands in a term
 |---------|------------|
 | "Start working on issue 55" | `/lc-wf-interview-to-knowledge` (or `/lc-init-branch`) sets up the branch and work package |
 | "What's the status?" | `/lc-status` reports current stage, waiting-on, and next step |
-| "Submit this stage's artifacts" | `/lc-submit` records artifacts and refreshes `documents.yaml` |
-| "Approved" | `/lc-approve` marks the current gate (human PM only) |
+| "Submit this stage's artifacts" | `/lc-stage` records artifacts and refreshes `documents.yaml` |
+| "Approved" | `/lc-stage` marks the current gate after explicit human-PM approval |
 | "Generate the handoff" | `/lc-handoff` writes the handoff document |
 | "Move to the next stage" | Agent checks the gate, then transitions |
 
@@ -191,8 +191,7 @@ Outputs a PASS/WARN/FAIL report covering state consistency, artifact completenes
 
 Lincoln's core definitions are inlined in `.claude/`:
 
-- [`.claude/stages/stage-manifest.yaml`](.claude/stages/stage-manifest.yaml) — registry and capability boundaries for Stages, Gates, Artifacts, and Roles.
-- [`.claude/skills/routing.yaml`](.claude/skills/routing.yaml) — maps external skills and Lincoln-native skills per stage.
+- [`.claude/stages/`](.claude/stages/) — registry and capability boundaries for Stages, Gates, Artifacts, and Roles: one `<stage-id>.yaml` per stage, whose `skills` field derives the stage-to-skill mapping.
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — index and routing notes for all SOP workflow templates.
 - [`.claude/schemas/`](.claude/schemas/) — JSON Schemas for `workflow-stage`, `stage-definition`, and `workflow-template`.
 - [`CLAUDE.md`](CLAUDE.md) — Agent startup self-check, human-gate rules, handoff protocol, skill invocation rules.
@@ -205,7 +204,7 @@ Lincoln's core definitions are inlined in `.claude/`:
 - Stage state is committed with the branch, stored in `{process_slug}/workflow-stage.yaml`.
 - Process documents (`recordings/`, `interviews/`, `requirements/`, `designs/`, `openspec/`, `docs/research/`) travel with the feature branch and are **never merged to `main`**.
 - The current owner pushes the feature branch after advancing stages locally; downstream roles check out the same branch to continue.
-- Every stage has its own context under `.claude/stages/<stage-id>/` (`AGENTS.md`, `CHECKLIST.md`, `SKILLS.md`, `PROMPT.md`).
+- Every stage's context is defined in `.claude/stages/<stage-id>.yaml` (role, skills, gates, and artifact contracts inlined).
 
 At Agent startup, `.claude/hooks/on-session-start.sh` automatically resolves `{process_slug}/workflow-stage.yaml`, loads the current stage context, reads handoff documents, and injects recommended skills — no need to manually read README then CLAUDE.md.
 
@@ -263,7 +262,7 @@ Install and usage instructions live in each directory's README or `--help`.
 │   ├── agents/                         # Agent role templates
 │   ├── hooks/                          # lifecycle hooks (wired by settings.json)
 │   ├── schemas/                        # JSON Schema validation
-│   ├── skills/                         # native skills (incl. routing.yaml, dependencies.yaml)
+│   ├── skills/                         # native skills (incl. dependencies.yaml)
 │   ├── stages/                         # stage contexts
 │   ├── templates/issue-package/        # issue work-package templates
 │   ├── workflows/                      # SOP workflow templates
@@ -341,7 +340,7 @@ Skill/command entry points have been renamed from `lincoln-*` to `lc-*` (e.g. `l
 ## Conventions & Constraints
 
 - At Agent startup, `.claude/hooks/on-session-start.sh` automatically loads the current stage context — no need to traverse every file manually.
-- Behavioral contracts live in [`CLAUDE.md`](CLAUDE.md); stage-level context lives in `.claude/stages/<stage-id>/`.
+- Behavioral contracts live in [`CLAUDE.md`](CLAUDE.md); stage-level context lives in `.claude/stages/<stage-id>.yaml`.
 - `human_gate: true` stages require explicit final human confirmation before proceeding.
 - Stage exit validation runs via `scripts/validate_stage.py`.
 
@@ -360,8 +359,7 @@ Before submitting a PR, please consult:
 
 - [`CLAUDE.md`](CLAUDE.md) — Agent contract, human-gate rules, and artifact conventions.
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — steps for adding a workflow template.
-- [`.claude/stages/stage-manifest.yaml`](.claude/stages/stage-manifest.yaml) — registry of stages, gates, artifacts, and roles.
-- [`.claude/skills/routing.yaml`](.claude/skills/routing.yaml) — stage-to-skill mapping.
+- [`.claude/stages/`](.claude/stages/) — registry of stages, gates, artifacts, and roles; each `<stage-id>.yaml`'s `skills` field derives the stage-to-skill mapping.
 - [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml) — external skill and CLI dependency manifest.
 
 > Tip: when adding a workflow template, also update the quick-routing table and template details in `.claude/workflows/README.md`; when adding skills or hooks, ensure compatibility with `.claude/settings.json` and `dependencies.yaml`, and add the necessary validation and tests.
