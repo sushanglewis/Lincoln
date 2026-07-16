@@ -289,9 +289,16 @@ The install method depends on your Claude Code plugin manager (e.g. oh-my-claude
 
 Lincoln's end-to-end logic (role contracts, stage workflows, `lc-*` commands) can be adapted to codex and opencode. `.claude/` is the single source of truth; harness artifacts are derived by the adapter from `.claude/harnesses/<name>.yaml` manifests — **never edit generated artifacts by hand**.
 
-Tell the Agent "generate the codex adaptation" or "generate the opencode adaptation" (or say "generate both harness adaptations at install time" to do it in one step). Generated artifacts: for codex, `AGENTS.md` and `~/.codex/prompts/lc-*.md`; for opencode, `.opencode/agent/*.md` and `.opencode/command/lc-*.md`.
+Tell the Agent "generate the codex adaptation" or "generate the opencode adaptation" (or say "generate both harness adaptations at install time" to do it in one step). Generated artifacts:
 
-Generated artifacts are not committed to git (`.opencode/` and `AGENTS.md` are in `.gitignore`). CI verifies that manifests can be generated and local artifacts haven't drifted.
+- codex: `AGENTS.md`, `~/.codex/prompts/lc-*.md`, and `.codex-plugin/plugin.json`.
+- opencode: `.opencode/agent/*.md` and `.opencode/command/lc-*.md`.
+
+Generated artifacts are not committed to git (`.opencode/`, `.codex-plugin/`, and `AGENTS.md` are in `.gitignore`). CI verifies that manifests can be generated and local artifacts haven't drifted.
+
+### Codex hooks default-fallback trap
+
+Codex falls back to the default `hooks/hooks.json` when `.codex-plugin/plugin.json` **omits** the `hooks` field (see the superpowers postmortem at obra/superpowers@7d8d3d4). Lincoln's derived codex plugin therefore **explicitly writes `"hooks": {}`**; both a missing field and an empty array `[]` trigger the fallback path. When adding new harness capabilities, declare them explicitly in the manifest, and disable unconfigured capabilities with an empty object/collection rather than omitting the field.
 
 Gates and CI stay lightweight: stage progression is always performed by the Agent through stage validation, already written into each harness's command templates; human_gate stages still require explicit human PM confirmation.
 

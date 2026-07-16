@@ -289,9 +289,16 @@ Lincoln 支持以 Claude Code 插件形式安装。清单文件位于 `.claude-p
 
 Lincoln 的端到端逻辑(角色契约、阶段工作流、`lc-*` 命令)可适配到 codex 与 opencode。`.claude/` 是唯一事实源,各 harness 产物由适配器按 `.claude/harnesses/<name>.yaml` manifest 派生,**不要手改生成产物**。
 
-需要对 Agent 说"生成 codex 适配"或"生成 opencode 适配"(也可说"安装时同时生成两个 harness 适配"一步到位)。生成产物:codex 为 `AGENTS.md` 与 `~/.codex/prompts/lc-*.md`,opencode 为 `.opencode/agent/*.md` 与 `.opencode/command/lc-*.md`。
+需要对 Agent 说"生成 codex 适配"或"生成 opencode 适配"(也可说"安装时同时生成两个 harness 适配"一步到位)。生成产物:
 
-生成产物不入 git(`.opencode/`、`AGENTS.md` 已加入 `.gitignore`)。CI 会校验 manifest 可生成、本地产物未漂移。
+- codex: `AGENTS.md`、`~/.codex/prompts/lc-*.md` 以及 `.codex-plugin/plugin.json`。
+- opencode: `.opencode/agent/*.md` 与 `.opencode/command/lc-*.md`。
+
+生成产物不入 git(`.opencode/`、`.codex-plugin/`、`AGENTS.md` 已加入 `.gitignore`)。CI 会校验 manifest 可生成、本地产物未漂移。
+
+### Codex hooks 缺省回退陷阱
+
+Codex 在 `.codex-plugin/plugin.json` **省略** `hooks` 字段时,会回退到默认的 `hooks/hooks.json`(参见 superpowers 踩坑记录 obra/superpowers@7d8d3d4)。因此 Lincoln 派生的 codex 插件清单会**显式写入 `"hooks": {}`**;缺失字段或空数组 `[]` 都会触发回退路径。新增 harness 能力时,必须在 manifest 中显式声明,未配置的能力务必置空对象/空集合,而非省略字段。
 
 门控与 CI 从轻:阶段推进统一由 Agent 执行阶段校验完成,已写入各 harness 的命令模板;human_gate 仍需人类 PM 显式确认。
 

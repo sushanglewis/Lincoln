@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 from pathlib import Path
@@ -67,8 +68,13 @@ def validate_manifest(manifest: dict[str, Any]) -> list[str]:
     errors: list[str] = []
     if not manifest.get("name"):
         errors.append("missing field: name")
-    if not isinstance(manifest.get("capabilities"), dict):
+    capabilities = manifest.get("capabilities")
+    if not isinstance(capabilities, dict):
         errors.append("missing field: capabilities")
+    else:
+        for key in ("hooks", "skills", "agents", "commands"):
+            if not isinstance(capabilities.get(key), bool):
+                errors.append(f"capabilities.{key} must be an explicit boolean")
     if not isinstance(manifest.get("targets"), list):
         errors.append("missing field: targets")
     command_map = manifest.get("command_map")
@@ -120,6 +126,40 @@ def _transform_frontmatter(
 
 def _transform_copy(text: str, harness: str, source: str) -> str:
     return f"{_header(harness, source)}\n\n{text}"
+
+
+# Metadata fields kept when deriving a codex/opencode plugin manifest.
+_PLUGIN_METADATA_KEYS = (
+    "name",
+    "version",
+    "description",
+    "author",
+    "repository",
+    "homepage",
+    "license",
+    "keywords",
+)
+
+
+def _transform_plugin_json(text: str, harness: str, source: str) -> str:
+    """Derive a plugin.json manifest with explicit empty capability declarations.
+
+    Lesson from superpowers (obra/superpowers@7d8d3d4): Codex falls back to
+    hooks/hooks.json when the manifest omits the `hooks` field. We therefore
+    keep only neutral metadata, drop harness-incompatible blocks, and emit
+    `"hooks": {}` explicitly rather than omitting the field.
+    """
+    try:
+        original = json.loads(text)
+    except json.JSONDecodeError as exc:
+        raise HarnessAdapterError(f"Invalid plugin JSON ({source}): {exc}") from exc
+    if not isinstance(original, dict):
+        raise HarnessAdapterError(f"Plugin JSON must be an object: {source}")
+
+    manifest = {k: original[k] for k in _PLUGIN_METADATA_KEYS if k in original}
+    # Explicitly disable hooks so the harness does not fall back to defaults.
+    manifest["hooks"] = {}
+    return json.dumps(manifest, indent=2, ensure_ascii=False) + "\n"
 
 
 def _transform_concat(
@@ -185,6 +225,10 @@ def _expand_target(
             fields = tuple(target.get("fields", FRONTMATTER_WHITELIST))
             content = _transform_frontmatter(
                 text, harness, str(path.relative_to(root)), fields
+            )
+        elif transform == "plugin-json":
+            content = _transform_plugin_json(
+                text, harness, str(path.relative_to(root))
             )
         else:
             content = _transform_copy(text, harness, str(path.relative_to(root)))
