@@ -8,6 +8,10 @@
 name: codex
 
 capabilities:
+  # 缺省即关闭(#64):任何未显式声明的能力都可能被 harness 按默认值激活
+  # (superpowers codex hooks 陷阱 obra/superpowers@7d8d3d4——hooks 字段缺失时
+  # codex 回退到默认 hooks/hooks.json)。新增能力必须显式写出;空能力显式置 false,
+  # 不得省略字段。验收测试:tests/test_harness_default_off.py
   hooks: false
   skills: false
   agents: true        # 经 AGENTS.md 拼接承载

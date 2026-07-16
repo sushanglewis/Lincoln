@@ -1,22 +1,24 @@
 # Linked GitHub Issues for Lincoln OpenSpec change
-# Session: 2026-07-13-issue-47
-# Change: multi-harness-adapter
-# Note: PM decided single-issue delivery on branch issue-47; slices below are
-# task slices within issue #47, not separate GitHub issues.
+# Session: 2026-07-15-issue-59
+# Change: session-opening-guidance
+# Note: PM decided single-issue delivery on branch issue-59; slices below are
+# task slices within issue #59, not separate GitHub issues.
 
 issues:
-  - issue_number: 47
-    title: "Lincoln 多 harness 适配(codex/opencode)+ lc-* 命令统一"
-    capability: multi-harness-adapter
-    source: issue-47/openspec/changes/multi-harness-adapter/proposal.md
+  - issue_number: 59
+    title: "让 Lincoln 根据当前可掌握信息,更自然的指导和辅助用户"
+    capability: session-opening-guidance
+    source: issue-59/openspec/changes/session-opening-guidance/proposal.md
     slices:
       - id: slice-1
-        title: "适配生成器核心 + harness manifest + 轻量门控模板"
+        title: "intake-prompt.md + lc-workflow-router 扩展(SKILL/router-prompt/stage yaml)"
       - id: slice-2
-        title: "opencode 适配(.opencode/agent + command/lc-*)"
+        title: "on-session-start.sh 开场引导注入(fresh/not_started/active 三分支)"
       - id: slice-3
-        title: "codex 适配(AGENTS.md + ~/.codex/prompts,含 spike 验证)"
+        title: "契约同步(default.md / CLAUDE.md / clarify-requirements / lc-workflow)"
       - id: slice-4
-        title: "lc-* 重命名 + 安装集成 + CI 漂移校验 + 文档"
+        title: "README.md / README.en.md 自然语言化改写"
+      - id: slice-5
+        title: "三个测试文件 + 全量验证(pytest/static-check/harness drift)"
 
-requirements_file: issue-47/requirements/2026-07-13-issue-47/requirements.md
+requirements_file: issue-59/requirements/2026-07-15-issue-59/requirements.md

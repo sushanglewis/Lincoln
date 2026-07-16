@@ -4,10 +4,20 @@ description: |
   Declares external skills and CLIs required by the Lincoln workflow.
   Run `scripts/check-skill-dependencies.sh` to verify the local environment.
 
+# Pin policy (#62): external skills/plugins are pinned to a known-good upstream
+# ref (full SHA), never a floating branch — an upstream commit must not silently
+# change every Lincoln user's session behavior. (#39 note: pins avoid the stale
+# fixed-version problem by making every upgrade explicit and reviewable.)
+# Upgrade flow: 1) pick the new upstream ref; 2) update `ref` (and `pinned_at`);
+# 3) run the benchmark to confirm no behavior regression; 4) merge.
+# Check upstream drift vs pins: `python3 scripts/check-dependency-drift.py`.
+
 skills:
   superpowers:
     source: https://github.com/obra/superpowers.git
-    ref: main
+    ref: 6fd4507659784c351abbd2bc264c7162cfd386dc
+    pinned_from: main
+    pinned_at: 2026-07-15
     type: skill
     required: true
     license: MIT
@@ -27,7 +37,9 @@ skills:
 
   gsd:
     source: https://github.com/gsd-build/get-shit-done.git
-    ref: main
+    ref: bdcaab2c752d9a33a1a1ca9acf3a3c81fb991815
+    pinned_from: main
+    pinned_at: 2026-07-15
     type: skill
     required: true
     license: MIT
@@ -103,14 +115,16 @@ skills:
   # oh-my-claudecode — optional multi-agent orchestration layer, installed by default
   oh-my-claudecode:
     source: https://github.com/Yeachan-Heo/oh-my-claudecode.git
-    ref: main
+    ref: 590fb988931d34a12604be0ca4215c818079018e
+    pinned_from: main
+    pinned_at: 2026-07-15
     type: plugin
     required: false
     default_install: true
     license: MIT
     platforms:
-      macos: git clone --branch main --single-branch --depth 1 https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
-      linux: git clone --branch main --single-branch --depth 1 https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode
+      macos: git clone https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode && git -C ~/.claude/skills/oh-my-claudecode checkout 590fb988931d34a12604be0ca4215c818079018e
+      linux: git clone https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode && git -C ~/.claude/skills/oh-my-claudecode checkout 590fb988931d34a12604be0ca4215c818079018e
     install_note: Optional but recommended. Installed as a skill under ~/.claude/skills/.
     recommended_skills:
       - oh-my-claudecode:plan

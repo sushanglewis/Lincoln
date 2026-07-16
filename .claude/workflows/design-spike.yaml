@@ -8,10 +8,12 @@ workflow:
   steps:
     - id: workflow-router
       name: 工作流路由
+      description: 会话开场引导后，选择最适合当前场景的工作流模板
       action: lc-workflow-router
 
     - id: clarify
       name: 需求澄清
+      description: 与人类 PM 多轮澄清，形成统一需求文档
       human_gate: true
       action: clarify-requirements
       artifacts:
@@ -22,6 +24,7 @@ workflow:
 
     - id: product-design-docs
       name: 产品设计文档
+      description: 产出设计文档（场景、功能目录、数据模型、流程、可行性）
       human_gate: true
       action: draft-product-design
       artifacts:
@@ -32,6 +35,7 @@ workflow:
 
     - id: product-prototype
       name: 产品原型
+      description: 产出 Pencil 原型与 UI 规格
       human_gate: true
       action: build-product-prototype
       artifacts:
@@ -41,6 +45,7 @@ workflow:
 
     - id: sync-knowledge
       name: 同步到知识库
+      description: 将业务与技术知识沉淀到 Obsidian vault
       action: sync-to-knowledge
       artifacts:
         - knowledge/03-features/{feature_slug}.md

@@ -29,8 +29,8 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
    - `验收标准`
    - `非目标`
    - `开放问题`
-4. Identify 1-3 ambiguities or missing details.
-5. Ask the human PM these questions one batch at a time in the terminal.
+4. Identify 1-3 ambiguities or missing details, and tag each with its Johari quadrant (认知象限): 知道自己知道 → 复述确认题; 知道自己不知道 → 直接回答 + coach; 不知道自己知道 → 展示已有资产; 不知道自己不知道 → 探查题.
+5. Ask the human PM these questions one batch at a time in the terminal, using the quadrant-appropriate style.
 6. Update `requirements.md` based on the answers.
 7. Repeat until the PM confirms the requirements are clear.
 8. Also generate `user-stories.md` and `prd.md` from the finalized requirements.
@@ -42,6 +42,22 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
 - After each answer, update the document and show the changed sections.
 - If the PM edits `requirements.md` directly and runs `workflow-continue`, re-read the file and continue from there.
 - Do not proceed to the next step until the PM explicitly confirms (e.g., says "confirm" or "确认").
+
+## 认知象限确认（Johari）
+
+澄清问题按 Johari 四象限设计与标注：
+
+| 象限 | 问题风格 |
+|------|----------|
+| 知道自己知道 | 复述确认题：用你的话复述需求，防止会错意 |
+| 知道自己不知道 | 直接回答 + coach：先给背景与选项，不反问 |
+| 不知道自己知道 | 展示已有资产：引用 knowledge/、issues、既有文档中已有的答案 |
+| 不知道自己不知道 | 探查题：用具体场景暴露用户未意识到的风险与缺失 |
+
+出口条件（两条都满足才允许进入下一阶段）：
+
+1. 每个开放问题都有明确的验收标准答案（用户认可的"怎样算完成"）。
+2. 执行路径已确定（下一步产物、负责角色、进入哪个阶段）。
 
 ## Output Artifacts
 

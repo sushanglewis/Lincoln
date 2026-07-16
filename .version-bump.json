@@ -1,0 +1,31 @@
+{
+  "version": "1.2.0",
+  "manifests": [
+    {
+      "path": ".claude-plugin/plugin.json",
+      "pointers": [
+        "/version"
+      ]
+    },
+    {
+      "path": ".claude-plugin/marketplace.json",
+      "pointers": [
+        "/plugins/0/version",
+        "/version"
+      ]
+    },
+    {
+      "path": "tools/lincoln/package.json",
+      "pointers": [
+        "/version"
+      ]
+    },
+    {
+      "path": "tools/lincoln/package-lock.json",
+      "pointers": [
+        "/version",
+        "/packages//version"
+      ]
+    }
+  ]
+}
