@@ -51,5 +51,6 @@ __pycache__/
 
 # Generated harness adapter artifacts (regenerate via:
 #   python3 scripts/lincoln-setup.py generate-harness --harness codex --harness opencode)
+.codex-plugin/
 .opencode/
 AGENTS.md

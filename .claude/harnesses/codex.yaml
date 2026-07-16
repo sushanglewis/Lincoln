@@ -1,6 +1,7 @@
 # codex harness manifest
 # 生成:AGENTS.md(项目根,角色契约 + lc-* 命令清单 + 轻量门控)
 #       ~/.codex/prompts/lc-*.md(用户级斜杠命令)
+#       .codex-plugin/plugin.json(显式声明 hooks:{} 以关闭默认 hook 回退)
 # spike 备注:codex 官方 docs 对 prompts frontmatter 描述不完整(网络受限),
 # 采用稳妥约定:prompt 文件为纯 markdown 正文;若真实 CLI 验证不符,
 # 移除 prompts target,命令说明已在 AGENTS.md 内联(回退方案零成本)。
@@ -31,3 +32,9 @@ targets:
     output: "{home}/.codex/prompts/{name}.md"
     scope: home
     transform: command-template
+
+  - kind: plugin
+    source: .claude-plugin/plugin.json
+    output: "{project}/.codex-plugin/{name}.json"
+    scope: project
+    transform: plugin-json

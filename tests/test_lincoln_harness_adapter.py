@@ -1,5 +1,6 @@
 """Tests for scripts/lincoln_harness_adapter.py."""
 
+import json
 from pathlib import Path
 
 import pytest
@@ -42,6 +43,31 @@ def _command_map(root: Path) -> Path:
     return path
 
 
+def _plugin_json(root: Path) -> Path:
+    plugin_dir = root / ".claude-plugin"
+    plugin_dir.mkdir(parents=True, exist_ok=True)
+    path = plugin_dir / "plugin.json"
+    path.write_text(
+        json.dumps(
+            {
+                "name": "lincoln",
+                "version": "1.2.0",
+                "description": "Test plugin",
+                "author": {"name": "Lincoln contributors"},
+                "repository": "https://github.com/sushanglewis/Lincoln",
+                "homepage": "https://github.com/sushanglewis/Lincoln",
+                "license": "MIT",
+                "keywords": ["test"],
+                "skills": ["./.claude/skills/test/"],
+                "agents": ["./.claude/agents/"],
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    return path
+
+
 @pytest.fixture
 def fake_repo(tmp_path):
     root = tmp_path / "repo"
@@ -50,6 +76,7 @@ def fake_repo(tmp_path):
         "---\nname: default\n---\n\nDefault agent contract.\n", encoding="utf-8"
     )
     _command_map(root)
+    _plugin_json(root)
     return root
 
 
@@ -228,3 +255,71 @@ def test_generated_gate_clause_included(fake_repo, tmp_path):
     text = cmd.read_text(encoding="utf-8")
     assert "stage_loader.py" in text
     assert "python3 scripts/lincoln-status.py" in text
+
+
+def _codex_manifest():
+    return {
+        "name": "codex",
+        "capabilities": {"hooks": False, "skills": False, "agents": True, "commands": True},
+        "targets": [
+            {
+                "kind": "agents-md",
+                "source": ".claude/agents/*.md",
+                "output": "{project}/AGENTS.md",
+                "scope": "project",
+                "transform": "concat",
+            },
+            {
+                "kind": "plugin",
+                "source": ".claude-plugin/plugin.json",
+                "output": "{project}/.codex-plugin/{name}.json",
+                "scope": "project",
+                "transform": "plugin-json",
+            },
+        ],
+        "command_map": {
+            "lc-status": {
+                "description": "Show current Lincoln stage status",
+                "action": "python3 scripts/lincoln-status.py",
+            }
+        },
+    }
+
+
+def test_validate_manifest_rejects_missing_capability_keys():
+    manifest = {
+        "name": "codex",
+        "capabilities": {"hooks": False},
+        "targets": [],
+        "command_map": {"lc-status": {"description": "x", "action": "y"}},
+    }
+    errors = validate_manifest(manifest)
+    assert any("capabilities.skills" in e for e in errors)
+    assert any("capabilities.agents" in e for e in errors)
+    assert any("capabilities.commands" in e for e in errors)
+
+
+def test_generate_produces_codex_plugin_manifest(fake_repo, tmp_path):
+    _write_manifest(fake_repo, "codex", _codex_manifest())
+    project = tmp_path / "project"
+    project.mkdir()
+    generate(fake_repo, "codex", project_dir=project, home_dir=tmp_path / "home")
+
+    plugin_path = project / ".codex-plugin" / "plugin.json"
+    assert plugin_path.exists()
+    manifest = json.loads(plugin_path.read_text(encoding="utf-8"))
+    assert manifest.get("hooks") == {}
+    assert "skills" not in manifest
+    assert "agents" not in manifest
+    assert manifest.get("name") == "lincoln"
+
+
+def test_codex_plugin_manifest_is_idempotent(fake_repo, tmp_path):
+    _write_manifest(fake_repo, "codex", _codex_manifest())
+    project = tmp_path / "project"
+    project.mkdir()
+    generate(fake_repo, "codex", project_dir=project, home_dir=tmp_path / "home")
+    first = (project / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+    generate(fake_repo, "codex", project_dir=project, home_dir=tmp_path / "home")
+    second = (project / ".codex-plugin" / "plugin.json").read_text(encoding="utf-8")
+    assert first == second

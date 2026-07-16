@@ -33,7 +33,13 @@ for HARNESS in codex opencode; do
     # Drift comparison only when artifacts were generated into the project.
     case "$HARNESS" in
         opencode) MARKER="$ROOT/.opencode" ;;
-        codex)    MARKER="$ROOT/AGENTS.md" ;;
+        codex)
+            if [ -e "$ROOT/.codex-plugin" ]; then
+                MARKER="$ROOT/.codex-plugin"
+            else
+                MARKER="$ROOT/AGENTS.md"
+            fi
+            ;;
     esac
     if [ -e "$MARKER" ]; then
         echo "==> Drift check: $HARNESS (project artifacts present)"
