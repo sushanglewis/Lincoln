@@ -8,7 +8,7 @@ version: 1.0.0
 
 ## Purpose
 
-Using [lc-explore-opensource] to Use during product design when the requirement can be solved or informed by existing open-source projects..
+Using [lc-explore-opensource] to research open-source projects that can solve or inform the current requirement.
 
 Research existing open-source projects that solve a similar problem, score them against Lincoln criteria, and produce a recommendation document.
 

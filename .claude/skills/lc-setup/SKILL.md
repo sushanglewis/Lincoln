@@ -9,8 +9,9 @@ description: |
 
 ## Purpose
 
-Using [lc-setup] to .
+Using [lc-setup] to guide one-time Lincoln installation and dependency setup.
 
+详细安装执行指令见 `prompts/main.md`。会话启动 hook 只负责提示依赖缺失，具体安装剧本由本 skill 承载。
 
 ## 触发条件
 
