@@ -587,12 +587,12 @@ def _benchmark_files(state_file, trigger):
     return sorted(benchmark_dir.glob(f"lc-benchmark-{trigger}-*.json"))
 
 
-def test_on_stop_triggers_session_stop_benchmark(process_package_state):
+def test_on_stop_does_not_trigger_session_stop_benchmark(process_package_state):
     project_root = process_package_state.parent.parent
     result = run_hook("on-stop.sh", process_package_state, project_root=project_root)
     assert result.returncode == 0
     files = _benchmark_files(process_package_state, "session_stop")
-    assert len(files) >= 1
+    assert len(files) == 0
 
 
 def test_on_stop_session_stop_benchmark_dedup(process_package_state):
@@ -602,4 +602,4 @@ def test_on_stop_session_stop_benchmark_dedup(process_package_state):
     result = run_hook("on-stop.sh", process_package_state, project_root=project_root)
     assert result.returncode == 0
     files_after = _benchmark_files(process_package_state, "session_stop")
-    assert len(files_after) == len(files_before)
+    assert len(files_after) == len(files_before) == 0

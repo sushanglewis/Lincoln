@@ -130,7 +130,7 @@ def test_record_artifacts_action_discovers_existing_files(minimal_state_file):
             shutil.rmtree(process_dir, ignore_errors=True)
 
 
-def test_handoff_report_generates_benchmark_and_handoff_trace(minimal_state_file):
+def test_handoff_report_generates_handoff_trace_without_auto_benchmark(minimal_state_file):
     result = run_loader("--stage", "clarify", "--action", "handoff-report", state_file=minimal_state_file)
     assert result.returncode == 0, result.stderr
 
@@ -143,7 +143,7 @@ def test_handoff_report_generates_benchmark_and_handoff_trace(minimal_state_file
     assert handoff_file.exists()
 
     benchmark_files = list((process_dir / "benchmark").glob("lc-benchmark-handoff-*.json"))
-    assert len(benchmark_files) >= 1
+    assert len(benchmark_files) == 0
 
     trace_file = process_dir / ".trace" / "lc-trace.jsonl"
     assert trace_file.exists()

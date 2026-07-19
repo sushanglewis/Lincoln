@@ -52,6 +52,31 @@ Lincoln v1.2.0 reframes the project as an AI-Native product R&D collaboration sy
 - Users upgrading from v1.1.0 should delete any legacy `.claude/workflow-stage.yaml` at repo root and let the next session recreate a per-branch state file.
 - External skill installation is now checked at session start; follow the prompts if any skill is missing.
 
+## Release Checklist
+
+Before tagging a new Lincoln release, run the deterministic packaging pipeline:
+
+1. Bump version and regenerate harness artifacts:
+   ```bash
+   python3 scripts/bump_version.py bump X.Y.Z
+   python3 scripts/bump_version.py --audit X.Y.Z-1
+   ```
+2. Dry-run the package to validate the allowlist/denylist:
+   ```bash
+   python3 scripts/package-lincoln-plugin.py check --check-dirty
+   ```
+3. Build the distribution archive on a clean working tree:
+   ```bash
+   python3 scripts/package-lincoln-plugin.py package
+   ```
+4. Verify the checksum and archive contents:
+   ```bash
+   cat dist/lincoln-X.Y.Z.tar.gz.sha256
+   tar -tzf dist/lincoln-X.Y.Z.tar.gz | head
+   ```
+5. Create a GitHub Release manually and attach `dist/lincoln-X.Y.Z.tar.gz`.
+   Automated marketplace/portal upload is not yet enabled.
+
 ## Full Changelog
 
 Compare: https://github.com/sushanglewis/Lincoln/compare/v1.1.0...v1.2.0

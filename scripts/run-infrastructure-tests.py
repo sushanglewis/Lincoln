@@ -25,6 +25,7 @@ INFRASTRUCTURE_TESTS = [
     "tests/test_infrastructure_layers.py",
     "tests/test_benchmark_opt_in.py",
     "tests/test_new_skills.py",
+    "tests/test_package_lincoln_plugin.py",
 ]
 
 
