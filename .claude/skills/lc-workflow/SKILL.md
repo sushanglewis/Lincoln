@@ -17,6 +17,11 @@ required_tools:
 
 # lc-workflow
 
+## Purpose
+
+Using [lc-workflow] to Lincoln 访谈到知识库完整工作流 bundle，按需组合 9 个阶段 skill.
+
+
  Lincoln 标准工作流 bundle：将访谈录音转化为结构化需求、产品设计、Pencil 原型、TDD 计划、OpenSpec 提案、GitHub Issues，最终沉淀到知识库。
 
 > 启动入口已统一为 `lc-wf-*`（见 `lc-wf` skill）：`lc-wf-list` 列出所有工作流，`lc-wf-<name>` 启动对应 SOP（solo 写入 `.context/workflow/`，team 写入 `{process_slug}/workflow-stage.yaml`）。本 skill 仍负责 interview-to-knowledge 的阶段→子 skill 映射。

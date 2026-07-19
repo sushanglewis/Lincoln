@@ -26,6 +26,11 @@ required_tools:
 
 # draft-product-design
 
+## Purpose
+
+Using [draft-product-design] to 基于已确认需求生成产品设计评审文档包.
+
+
 基于已确认需求生成面向 PM 评审的简洁产品设计文档包。
 
 运行入口： prompts/main.md

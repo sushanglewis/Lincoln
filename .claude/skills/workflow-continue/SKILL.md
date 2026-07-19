@@ -14,6 +14,11 @@ required_tools:
 
 # workflow-continue
 
+## Purpose
+
+Using [workflow-continue] to 人类修改文件后继续被暂停的工作流.
+
+
 在人类修改文件或回复后继续被暂停的 Lincoln 工作流。
 
 运行入口： prompts/main.md

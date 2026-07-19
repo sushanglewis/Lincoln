@@ -21,6 +21,11 @@ required_tools:
 
 # clarify-requirements
 
+## Purpose
+
+Using [clarify-requirements] to 基于访谈内容与人类 PM 多轮澄清需求.
+
+
 基于访谈 transcript 和 summary 与人类 PM 多轮澄清，输出统一需求文档。
 
 运行入口： prompts/main.md

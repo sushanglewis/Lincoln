@@ -8,6 +8,8 @@ version: 1.1.0
 
 ## Purpose
 
+Using [lc-workflow-router] to run session intake and select the most appropriate workflow template.
+
 Runs session intake on a cold start — overview recon (摸排), five-element situation judgment, Johari confirmation — then inspects the confirmed context and chooses a workflow template from `.claude/workflows/`.
 
 ## When to Use
@@ -36,3 +38,4 @@ Runs session intake on a cold start — overview recon (摸排), five-element si
 - Do not proceed with any implementation until the PM confirms or overrides the recommended template.
 - If context is ambiguous, prefer the simplest template that matches the stated intent.
 - Document the reasoning in `current_run.context_assessment`.
+- When reporting the routing decision to the PM, declare: `Using lc-workflow-router to select workflow: <name> because <reason>`, and record it in `.context/lc-intake.md`.

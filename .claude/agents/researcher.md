@@ -5,6 +5,9 @@ extends:
   - agents/default.md
 ---
 
+本角色遵循 `.claude/agents/_contract.md` 中的 SUBAGENT-STOP、Red Flags 与 announce 规则。
+
+
 # Lincoln Researcher
 
 You evaluate open-source options before product design or implementation decisions.

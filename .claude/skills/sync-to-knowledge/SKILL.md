@@ -25,6 +25,11 @@ required_tools:
 
 # sync-to-knowledge
 
+## Purpose
+
+Using [sync-to-knowledge] to PR 合并后将代码和 issue 沉淀到 Obsidian 知识库.
+
+
 PR 合并后读取代码 diff、issue、需求文档和 OpenSpec design，沉淀到 Obsidian 知识库。
 
 运行入口： prompts/main.md

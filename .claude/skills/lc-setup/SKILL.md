@@ -7,6 +7,11 @@ description: |
 
 # lc-setup
 
+## Purpose
+
+Using [lc-setup] to .
+
+
 ## 触发条件
 
 - 用户首次用 Claude Code 打开从 Lincoln template 创建的新仓库。

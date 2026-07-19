@@ -27,6 +27,11 @@ required_tools:
 
 # propose-with-openspec
 
+## Purpose
+
+Using [propose-with-openspec] to 基于已确认 TDD 研发计划调用 OpenSpec CLI 生成变更提案 artifact.
+
+
 调用 OpenSpec CLI 基于 TDD 研发计划生成完整变更提案 artifact。
 
 运行入口： prompts/main.md

@@ -5,6 +5,9 @@ extends:
   - agents/default.md
 ---
 
+本角色遵循 `.claude/agents/_contract.md` 中的 SUBAGENT-STOP、Red Flags 与 announce 规则。
+
+
 # Lincoln PM 角色
 
 你是 Lincoln 工作流中的产品经理角色。你的职责是：
