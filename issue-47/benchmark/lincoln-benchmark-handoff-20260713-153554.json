@@ -1,0 +1,161 @@
+{
+  "report_id": "6e5579adda1e4d6f964c464753432996",
+  "schema_version": "1.0.0",
+  "scenario": "S1",
+  "trigger": "handoff",
+  "generated_at": "2026-07-13T15:35:54Z",
+  "metadata": {
+    "process_slug": "issue-47",
+    "run_id": "20260713144558-5baa539c",
+    "branch": "issue-47",
+    "issue_number": "47",
+    "linear_id": "LEW-47",
+    "current_stage": "product-design-docs",
+    "trace_files": [
+      "issue-47/.trace/lincoln-trace.jsonl"
+    ],
+    "workflow_template": "interview-to-knowledge"
+  },
+  "metrics": {
+    "session": {
+      "session_duration_seconds": 2409,
+      "trace_line_count": 2,
+      "total_tool_calls": 2,
+      "tool_calls_by_category": {
+        "handoff": 2
+      },
+      "unique_skills": [],
+      "unique_files_touched": 0,
+      "test_runs": 0,
+      "error_count": 0,
+      "retry_count": 0
+    },
+    "workflow": {
+      "stage_transition_count": 1,
+      "stage_durations": {
+        "clarify": 0,
+        "ingest": 0
+      },
+      "stage_completion_rate": 0.4,
+      "stage_rework_count": 0,
+      "artifact_completion_rate": 1.0,
+      "validation_failure_count": 0,
+      "workflow_adherence_score": 0.22,
+      "human_gate_count": 2,
+      "human_gate_wait_seconds": 0,
+      "human_gate_pass_rate": 0.5,
+      "build_codebase_knowledge_duration_seconds": 0
+    },
+    "collaboration": {
+      "handoff_count": 2,
+      "agent_switches": 0,
+      "pm_turns": 2,
+      "time_to_first_handoff": 0
+    },
+    "quality": {
+      "requirements_clarity_score": 4,
+      "design_doc_completeness": 1.0,
+      "tdd_plan_red_green_refactor": {
+        "red": false,
+        "green": false,
+        "refactor": false
+      },
+      "openspec_task_count": 0,
+      "static_check_pass": null,
+      "test_coverage": null,
+      "pr_size": 25702,
+      "audit_score": {
+        "PASS": 5,
+        "WARN": 2
+      },
+      "code_review_calls": 0
+    },
+    "outcome": {
+      "issue_closed": null,
+      "pr_merged": false,
+      "pr_merge_latency_seconds": 0,
+      "knowledge_synced": null,
+      "time_to_pr_seconds": 0,
+      "time_to_merge_seconds": 0,
+      "unique_files_touched_ratio": 0.0
+    }
+  },
+  "confidence": {
+    "session_duration_seconds": "exact",
+    "trace_line_count": "exact",
+    "total_tool_calls": "exact",
+    "tool_calls_by_category": "exact",
+    "unique_skills": "exact",
+    "unique_files_touched": "exact",
+    "test_runs": "exact",
+    "error_count": "exact",
+    "retry_count": "exact",
+    "stage_durations": "estimated",
+    "human_gate_wait_seconds": "estimated",
+    "artifact_completion_rate": "exact",
+    "workflow_adherence_score": "exact",
+    "build_codebase_knowledge_duration_seconds": "estimated",
+    "agent_switches": "pending",
+    "pm_turns": "estimated",
+    "time_to_first_handoff": "exact",
+    "test_coverage": "pending",
+    "audit_score": "exact",
+    "pr_size": "exact",
+    "issue_closed": "pending",
+    "knowledge_synced": "pending",
+    "pr_merge_latency_seconds": "pending",
+    "unique_files_touched_ratio": "estimated"
+  },
+  "evaluation": {
+    "time_to_merge_seconds": {
+      "value": 0,
+      "threshold": {
+        "green": 259200,
+        "yellow": 604800,
+        "direction": "minimize"
+      },
+      "status": "green"
+    },
+    "human_gate_wait_seconds": {
+      "value": 0,
+      "threshold": {
+        "green": 14400,
+        "yellow": 28800,
+        "direction": "minimize"
+      },
+      "status": "green"
+    },
+    "human_gate_pass_rate": {
+      "value": 0.5,
+      "threshold": {
+        "green": 1.0,
+        "yellow": 0.8,
+        "direction": "maximize"
+      },
+      "status": "red"
+    },
+    "requirements_clarity_score": {
+      "value": 4,
+      "threshold": {
+        "green": 4,
+        "yellow": 3,
+        "direction": "maximize"
+      },
+      "status": "green"
+    },
+    "pr_size": {
+      "value": 25702,
+      "threshold": {
+        "green": 400,
+        "yellow": 800,
+        "direction": "minimize"
+      },
+      "status": "red"
+    },
+    "tdd_plan_red_green_refactor": {
+      "value": "0/3",
+      "threshold": "3/3 phases",
+      "status": "red"
+    }
+  }
+}
