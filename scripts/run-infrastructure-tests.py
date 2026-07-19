@@ -23,6 +23,8 @@ INFRASTRUCTURE_TESTS = [
     "tests/test_session_start_shape.py",
     "tests/test_hook_session_start.py",
     "tests/test_infrastructure_layers.py",
+    "tests/test_benchmark_opt_in.py",
+    "tests/test_new_skills.py",
 ]
 
 

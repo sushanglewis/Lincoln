@@ -887,9 +887,6 @@ def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path
         run_id=state.get("current_run", {}).get("run_id"),
     )
 
-    # Trigger the handoff benchmark report from the canonical state mutation layer.
-    action_benchmark_report(state_file, "handoff")
-
     return str(handoff_path.relative_to(project_root))
 
 
