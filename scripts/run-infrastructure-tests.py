@@ -21,6 +21,7 @@ INFRASTRUCTURE_TESTS = [
     "tests/test_harness_default_off.py",
     "tests/test_agent_contract.py",
     "tests/test_session_start_shape.py",
+    "tests/test_hook_session_start.py",
     "tests/test_infrastructure_layers.py",
 ]
 
