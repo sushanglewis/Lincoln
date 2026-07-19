@@ -19,6 +19,42 @@ fi
 STATE_FILE="${LINCOLN_STATE_FILE:-}"
 LEGACY_STATE_FILE="$ROOT/.claude/workflow-state.yaml"
 
+# Runtime state captured for optional machine-readable JSON output
+# (LINCOLN_SESSION_START_JSON=1). Updated at key decision points.
+_LINCOLN_SETUP_COMPLETE="false"
+_LINCOLN_HAS_STATE="false"
+_LINCOLN_GUIDANCE_INJECTED="false"
+_LINCOLN_CURRENT_STAGE="not_started"
+_LINCOLN_STATUS="not_started"
+_LINCOLN_WORKFLOW_TEMPLATE="unknown"
+_LINCOLN_PROCESS_SLUG=""
+
+emit_session_start_json() {
+    if [[ "${LINCOLN_SESSION_START_JSON:-}" != "1" ]]; then
+        return 0
+    fi
+    "$PYTHON" - "$_LINCOLN_SETUP_COMPLETE" "$_LINCOLN_HAS_STATE" "$_LINCOLN_GUIDANCE_INJECTED" "$_LINCOLN_CURRENT_STAGE" "$_LINCOLN_STATUS" "$_LINCOLN_WORKFLOW_TEMPLATE" "$_LINCOLN_PROCESS_SLUG" <<'PY'
+import sys, json
+setup_complete = sys.argv[1] == "true"
+has_state = sys.argv[2] == "true"
+guidance_injected = sys.argv[3] == "true"
+current_stage = sys.argv[4]
+status = sys.argv[5]
+workflow_template = sys.argv[6]
+process_slug = sys.argv[7]
+print(json.dumps({
+    "schema_version": "1.0.0",
+    "has_state": has_state,
+    "guidance_injected": guidance_injected,
+    "setup_complete": setup_complete,
+    "current_stage": current_stage,
+    "status": status,
+    "workflow_template": workflow_template,
+    "process_slug": process_slug,
+}))
+PY
+}
+
 # Reset any stale task-tool burst counter from a previous session
 rm -f "$ROOT/.context/task-tool-burst.json"
 
@@ -34,6 +70,7 @@ if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$ROOT/.claude/skills/dependenc
         if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
             if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
                 SETUP_COMPLETE="true"
+                _LINCOLN_SETUP_COMPLETE="true"
             fi
         fi
         if [[ "$SETUP_COMPLETE" != "true" ]]; then
@@ -45,14 +82,25 @@ if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$ROOT/.claude/skills/dependenc
             echo ""
             echo "=== End Lincoln 依赖缺失 ==="
             echo ""
+            emit_session_start_json
             exit 0
         fi
+    else
+        _LINCOLN_SETUP_COMPLETE="true"
     fi
     echo ""
+else
+    # Even when dependency check is skipped, surface setup completeness in the JSON shape.
+    if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
+        if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
+            _LINCOLN_SETUP_COMPLETE="true"
+        fi
+    fi
 fi
 
 # Print the cold-start opening guidance block (fresh repo / unclear issue branch).
 print_opening_guidance() {
+    _LINCOLN_GUIDANCE_INJECTED="true"
     echo ""
     echo "=== Lincoln 开场引导 ==="
     echo ""
@@ -99,6 +147,7 @@ if [[ ! -f "$STATE_FILE" ]]; then
                 echo "  scripts/init-lincoln-branch.sh --issue-number $ISSUE_NUMBER"
                 echo "=== End Lincoln Session Start ==="
                 echo ""
+                emit_session_start_json
                 exit 0
             }
             # Re-resolve state file after initialization
@@ -116,15 +165,19 @@ PY
             print_opening_guidance
             echo "=== End Lincoln Session Start ==="
             echo ""
+            emit_session_start_json
             exit 0
         fi
     else
         print_opening_guidance
         echo "=== End Lincoln Session Start ==="
         echo ""
+        emit_session_start_json
         exit 0
     fi
 fi
+
+_LINCOLN_HAS_STATE="true"
 
 # 3. Read current stage and node info
 STATE_JSON=$("$PYTHON" - "$STATE_FILE" <<'PY'
@@ -166,6 +219,11 @@ WAITING_FOR=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.loa
 SESSION_ID=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['session_id'])")
 DESIGN_ID=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['design_id'])")
 PROCESS_SLUG=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['process_slug'])")
+
+_LINCOLN_CURRENT_STAGE="$CURRENT_STAGE"
+_LINCOLN_STATUS="$STATUS"
+_LINCOLN_WORKFLOW_TEMPLATE="$WORKFLOW_TEMPLATE"
+_LINCOLN_PROCESS_SLUG="$PROCESS_SLUG"
 
 echo "Workflow: $WORKFLOW_NAME ($WORKFLOW_TEMPLATE)"
 echo "Process package: ${PROCESS_SLUG:-(unset)}"
@@ -222,7 +280,7 @@ PY
         echo "=== Lincoln Agent Contract ==="
         cat "$ROOT/.claude/agents/default.md"
         echo ""
-        echo "=== End Lincoln Agent Contract ==="
+        echo "=== End Agent Context ==="
         echo ""
     fi
 
@@ -308,6 +366,7 @@ fi
 
 # 8. Opening guidance for a work package that has not started yet
 if [[ "${NEEDS_OPENING_GUIDANCE:-}" == "true" ]]; then
+    _LINCOLN_GUIDANCE_INJECTED="true"
     echo "=== Lincoln 开场引导 ==="
     echo ""
     echo "工作包已就绪但尚未启动（current_stage: not_started）。请先完成开场确认，再进入第一阶段："
@@ -328,4 +387,5 @@ fi
 echo "=== End Lincoln Session Start ==="
 echo ""
 
+emit_session_start_json
 exit 0
