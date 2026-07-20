@@ -40,3 +40,30 @@ def test_cli_writes_json(tmp_path):
     assert output_file.exists()
     data = json.loads(output_file.read_text(encoding="utf-8"))
     assert data["tokens"] > 0
+
+
+def test_benchmark_metrics_reads_session_start_tokens(tmp_path):
+    from scripts.lincoln_benchmark_metrics import compute_metrics
+
+    process_slug = "issue-test"
+    trace_dir = tmp_path / process_slug / ".trace"
+    trace_dir.mkdir(parents=True, exist_ok=True)
+    metrics_file = trace_dir / "session-start-metrics.json"
+    metrics_file.write_text(
+        json.dumps({"schema_version": "1.0.0", "bytes": 1200, "chars": 600, "tokens": 150}),
+        encoding="utf-8",
+    )
+
+    state = {
+        "current_run": {
+            "current_stage": "clarify",
+            "variables": {"process_slug": process_slug},
+        },
+        "workflow": {"template": "interview-to-knowledge"},
+        "nodes": [],
+    }
+
+    metrics, confidence = compute_metrics([], state, "S1", tmp_path)
+    assert metrics["session"]["session_start_tokens"] == 150
+    assert metrics["session"]["session_start_bytes"] == 1200
+    assert confidence["session_start_tokens"] == "exact"
