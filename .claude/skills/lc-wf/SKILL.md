@@ -22,6 +22,11 @@ required_tools:
 
 # lc-wf — Lincoln workflow bundle 入口
 
+## Purpose
+
+Using [lc-wf] to Lincoln workflow bundle 入口，按 lc-wf-<workflow-name> 启动对应 SOP（solo 或 team）.
+
+
 所有 Lincoln SOP 工作流统一通过 `lc-wf-*` 启动，底层命令为 `python3 scripts/lincoln_workflow.py`。
 
 ## 命令映射

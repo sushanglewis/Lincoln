@@ -124,13 +124,4 @@ if [[ -n "$BENCHMARK_TRIGGER" ]]; then
         2>/dev/null || true
 fi
 
-# Trigger benchmark reports for PR lifecycle events. Handoff reports are now
-# generated directly by stage_loader when it processes --action handoff-report.
-if [[ -n "$BENCHMARK_TRIGGER" ]]; then
-    LINCOLN_SKIP_TRACE=1 "$PYTHON" "$ROOT/scripts/lincoln_benchmark.py" \
-        --state-file "$STATE_FILE" \
-        --trigger "$BENCHMARK_TRIGGER" \
-        >/dev/null 2>&1 || true
-fi
-
 exit 0

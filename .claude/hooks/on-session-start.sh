@@ -19,6 +19,42 @@ fi
 STATE_FILE="${LINCOLN_STATE_FILE:-}"
 LEGACY_STATE_FILE="$ROOT/.claude/workflow-state.yaml"
 
+# Runtime state captured for optional machine-readable JSON output
+# (LINCOLN_SESSION_START_JSON=1). Updated at key decision points.
+_LINCOLN_SETUP_COMPLETE="false"
+_LINCOLN_HAS_STATE="false"
+_LINCOLN_GUIDANCE_INJECTED="false"
+_LINCOLN_CURRENT_STAGE="not_started"
+_LINCOLN_STATUS="not_started"
+_LINCOLN_WORKFLOW_TEMPLATE="unknown"
+_LINCOLN_PROCESS_SLUG=""
+
+emit_session_start_json() {
+    if [[ "${LINCOLN_SESSION_START_JSON:-}" != "1" ]]; then
+        return 0
+    fi
+    "$PYTHON" - "$_LINCOLN_SETUP_COMPLETE" "$_LINCOLN_HAS_STATE" "$_LINCOLN_GUIDANCE_INJECTED" "$_LINCOLN_CURRENT_STAGE" "$_LINCOLN_STATUS" "$_LINCOLN_WORKFLOW_TEMPLATE" "$_LINCOLN_PROCESS_SLUG" <<'PY'
+import sys, json
+setup_complete = sys.argv[1] == "true"
+has_state = sys.argv[2] == "true"
+guidance_injected = sys.argv[3] == "true"
+current_stage = sys.argv[4]
+status = sys.argv[5]
+workflow_template = sys.argv[6]
+process_slug = sys.argv[7]
+print(json.dumps({
+    "schema_version": "1.0.0",
+    "has_state": has_state,
+    "guidance_injected": guidance_injected,
+    "setup_complete": setup_complete,
+    "current_stage": current_stage,
+    "status": status,
+    "workflow_template": workflow_template,
+    "process_slug": process_slug,
+}))
+PY
+}
+
 # Reset any stale task-tool burst counter from a previous session
 rm -f "$ROOT/.context/task-tool-burst.json"
 
@@ -34,38 +70,37 @@ if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$ROOT/.claude/skills/dependenc
         if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
             if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
                 SETUP_COMPLETE="true"
+                _LINCOLN_SETUP_COMPLETE="true"
             fi
         fi
         if [[ "$SETUP_COMPLETE" != "true" ]]; then
             echo ""
-            echo "=== Lincoln 依赖缺失 ==="
+            echo "Lincoln 依赖未就绪。请调用 lc-setup 技能完成一次性安装；安装完成前不要进行其他 Lincoln 工作流操作。"
             echo ""
-            echo "Lincoln 依赖未就绪。请调用 lc-setup 技能完成一次性安装（安装全局工具或写配置前先向用户确认），"
-            echo "安装完成前不要进行其他 Lincoln 工作流操作。"
-            echo ""
-            echo "=== End Lincoln 依赖缺失 ==="
-            echo ""
+            emit_session_start_json
             exit 0
         fi
+    else
+        _LINCOLN_SETUP_COMPLETE="true"
     fi
     echo ""
+else
+    # Even when dependency check is skipped, surface setup completeness in the JSON shape.
+    if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
+        if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
+            _LINCOLN_SETUP_COMPLETE="true"
+        fi
+    fi
 fi
 
 # Print the cold-start opening guidance block (fresh repo / unclear issue branch).
 print_opening_guidance() {
+    _LINCOLN_GUIDANCE_INJECTED="true"
     echo ""
     echo "=== Lincoln 开场引导 ==="
     echo ""
-    echo "Lincoln 当前没有可驱动的工作状态。请立即执行开场引导流程，再开始任何工作："
-    echo ""
-    echo "1. 摸排：概览级侦察（顶层结构 / README 前 100 行 / knowledge 索引 / 开放 issues / 用户首条消息），"
-    echo "   只读操作 ≤ 8 次，不读源码实现，不做深度扫描（禁用 lc-build-codebase-knowledge）。"
-    echo "2. 判断：输出处境评估（角色 / 流程位置 / 问题 / 目标 / Johari 象限初判 + 置信度）。"
-    echo "3. 询问和确认：展示判断，按认知象限设计确认动作，每轮 ≤ 3 个问题。"
-    echo "4. 有策略的开展：每个目标有明确验收标准、执行路径确定后，再路由到对应工作流。"
-    echo ""
-    echo "完整流程: .claude/skills/lc-workflow-router/prompts/intake-prompt.md"
-    echo "确认完成前不做实现性工作；如需初始化 issue 工作包，由你（Agent）代为执行脚本，不让用户敲命令。"
+    echo "Lincoln 当前没有可驱动的工作状态。请先完成 .claude/skills/lc-workflow-router/prompts/intake-prompt.md 中的摸排 → 判断 → 确认流程。"
+    echo "如需初始化 issue 工作包，由你（Agent）代为执行 scripts/init-lincoln-branch.sh，不让用户敲命令。"
     echo ""
     echo "=== End Lincoln 开场引导 ==="
     echo ""
@@ -99,6 +134,7 @@ if [[ ! -f "$STATE_FILE" ]]; then
                 echo "  scripts/init-lincoln-branch.sh --issue-number $ISSUE_NUMBER"
                 echo "=== End Lincoln Session Start ==="
                 echo ""
+                emit_session_start_json
                 exit 0
             }
             # Re-resolve state file after initialization
@@ -116,15 +152,19 @@ PY
             print_opening_guidance
             echo "=== End Lincoln Session Start ==="
             echo ""
+            emit_session_start_json
             exit 0
         fi
     else
         print_opening_guidance
         echo "=== End Lincoln Session Start ==="
         echo ""
+        emit_session_start_json
         exit 0
     fi
 fi
+
+_LINCOLN_HAS_STATE="true"
 
 # 3. Read current stage and node info
 STATE_JSON=$("$PYTHON" - "$STATE_FILE" <<'PY'
@@ -167,6 +207,11 @@ SESSION_ID=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load
 DESIGN_ID=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['design_id'])")
 PROCESS_SLUG=$(echo "$STATE_JSON" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin)['process_slug'])")
 
+_LINCOLN_CURRENT_STAGE="$CURRENT_STAGE"
+_LINCOLN_STATUS="$STATUS"
+_LINCOLN_WORKFLOW_TEMPLATE="$WORKFLOW_TEMPLATE"
+_LINCOLN_PROCESS_SLUG="$PROCESS_SLUG"
+
 echo "Workflow: $WORKFLOW_NAME ($WORKFLOW_TEMPLATE)"
 echo "Process package: ${PROCESS_SLUG:-(unset)}"
 echo "State file: ${STATE_FILE#$ROOT/}"
@@ -177,52 +222,57 @@ echo "Design ID: ${DESIGN_ID:-(unset)}"
 echo "Waiting for: $WAITING_FOR"
 echo ""
 
-# 4. Load stage context, agent role, and workflow template
+# 4. Load stage context, agent role, and workflow template (summaries only)
 if [[ "$CURRENT_STAGE" != "not_started" ]]; then
     STAGE_YAML="$ROOT/.claude/stages/$CURRENT_STAGE.yaml"
     if [[ -f "$STAGE_YAML" ]]; then
         echo "=== Lincoln Stage Context ==="
         echo ""
         echo "Stage YAML: ${STAGE_YAML#$ROOT/}"
-        echo ""
-        # Print the context block if we can extract it; otherwise print the whole file
-        "$PYTHON" - "$STAGE_YAML" <<'PY' 2>/dev/null || cat "$STAGE_YAML"
+        "$PYTHON" - "$STAGE_YAML" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
 ctx = data.get("context", {})
-for key in ["goal", "entry", "execution", "exit", "constraints"]:
-    value = ctx.get(key)
-    if value:
-        print(f"## {key.capitalize()}")
-        print(value)
-        print("")
+goal = ctx.get("goal", "")
+if goal:
+    summary = goal.splitlines()[0]
+    print(f"Goal: {summary}")
+agent = data.get("agent", {}).get("primary", "")
+if agent:
+    print(f"Primary agent: {agent}")
+skills = data.get("skills", {})
+if isinstance(skills, dict):
+    skill_names = skills.get("required", []) + skills.get("optional", [])
+elif isinstance(skills, list):
+    skill_names = skills
+else:
+    skill_names = []
+if skill_names:
+    print(f"Skills: {', '.join(skill_names[:5])}{'...' if len(skill_names) > 5 else ''}")
+print("Use Read to inspect the full stage YAML if needed.")
 PY
         echo ""
         echo "=== End Lincoln Stage Context ==="
         echo ""
     fi
 
-    # Load primary agent role file if declared
+    # Print agent file pointers instead of full text to keep session-start lean.
     PRIMARY_AGENT=$("$PYTHON" - "$STAGE_YAML" <<'PY' 2>/dev/null || true
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
 print(data.get("agent", {}).get("primary", ""))
 PY
-)
-    if [[ -n "$PRIMARY_AGENT" && -f "$ROOT/.claude/agents/$PRIMARY_AGENT.md" ]]; then
+    )
+    # Stage YAML uses role IDs like lc-pm; agent files omit the lc- prefix.
+    AGENT_FILE="${PRIMARY_AGENT#lc-}.md"
+    if [[ -n "$PRIMARY_AGENT" && -f "$ROOT/.claude/agents/$AGENT_FILE" ]]; then
         echo "=== Agent Context ($PRIMARY_AGENT) ==="
-        cat "$ROOT/.claude/agents/$PRIMARY_AGENT.md"
+        echo "Agent file: .claude/agents/$AGENT_FILE"
+        echo "Default contract: .claude/agents/default.md"
+        echo "Behavioral contract: .claude/agents/_contract.md"
+        echo "Use Read to inspect the agent role if needed."
         echo ""
         echo "=== End Agent Context ==="
-        echo ""
-    fi
-
-    # Load default agent contract
-    if [[ -f "$ROOT/.claude/agents/default.md" ]]; then
-        echo "=== Lincoln Agent Contract ==="
-        cat "$ROOT/.claude/agents/default.md"
-        echo ""
-        echo "=== End Lincoln Agent Contract ==="
         echo ""
     fi
 
@@ -308,18 +358,10 @@ fi
 
 # 8. Opening guidance for a work package that has not started yet
 if [[ "${NEEDS_OPENING_GUIDANCE:-}" == "true" ]]; then
+    _LINCOLN_GUIDANCE_INJECTED="true"
     echo "=== Lincoln 开场引导 ==="
     echo ""
-    echo "工作包已就绪但尚未启动（current_stage: not_started）。请先完成开场确认，再进入第一阶段："
-    echo ""
-    echo "1. 摸排：轻量侦察（README 前 100 行 / ${PROCESS_SLUG:-工作包}/documents.yaml / 开放 issues / 用户首条消息），"
-    echo "   只读操作 ≤ 8 次，不读源码实现，不做深度扫描。"
-    echo "2. 判断：展示处境评估（角色 / 流程位置 / 问题 / 目标 / Johari 象限初判 + 置信度）。"
-    echo "3. 询问和确认：按认知象限设计确认动作，每轮 ≤ 3 个问题。"
-    echo "4. 确认目标与验收标准后，由你（Agent）代为运行 validate-entry 进入第一阶段："
-    echo "   python3 scripts/stage_loader.py --stage <第一阶段> --action validate-entry"
-    echo ""
-    echo "完整流程: .claude/skills/lc-workflow-router/prompts/intake-prompt.md"
+    echo "工作包已就绪但尚未启动（current_stage: not_started）。请先完成 .claude/skills/lc-workflow-router/prompts/intake-prompt.md 中的确认流程，再运行 validate-entry 进入第一阶段。"
     echo ""
     echo "=== End Lincoln 开场引导 ==="
     echo ""
@@ -328,4 +370,5 @@ fi
 echo "=== End Lincoln Session Start ==="
 echo ""
 
+emit_session_start_json
 exit 0

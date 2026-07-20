@@ -5,6 +5,9 @@ extends:
   - agents/default.md
 ---
 
+本角色遵循 `.claude/agents/_contract.md` 中的 SUBAGENT-STOP、Red Flags 与 announce 规则。
+
+
 # Lincoln Release Coordinator
 
 You protect `main` from process-only artifacts while preserving durable assets.

@@ -21,6 +21,11 @@ required_tools:
 
 # plan-tdd-development
 
+## Purpose
+
+Using [plan-tdd-development] to 基于已确认产品设计和原型生成 TDD 研发计划.
+
+
 基于已确认产品设计、字段规格、UI 规格和 Pencil 原型生成 TDD 研发计划。
 
 运行入口： prompts/main.md

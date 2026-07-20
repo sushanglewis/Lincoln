@@ -8,6 +8,8 @@ version: 1.0.0
 
 ## Purpose
 
+Using [lc-build-codebase-knowledge] to scan an existing codebase and generate feature knowledge documents under `knowledge/`.
+
 Scan an existing codebase, identify its major features/modules, and generate feature knowledge documents under `knowledge/` so Lincoln can iterate from facts instead of assumptions.
 
 ## When to Use

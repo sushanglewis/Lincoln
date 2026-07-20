@@ -84,7 +84,7 @@ def cmd_check(data: dict, root: Path) -> int:
     return 0
 
 
-def cmd_bump(data: dict, root: Path, new_version: str) -> int:
+def cmd_bump(data: dict, root: Path, new_version: str, dry_run: bool = False) -> int:
     if not SEMVER.match(new_version):
         sys.exit(f"invalid semver (want X.Y.Z): {new_version!r}")
     old_version = data["version"]
@@ -94,16 +94,47 @@ def cmd_bump(data: dict, root: Path, new_version: str) -> int:
         for pointer in manifest["pointers"]:
             parent, key = resolve(doc, parse_pointer(pointer))
             parent[key] = new_version
-        path.write_text(
-            json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-        print(f"  bumped {manifest['path']}")
+        if dry_run:
+            print(f"  would bump {manifest['path']}")
+        else:
+            path.write_text(
+                json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+            )
+            print(f"  bumped {manifest['path']}")
     data["version"] = new_version
-    (root / ".version-bump.json").write_text(
-        json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
-    print(f"bumped {old_version} -> {new_version}")
-    print(f"next: python3 scripts/bump_version.py --audit {old_version}")
+    if dry_run:
+        print(f"would bump .version-bump.json {old_version} -> {new_version}")
+    else:
+        (root / ".version-bump.json").write_text(
+            json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        print(f"bumped {old_version} -> {new_version}")
+
+    # Keep harness artifacts in lockstep with the bumped version.
+    adapter = root / "scripts" / "lincoln_harness_adapter.py"
+    if adapter.exists():
+        for harness in ("codex", "opencode"):
+            artifact = root / ".claude" / "harnesses" / f"{harness}.yaml"
+            if not artifact.exists():
+                continue
+            if dry_run:
+                print(f"  would regenerate harness {harness}.yaml")
+                continue
+            result = subprocess.run(
+                [sys.executable, str(adapter), "--harness", harness],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                print(result.stderr, file=sys.stderr)
+                sys.exit(f"harness generation failed for {harness}")
+            print(f"  regenerated harness {harness}.yaml")
+
+    if dry_run:
+        print(f"next (dry run complete): review changes, then run bump {new_version}")
+    else:
+        print(f"next: python3 scripts/bump_version.py --audit {old_version}")
     return 0
 
 
@@ -127,11 +158,19 @@ def cmd_audit(root: Path, old_version: str) -> int:
 
 
 def main(argv: list[str], root: Path = ROOT) -> int:
-    args = argv[1:]
+    raw_args = argv[1:]
+    dry_run = "--dry-run" in raw_args
+    args = [a for a in raw_args if a != "--dry-run"]
+
+    if dry_run and not (len(args) == 2 and args[0] == "bump"):
+        print("--dry-run can only be used with 'bump X.Y.Z'", file=sys.stderr)
+        print(__doc__, file=sys.stderr)
+        return 2
+
     if args == ["--check"]:
         return cmd_check(load_source(root), root)
     if len(args) == 2 and args[0] == "bump":
-        return cmd_bump(load_source(root), root, args[1])
+        return cmd_bump(load_source(root), root, args[1], dry_run=dry_run)
     if len(args) == 2 and args[0] == "--audit":
         return cmd_audit(root, args[1])
     print(__doc__, file=sys.stderr)

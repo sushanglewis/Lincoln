@@ -31,8 +31,9 @@ commands:
     action: python3 scripts/stage_loader.py
     args_hint: --stage <current_stage> --action approve-gate
   lc-benchmark:
-    description: 运行 Lincoln benchmark 报告(可选模块)
-    action: python3 scripts/lincoln_benchmark_report.py
+    description: 运行 Lincoln benchmark 报告（需显式调用）
+    action: python3 scripts/lc-benchmark-cli.py
+    args_hint: "[--trigger manual|handoff|pr_created|pr_merged|session_stop]"
   lc-wf-list:
     description: 列出所有已注册的 Lincoln workflow 及其执行模式(solo/team)
     action: python3 scripts/lincoln_workflow.py

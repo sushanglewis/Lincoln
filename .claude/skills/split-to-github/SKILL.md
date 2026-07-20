@@ -22,6 +22,11 @@ required_tools:
 
 # split-to-github
 
+## Purpose
+
+Using [split-to-github] to 将 OpenSpec tasks 拆分为 GitHub Issues.
+
+
 读取 OpenSpec tasks 并拆分为带清晰边界和验收标准的 GitHub Issues。
 
 运行入口： prompts/main.md

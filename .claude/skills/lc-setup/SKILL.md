@@ -7,6 +7,12 @@ description: |
 
 # lc-setup
 
+## Purpose
+
+Using [lc-setup] to guide one-time Lincoln installation and dependency setup.
+
+详细安装执行指令见 `prompts/main.md`。会话启动 hook 只负责提示依赖缺失，具体安装剧本由本 skill 承载。
+
 ## 触发条件
 
 - 用户首次用 Claude Code 打开从 Lincoln template 创建的新仓库。

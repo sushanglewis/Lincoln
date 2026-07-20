@@ -18,6 +18,15 @@ def test_explore_opensource_skill_exists():
     assert prompt.exists()
 
 
+def test_lc_benchmark_skill_exists():
+    root = Path(__file__).resolve().parents[1]
+    skill = root / ".claude" / "skills" / "lc-benchmark" / "SKILL.md"
+    assert skill.exists()
+    text = skill.read_text(encoding="utf-8").lower()
+    assert "benchmark" in text
+    assert "opt-in" in text
+
+
 def test_new_stages_registered_in_bundle_skill():
     root = Path(__file__).resolve().parents[1]
     skill_md = root / ".claude" / "skills" / "lc-workflow" / "SKILL.md"

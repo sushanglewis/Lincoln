@@ -19,6 +19,11 @@ required_tools:
 
 # lc-handoff
 
+## Purpose
+
+Using [lc-handoff] to 为当前阶段生成交接文档，并标记人类审批通过.
+
+
 为当前阶段生成交接文档，并在人类 PM 确认后标记 gate 审批通过。
 
 执行步骤：

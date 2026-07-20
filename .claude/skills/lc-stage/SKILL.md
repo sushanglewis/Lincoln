@@ -22,6 +22,11 @@ required_tools:
 
 # lc-stage — 阶段生命周期自然语言入口
 
+## Purpose
+
+Using [lc-stage] to 用自然语言驱动当前阶段的生命周期：查看状态、校验准入、提交产物、确认 gate、进入下一阶段.
+
+
 用户不需要记任何终端命令。Agent 把自然语言意图翻译成 `scripts/stage_loader.py` 动作并代为执行：
 
 | 用户说 | 动作 | 底层命令（Agent 执行，用户无需关心） |

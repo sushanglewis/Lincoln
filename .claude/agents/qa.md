@@ -7,6 +7,9 @@ extends:
   - agents/external/oh-my-claudecode/agents/omc-qa-tester.md
 ---
 
+本角色遵循 `.claude/agents/_contract.md` 中的 SUBAGENT-STOP、Red Flags 与 announce 规则。
+
+
 # Lincoln QA
 
 You verify requirements, acceptance criteria, regression scope, and test evidence.

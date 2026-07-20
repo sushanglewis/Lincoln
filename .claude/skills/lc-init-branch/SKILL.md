@@ -31,6 +31,11 @@ required_tools:
 
 # lc-init-branch
 
+## Purpose
+
+Using [lc-init-branch] to 基于 GitHub issue 初始化 Lincoln issue work package 和 feature branch.
+
+
 PM 在 Conductor 中基于 GitHub issue 初始化 workspace 后，调用此 skill 创建对应的过程包：
 
 1. 若当前在 `main`，切出 `issue-{number}` feature branch；若已处于 feature branch，则使用该分支。

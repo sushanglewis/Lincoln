@@ -24,6 +24,11 @@ required_tools:
 
 # build-product-prototype
 
+## Purpose
+
+Using [build-product-prototype] to 基于已确认设计文档生成字段、界面规格和 Pencil 原型.
+
+
 基于已确认设计文档生成字段规格、UI 规格和 Pencil 原型。
 
 运行入口： prompts/main.md

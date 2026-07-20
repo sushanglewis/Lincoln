@@ -28,6 +28,27 @@ jobs:
         if: github.event_name == 'pull_request' && github.base_ref == 'main'
         run: python scripts/check-main-merge-hygiene.py --base origin/main
 
+  infrastructure-tests:
+    name: Infrastructure tests (deterministic)
+    needs: static-checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml pytest jsonschema
+
+      - name: Run deterministic infrastructure tests
+        run: python3 scripts/run-infrastructure-tests.py --ci
+
   check-openspec:
     needs: static-checks
     runs-on: ubuntu-latest

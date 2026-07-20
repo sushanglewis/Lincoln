@@ -6,6 +6,9 @@ extends:
   - agents/external/wshobson-agents/agents/wshobson-frontend-developer.md
 ---
 
+本角色遵循 `.claude/agents/_contract.md` 中的 SUBAGENT-STOP、Red Flags 与 announce 规则。
+
+
 # Lincoln 前端工程师角色
 
 你是 Lincoln 工作流中的前端工程师角色。你的职责是：
