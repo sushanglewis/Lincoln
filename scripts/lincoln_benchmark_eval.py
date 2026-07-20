@@ -13,26 +13,31 @@ THRESHOLDS: dict[str, dict[str, dict[str, Any]]] = {
         "requirements_clarity_score": {"green": 4, "yellow": 3, "direction": "maximize"},
         "static_check_pass": {"green": True, "yellow": None, "direction": "maximize"},
         "pr_size": {"green": 400, "yellow": 800, "direction": "minimize"},
+        "session_start_tokens": {"green": 2500, "yellow": 5000, "direction": "minimize"},
     },
     "S2": {
         "build_codebase_knowledge_duration_seconds": {"green": 3600, "yellow": 2 * 3600, "direction": "minimize"},
         "unique_files_touched_ratio": {"green": 1.0, "yellow": 1.5, "direction": "minimize"},
         "pr_size": {"green": 300, "yellow": 600, "direction": "minimize"},
+        "session_start_tokens": {"green": 2500, "yellow": 5000, "direction": "minimize"},
     },
     "S3": {
         "time_to_pr_seconds": {"green": 3600, "yellow": 4 * 3600, "direction": "minimize"},
         "retry_count": {"green": 1, "yellow": 3, "direction": "minimize"},
         "test_runs": {"green": 2, "yellow": 1, "direction": "maximize"},
         "pr_size": {"green": 100, "yellow": 300, "direction": "minimize"},
+        "session_start_tokens": {"green": 2500, "yellow": 5000, "direction": "minimize"},
     },
     "S4": {
         "time_to_first_handoff": {"green": 30 * 60, "yellow": 2 * 3600, "direction": "minimize"},
         "explored_options_count": {"green": 2, "yellow": 1, "direction": "maximize"},
         "design_doc_completeness": {"green": 1.0, "yellow": 0.8, "direction": "maximize"},
+        "session_start_tokens": {"green": 2500, "yellow": 5000, "direction": "minimize"},
     },
     "S5": {
         "time_to_first_handoff": {"green": 3600, "yellow": 4 * 3600, "direction": "minimize"},
         "oss_candidates_evaluated": {"green": 3, "yellow": 1, "direction": "maximize"},
+        "session_start_tokens": {"green": 2500, "yellow": 5000, "direction": "minimize"},
     },
 }
 

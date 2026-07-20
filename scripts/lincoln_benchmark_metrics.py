@@ -593,6 +593,24 @@ def _compute_workflow_metrics(
     return workflow, confidence
 
 
+def _session_start_metrics(process_root: Path, process_slug: str) -> dict[str, Any]:
+    """Load the session-start token/byte metrics written by the hook (#63)."""
+    path = process_root / process_slug / ".trace" / "session-start-metrics.json"
+    if not path.exists():
+        return {}
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    if not isinstance(data, dict):
+        return {}
+    return {
+        "session_start_bytes": data.get("bytes"),
+        "session_start_chars": data.get("chars"),
+        "session_start_tokens": data.get("tokens"),
+    }
+
+
 def _is_handoff_command(entry: dict[str, Any]) -> bool:
     # Handoffs are recorded as structured LincolnHandoff trace entries by
     # stage_loader, so we detect them by category rather than regex-parsing Bash text.
@@ -768,6 +786,12 @@ def compute_metrics(
     primary_agents = _load_primary_agents(process_root)
 
     session, conf_session = _compute_session_metrics(trace)
+    process_slug = get_process_slug(state, None)
+    session_start = _session_start_metrics(process_root, process_slug)
+    if session_start:
+        session.update(session_start)
+        for key in session_start:
+            conf_session[key] = "exact"
     workflow, conf_workflow = _compute_workflow_metrics(
         trace, state, workflow_steps, variables, process_root
     )
