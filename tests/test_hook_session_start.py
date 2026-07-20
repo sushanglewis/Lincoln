@@ -145,3 +145,24 @@ def test_no_state_guidance_points_to_intake_prompt(tmp_path):
     # Assert
     assert code == 0, stderr
     assert "lc-workflow-router/prompts/intake-prompt.md" in stdout
+
+
+def test_session_start_metrics_are_written(tmp_path):
+    # Arrange
+    root = _make_minimal_repo(tmp_path, branch="issue-42")
+    _write_setup_state(root, completed=True)
+    _write_workflow_state(root, stage="clarify", process_slug="issue-42")
+
+    # Act
+    code, _, stderr = _run_hook(root)
+
+    # Assert
+    assert code == 0, stderr
+    metrics_path = root / "issue-42" / ".trace" / "session-start-metrics.json"
+    assert metrics_path.exists()
+    data = json.loads(metrics_path.read_text(encoding="utf-8"))
+    assert data["schema_version"] == "1.0.0"
+    assert data["stage"] == "clarify"
+    assert data["bytes"] > 0
+    assert data["chars"] > 0
+    assert data["tokens"] > 0

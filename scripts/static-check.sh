@@ -314,6 +314,7 @@ echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/lincoln_paths.py
 "$PYTHON" -m py_compile scripts/check-main-merge-hygiene.py
 "$PYTHON" -m py_compile scripts/lincoln_harness_adapter.py
+"$PYTHON" -m py_compile scripts/lincoln_session_start_metrics.py
 "$PYTHON" -m py_compile scripts/bump_version.py
 "$PYTHON" -m py_compile scripts/check-dependency-drift.py
 "$PYTHON" -m py_compile scripts/lc-benchmark-cli.py

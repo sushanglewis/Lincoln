@@ -29,6 +29,11 @@ _LINCOLN_STATUS="not_started"
 _LINCOLN_WORKFLOW_TEMPLATE="unknown"
 _LINCOLN_PROCESS_SLUG=""
 
+# Capture the full hook stdout so we can quantify the session-start token cost (#63).
+HOOK_OUTPUT_CAPTURE="$(mktemp)"
+trap 'rm -f "$HOOK_OUTPUT_CAPTURE"' EXIT
+exec > >(tee "$HOOK_OUTPUT_CAPTURE")
+
 emit_session_start_json() {
     if [[ "${LINCOLN_SESSION_START_JSON:-}" != "1" ]]; then
         return 0
@@ -371,4 +376,16 @@ echo "=== End Lincoln Session Start ==="
 echo ""
 
 emit_session_start_json
+
+# Quantify the session-start token cost and make it available to benchmark reports (#63).
+if [[ -n "$PROCESS_SLUG" && -f "$HOOK_OUTPUT_CAPTURE" ]]; then
+    METRICS_DIR="$ROOT/$PROCESS_SLUG/.trace"
+    mkdir -p "$METRICS_DIR"
+    "$PYTHON" "$ROOT/scripts/lincoln_session_start_metrics.py" \
+        --input "$HOOK_OUTPUT_CAPTURE" \
+        --output "$METRICS_DIR/session-start-metrics.json" \
+        --stage "$CURRENT_STAGE" \
+        --status "$STATUS" >/dev/null 2>&1 || true
+fi
+
 exit 0
