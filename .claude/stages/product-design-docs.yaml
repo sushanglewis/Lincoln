@@ -57,3 +57,9 @@ gates:
   exit:
   - check: artifacts_present
   - check: human_approved
+  - check: handoff_contract_valid
+    args:
+    - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'
+  - check: handoff_versions_match
+    args:
+    - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'

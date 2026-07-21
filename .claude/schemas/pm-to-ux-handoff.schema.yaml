@@ -1,0 +1,128 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: PM-to-UX Handoff Contract
+description: |
+  Machine-readable contract for PM→UX handoff in Lincoln issue packages.
+  UX Agents must read this file first, then the human master doc, then the ordered context pack.
+type: object
+required:
+  - contract_version
+  - issue_number
+  - feature_slug
+  - from_stage
+  - to_stage
+  - from_agent
+  - to_agent
+  - handoff_type
+  - human_master_doc
+  - based_on
+  - context_pack
+  - reading_rules
+  - open_questions
+  - approval
+properties:
+  contract_version:
+    type: string
+    pattern: "^\\d+\\.\\d+\\.\\d+$"
+    description: Schema version of this contract file.
+  issue_number:
+    type: string
+    description: GitHub issue number.
+  feature_slug:
+    type: string
+    description: Feature/design slug used in the issue package.
+  from_stage:
+    type: string
+    enum: ["clarify", "product-design-docs"]
+  to_stage:
+    type: string
+    enum: ["product-design-docs", "product-prototype"]
+  from_agent:
+    type: string
+  to_agent:
+    type: string
+  handoff_type:
+    type: string
+    enum: ["pm-to-ux"]
+  human_master_doc:
+    type: object
+    required: [path, version]
+    properties:
+      path:
+        type: string
+      version:
+        type: string
+        pattern: "^v\\d+\\.\\d+$"
+  based_on:
+    type: array
+    items:
+      type: object
+      required: [path, version]
+      properties:
+        path:
+          type: string
+        version:
+          type: string
+          pattern: "^v\\d+\\.\\d+$"
+  context_pack:
+    type: object
+    required: [tier_0, tier_1, tier_2]
+    properties:
+      tier_0:
+        type: array
+        items:
+          type: object
+          required: [path, reason]
+          properties:
+            path: { type: string }
+            reason: { type: string }
+      tier_1:
+        type: array
+        items:
+          type: object
+          required: [path, reason]
+          properties:
+            path: { type: string }
+            reason: { type: string }
+      tier_2:
+        type: array
+        items:
+          type: object
+          required: [feature, links]
+          properties:
+            feature: { type: string }
+            links:
+              type: array
+              items:
+                type: object
+                required: [path, reason]
+                properties:
+                  path: { type: string }
+                  reason: { type: string }
+  reading_rules:
+    type: array
+    items:
+      type: string
+  open_questions:
+    type: array
+    items:
+      type: object
+      required: [id, question, owner, status]
+      properties:
+        id: { type: string }
+        question: { type: string }
+        owner: { type: string }
+        status:
+          type: string
+          enum: ["open", "resolved", "deferred"]
+  approval:
+    type: object
+    required: [pm_confirmed]
+    properties:
+      pm_confirmed:
+        type: boolean
+      approved_at:
+        type: string
+      approved_by:
+        type: string
+  notes:
+    type: string
