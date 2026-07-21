@@ -1,0 +1,71 @@
+contract_version: 1.0.0
+version: v1.0
+issue_number: '76'
+feature_slug: handoff-contracts
+from_stage: product-design-docs
+to_stage: product-prototype
+from_agent: lc-pm
+to_agent: lc-designer
+handoff_type: pm-to-ux
+human_master_doc:
+  path: issue-76/handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md
+  version: v1.0
+based_on:
+- path: issue-76/requirements/2026-07-21-lew-49-handoff/requirements.md
+  version: v1.0
+- path: issue-76/requirements/2026-07-21-lew-49-handoff/user-stories.md
+  version: v1.0
+- path: issue-76/requirements/2026-07-21-lew-49-handoff/prd.md
+  version: v1.0
+- path: issue-76/designs/handoff-contracts/feature-catalog.md
+  version: v1.0
+- path: issue-76/designs/handoff-contracts/scenarios.md
+  version: v1.0
+- path: issue-76/designs/handoff-contracts/flows.md
+  version: v1.0
+- path: issue-76/designs/handoff-contracts/page-map.md
+  version: v1.0
+context_pack:
+  tier_0:
+  - path: issue-76/handoffs/pm-to-ux/pm-to-ux.handoff.yaml
+    description: 本契约。UX Agent 必须从此文件开始阅读。
+  tier_1:
+  - path: issue-76/handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md
+    description: 人类主文档，建立全局认知。
+  tier_2:
+  - feature: PM→UX 交接主文档
+    links:
+    - path: issue-76/designs/handoff-contracts/feature-catalog.md
+      section: 功能清单
+  - feature: 角色与用户旅程
+    links:
+    - path: issue-76/designs/handoff-contracts/scenarios.md
+    - path: issue-76/requirements/2026-07-21-lew-49-handoff/user-stories.md
+  - feature: 功能流程
+    links:
+    - path: issue-76/designs/handoff-contracts/flows.md
+  - feature: 页面与页面关系
+    links:
+    - path: issue-76/designs/handoff-contracts/page-map.md
+  - feature: 需求规格
+    links:
+    - path: issue-76/requirements/2026-07-21-lew-49-handoff/requirements.md
+    - path: issue-76/requirements/2026-07-21-lew-49-handoff/prd.md
+reading_rules:
+- 必须按 tier_0 → tier_1 → tier_2 顺序阅读。
+- tier_2 中每个 feature 最多再跟随 2 个链接。
+- tier_3（原始录音/输入）禁止直接读取，除非 tier_2 链接明确要求。
+- 如果基于文档的版本与 based_on 不一致，必须暂停并请求重新生成契约。
+open_questions:
+- id: Q-001
+  question: UI→前端、前端→研发等后续交接是否复用本模式？
+  owner: 后续 issue
+  status: open
+- id: Q-002
+  question: page-map.md 是否需要在 product-prototype 阶段补充交互细节？
+  owner: UI 阶段
+  status: open
+approval:
+  pm_confirmed: true
+  approved_at: '2026-07-21T13:21:14Z'
+  approved_by: system

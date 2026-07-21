@@ -1,7 +1,7 @@
 schema_version: 2.0.0
 id: product-prototype
 name: Product Prototype
-description: Generates UI specs, field specs, and Pencil prototypes.
+description: Generates UI specs, field specs, and optionally Pencil prototypes (prototype.pen is produced by UI after the UX node).
 templates:
 - interview-to-knowledge
 - existing-project-iteration
@@ -27,14 +27,17 @@ artifacts:
   required:
   - '{process_slug}/designs/{design_id}/ui-spec.md'
   - '{process_slug}/designs/{design_id}/fields.md'
+  optional:
   - '{process_slug}/designs/{design_id}/prototype.pen'
 context:
-  goal: 将已确认的产品设计文档转化为可交互的 Pencil 原型和开发可用的 UI/字段规格文档。
+  goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格文档；`prototype.pen` 由 UI 在 UX 节点之后产出，因此在本阶段 PM→UX 交接中视为 optional。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
     - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
+
+    - `prototype.pen` 为 UI 阶段产物，在 PM→UX 交接中不作为 required artifact。
 
     - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 

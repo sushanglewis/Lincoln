@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -133,6 +134,114 @@ def check_human_approved() -> None:
     fail(f"Stage '{current_stage}' not approved")
 
 
+def _extract_markdown_version(path: Path) -> str | None:
+    """Look for `<!-- version: vX.Y -->` in markdown files."""
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    match = re.search(r"<!--\s*version:\s*(v\d+\.\d+)\s*-->", text, re.IGNORECASE)
+    return match.group(1) if match else None
+
+
+def _extract_yaml_version(path: Path) -> str | None:
+    """Read a top-level `version` or `contract_version` field from YAML."""
+    if not path.exists():
+        return None
+    try:
+        data = load_yaml(path)
+    except Exception:
+        return None
+    if not isinstance(data, dict):
+        return None
+    return data.get("version") or data.get("contract_version")
+
+
+def _extract_document_version(path: Path) -> str | None:
+    if path.suffix in (".md", ".markdown"):
+        return _extract_markdown_version(path)
+    if path.suffix in (".yaml", ".yml"):
+        return _extract_yaml_version(path)
+    return None
+
+
+def check_handoff_contract_valid(path: str) -> None:
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"Handoff contract missing: {target}")
+
+    try:
+        data = load_yaml(target)
+    except Exception as exc:
+        fail(f"Handoff contract is not valid YAML: {target} ({exc})")
+
+    if not isinstance(data, dict):
+        fail(f"Handoff contract must be a YAML mapping: {target}")
+
+    required_keys = [
+        "contract_version",
+        "issue_number",
+        "feature_slug",
+        "from_stage",
+        "to_stage",
+        "from_agent",
+        "to_agent",
+        "handoff_type",
+        "human_master_doc",
+        "based_on",
+        "context_pack",
+        "reading_rules",
+        "open_questions",
+        "approval",
+    ]
+    missing = [key for key in required_keys if key not in data]
+    if missing:
+        fail(f"Handoff contract missing required keys: {', '.join(missing)}")
+
+    human_doc = data.get("human_master_doc", {})
+    if not human_doc.get("path") or not human_doc.get("version"):
+        fail("Handoff contract human_master_doc must have path and version")
+
+    pass_check(f"handoff contract valid: {target}")
+
+
+def check_handoff_versions_match(path: str) -> None:
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"Handoff contract missing: {target}")
+
+    try:
+        data = load_yaml(target)
+    except Exception as exc:
+        fail(f"Handoff contract is not valid YAML: {target} ({exc})")
+
+    if not isinstance(data, dict):
+        fail(f"Handoff contract must be a YAML mapping: {target}")
+
+    based_on = data.get("based_on", [])
+    if not isinstance(based_on, list):
+        fail("Handoff contract based_on must be a list")
+
+    mismatches = []
+    for item in based_on:
+        if not isinstance(item, dict):
+            continue
+        doc_path = item.get("path", "")
+        expected_version = item.get("version", "")
+        if not doc_path or not expected_version:
+            continue
+        full_path = PROJECT_ROOT / doc_path
+        actual_version = _extract_document_version(full_path)
+        if actual_version is None:
+            mismatches.append(f"{doc_path}: could not detect version")
+        elif actual_version != expected_version:
+            mismatches.append(f"{doc_path}: expected {expected_version}, found {actual_version}")
+
+    if mismatches:
+        fail("Handoff version mismatches:\n  - " + "\n  - ".join(mismatches))
+
+    pass_check("handoff versions match")
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -149,6 +258,8 @@ EXIT_CHECKS = {
     "artifact_exists": check_artifact_exists,
     "artifacts_present": check_artifacts_present,
     "human_approved": check_human_approved,
+    "handoff_contract_valid": check_handoff_contract_valid,
+    "handoff_versions_match": check_handoff_versions_match,
 }
 
 

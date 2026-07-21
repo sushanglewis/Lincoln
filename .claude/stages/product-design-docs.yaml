@@ -31,13 +31,20 @@ artifacts:
   - '{process_slug}/designs/{design_id}/data-model.md'
   - '{process_slug}/designs/{design_id}/flows.md'
   - '{process_slug}/designs/{design_id}/feasibility.md'
+  - '{process_slug}/designs/{design_id}/page-map.md'
+  - '{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md'
+  - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'
 context:
-  goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包。
+  goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包，并完成 PM→UX 交接产物（master-handoff 与 agent-agent 契约），使人类 UX 能基于统一认知驱动 UX Agent。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
     - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
+
+    - 本阶段 exit gate 要求 `handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md` 与 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 同时存在。
+
+    - handoff_to 为 lc-designer / lc-frontend-engineer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再读 master-handoff，然后按 `context_pack` 顺序读取 Tier-2 文档。
 
     - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
@@ -50,3 +57,9 @@ gates:
   exit:
   - check: artifacts_present
   - check: human_approved
+  - check: handoff_contract_valid
+    args:
+    - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'
+  - check: handoff_versions_match
+    args:
+    - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'

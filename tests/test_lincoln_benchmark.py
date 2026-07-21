@@ -280,7 +280,7 @@ def test_compute_metrics_quality_with_artifacts(base_state):
 
     design_dir = project_root / slug / "designs" / design_id
     design_dir.mkdir(parents=True)
-    for name in ["design-review.md", "scenarios.md", "feature-catalog.md", "data-model.md", "flows.md", "feasibility.md"]:
+    for name in ["design-review.md", "scenarios.md", "feature-catalog.md", "data-model.md", "flows.md", "feasibility.md", "page-map.md"]:
         design_dir.joinpath(name).write_text("ok", encoding="utf-8")
     design_dir.joinpath("tdd-plan.md").write_text(
         "# TDD Plan\n\n## Red\n## Green\n## Refactor\n", encoding="utf-8"

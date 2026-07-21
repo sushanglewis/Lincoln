@@ -10,6 +10,7 @@ It is regenerated from workflow-stage.yaml on every state mutation.
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -21,6 +22,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.lincoln_paths import STATE_FILENAME
 
 DOCUMENTS_FILENAME = "documents.yaml"
+
+# Matches master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.md
+HANDOFF_DOC_PATTERN = re.compile(r"handoffs/pm-to-ux/master-handoff-pm-to-ux-v(\d+)\.(\d+)\.md$")
+HANDOFF_YAML_PATTERN = re.compile(r"handoffs/pm-to-ux/pm-to-ux\.handoff\.yaml$")
 
 
 def now_iso() -> str:
@@ -38,14 +43,37 @@ def is_team_package_state(state_path: Path) -> bool:
     return state_path.name == STATE_FILENAME and state_path.parent.name != ".claude"
 
 
+def _extract_document_version(rel_path: str, project_root: Path, process_slug: str) -> str | None:
+    """Detect version for PM→UX handoff documents; returns None for others."""
+    full_path = project_root / process_slug / rel_path
+    if not full_path.exists():
+        return None
+
+    md_match = HANDOFF_DOC_PATTERN.search(rel_path)
+    if md_match:
+        return f"v{md_match.group(1)}.{md_match.group(2)}"
+
+    if HANDOFF_YAML_PATTERN.search(rel_path):
+        try:
+            data = yaml.safe_load(full_path.read_text(encoding="utf-8"))
+            if isinstance(data, dict):
+                return data.get("human_master_doc", {}).get("version")
+        except Exception:
+            pass
+
+    return None
+
+
 def build_documents_index(
     state: dict[str, Any],
     process_slug: str,
     generated_at: str | None = None,
+    project_root: Path | None = None,
 ) -> dict[str, Any]:
     """Build the index dict from state nodes; later/higher approvals win per path."""
     current_run = state.get("current_run", {})
     documents: dict[str, dict[str, Any]] = {}
+    root = project_root or Path(__file__).resolve().parents[1]
     for node in state.get("nodes") or []:
         stage_id = str(node.get("stage_id") or "")
         for artifact in node.get("artifacts") or []:
@@ -59,10 +87,14 @@ def build_documents_index(
                     "gate_passed": False,
                     "human_confirmed": False,
                     "approved_by": None,
+                    "version": None,
                 },
             )
             entry["stage"] = stage_id or entry["stage"]
             entry["status"] = str(node.get("status") or "") or entry["status"]
+            version = _extract_document_version(rel, root, process_slug)
+            if version:
+                entry["version"] = version
             if not node.get("gate_passed"):
                 continue
             entry["gate_passed"] = True
@@ -90,7 +122,8 @@ def write_documents_index(
     """Regenerate documents.yaml next to a team package state file; else return None."""
     if not is_team_package_state(state_path):
         return None
-    index = build_documents_index(state, state_path.parent.name, generated_at)
+    project_root = state_path.parents[1]
+    index = build_documents_index(state, state_path.parent.name, generated_at, project_root)
     index_path = state_path.parent / DOCUMENTS_FILENAME
     index_path.write_text(
         yaml.dump(index, allow_unicode=True, sort_keys=False, width=120),

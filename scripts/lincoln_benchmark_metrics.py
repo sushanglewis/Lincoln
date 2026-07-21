@@ -238,6 +238,9 @@ def _design_doc_completeness(
         return 0.0
     stage_id = "product-design-docs"
     artifacts = _artifact_paths_for_stage(workflow_steps, stage_id, variables)
+    # Only count design docs under designs/{design_id}; handoff artifacts are tracked separately.
+    design_prefix = f"{process_slug}/designs/{design_id}/"
+    artifacts = [p for p in artifacts if design_prefix in p]
     if not artifacts:
         base = process_root / process_slug / "designs" / design_id
         artifacts = [
@@ -247,6 +250,7 @@ def _design_doc_completeness(
             str(base / "data-model.md"),
             str(base / "flows.md"),
             str(base / "feasibility.md"),
+            str(base / "page-map.md"),
         ]
     existing = sum(1 for p in artifacts if (process_root / p).exists())
     return round(existing / len(artifacts), 2) if artifacts else 0.0

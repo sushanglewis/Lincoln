@@ -228,7 +228,7 @@ print(f"Initialized workflow-stage.yaml for issue #{issue_number} on branch {bra
 PY
 
 # Add gitkeep files for empty directories to ensure they are tracked
-for dir in "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PROCESS_ROOT/handoffs" "$PROCESS_ROOT/interviews/$SESSION_ID" "$PROCESS_ROOT/openspec/changes" "$PROCESS_ROOT/openspec/specs" "$PROCESS_ROOT/recordings" "$PROCESS_ROOT/requirements/$SESSION_ID" ".github/lincoln-sync-queue"; do
+for dir in "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PROCESS_ROOT/handoffs" "$PROCESS_ROOT/handoffs/pm-to-ux" "$PROCESS_ROOT/interviews/$SESSION_ID" "$PROCESS_ROOT/openspec/changes" "$PROCESS_ROOT/openspec/specs" "$PROCESS_ROOT/recordings" "$PROCESS_ROOT/requirements/$SESSION_ID" ".github/lincoln-sync-queue"; do
     mkdir -p "$dir"
     touch "$dir/.gitkeep"
 done

@@ -21,3 +21,7 @@
 ## 风险
 
 -
+
+---
+
+*PM→UX 交接：本 PRD 是 [`handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md`](../handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md) 的 Tier-2 产物。*

@@ -214,7 +214,9 @@
             "audio_format_supported",
             "previous_stage_completed",
             "human_approved",
-            "gate_review_passed"
+            "gate_review_passed",
+            "handoff_contract_valid",
+            "handoff_versions_match"
           ]
         },
         "args": {
