@@ -1,0 +1,45 @@
+# Scenario catalog for /lc-scenario-* commands.
+# Each scenario describes a cross-role + cross-skill intent.
+
+scenarios:
+  make-prd:
+    description: 制作 PRD 与已确认的需求文档
+    role: pm
+    skills: [clarify-requirements]
+    goal: 基于需求澄清输出已确认的 PRD、用户故事与验收标准
+
+  make-ux:
+    description: 制作产品设计与原型规格
+    role: designer
+    skills: [draft-product-design, build-product-prototype]
+    goal: 输出设计评审文档、UI 规格与可选的 Pencil 原型
+
+  make-tdd:
+    description: 生成 TDD 研发计划
+    role: engineer
+    skills: [plan-tdd-development]
+    goal: 基于已确认设计输出测试驱动研发计划
+
+  make-pr:
+    description: 整理 PR 摘要与合并准备
+    role: release-coordinator
+    skills: [workflow-continue]
+    goal: 基于分支提交历史生成综合 PR 描述与检查清单
+
+  research-oss:
+    description: 开源方案调研
+    role: researcher
+    skills: [lc-explore-opensource]
+    goal: 输出可选开源方案对比与推荐文档
+
+  pm-research:
+    description: 完整 PM 市场/竞品/用户/相关者研究
+    role: pm
+    skills: [lc-wf-pm-research]
+    goal: 启动 pm-research 工作流并完成最终研究报告
+
+  build-codebase-knowledge:
+    description: 为已有源码构建功能知识库
+    role: engineer
+    skills: [lc-build-codebase-knowledge]
+    goal: 扫描代码并生成知识库索引与功能文档
