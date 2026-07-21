@@ -9,7 +9,7 @@ current_run:
   current_stage: implement
   status: in_progress
   started_at: '2026-07-21T14:26:13Z'
-  last_updated_at: '2026-07-21T14:43:14Z'
+  last_updated_at: '2026-07-21T14:46:04Z'
   issue_number: '75'
   variables:
     process_slug: issue-75
@@ -17,11 +17,11 @@ current_run:
     design_id: agent-contract
     issue_number: '75'
     change_name: ''
-    pr_number: ''
-    feature_slug: ''
-  change_name: ''
-  pr_number: ''
-  feature_slug: ''
+    pr_number: '80'
+    feature_slug: subagent-principles
+  change_name: subagent-principles
+  pr_number: '80'
+  feature_slug: subagent-principles
   execution_mode: team
 artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
   - Document templates live read-only under `.claude/templates/issue-package/`.\n  Do NOT copy `.tpl` files into this package.\
