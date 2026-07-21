@@ -1,0 +1,36 @@
+schema_version: 2.0.0
+id: lc-market-research
+name: 市场研究
+description: '分析市场规模、趋势、细分与动态，为产品定位提供事实基础。'
+templates:
+- pm-research
+prerequisite_stage: lc-stakeholder-research
+next_stage: lc-product-research
+human_gate: false
+agent:
+  primary: lc-researcher
+  reviewers:
+  - lc-pm
+  handoff_to: null
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/research/{session_id}/market.md'
+context:
+  goal: 分析市场规模、趋势、细分与动态，为产品定位提供事实基础。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
+
+    - 本阶段产物写入 {process_slug}/research/{session_id}/。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - lc-stakeholder-research
+  exit:
+  - check: artifacts_present

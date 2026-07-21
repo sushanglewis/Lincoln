@@ -1,0 +1,115 @@
+workflow:
+  name: pm-research
+  version: 1.0.0
+  description: PM 市场/产品/竞品/用户/相关者研究与决策支持工作流（solo）
+  execution_mode: solo
+  engine: everything-claude-code
+  conventions:
+    language: zh-CN
+    artifact_encoding: utf-8
+    timestamp_format: "%Y-%m-%dT%H:%M:%SZ"
+    session_id_pattern: "YYYY-MM-DD-descriptive-name"
+  steps:
+    - id: workflow-router
+      name: 工作流路由
+      description: 会话开场引导后，确认启动 pm-research 工作流
+      action: lc-workflow-router
+
+    - id: lc-research-scope
+      name: 界定研究范围
+      description: 与 PM 澄清研究目标、问题、范围与验收标准
+      action: lc-research-scope
+      human_gate: true
+      artifacts:
+        - "{process_slug}/research/{session_id}/scope.md"
+      exit_checks:
+        - check: artifacts_present
+        - check: human_approved
+
+    - id: lc-first-principles
+      name: 第一性原理探索
+      description: 挑战假设，挖掘底层真相，为研究建立第一性原理基础
+      action: lc-first-principles
+      artifacts:
+        - "{process_slug}/research/{session_id}/first-principles.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-stakeholder-research
+      name: 相关者研究
+      description: 识别用户、买单方、建设方、维护方并分析其诉求
+      action: lc-stakeholder-research
+      artifacts:
+        - "{process_slug}/research/{session_id}/stakeholders.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-market-research
+      name: 市场研究
+      description: 分析市场规模、趋势、细分与动态
+      action: lc-market-research
+      artifacts:
+        - "{process_slug}/research/{session_id}/market.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-product-research
+      name: 产品研究
+      description: 研究相关产品与解决方案的能力、价值主张与使用场景
+      action: lc-product-research
+      artifacts:
+        - "{process_slug}/research/{session_id}/product-research.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-competitive-analysis
+      name: 竞品分析
+      description: 分析竞争格局与差异化机会
+      action: lc-competitive-analysis
+      artifacts:
+        - "{process_slug}/research/{session_id}/competitive.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-analyze-frameworks
+      name: 分析框架应用
+      description: 选择并应用分析框架，规划 ECharts/HTML 可视化
+      action: lc-analyze-frameworks
+      artifacts:
+        - "{process_slug}/research/{session_id}/analysis-frameworks.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-storytelling
+      name: 体系化论述
+      description: 基于金字塔原理将研究成果结构化为可说服决策者的故事
+      action: lc-storytelling
+      artifacts:
+        - "{process_slug}/research/{session_id}/narrative.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-collect-intelligence
+      name: 信息收集
+      description: 基于权威渠道体系化收集研究证据并标注来源
+      action: lc-collect-intelligence
+      artifacts:
+        - "{process_slug}/research/{session_id}/collected-intelligence.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-research-report
+      name: 研究报告
+      description: 整合全流程产物，输出最终研究报告
+      action: lc-research-report
+      human_gate: true
+      artifacts:
+        - "{process_slug}/research/{session_id}/report.md"
+      exit_checks:
+        - check: artifacts_present
+        - check: human_approved
+
+  gates:
+    human_confirmation_prompt: "请确认当前研究阶段已完成并可以继续？输入 confirm 继续，或说明需要修改的地方。"
+    on_validation_failure: pause_and_report
+    on_human_rejection: update_artifact_and_revalidate

@@ -1,0 +1,36 @@
+schema_version: 2.0.0
+id: lc-stakeholder-research
+name: 相关者研究
+description: '识别并研究用户、买单方、建设方、维护方等关键相关者及其诉求。'
+templates:
+- pm-research
+prerequisite_stage: lc-first-principles
+next_stage: lc-market-research
+human_gate: false
+agent:
+  primary: lc-researcher
+  reviewers:
+  - lc-pm
+  handoff_to: null
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/research/{session_id}/stakeholders.md'
+context:
+  goal: 识别并研究用户、买单方、建设方、维护方等关键相关者及其诉求。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
+
+    - 本阶段产物写入 {process_slug}/research/{session_id}/。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - lc-first-principles
+  exit:
+  - check: artifacts_present

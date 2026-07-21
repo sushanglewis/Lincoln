@@ -1,31 +1,46 @@
 # lc-* 命令单一事实源(Single source of truth)
 # 三个 harness manifest(claude-code.yaml / codex.yaml / opencode.yaml)通过
 # command_map_source: command-map.yaml 引用本文件。
-# 新增/修改命令只需改这里,CI 漂移校验保证三端一致。
+# 新增/修改命令请运行: python3 scripts/lincoln_command_map.py --refresh
 
 commands:
-  lc-status:
-    description: 显示当前 Lincoln 阶段状态与下一步动作
-    action: python3 scripts/lincoln-status.py
-  lc-setup:
-    description: 安装/检查 Lincoln 依赖并生成 harness 适配产物
-    action: python3 scripts/lincoln-setup.py
-  lc-init-branch:
-    description: 初始化 issue 工作包(分支 + workflow-stage.yaml)
-    action: bash scripts/init-lincoln-branch.sh
-    args_hint: --issue-number <N>
-  lc-validate:
-    description: 运行当前阶段的准入校验(validate-entry)
-    action: python3 scripts/stage_loader.py
-    args_hint: --stage <current_stage> --action validate-entry
-  lc-handoff:
-    description: 生成阶段 handoff 报告
-    action: python3 scripts/stage_loader.py
-    args_hint: --stage <current_stage> --action handoff-report
-  lc-submit:
-    description: 提交当前阶段产物(写入 workflow-stage.yaml 并刷新 documents.yaml)
-    action: python3 scripts/stage_loader.py
-    args_hint: --stage <current_stage> --action record-artifacts
+  lc-agent-architect:
+    description: Lincoln 架构师角色，用于系统设计、技术方案评审与跨阶段技术把关
+    action: python3 scripts/lincoln_role.py --role architect
+    args_hint: $ARGUMENTS
+  lc-agent-designer:
+    description: 产品设计师角色模板，用于原型/UI 阶段
+    action: python3 scripts/lincoln_role.py --role designer
+    args_hint: $ARGUMENTS
+  lc-agent-engineer:
+    description: 研发工程师角色模板，用于 TDD 计划、实现、测试阶段
+    action: python3 scripts/lincoln_role.py --role engineer
+    args_hint: $ARGUMENTS
+  lc-agent-frontend-engineer:
+    description: Lincoln 前端工程师角色，用于原型实现、UI 评审与前端技术把关
+    action: python3 scripts/lincoln_role.py --role frontend-engineer
+    args_hint: $ARGUMENTS
+  lc-agent-knowledge-curator:
+    description: Durable knowledge curator for accepted Lincoln feature work
+    action: python3 scripts/lincoln_role.py --role knowledge-curator
+    args_hint: $ARGUMENTS
+  lc-agent-pm:
+    description: 产品经理角色模板，用于需求澄清、产品设计等 human_gate 阶段
+    action: python3 scripts/lincoln_role.py --role pm
+    args_hint: $ARGUMENTS
+  lc-agent-qa:
+    description: QA and acceptance specialist for Lincoln validation and release readiness
+    action: python3 scripts/lincoln_role.py --role qa
+    args_hint: $ARGUMENTS
+  lc-agent-release-coordinator:
+    description: Release and main-merge hygiene specialist for Lincoln feature branches
+    action: python3 scripts/lincoln_role.py --role release-coordinator
+    args_hint: $ARGUMENTS
+  lc-agent-researcher:
+    description: Research specialist for Lincoln design, feasibility, and PM-led research
+      stages
+    action: python3 scripts/lincoln_role.py --role researcher
+    args_hint: $ARGUMENTS
   lc-approve:
     description: 人类 PM 确认当前阶段 gate 通过(仅 human_gate 阶段)
     action: python3 scripts/stage_loader.py
@@ -33,28 +48,211 @@ commands:
   lc-benchmark:
     description: 运行 Lincoln benchmark 报告（需显式调用）
     action: python3 scripts/lc-benchmark-cli.py
-    args_hint: "[--trigger manual|handoff|pr_created|pr_merged|session_stop]"
+    args_hint: '[--trigger manual|handoff|pr_created|pr_merged|session_stop]'
+  lc-handoff:
+    description: 生成阶段 handoff 报告
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action handoff-report
+  lc-init-branch:
+    description: 初始化 issue 工作包(分支 + workflow-stage.yaml)
+    action: bash scripts/init-lincoln-branch.sh
+    args_hint: --issue-number <N>
+  lc-scenario-build-codebase-knowledge:
+    description: 为已有源码构建功能知识库
+    action: python3 scripts/lincoln_scenario.py --scenario build-codebase-knowledge
+    args_hint: $ARGUMENTS
+  lc-scenario-make-pr:
+    description: 整理 PR 摘要与合并准备
+    action: python3 scripts/lincoln_scenario.py --scenario make-pr
+    args_hint: $ARGUMENTS
+  lc-scenario-make-prd:
+    description: 制作 PRD 与已确认的需求文档
+    action: python3 scripts/lincoln_scenario.py --scenario make-prd
+    args_hint: $ARGUMENTS
+  lc-scenario-make-tdd:
+    description: 生成 TDD 研发计划
+    action: python3 scripts/lincoln_scenario.py --scenario make-tdd
+    args_hint: $ARGUMENTS
+  lc-scenario-make-ux:
+    description: 制作产品设计与原型规格
+    action: python3 scripts/lincoln_scenario.py --scenario make-ux
+    args_hint: $ARGUMENTS
+  lc-scenario-pm-research:
+    description: 完整 PM 市场/竞品/用户/相关者研究
+    action: python3 scripts/lincoln_scenario.py --scenario pm-research
+    args_hint: $ARGUMENTS
+  lc-scenario-research-oss:
+    description: 开源方案调研
+    action: python3 scripts/lincoln_scenario.py --scenario research-oss
+    args_hint: $ARGUMENTS
+  lc-setup:
+    description: 安装/检查 Lincoln 依赖并生成 harness 适配产物
+    action: python3 scripts/lincoln-setup.py
+  lc-skill-build-product-prototype:
+    description: 基于已确认设计文档生成字段、界面规格和 Pencil 原型
+    action: python3 scripts/lincoln_skill_prompt.py --skill build-product-prototype
+    args_hint: $ARGUMENTS
+  lc-skill-clarify-requirements:
+    description: 基于访谈内容与人类 PM 多轮澄清需求
+    action: python3 scripts/lincoln_skill_prompt.py --skill clarify-requirements
+    args_hint: $ARGUMENTS
+  lc-skill-draft-product-design:
+    description: 基于已确认需求生成产品设计评审文档包
+    action: python3 scripts/lincoln_skill_prompt.py --skill draft-product-design
+    args_hint: $ARGUMENTS
+  lc-skill-lc-analyze-frameworks:
+    description: 提供并应用分析框架（SWOT、波特五力、商业模式画布、PEST、用户分析等），必要时生成 ECharts/HTML 可视化方案。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-analyze-frameworks
+    args_hint: $ARGUMENTS
+  lc-skill-lc-benchmark:
+    description: Generate a Lincoln benchmark report on explicit request.
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-benchmark
+    args_hint: $ARGUMENTS
+  lc-skill-lc-build-codebase-knowledge:
+    description: Use when starting Lincoln on an existing project with source code
+      but no feature knowledge base yet.
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-build-codebase-knowledge
+    args_hint: $ARGUMENTS
+  lc-skill-lc-collect-intelligence:
+    description: 基于权威报告、官方动态、开放 API、官网等渠道，体系化收集研究所需的权威信息并标注来源。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-collect-intelligence
+    args_hint: $ARGUMENTS
+  lc-skill-lc-competitive-analysis:
+    description: 分析竞争格局，评估竞争对手定位、能力、优势与劣势，形成差异化洞察。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-competitive-analysis
+    args_hint: $ARGUMENTS
+  lc-skill-lc-explore-opensource:
+    description: Use during product design when the requirement can be solved or informed
+      by existing open-source projects.
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-explore-opensource
+    args_hint: $ARGUMENTS
+  lc-skill-lc-first-principles:
+    description: 帮助 PM 回归底层真相，挑战假设，识别第一性原理，为研究奠定坚实基础。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-first-principles
+    args_hint: $ARGUMENTS
+  lc-skill-lc-handoff:
+    description: 为当前阶段生成交接文档，并标记人类审批通过
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-handoff
+    args_hint: $ARGUMENTS
+  lc-skill-lc-init-branch:
+    description: 基于 GitHub issue 初始化 Lincoln issue work package 和 feature branch
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-init-branch
+    args_hint: $ARGUMENTS
+  lc-skill-lc-market-research:
+    description: 分析市场规模、趋势、细分与动态，为产品定位与机会判断提供事实基础。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-market-research
+    args_hint: $ARGUMENTS
+  lc-skill-lc-product-research:
+    description: 研究相关产品/解决方案的能力、价值主张、使用场景与优劣势。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-product-research
+    args_hint: $ARGUMENTS
+  lc-skill-lc-research-report:
+    description: 整合 PM 研究全流程产物，输出可交付、可沉淀的研究报告。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-research-report
+    args_hint: $ARGUMENTS
+  lc-skill-lc-research-scope:
+    description: 界定 PM 研究工作的范围、目标、问题与验收标准，作为后续研究阶段的单一事实来源。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-research-scope
+    args_hint: $ARGUMENTS
+  lc-skill-lc-setup:
+    description: 'Lincoln 环境初始化 skill。用于在仓库首次打开或依赖发生变化时，
+
+      检查、安装并配置 Lincoln 所需的外部 skills、CLI 工具、插件以及仓库配置。
+
+      '
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-setup
+    args_hint: $ARGUMENTS
+  lc-skill-lc-stage:
+    description: 用自然语言驱动当前阶段的生命周期：查看状态、校验准入、提交产物、确认 gate、进入下一阶段
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-stage
+    args_hint: $ARGUMENTS
+  lc-skill-lc-stakeholder-research:
+    description: 识别并研究产品相关者（用户、买单方、建设方、维护方），找到他们的发声渠道并分析其诉求。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-stakeholder-research
+    args_hint: $ARGUMENTS
+  lc-skill-lc-status:
+    description: 查看当前 Lincoln 分支的阶段状态、等待对象、推荐技能和下一步动作
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-status
+    args_hint: $ARGUMENTS
+  lc-skill-lc-storytelling:
+    description: 基于金字塔原理与科学论述逻辑，将研究成果结构化为动人的、可说服决策者的故事。
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-storytelling
+    args_hint: $ARGUMENTS
+  lc-skill-lc-wf:
+    description: Lincoln workflow bundle 入口，按 lc-wf-<workflow-name> 启动对应 SOP（solo
+      或 team）
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-wf
+    args_hint: $ARGUMENTS
+  lc-skill-lc-workflow:
+    description: Lincoln 访谈到知识库完整工作流 bundle，按需组合 9 个阶段 skill
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-workflow
+    args_hint: $ARGUMENTS
+  lc-skill-lc-workflow-router:
+    description: Use at the start of a Lincoln session to run session intake (recon,
+      situation judgment, Johari confirmation) and select the most appropriate workflow
+      template.
+    action: python3 scripts/lincoln_skill_prompt.py --skill lc-workflow-router
+    args_hint: $ARGUMENTS
+  lc-skill-plan-tdd-development:
+    description: 基于已确认产品设计和原型生成 TDD 研发计划
+    action: python3 scripts/lincoln_skill_prompt.py --skill plan-tdd-development
+    args_hint: $ARGUMENTS
+  lc-skill-process-interview:
+    description: 处理访谈录音，生成转写、摘要和初始洞察
+    action: python3 scripts/lincoln_skill_prompt.py --skill process-interview
+    args_hint: $ARGUMENTS
+  lc-skill-propose-with-openspec:
+    description: 基于已确认 TDD 研发计划调用 OpenSpec CLI 生成变更提案 artifact
+    action: python3 scripts/lincoln_skill_prompt.py --skill propose-with-openspec
+    args_hint: $ARGUMENTS
+  lc-skill-split-to-github:
+    description: 将 OpenSpec tasks 拆分为 GitHub Issues
+    action: python3 scripts/lincoln_skill_prompt.py --skill split-to-github
+    args_hint: $ARGUMENTS
+  lc-skill-sync-to-knowledge:
+    description: PR 合并后将代码和 issue 沉淀到 Obsidian 知识库
+    action: python3 scripts/lincoln_skill_prompt.py --skill sync-to-knowledge
+    args_hint: $ARGUMENTS
+  lc-skill-workflow-continue:
+    description: 人类修改文件后继续被暂停的工作流
+    action: python3 scripts/lincoln_skill_prompt.py --skill workflow-continue
+    args_hint: $ARGUMENTS
+  lc-status:
+    description: 显示当前 Lincoln 阶段状态与下一步动作
+    action: python3 scripts/lincoln-status.py
+  lc-submit:
+    description: 提交当前阶段产物(写入 workflow-stage.yaml 并刷新 documents.yaml)
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action record-artifacts
+  lc-validate:
+    description: 运行当前阶段的准入校验(validate-entry)
+    action: python3 scripts/stage_loader.py
+    args_hint: --stage <current_stage> --action validate-entry
+  lc-wf-bug-fix:
+    description: 基于明确 issue/bug 的快速修复工作流
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: start --workflow bug-fix
+  lc-wf-design-spike:
+    description: 仅做方案预研，不进入研发实现
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: start --workflow design-spike
+  lc-wf-existing-project-iteration:
+    description: 已有源码项目的 Lincoln 迭代工作流
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: start --workflow existing-project-iteration
+  lc-wf-interview-to-knowledge:
+    description: 从访谈录音到 GitHub Issues 再到 Obsidian 知识库沉淀的标准工作流
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: start --workflow interview-to-knowledge --issue-number <N>
   lc-wf-list:
     description: 列出所有已注册的 Lincoln workflow 及其执行模式(solo/team)
     action: python3 scripts/lincoln_workflow.py
     args_hint: list
-  lc-wf-interview-to-knowledge:
-    description: 启动访谈到知识库完整 SOP(team 模式,需 --issue-number)
-    action: python3 scripts/lincoln_workflow.py
-    args_hint: --workflow interview-to-knowledge --issue-number <N> start
-  lc-wf-bug-fix:
-    description: 启动 bug 快速修复工作流(solo 模式,实例写入 .context/workflow/)
-    action: python3 scripts/lincoln_workflow.py
-    args_hint: --workflow bug-fix start
-  lc-wf-design-spike:
-    description: 启动方案预研工作流(solo 模式,实例写入 .context/workflow/)
-    action: python3 scripts/lincoln_workflow.py
-    args_hint: --workflow design-spike start
-  lc-wf-existing-project-iteration:
-    description: 启动已有项目迭代工作流(solo 模式,实例写入 .context/workflow/)
-    action: python3 scripts/lincoln_workflow.py
-    args_hint: --workflow existing-project-iteration start
   lc-wf-oss-first-design:
-    description: 启动开源方案优先设计工作流(solo 模式,实例写入 .context/workflow/)
+    description: 先探索开源方案，再进行产品设计
     action: python3 scripts/lincoln_workflow.py
-    args_hint: --workflow oss-first-design start
+    args_hint: start --workflow oss-first-design
+  lc-wf-pm-research:
+    description: PM 市场/产品/竞品/用户/相关者研究与决策支持工作流（solo）
+    action: python3 scripts/lincoln_workflow.py
+    args_hint: start --workflow pm-research

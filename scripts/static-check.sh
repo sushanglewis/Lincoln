@@ -319,6 +319,10 @@ echo "==> Validate Python syntax for scripts"
 "$PYTHON" -m py_compile scripts/check-dependency-drift.py
 "$PYTHON" -m py_compile scripts/lc-benchmark-cli.py
 "$PYTHON" -m py_compile scripts/package-lincoln-plugin.py
+"$PYTHON" -m py_compile scripts/lincoln_command_map.py
+"$PYTHON" -m py_compile scripts/lincoln_role.py
+"$PYTHON" -m py_compile scripts/lincoln_scenario.py
+"$PYTHON" -m py_compile scripts/lincoln_skill_prompt.py
 
 echo "==> Check main merge hygiene"
 "$PYTHON" scripts/check-main-merge-hygiene.py || true

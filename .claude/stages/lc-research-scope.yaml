@@ -1,0 +1,37 @@
+schema_version: 2.0.0
+id: lc-research-scope
+name: 界定研究范围
+description: '与 PM 澄清研究目标、问题、范围与验收标准，输出已确认的研究 brief。'
+templates:
+- pm-research
+prerequisite_stage: workflow-router
+next_stage: lc-first-principles
+human_gate: true
+agent:
+  primary: lc-pm
+  reviewers:
+  - lc-researcher
+  handoff_to: null
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/research/{session_id}/scope.md'
+context:
+  goal: 与 PM 澄清研究目标、问题、范围与验收标准，输出已确认的研究 brief。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
+
+    - 本阶段产物写入 {process_slug}/research/{session_id}/。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - workflow-router
+  exit:
+  - check: artifacts_present
+  - check: human_approved
