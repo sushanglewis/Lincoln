@@ -12,6 +12,10 @@ AGENTS_DIR = ROOT / ".claude" / "agents"
 SKILLS_DIR = ROOT / ".claude" / "skills"
 
 
+CONTRACT_PATH = AGENTS_DIR / "_contract.md"
+DEFAULT_PATH = AGENTS_DIR / "default.md"
+
+
 def _load_after_frontmatter(path: Path) -> str:
     text = path.read_text(encoding="utf-8")
     if not text.startswith("---"):
@@ -20,6 +24,29 @@ def _load_after_frontmatter(path: Path) -> str:
     if end == -1:
         return text
     return text[end + 3 :]
+
+
+def test_contract_contains_subagent_principles():
+    body = _load_after_frontmatter(CONTRACT_PATH)
+    assert "## Sub-Agent Dispatch Principles" in body, (
+        "_contract.md must contain a Sub-Agent Dispatch Principles section"
+    )
+    assert "Prefer linear, single-session work" in body
+    assert "Fan-out requires explicit permission" in body
+    assert "SMART briefs are mandatory" in body
+
+
+def test_contract_red_flags_cover_subagent_anti_patterns():
+    body = _load_after_frontmatter(CONTRACT_PATH)
+    assert "开多个子 agent 并行会更快，先跑再说" in body
+    assert "子 agent 返回什么我就直接采用" in body
+    assert "这个任务先丢给子 agent 探索一下" in body
+
+
+def test_default_contract_references_subagent_principles():
+    body = _load_after_frontmatter(DEFAULT_PATH)
+    assert "Sub-Agent Dispatch Principles" in body
+    assert "fan-out of multiple subagents" in body.lower()
 
 
 @pytest.mark.parametrize("agent_file", sorted(AGENTS_DIR.glob("*.md")), ids=lambda p: p.name)
