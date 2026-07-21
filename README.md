@@ -58,6 +58,7 @@ Lincoln 提供两种启动方式，选择适合你的即可。
 3. 根据你的场景选择模板：
    - **已有源码，想让 Agent 先读懂代码再迭代**：使用 `existing-project-iteration`
    - **只有想法，先做方案/原型探索**：使用 `design-spike`
+   - **要做市场/竞品/用户/相关者研究或决策支持**：使用 `pm-research`
 4. 对 Claude 说：
    - 如果你选择 `existing-project-iteration`：
      > 请使用 Lincoln 的 `existing-project-iteration` 模板，帮我理解当前代码库并规划下一个功能迭代。
@@ -123,6 +124,10 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 | "检查 Lincoln 环境" | `/lc-setup` 检测依赖并列出缺失项 |
 | "列出所有活跃分支" | Agent 列出所有 issue 分支的阶段状态与等待对象 |
 | "审计工作流健康度" | Agent 输出 PASS/WARN/FAIL 健康报告 |
+| "启动 PM 研究工作流" | `/lc-wf-pm-research` 进入市场/竞品/用户/相关者研究 |
+| "调用研究员角色" | `/lc-agent-researcher` 输出 researcher 角色契约与上下文 |
+| "查看某 skill 的完整提示" | `/lc-skill-lc-first-principles` 输出对应 SKILL.md + prompts |
+| "执行一个场景" | `/lc-scenario-make-prd` 按场景组合角色与技能序列 |
 
 `/lc-stage` 技能覆盖完整的阶段生命周期意图映射。底层脚本始终由 Agent 执行，用户无需关心。
 
@@ -141,6 +146,9 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 ## 新增能力（未发布）
 
 - **会话开场引导**：当 Lincoln 没有可驱动的工作状态（新仓库或工作包未启动）时，会话启动 hook 会注入开场引导——Agent 先做概览级摸排（≤ 8 次只读、不读源码），给出处境判断（角色 / 流程位置 / 问题 / 目标 + 置信度），按 Johari 认知象限确认（每轮 ≤ 3 问），并在每个目标有明确验收标准、执行路径确定后才开始工作；README 同步改为全自然语言入口。
+- **体系化的 `/lc-*` 命令面**：新增 `lc-agent-*`、`lc-skill-*`、`lc-scenario-*` 与 `lc-wf-*` 命令族，覆盖全部角色、技能、场景与工作流。命令表由 `scripts/lincoln_command_map.py --refresh` 从 `.claude/workflows/`、`.claude/agents/`、`.claude/skills/` 与 `.claude/harnesses/scenarios.yaml` 自动生成，确保命令与事实源一致。
+- **PM 研究 solo 工作流 `pm-research`**：支持从研究范围界定、第一性原理、相关者研究、市场/产品/竞品研究、信息收集、分析框架、故事化论述到最终研究报告的完整链路；对应新增 10 个研究 skill/stage（`lc-research-scope`、`lc-first-principles`、`lc-stakeholder-research`、`lc-market-research`、`lc-product-research`、`lc-competitive-analysis`、`lc-collect-intelligence`、`lc-analyze-frameworks`、`lc-storytelling`、`lc-research-report`）。
+- **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现。
 
 ---
 
@@ -173,6 +181,8 @@ Lincoln 框架的核心定义直接内联在 `.claude/` 中：
 - [`.claude/stages/`](.claude/stages/) — Stage、Gate、Artifact、Role 的注册表与能力边界：每个阶段一个 `<stage-id>.yaml`，其 `skills` 字段派生阶段到技能的映射。
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — 所有 SOP 工作流模板的索引与路由说明。
 - [`.claude/schemas/`](.claude/schemas/) — `workflow-stage`、`stage-definition`、`workflow-template` 的 JSON Schema。
+- [`.claude/harnesses/command-map.yaml`](.claude/harnesses/command-map.yaml) — `/lc-*` 命令单一事实源，由 `scripts/lincoln_command_map.py --refresh` 自动维护。
+- [`.claude/harnesses/scenarios.yaml`](.claude/harnesses/scenarios.yaml) — 跨角色/技能的组合场景目录（如 `make-prd`、`make-ux`、`pm-research`）。
 - [`CLAUDE.md`](CLAUDE.md) — Agent 启动自检、人类门控规则、handoff 协议、技能调用规范。
 
 ---
@@ -335,7 +345,11 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 - [`.claude/stages/`](.claude/stages/) — 阶段、门控、产物与角色注册表；各 `<stage-id>.yaml` 的 `skills` 字段派生阶段到技能的映射。
 - [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml) — 外部 skill 与 CLI 依赖清单。
 
-> 提示：新增 workflow 模板时，请同步更新 `.claude/workflows/README.md` 的快速路由表与模板详解；新增 skills 或 hooks 时，请确保与 `.claude/settings.json` 和 `dependencies.yaml` 兼容，并补充必要的验证与测试。
+> 提示：
+> - 新增 workflow 模板时，请同步更新 `.claude/workflows/README.md` 的快速路由表与模板详解，并运行 `python3 scripts/lincoln_command_map.py --refresh` 自动登记 `lc-wf-<name>` 命令。
+> - 新增 agent 角色或 skill 时，刷新命令表后会自动生成对应的 `lc-agent-*` / `lc-skill-*` 命令。
+> - 新增跨角色/技能场景时，请在 `.claude/harnesses/scenarios.yaml` 中登记，再由命令表脚本生成 `lc-scenario-*`。
+> - 新增 skills 或 hooks 时，请确保与 `.claude/settings.json` 和 `dependencies.yaml` 兼容，并补充必要的验证与测试。
 
 ---
 
