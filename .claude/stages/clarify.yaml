@@ -27,12 +27,14 @@ artifacts:
   - '{process_slug}/requirements/{session_id}/user-stories.md'
   - '{process_slug}/requirements/{session_id}/prd.md'
 context:
-  goal: 基于访谈产物（逐字稿、摘要、初始洞察）与人类 PM 进行多轮澄清，形成统一、可追溯、已确认的需求文档，作为后续所有阶段的单一事实来源。
+  goal: 基于访谈产物（逐字稿、摘要、初始洞察）与人类 PM 进行多轮澄清，形成统一、可追溯、已确认的需求文档，作为后续所有阶段的单一事实来源，并作为 PM→UX 交接的 Tier-2 产物。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
     - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
+
+    - 本阶段产出的 requirement 文档是 PM→UX 交接的 Tier-2 产物，需在 `product-design-docs` 阶段由 master-handoff 统一索引。
 
     - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 
