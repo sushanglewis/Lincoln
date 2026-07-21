@@ -1,5 +1,47 @@
 process_slug: issue-75
 issue_number: '75'
-current_stage: ingest
-last_updated: '2026-07-21T14:26:13Z'
-documents: []
+current_stage: implement
+last_updated: '2026-07-21T14:43:14Z'
+documents:
+- path: .claude/agents/_contract.md
+  stage: implement
+  status: in_progress
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
+- path: .claude/agents/default.md
+  stage: implement
+  status: in_progress
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
+- path: requirements/2026-07-21-subagent-principles/prd.md
+  stage: implement
+  status: in_progress
+  gate_passed: true
+  human_confirmed: true
+  approved_by: human-pm
+  version: null
+- path: requirements/2026-07-21-subagent-principles/requirements.md
+  stage: implement
+  status: in_progress
+  gate_passed: true
+  human_confirmed: true
+  approved_by: human-pm
+  version: null
+- path: requirements/2026-07-21-subagent-principles/user-stories.md
+  stage: implement
+  status: in_progress
+  gate_passed: true
+  human_confirmed: true
+  approved_by: human-pm
+  version: null
+- path: tests/test_agent_contract.py
+  stage: implement
+  status: in_progress
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
