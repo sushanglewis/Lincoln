@@ -17,3 +17,7 @@
 
 - [ ] F-001 对应验收标准
 - [ ] F-002 对应验收标准
+
+---
+
+*PM→UX 交接：本清单是 [`handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md`](../handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md) 的 Tier-2 产物。*

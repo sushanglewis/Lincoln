@@ -26,3 +26,5 @@
 
 ---
 *PM 确认时请添加 `<!-- status: approved -->` 或 `[x] PM 已确认需求`。*
+
+*PM→UX 交接：本需求文档是 [`handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md`](../handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md) 的 Tier-2 产物。*

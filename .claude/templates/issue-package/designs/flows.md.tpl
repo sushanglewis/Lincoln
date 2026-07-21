@@ -22,3 +22,7 @@ graph TD
 
 - 状态 1 → 状态 2（事件）
 - 状态 2 → 状态 3（事件）
+
+---
+
+*PM→UX 交接：本流程图是 [`handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md`](../handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md) 的 Tier-2 产物。*
