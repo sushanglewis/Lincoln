@@ -5,7 +5,7 @@ workflow:
   template: interview-to-knowledge
 current_run:
   run_id: 20260721124525-02ae610d
-  branch: lewiswhitephotograph/lew-49-关于跨成员（人-人、人-agent、agent-agent）交接的设计与issue-package的设计问题
+  branch: issue-76
   current_stage: ingest
   status: in_progress
   started_at: '2026-07-21T12:45:25Z'
