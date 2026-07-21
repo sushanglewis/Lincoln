@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -72,7 +73,14 @@ def list_workflows() -> int:
     return 0
 
 
-def start_solo(workflow_name: str, wf: dict[str, Any], force: bool) -> int:
+def _default_session_id(workflow_name: str) -> str:
+    """Generate a filesystem-safe session id for solo workflows."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
+    safe = re.sub(r"[^a-z0-9_-]", "-", workflow_name.lower())
+    return f"{safe}-{timestamp}"
+
+
+def start_solo(workflow_name: str, wf: dict[str, Any], force: bool = False, session_id: str | None = None) -> int:
     state_path = SOLO_STATE_DIR / f"{workflow_name}.yaml"
     if state_path.exists() and not force:
         raise SystemExit(f"ERROR: solo instance already exists: {state_path} (use --force to overwrite)")
@@ -93,6 +101,9 @@ def start_solo(workflow_name: str, wf: dict[str, Any], force: bool) -> int:
     current_run["started_at"] = now
     current_run["last_updated_at"] = now
     state["recovery"]["can_resume_from"] = first_stage
+
+    variables = state.setdefault("current_run", {}).setdefault("variables", {})
+    variables["session_id"] = session_id or _default_session_id(workflow_name)
 
     state_path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = state_path.with_suffix(".yaml.tmp")
@@ -136,7 +147,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     wf = load_workflow_definition(args.workflow)
     mode = wf.get("execution_mode", DEFAULT_EXECUTION_MODE)
     if mode == "solo":
-        return start_solo(args.workflow, wf, args.force)
+        return start_solo(args.workflow, wf, args.force, getattr(args, "session_id", None))
     return start_team(args.workflow, args.issue_number)
 
 
@@ -156,6 +167,7 @@ def main() -> int:
     start = sub.add_parser("start", help="Start a workflow run (solo instance or team issue package)")
     start.add_argument("--workflow", required=True, help="Workflow name under .claude/workflows/")
     start.add_argument("--issue-number", help="Issue number (required for team workflows)")
+    start.add_argument("--session-id", help="Session identifier for solo artifacts (auto-generated if omitted)")
     start.add_argument("--force", action="store_true", help="Overwrite existing solo instance")
 
     sub.add_parser("status", help="Show current workflow run status")

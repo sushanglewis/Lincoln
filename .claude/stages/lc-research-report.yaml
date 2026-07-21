@@ -1,0 +1,37 @@
+schema_version: 2.0.0
+id: lc-research-report
+name: 研究报告
+description: '整合全流程产物，输出可交付、可沉淀的最终研究报告。'
+templates:
+- pm-research
+prerequisite_stage: lc-collect-intelligence
+next_stage: null
+human_gate: true
+agent:
+  primary: lc-pm
+  reviewers:
+  - lc-researcher
+  handoff_to: null
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/research/{session_id}/report.md'
+context:
+  goal: 整合全流程产物，输出可交付、可沉淀的最终研究报告。
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
+
+    - 本阶段产物写入 {process_slug}/research/{session_id}/。
+
+    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
+
+    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - lc-collect-intelligence
+  exit:
+  - check: artifacts_present
+  - check: human_approved

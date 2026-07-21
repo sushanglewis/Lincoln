@@ -28,6 +28,7 @@
 | 已有明确 bug/issue，需要快速定位修复 | `bug-fix` | solo | [`bug-fix.yaml`](bug-fix.yaml) |
 | 仅做方案预研，不进入研发实现 | `design-spike` | solo | [`design-spike.yaml`](design-spike.yaml) |
 | 强依赖开源方案，需要先调研再设计 | `oss-first-design` | solo | [`oss-first-design.yaml`](oss-first-design.yaml) |
+| 需要做竞品/市场/用户/相关者研究，辅助产品决策 | `pm-research` | solo | [`pm-research.yaml`](pm-research.yaml) |
 
 ## 工作流详解
 
@@ -56,6 +57,12 @@
 - **适用场景**：设计方案强依赖开源项目或技术框架，需要先调研可选方案。
 - **特点**：在 `clarify` 和 `product-design-docs` 之间插入 `explore-opensource` 阶段。
 
+### `pm-research`（solo）
+
+- **适用场景**：PM 需要体系化地完成竞品分析、市场研究、产品研究、用户/相关者研究、第一性原理探索，并输出可说服决策者的研究报告。
+- **阶段**：workflow-router → lc-research-scope → lc-first-principles → lc-stakeholder-research → lc-market-research → lc-product-research → lc-competitive-analysis → lc-analyze-frameworks → lc-storytelling → lc-collect-intelligence → lc-research-report
+- **特点**：全程 solo，研究范围与最终报告设有人类 gate；中间阶段以 artifact 完整性为准出门控。
+
 ## 工作流元模型
 
 所有工作流共享同一套元模型：
@@ -70,7 +77,7 @@
 
 1. 在本目录创建 `<workflow-name>.yaml`，声明 `execution_mode: solo|team`。
 2. 遵循 [`workflow-template.schema.json`](../schemas/workflow-template.schema.json) 的字段约定（`execution_mode` 为必填）。
-3. 在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 条目（`action: python3 scripts/lincoln_workflow.py`），然后运行 `python3 scripts/lincoln-setup.py generate-harness --harness codex --harness opencode` 重新生成适配产物。
+3. 运行 `python3 scripts/lincoln_command_map.py --refresh` 自动在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 等命令，并同步 `.claude-plugin/plugin.json`，然后运行 `python3 scripts/lincoln-setup.py generate-harness --harness codex --harness opencode` 重新生成适配产物。
 4. 在 `.claude/skills/lc-wf/SKILL.md` 的命令映射表中补充触发词。
 5. 更新本 README 的**快速路由表**和**工作流详解**。
 
