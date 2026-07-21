@@ -19,6 +19,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import glob
 import json
 import os
 import re
@@ -400,12 +401,21 @@ def _check_artifacts_present(stage_id: str, state: dict[str, Any], state_file: P
     all_present = True
     for art in required:
         path = interpolate_artifact(str(art), state, state_file)
-        target = PROJECT_ROOT / path
-        if not target.exists() or target.stat().st_size == 0:
-            print(f"FAIL: artifact missing or empty: {path}", file=sys.stderr)
-            all_present = False
+        if "*" in path or "?" in path:
+            matches = list(PROJECT_ROOT.glob(path))
+            if not matches or all(m.stat().st_size == 0 for m in matches):
+                print(f"FAIL: artifact missing or empty: {path}", file=sys.stderr)
+                all_present = False
+            else:
+                for match in matches:
+                    print(f"PASS: artifact present: {match.relative_to(PROJECT_ROOT)}")
         else:
-            print(f"PASS: artifact present: {path}")
+            target = PROJECT_ROOT / path
+            if not target.exists() or target.stat().st_size == 0:
+                print(f"FAIL: artifact missing or empty: {path}", file=sys.stderr)
+                all_present = False
+            else:
+                print(f"PASS: artifact present: {path}")
     return all_present
 
 
@@ -555,9 +565,14 @@ def action_record_artifacts(
     artifacts = stage.get("artifacts", {})
     for art in artifacts.get("required", []) + artifacts.get("optional", []):
         path = interpolate_artifact(str(art), state, state_file)
-        target = PROJECT_ROOT / path
-        if target.exists():
-            recorded.append(str(path))
+        if "*" in path or "?" in path:
+            for match in PROJECT_ROOT.glob(path):
+                if match.exists():
+                    recorded.append(str(match.relative_to(PROJECT_ROOT)))
+        else:
+            target = PROJECT_ROOT / path
+            if target.exists():
+                recorded.append(str(path))
 
     latest_node = get_latest_node_for_stage(state, stage_id)
     if latest_node is None:
