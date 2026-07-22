@@ -107,13 +107,14 @@ def fake_repo(tmp_path, monkeypatch):
         },
     )
     import scripts.lincoln_command_map as cm
-    cm.PROJECT_ROOT = root
-    cm.COMMAND_MAP_PATH = root / ".claude" / "harnesses" / "command-map.yaml"
-    cm.SCENARIOS_PATH = root / ".claude" / "harnesses" / "scenarios.yaml"
-    cm.PLUGIN_PATH = root / ".claude-plugin" / "plugin.json"
-    cm.WORKFLOWS_DIR = root / ".claude" / "workflows"
-    cm.AGENTS_DIR = root / ".claude" / "agents"
-    cm.SKILLS_DIR = root / ".claude" / "skills"
+
+    monkeypatch.setattr(cm, "PROJECT_ROOT", root)
+    monkeypatch.setattr(cm, "COMMAND_MAP_PATH", root / ".claude" / "harnesses" / "command-map.yaml")
+    monkeypatch.setattr(cm, "SCENARIOS_PATH", root / ".claude" / "harnesses" / "scenarios.yaml")
+    monkeypatch.setattr(cm, "PLUGIN_PATH", root / ".claude-plugin" / "plugin.json")
+    monkeypatch.setattr(cm, "WORKFLOWS_DIR", root / ".claude" / "workflows")
+    monkeypatch.setattr(cm, "AGENTS_DIR", root / ".claude" / "agents")
+    monkeypatch.setattr(cm, "SKILLS_DIR", root / ".claude" / "skills")
     monkeypatch.chdir(root)
     return root
 
@@ -147,7 +148,9 @@ def test_build_commands_generates_skill_commands(fake_repo):
         commands["lc-skill-clarify-requirements"]["action"]
         == "python3 scripts/lincoln_skill_prompt.py --skill clarify-requirements"
     )
-    assert "lc-skill-lc-first-principles" in commands
+    # Leading lc- prefix on skill folder should be stripped from command name
+    assert "lc-skill-first-principles" in commands
+    assert "lc-skill-lc-first-principles" not in commands
 
 
 def test_build_commands_generates_scenario_commands(fake_repo):
@@ -164,16 +167,8 @@ def test_all_commands_start_with_lc(fake_repo):
     assert all(k.startswith("lc-") for k in commands)
 
 
-def test_refresh_updates_command_map_and_plugin(fake_repo, monkeypatch):
+def test_refresh_updates_command_map_and_plugin(fake_repo):
     import scripts.lincoln_command_map as cm
-
-    monkeypatch.setattr(cm, "PROJECT_ROOT", fake_repo)
-    cm.COMMAND_MAP_PATH = fake_repo / ".claude" / "harnesses" / "command-map.yaml"
-    cm.SCENARIOS_PATH = fake_repo / ".claude" / "harnesses" / "scenarios.yaml"
-    cm.PLUGIN_PATH = fake_repo / ".claude-plugin" / "plugin.json"
-    cm.WORKFLOWS_DIR = fake_repo / ".claude" / "workflows"
-    cm.AGENTS_DIR = fake_repo / ".claude" / "agents"
-    cm.SKILLS_DIR = fake_repo / ".claude" / "skills"
 
     cm.refresh_command_map()
     cm.refresh_plugin_json()
@@ -191,3 +186,17 @@ def test_refresh_updates_command_map_and_plugin(fake_repo, monkeypatch):
     assert "clarify-requirements" in skill_names
     assert "lc-first-principles" in skill_names
     assert "old" not in skill_names
+
+
+def test_check_reports_drift_and_returns_nonzero(fake_repo):
+    import scripts.lincoln_command_map as cm
+
+    # Map already exists but is missing generated commands
+    assert cm.check() == 1
+
+
+def test_check_passes_after_refresh(fake_repo):
+    import scripts.lincoln_command_map as cm
+
+    cm.refresh_command_map()
+    assert cm.check() == 0

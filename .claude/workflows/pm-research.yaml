@@ -80,21 +80,21 @@ workflow:
       exit_checks:
         - check: artifacts_present
 
-    - id: lc-storytelling
-      name: 体系化论述
-      description: 基于金字塔原理将研究成果结构化为可说服决策者的故事
-      action: lc-storytelling
-      artifacts:
-        - "{process_slug}/research/{session_id}/narrative.md"
-      exit_checks:
-        - check: artifacts_present
-
     - id: lc-collect-intelligence
       name: 信息收集
       description: 基于权威渠道体系化收集研究证据并标注来源
       action: lc-collect-intelligence
       artifacts:
         - "{process_slug}/research/{session_id}/collected-intelligence.md"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: lc-storytelling
+      name: 体系化论述
+      description: 基于金字塔原理将研究成果结构化为可说服决策者的故事
+      action: lc-storytelling
+      artifacts:
+        - "{process_slug}/research/{session_id}/narrative.md"
       exit_checks:
         - check: artifacts_present
 

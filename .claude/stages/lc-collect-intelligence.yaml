@@ -4,8 +4,8 @@ name: 信息收集
 description: '基于权威报告、官方动态、开放 API 等渠道体系化收集研究证据并标注来源。'
 templates:
 - pm-research
-prerequisite_stage: lc-storytelling
-next_stage: lc-research-report
+prerequisite_stage: lc-analyze-frameworks
+next_stage: lc-storytelling
 human_gate: false
 agent:
   primary: lc-researcher
@@ -13,7 +13,8 @@ agent:
   - lc-pm
   handoff_to: null
 skills:
-  required: []
+  required:
+  - lincoln:lc-collect-intelligence
   optional: []
 artifacts:
   required:
@@ -31,6 +32,6 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - lc-storytelling
+    - lc-analyze-frameworks
   exit:
   - check: artifacts_present

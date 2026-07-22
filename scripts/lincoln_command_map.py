@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -22,7 +23,11 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lincoln_paths import PROJECT_ROOT  # noqa: E402
+from lincoln_paths import (  # noqa: E402
+    PROJECT_ROOT,
+    atomic_write_text,
+    validate_name,
+)
 
 COMMAND_MAP_PATH = PROJECT_ROOT / ".claude" / "harnesses" / "command-map.yaml"
 SCENARIOS_PATH = PROJECT_ROOT / ".claude" / "harnesses" / "scenarios.yaml"
@@ -50,6 +55,8 @@ HEADER = """# lc-* 命令单一事实源(Single source of truth)
 # 新增/修改命令请运行: python3 scripts/lincoln_command_map.py --refresh
 """
 
+FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
+
 
 def load_yaml(path: Path) -> dict[str, Any]:
     return yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -67,12 +74,28 @@ def load_scenarios() -> dict[str, Any]:
     return load_yaml(SCENARIOS_PATH).get("scenarios", {})
 
 
+def _clean_name(value: str, kind: str) -> str:
+    """Validate an identifier before embedding it into commands or paths."""
+    return validate_name(value, kind)
+
+
+def _iter_skill_dirs():
+    """Yield skill directories that contain a SKILL.md manifest."""
+    for path in sorted(SKILLS_DIR.iterdir()):
+        if not path.is_dir():
+            continue
+        if not (path / "SKILL.md").exists():
+            continue
+        yield path
+
+
 def list_workflows() -> dict[str, dict[str, Any]]:
     workflows: dict[str, dict[str, Any]] = {}
     for path in sorted(WORKFLOWS_DIR.glob("*.yaml")):
         data = load_yaml(path)
-        wf = data.get("workflow", {})
-        workflows[path.stem] = {
+        wf = data.get("workflow", {}) if isinstance(data, dict) else {}
+        stem = _clean_name(path.stem, "workflow name")
+        workflows[stem] = {
             "name": wf.get("name", path.stem),
             "description": wf.get("description", ""),
             "execution_mode": wf.get("execution_mode", "team"),
@@ -87,7 +110,8 @@ def list_agents() -> dict[str, dict[str, Any]]:
         if path.name in excluded:
             continue
         front, _ = split_frontmatter(path.read_text(encoding="utf-8"))
-        agents[path.stem] = {
+        stem = _clean_name(path.stem, "agent name")
+        agents[stem] = {
             "name": front.get("name", path.stem),
             "description": front.get("description", ""),
         }
@@ -96,14 +120,10 @@ def list_agents() -> dict[str, dict[str, Any]]:
 
 def list_skills() -> dict[str, dict[str, Any]]:
     skills: dict[str, dict[str, Any]] = {}
-    for path in sorted(SKILLS_DIR.iterdir()):
-        if not path.is_dir():
-            continue
-        skill_md = path / "SKILL.md"
-        if not skill_md.exists():
-            continue
-        front, _ = split_frontmatter(skill_md.read_text(encoding="utf-8"))
-        skills[path.name] = {
+    for path in _iter_skill_dirs():
+        front, _ = split_frontmatter((path / "SKILL.md").read_text(encoding="utf-8"))
+        folder = _clean_name(path.name, "skill folder name")
+        skills[folder] = {
             "name": front.get("name", path.name),
             "description": front.get("description", ""),
         }
@@ -111,18 +131,22 @@ def list_skills() -> dict[str, dict[str, Any]]:
 
 
 def split_frontmatter(text: str) -> tuple[dict[str, Any], str]:
-    if not text.startswith("---"):
-        return {}, text
-    parts = text.split("---", 2)
-    if len(parts) < 3:
+    match = FRONTMATTER_RE.match(text)
+    if not match:
         return {}, text
     try:
-        front = yaml.safe_load(parts[1]) or {}
+        front = yaml.safe_load(match.group(1)) or {}
     except yaml.YAMLError:
         front = {}
     if not isinstance(front, dict):
         front = {}
-    return front, parts[2].lstrip("\n")
+    body_start = match.end()
+    return front, text[body_start:].lstrip("\n")
+
+
+def _skill_command_key(folder: str) -> str:
+    """Avoid lc-skill-lc-* duplication by stripping a leading lc- prefix."""
+    return f"lc-skill-{folder.removeprefix('lc-')}"
 
 
 def build_commands() -> dict[str, dict[str, Any]]:
@@ -130,9 +154,17 @@ def build_commands() -> dict[str, dict[str, Any]]:
     commands: dict[str, dict[str, Any]] = {}
 
     # 1. Preserve static commands exactly as they are.
+    missing_static = []
     for key in STATIC_COMMANDS:
         if key in existing:
             commands[key] = existing[key]
+        else:
+            missing_static.append(key)
+    if missing_static:
+        print(
+            f"WARNING: static commands missing from existing map: {', '.join(missing_static)}",
+            file=sys.stderr,
+        )
 
     # 2. Workflow commands.
     for stem, wf in list_workflows().items():
@@ -162,7 +194,7 @@ def build_commands() -> dict[str, dict[str, Any]]:
 
     # 4. Skill commands.
     for folder, skill in list_skills().items():
-        key = f"lc-skill-{folder}"
+        key = _skill_command_key(folder)
         if key in STATIC_COMMANDS:
             continue
         commands[key] = {
@@ -173,6 +205,7 @@ def build_commands() -> dict[str, dict[str, Any]]:
 
     # 5. Scenario commands.
     for sid, scenario in load_scenarios().items():
+        sid = _clean_name(sid, "scenario id")
         key = f"lc-scenario-{sid}"
         if key in STATIC_COMMANDS:
             continue
@@ -188,7 +221,11 @@ def build_commands() -> dict[str, dict[str, Any]]:
 def refresh_command_map() -> None:
     commands = build_commands()
     data = {"commands": commands}
-    COMMAND_MAP_PATH.write_text(HEADER + "\n" + yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
+    atomic_write_text(
+        COMMAND_MAP_PATH,
+        HEADER + yaml.safe_dump(data, allow_unicode=True, sort_keys=False),
+        encoding="utf-8",
+    )
     print(f"Updated {COMMAND_MAP_PATH.relative_to(PROJECT_ROOT)} ({len(commands)} commands)")
 
 
@@ -197,16 +234,14 @@ def refresh_plugin_json() -> None:
         raise SystemExit(f"ERROR: plugin.json not found: {PLUGIN_PATH}")
     plugin = json.loads(PLUGIN_PATH.read_text(encoding="utf-8"))
 
-    skill_paths = []
-    for path in sorted(SKILLS_DIR.iterdir()):
-        if not path.is_dir():
-            continue
-        if not (path / "SKILL.md").exists():
-            continue
-        skill_paths.append(f"./.claude/skills/{path.name}/")
+    skill_paths = [f"./.claude/skills/{path.name}/" for path in _iter_skill_dirs()]
 
     plugin["skills"] = skill_paths
-    PLUGIN_PATH.write_text(json.dumps(plugin, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    atomic_write_text(
+        PLUGIN_PATH,
+        json.dumps(plugin, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     print(f"Updated {PLUGIN_PATH.relative_to(PROJECT_ROOT)} ({len(skill_paths)} skills)")
 
 
@@ -228,23 +263,26 @@ def check() -> int:
         print("Extra commands:", ", ".join(sorted(extra)))
     if changed:
         print("Changed commands:", ", ".join(sorted(changed)))
+    try:
+        script_rel = Path(__file__).relative_to(PROJECT_ROOT)
+    except ValueError:
+        script_rel = Path("scripts/lincoln_command_map.py")
+    print(f"Run: python3 {script_rel} --refresh")
     return 1
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Maintain Lincoln /lc-* command surface")
-    parser.add_argument("--refresh", action="store_true", help="Regenerate command-map.yaml and plugin.json")
-    parser.add_argument("--check", action="store_true", help="Check if command-map.yaml is in sync")
+    group = parser.add_mutually_exclusive_group(required=True)
+    group.add_argument("--refresh", action="store_true", help="Regenerate command-map.yaml and plugin.json")
+    group.add_argument("--check", action="store_true", help="Check if command-map.yaml is in sync")
     args = parser.parse_args()
 
     if args.refresh:
         refresh_command_map()
         refresh_plugin_json()
         return 0
-    if args.check:
-        return check()
-    parser.print_help()
-    return 1
+    return check()
 
 
 if __name__ == "__main__":

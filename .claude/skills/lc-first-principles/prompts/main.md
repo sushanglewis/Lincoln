@@ -64,10 +64,10 @@ Produce `{process_slug}/research/{session_id}/first-principles.md` that captures
 ## Human Interaction Rules
 
 - Present the reframed questions to the PM.
-- Do not proceed until the PM confirms or refines the first-principles framing.
+- Pause for PM feedback. If the PM provides refinements, update the document and continue; otherwise proceed.
 - If the PM disagrees with an assumption, capture the revised view and update the document.
 
 ## Exit Criteria
 
-- `first-principles.md` is complete and confirmed by the PM.
+- `first-principles.md` is complete and has been reviewed by the PM (revisions incorporated if any).
 - At least one implicit assumption has been surfaced and validated.

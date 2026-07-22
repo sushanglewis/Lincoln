@@ -51,6 +51,37 @@ def validate_slug(value: str) -> str:
     return slug
 
 
+LC_NAME_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
+
+
+def validate_name(value: str, kind: str = "name") -> str:
+    """Validate a Lincoln identifier (workflow, role, skill, scenario key)."""
+    if not LC_NAME_RE.fullmatch(value):
+        raise ValueError(f"Invalid {kind}: {value!r}")
+    return value
+
+
+def assert_contained(path: Path, parent: Path, desc: str = "path") -> Path:
+    """Raise ValueError if resolved path escapes parent directory."""
+    resolved = path.resolve()
+    base = parent.resolve()
+    if base not in resolved.parents and resolved != base:
+        raise ValueError(f"{desc} escapes allowed directory: {path}")
+    return resolved
+
+
+def atomic_write_text(path: Path, content: str, encoding: str = "utf-8") -> None:
+    """Atomically write text to path using a temporary file and rename."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    try:
+        tmp.write_text(content, encoding=encoding)
+        tmp.replace(path)
+    except Exception:
+        if tmp.exists():
+            tmp.unlink()
+        raise
+
+
 def branch_slug(project_root: Path = PROJECT_ROOT) -> str:
     try:
         branch = subprocess.check_output(

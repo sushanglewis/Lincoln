@@ -13,7 +13,8 @@ agent:
   - lc-researcher
   handoff_to: null
 skills:
-  required: []
+  required:
+  - lincoln:lc-research-scope
   optional: []
 artifacts:
   required:

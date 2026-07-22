@@ -301,28 +301,21 @@ done
 echo "All hooks executable."
 
 echo "==> Validate Python syntax for scripts"
-"$PYTHON" -m py_compile scripts/stage_loader.py
-"$PYTHON" -m py_compile scripts/lincoln-status.py
-"$PYTHON" -m py_compile scripts/lincoln_trace.py
-"$PYTHON" -m py_compile scripts/lincoln_benchmark.py
-"$PYTHON" -m py_compile scripts/lincoln_benchmark_eval.py
-"$PYTHON" -m py_compile scripts/lincoln_benchmark_report.py
-"$PYTHON" -m py_compile scripts/lincoln_benchmark_metrics.py
-"$PYTHON" -m py_compile scripts/track-artifacts.py
-"$PYTHON" -m py_compile scripts/task_tool_guard.py
-"$PYTHON" -m py_compile scripts/validate_stage.py
-"$PYTHON" -m py_compile scripts/lincoln_paths.py
-"$PYTHON" -m py_compile scripts/check-main-merge-hygiene.py
-"$PYTHON" -m py_compile scripts/lincoln_harness_adapter.py
-"$PYTHON" -m py_compile scripts/lincoln_session_start_metrics.py
-"$PYTHON" -m py_compile scripts/bump_version.py
-"$PYTHON" -m py_compile scripts/check-dependency-drift.py
-"$PYTHON" -m py_compile scripts/lc-benchmark-cli.py
-"$PYTHON" -m py_compile scripts/package-lincoln-plugin.py
-"$PYTHON" -m py_compile scripts/lincoln_command_map.py
-"$PYTHON" -m py_compile scripts/lincoln_role.py
-"$PYTHON" -m py_compile scripts/lincoln_scenario.py
-"$PYTHON" -m py_compile scripts/lincoln_skill_prompt.py
+# Compile every Python script under scripts/ (skip __pycache__ and non-.py files)
+py_errors=0
+for pyfile in scripts/*.py; do
+    [ -f "$pyfile" ] || continue
+    if ! "$PYTHON" -m py_compile "$pyfile"; then
+        py_errors=$((py_errors + 1))
+    fi
+done
+if [ $py_errors -ne 0 ]; then
+    echo "Python syntax errors detected: $py_errors"
+    exit 1
+fi
+
+echo "==> Check command-map drift"
+"$PYTHON" scripts/lincoln_command_map.py --check
 
 echo "==> Check main merge hygiene"
 "$PYTHON" scripts/check-main-merge-hygiene.py || true

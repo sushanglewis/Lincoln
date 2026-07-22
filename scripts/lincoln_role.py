@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lincoln_paths import PROJECT_ROOT  # noqa: E402
+from lincoln_paths import PROJECT_ROOT, assert_contained, validate_name  # noqa: E402
 
 AGENTS_DIR = PROJECT_ROOT / ".claude" / "agents"
 
@@ -24,16 +24,22 @@ def main() -> int:
     parser.add_argument("topic", nargs="*", help="Optional topic/context")
     args = parser.parse_args()
 
-    path = AGENTS_DIR / f"{args.role}.md"
-    if not path.exists():
-        print(f"ERROR: agent role not found: {path}", file=sys.stderr)
-        return 1
+    try:
+        validate_name(args.role, "role name")
+        path = AGENTS_DIR / f"{args.role}.md"
+        assert_contained(path, AGENTS_DIR, "agent role path")
+        if not path.exists():
+            print(f"ERROR: agent role not found: {path}", file=sys.stderr)
+            return 1
 
-    text = path.read_text(encoding="utf-8")
-    if args.topic:
-        print(f"Topic/context: {' '.join(args.topic)}\n")
-    print(text)
-    return 0
+        text = path.read_text(encoding="utf-8")
+        if args.topic:
+            print(f"Topic/context: {' '.join(args.topic)}\n")
+        print(text)
+        return 0
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return 1
 
 
 if __name__ == "__main__":
