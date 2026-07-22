@@ -6,43 +6,37 @@ workflow:
 current_run:
   run_id: 20260722021013-7fc4b7cd
   branch: issue-83
-  current_stage: ingest
-  status: in_progress
+  current_stage: implement
+  status: validation_failed
   started_at: '2026-07-22T02:10:13Z'
-  last_updated_at: '2026-07-22T02:10:13Z'
+  last_updated_at: '2026-07-22T02:11:00Z'
   issue_number: '83'
   variables:
     process_slug: issue-83
     session_id: 2026-07-22-issue-83
     design_id: issue-83
     issue_number: '83'
-    change_name: ''
+    change_name: readme-v1-3-0
     pr_number: ''
-    feature_slug: ''
+    feature_slug: readme-update
   change_name: ''
   pr_number: ''
   feature_slug: ''
   execution_mode: team
-artifact_guidance: "This issue work package holds all artifacts produced while resolving\
-  \ the issue.\n\nHow to use templates:\n- Document templates live read-only under\
-  \ `.claude/templates/issue-package/`.\n  Do NOT copy `.tpl` files into this package.\
-  \ When a stage needs a document,\n  read the matching `.tpl` file there as a format\
-  \ reference and author the\n  document directly in the appropriate package directory,\
-  \ replacing\n  placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).\n\
-  - Use `designs/` for product design docs, `requirements/` for clarified needs,\n\
-  \  `interviews/` for recorded session outputs, `openspec/` for implementation proposals,\n\
-  \  `docs/` for research and decision records, `handoffs/` for cross-role handoff\
-  \ documents\n  (e.g. `handoffs/pm-to-ux/` for PM-to-UX handoff), and `recordings/`\
-  \ for raw input files only.\n- PM-to-UX handoff artifacts live under `handoffs/pm-to-ux/`:\n\
-  \  - `master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.md` — the human-readable entry doc.\n\
-  \  - `pm-to-ux.handoff.yaml` — the machine-readable agent-agent contract.\n  - Both\
-  \ use version `v{MAJOR}.{MINOR}` (e.g. `v1.0`).\n- When a stage completes, run `scripts/stage_loader.py\
-  \ --stage <stage> --action record-artifacts`\n  to persist produced artifact paths\
-  \ back into this workflow-stage.yaml; this also\n  refreshes `documents.yaml`, the\
-  \ document index in the package root. Read that\n  index first to learn which documents\
-  \ exist and their approval status.\n\nApproval convention:\n- Add `<!-- status:\
-  \ approved -->` or `[x] PM 已确认<文档类型>` to mark a document\n  as reviewed by the human\
-  \ PM before handoff.\n"
+artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
+  - Document templates live read-only under `.claude/templates/issue-package/`.\n  Do NOT copy `.tpl` files into this package.\
+  \ When a stage needs a document,\n  read the matching `.tpl` file there as a format reference and author the\n  document\
+  \ directly in the appropriate package directory, replacing\n  placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).\n\
+  - Use `designs/` for product design docs, `requirements/` for clarified needs,\n  `interviews/` for recorded session outputs,\
+  \ `openspec/` for implementation proposals,\n  `docs/` for research and decision records, `handoffs/` for cross-role handoff\
+  \ documents\n  (e.g. `handoffs/pm-to-ux/` for PM-to-UX handoff), and `recordings/` for raw input files only.\n- PM-to-UX\
+  \ handoff artifacts live under `handoffs/pm-to-ux/`:\n  - `master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.md` — the human-readable\
+  \ entry doc.\n  - `pm-to-ux.handoff.yaml` — the machine-readable agent-agent contract.\n  - Both use version `v{MAJOR}.{MINOR}`\
+  \ (e.g. `v1.0`).\n- When a stage completes, run `scripts/stage_loader.py --stage <stage> --action record-artifacts`\n  to\
+  \ persist produced artifact paths back into this workflow-stage.yaml; this also\n  refreshes `documents.yaml`, the document\
+  \ index in the package root. Read that\n  index first to learn which documents exist and their approval status.\n\nApproval\
+  \ convention:\n- Add `<!-- status: approved -->` or `[x] PM 已确认<文档类型>` to mark a document\n  as reviewed by the human PM\
+  \ before handoff.\n"
 nodes: []
 recovery:
   last_validated_checkpoint: ''
