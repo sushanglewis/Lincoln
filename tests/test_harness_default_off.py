@@ -110,4 +110,4 @@ def test_codex_plugin_manifest_drops_claude_only_capabilities(tmp_path):
     assert "agents" not in manifest, "agents block must be absent from codex plugin manifest"
     # Neutral metadata should be preserved.
     assert manifest.get("name") == "lincoln"
-    assert manifest.get("version") == "1.2.0"
+    assert manifest.get("version") == "1.3.0"

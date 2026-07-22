@@ -124,6 +124,7 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 | "检查 Lincoln 环境" | `/lc-setup` 检测依赖并列出缺失项 |
 | "列出所有活跃分支" | Agent 列出所有 issue 分支的阶段状态与等待对象 |
 | "审计工作流健康度" | Agent 输出 PASS/WARN/FAIL 健康报告 |
+| "运行 benchmark" | `/lc-benchmark` 生成 Lincoln 会话基准评测报告 |
 | "启动 PM 研究工作流" | `/lc-wf-pm-research` 进入市场/竞品/用户/相关者研究 |
 | "调用研究员角色" | `/lc-agent-researcher` 输出 researcher 角色契约与上下文 |
 | "查看某 skill 的完整提示" | `/lc-skill-lc-first-principles` 输出对应 SKILL.md + prompts |
@@ -143,12 +144,21 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 - **多 harness 适配**：角色契约、`lc-*` 命令与阶段工作流可派生到 codex / opencode，详见下文 [多 harness 支持](#多-harness-支持codex--opencode)。
 - **Claude Code 插件化**：新增 `.claude-plugin/` 清单，支持作为 Claude Code 插件安装。
 
+## 新增能力（v1.3.0）
+
+- **体系化的 `/lc-*` 命令面**：新增 `lc-agent-*`、`lc-skill-*`、`lc-scenario-*` 与 `lc-wf-*` 命令族，覆盖全部角色、技能、场景与工作流。命令表由 `scripts/lincoln_command_map.py --refresh` 从 `.claude/workflows/`、`.claude/agents/`、`.claude/skills/` 与 `.claude/harnesses/scenarios.yaml` 自动生成，确保命令与事实源一致（#78 / #79 / #81 / #82）。
+- **PM 研究 solo 工作流 `pm-research`**：支持从研究范围界定、第一性原理、相关者研究、市场/产品/竞品研究、信息收集、分析框架、故事化论述到最终研究报告的完整链路；对应新增 10 个研究 skill/stage：`lc-research-scope`、`lc-first-principles`、`lc-stakeholder-research`、`lc-market-research`、`lc-product-research`、`lc-competitive-analysis`、`lc-collect-intelligence`、`lc-analyze-frameworks`、`lc-storytelling`、`lc-research-report`（#79 / #81）。
+- **会话开场引导**：当 Lincoln 没有可驱动的工作状态（新仓库或工作包未启动）时，会话启动 hook 会注入开场引导——Agent 先做概览级摸排（≤ 8 次只读、不读源码），给出处境判断（角色 / 流程位置 / 问题 / 目标 + 置信度），按 Johari 认知象限确认（每轮 ≤ 3 问），并在每个目标有明确验收标准、执行路径确定后才开始工作；README 同步改为全自然语言入口（#59 / #70）。
+- **sub-Agent 调度原则**：agent contract 中新增 Red Flags 表与「fan-out 前必须向 PM 说明行为与必要性并获得许可」等原则，避免无节制派发子 agent，主 session 必须验证、整合子 agent 产物，不能替代人类确认（#75 / #80）。
+- **PM→UX 交接文档与门控**：`product-design-docs` 阶段新增 `handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md` 与 `pm-to-ux.handoff.yaml`，由 PM Agent 向 UX Agent 传递统一认知，确保跨成员、跨 Agent 协作时设计上下文不丢失（#76 / #77）。
+- **基础设施加固**：benchmark 改为显式 opt-in（`lc-benchmark` skill / `scripts/lc-benchmark-cli.py`，不再自动触发）；新增行为塑造写作模式（Red Flags / SUBAGENT-STOP / announce skill use）；新增基础设施测试层（`scripts/run-infrastructure-tests.py`）；多 manifest 锁步版本 bump（`scripts/bump_version.py` + `.version-bump.json`）；session-start 精简并暴露 token cost 指标（#58 / #63 / #65 / #67 / #68 / #72 / #73 / #74）。
+- **多 harness 缺省关闭验收测试**：codex 派生插件清单显式声明 `"hooks": {}`，并为 codex / opencode 增加「缺省即关闭」的验收测试，防止 harness 回退陷阱（#64 / #71）。
+- **安装与依赖合规**：初始化流程询问是否需要录音转写和 benchmark；外部 skills 改为 pin 到已知良好 ref；许可合规声明集中化（#39 / #41 / #42 / #43 / #44 / #45 / #46）。
+- **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现（#81）。
+
 ## 新增能力（未发布）
 
-- **会话开场引导**：当 Lincoln 没有可驱动的工作状态（新仓库或工作包未启动）时，会话启动 hook 会注入开场引导——Agent 先做概览级摸排（≤ 8 次只读、不读源码），给出处境判断（角色 / 流程位置 / 问题 / 目标 + 置信度），按 Johari 认知象限确认（每轮 ≤ 3 问），并在每个目标有明确验收标准、执行路径确定后才开始工作；README 同步改为全自然语言入口。
-- **体系化的 `/lc-*` 命令面**：新增 `lc-agent-*`、`lc-skill-*`、`lc-scenario-*` 与 `lc-wf-*` 命令族，覆盖全部角色、技能、场景与工作流。命令表由 `scripts/lincoln_command_map.py --refresh` 从 `.claude/workflows/`、`.claude/agents/`、`.claude/skills/` 与 `.claude/harnesses/scenarios.yaml` 自动生成，确保命令与事实源一致。
-- **PM 研究 solo 工作流 `pm-research`**：支持从研究范围界定、第一性原理、相关者研究、市场/产品/竞品研究、信息收集、分析框架、故事化论述到最终研究报告的完整链路；对应新增 10 个研究 skill/stage（`lc-research-scope`、`lc-first-principles`、`lc-stakeholder-research`、`lc-market-research`、`lc-product-research`、`lc-competitive-analysis`、`lc-collect-intelligence`、`lc-analyze-frameworks`、`lc-storytelling`、`lc-research-report`）。
-- **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现。
+当前暂无未发布能力。后续路线图见 [开放 issues](https://github.com/sushanglewis/Lincoln/issues)。
 
 ---
 
@@ -163,6 +173,15 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 暂停或切换协作者时，对 Agent 说"生成交接"，会生成 `.context/lc-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档，包含当前阶段、已确认产物、待解决问题、下一角色、推荐技能。
 
 阶段通过人类确认后，对 Agent 说"确认通过"，Agent 会标记该阶段 gate 已审批通过。
+
+### PM→UX 交接
+
+在 `product-design-docs` 阶段结束时，PM Agent 会生成 `{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md` 与 `{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml`：
+
+- **master-handoff** 是人类可读的交接文档，汇总需求背景、设计决策、场景、功能目录、数据模型、流程与可行性结论。
+- **pm-to-ux.handoff.yaml** 是机器可读的 agent-agent 契约，定义接收方（lc-designer / lc-frontend-engineer）应读取的上下文包顺序与校验项。
+
+UX Agent 接手时应先读 `pm-to-ux.handoff.yaml`，再读 master-handoff，然后按 `context_pack` 顺序读取 Tier-2 设计文档，确保跨成员、跨 Agent 协作时设计上下文不丢失。
 
 ### 查看所有进行中的 Lincoln 分支
 
