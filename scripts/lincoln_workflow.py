@@ -24,7 +24,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lincoln_paths import PROJECT_ROOT  # noqa: E402
+from lincoln_paths import PROJECT_ROOT, assert_contained, validate_name  # noqa: E402
 
 WORKFLOWS_DIR = PROJECT_ROOT / ".claude" / "workflows"
 SOLO_TEMPLATE_PATH = PROJECT_ROOT / ".claude" / "templates" / "solo-workflow-context.yaml"
@@ -44,7 +44,12 @@ def run_id_stamp() -> str:
 
 
 def load_workflow_definition(name: str) -> dict[str, Any]:
+    try:
+        validate_name(name, "workflow name")
+    except ValueError as exc:
+        raise SystemExit(f"ERROR: {exc}")
     path = WORKFLOWS_DIR / f"{name}.yaml"
+    assert_contained(path, WORKFLOWS_DIR, "workflow path")
     if not path.is_file():
         available = ", ".join(sorted(p.stem for p in WORKFLOWS_DIR.glob("*.yaml")))
         raise SystemExit(f"ERROR: unknown workflow '{name}'. Available: {available}")
@@ -81,7 +86,12 @@ def _default_session_id(workflow_name: str) -> str:
 
 
 def start_solo(workflow_name: str, wf: dict[str, Any], force: bool = False, session_id: str | None = None) -> int:
+    try:
+        validate_name(workflow_name, "workflow name")
+    except ValueError as exc:
+        raise SystemExit(f"ERROR: {exc}")
     state_path = SOLO_STATE_DIR / f"{workflow_name}.yaml"
+    assert_contained(state_path, SOLO_STATE_DIR, "solo state path")
     if state_path.exists() and not force:
         raise SystemExit(f"ERROR: solo instance already exists: {state_path} (use --force to overwrite)")
 
@@ -176,7 +186,12 @@ def main() -> int:
     if args.command == "list":
         return list_workflows()
     if args.command == "start":
-        return cmd_start(args)
+        try:
+            validate_name(args.workflow, "workflow name")
+            return cmd_start(args)
+        except ValueError as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
     return cmd_status(args)
 
 

@@ -15,7 +15,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from lincoln_paths import PROJECT_ROOT  # noqa: E402
+from lincoln_paths import PROJECT_ROOT, validate_name  # noqa: E402
 
 SCENARIOS_PATH = PROJECT_ROOT / ".claude" / "harnesses" / "scenarios.yaml"
 
@@ -28,6 +28,12 @@ def main() -> int:
 
     if not SCENARIOS_PATH.exists():
         print(f"ERROR: scenarios file not found: {SCENARIOS_PATH}", file=sys.stderr)
+        return 1
+
+    try:
+        validate_name(args.scenario, "scenario id")
+    except ValueError as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
         return 1
 
     data = yaml.safe_load(SCENARIOS_PATH.read_text(encoding="utf-8")) or {}
