@@ -151,3 +151,99 @@ def test_handoff_report_generates_handoff_trace_without_auto_benchmark(minimal_s
     handoff_entries = [e for e in entries if e.get("category") == "handoff"]
     assert len(handoff_entries) == 1
     assert handoff_entries[0].get("tool") == "LincolnHandoff"
+
+
+def test_validate_exit_clarify_artifacts_present_at_root_prd(minimal_state_file):
+    """clarify exit should pass when root-level prd.md exists and snapshot is frozen."""
+    state = yaml.safe_load(minimal_state_file.read_text(encoding="utf-8"))
+    state["current_run"]["current_stage"] = "clarify"
+    state["nodes"].append({
+        "stage_id": "ingest",
+        "node_id": "ingest-1",
+        "status": "completed",
+        "gate_passed": True,
+        "approved_by": "system",
+        "artifacts": [],
+    })
+    state["nodes"].append({
+        "stage_id": "clarify",
+        "node_id": "clarify-1",
+        "status": "in_progress",
+        "gate_passed": True,
+        "approved_by": "human-pm",
+        "artifacts": [],
+    })
+    minimal_state_file.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), encoding="utf-8")
+
+    process_slug = state["current_run"]["variables"]["process_slug"]
+    session_id = state["current_run"]["variables"]["session_id"]
+    process_dir = ROOT / process_slug
+
+    created_paths = []
+    try:
+        process_dir.mkdir(parents=True, exist_ok=True)
+        prd = process_dir / "prd.md"
+        prd.write_text(
+            "<!-- version: v1.0 -->\n# PRD\n\n"
+            "## 1. 需求背景\n## 2. 用户故事\n## 3. 功能拆解\n"
+            "## 4. 业务流程图\n## 5. 验收标准\n## 6. 业务规则\n"
+            "## 7. 非功能需求\n## 8. 关联系统/接口\n"
+            "## 9. 相关产物链接\n## 10. 风险与开放问题\n",
+            encoding="utf-8",
+        )
+        created_paths.append(prd)
+        snapshot = process_dir / "prd-v1.0.md"
+        snapshot.write_text(prd.read_text(encoding="utf-8"), encoding="utf-8")
+        created_paths.append(snapshot)
+
+        # requirements.md and user-stories.md are still required by clarify
+        req_dir = process_dir / "requirements" / session_id
+        req_dir.mkdir(parents=True, exist_ok=True)
+        req_file = req_dir / "requirements.md"
+        req_file.write_text("<!-- status: approved -->\n# Requirements", encoding="utf-8")
+        created_paths.append(req_file)
+        us_file = req_dir / "user-stories.md"
+        us_file.write_text("# User Stories", encoding="utf-8")
+        created_paths.append(us_file)
+
+        result = run_loader("--stage", "clarify", "--action", "validate-exit", state_file=minimal_state_file)
+        assert result.returncode == 0, result.stderr + result.stdout
+    finally:
+        for path in created_paths:
+            path.unlink(missing_ok=True)
+        if process_dir.exists():
+            import shutil
+            shutil.rmtree(process_dir, ignore_errors=True)
+
+
+def test_record_artifacts_captures_root_prd_and_snapshot(minimal_state_file):
+    import importlib.util
+
+    loader_spec = importlib.util.spec_from_file_location("stage_loader", STAGE_LOADER)
+    loader_mod = importlib.util.module_from_spec(loader_spec)
+    loader_spec.loader.exec_module(loader_mod)
+
+    state = yaml.safe_load(minimal_state_file.read_text(encoding="utf-8"))
+    state["current_run"]["current_stage"] = "clarify"
+    process_slug = state["current_run"]["variables"]["process_slug"]
+    process_dir = ROOT / process_slug
+
+    created_paths = []
+    try:
+        process_dir.mkdir(parents=True, exist_ok=True)
+        prd = process_dir / "prd.md"
+        prd.write_text("<!-- version: v1.0 -->\n# PRD", encoding="utf-8")
+        created_paths.append(prd)
+        snapshot = process_dir / "prd-v1.0.md"
+        snapshot.write_text("<!-- version: v1.0 -->\n# PRD", encoding="utf-8")
+        created_paths.append(snapshot)
+
+        recorded = loader_mod.action_record_artifacts("clarify", state, minimal_state_file)
+        assert any("prd.md" in a and "prd-v" not in a for a in recorded)
+        assert any("prd-v1.0.md" in a for a in recorded)
+    finally:
+        for path in created_paths:
+            path.unlink(missing_ok=True)
+        if process_dir.exists():
+            import shutil
+            shutil.rmtree(process_dir, ignore_errors=True)

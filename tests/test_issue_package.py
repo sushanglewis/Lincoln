@@ -25,12 +25,14 @@ REQUIRED_DIRS = [
 ]
 
 REQUIRED_TEMPLATES = {
-    "designs": ["design-review.md.tpl", "scenarios.md.tpl", "feature-catalog.md.tpl", "data-model.md.tpl", "flows.md.tpl", "feasibility.md.tpl"],
+    "designs": ["design-review.md.tpl", "scenarios.md.tpl", "feature-catalog.md.tpl", "data-model.md.tpl", "flows.md.tpl", "feasibility.md.tpl", "ui-spec.md.tpl"],
     "docs": ["research-note.md.tpl", "decision-record.md.tpl"],
     "interviews": ["metadata.json.tpl", "transcript.md.tpl", "summary.md.tpl", "raw-insights.md.tpl"],
     "openspec": ["proposal.md.tpl", "design.md.tpl", "tasks.md.tpl"],
-    "requirements": ["requirements.md.tpl", "user-stories.md.tpl", "prd.md.tpl"],
+    "requirements": ["requirements.md.tpl", "user-stories.md.tpl"],
 }
+
+ROOT_TEMPLATES = ["prd.md.tpl"]
 
 
 def test_issue_package_template_has_state_file():
@@ -57,6 +59,11 @@ def test_issue_package_workflow_stage_has_issue_number_and_guidance():
     assert state["current_run"]["variables"]["issue_number"] == ""
     assert "artifact_guidance" in state
     assert "{issue_number}" in state["artifact_guidance"]
+
+
+def test_issue_package_template_has_root_templates():
+    for tpl in ROOT_TEMPLATES:
+        assert (TEMPLATE_ROOT / tpl).exists(), f"Missing root template: {tpl}"
 
 
 def test_schema_allows_issue_number_in_current_run():

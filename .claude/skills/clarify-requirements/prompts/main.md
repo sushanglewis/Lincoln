@@ -4,7 +4,7 @@ You are executing the Lincoln workflow step `clarify`: turn interview artifacts 
 
 ## Goal
 
-Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requirements.md` that serves as the single source of truth for this interview.
+Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requirements.md` and the root-level `{process_slug}/prd.md` that serves as the single source of truth and main thread for this issue.
 
 ## Input
 
@@ -33,14 +33,19 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
 5. Ask the human PM these questions one batch at a time in the terminal, using the quadrant-appropriate style.
 6. Update `requirements.md` based on the answers.
 7. Repeat until the PM confirms the requirements are clear.
-8. Also generate `user-stories.md` and `prd.md` from the finalized requirements.
-9. When the PM confirms, add an approval marker to `requirements.md`: `<!-- status: approved -->`.
+8. Also generate `user-stories.md` from the finalized requirements.
+9. Generate the root-level PRD at `{process_slug}/prd.md` using `.claude/templates/issue-package/prd.md.tpl`. It must include:
+   - `<!-- version: v1.0 -->` marker at the top.
+   - All required sections: 1.需求背景, 2.用户故事, 3.功能拆解, 4.业务流程图, 5.验收标准, 6.业务规则, 7.非功能需求, 8.关联系统/接口, 9.相关产物链接, 10.风险与开放问题.
+   - A links table in section 9 pointing to interviews, requirements, and downstream design/prototype/OpenSpec artifacts.
+10. When the PM confirms, add an approval marker to `requirements.md`: `<!-- status: approved -->`.
+11. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/prd-v1.0.md`.
 
 ## Human Interaction Rules
 
 - Ask at most 3 questions per turn.
 - After each answer, update the document and show the changed sections.
-- If the PM edits `requirements.md` directly and runs `workflow-continue`, re-read the file and continue from there.
+- If the PM edits `requirements.md` or `prd.md` directly and runs `workflow-continue`, re-read the file and continue from there.
 - Do not proceed to the next step until the PM explicitly confirms (e.g., says "confirm" or "确认").
 
 ## 认知象限确认（Johari）
@@ -63,7 +68,8 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
 
 - `{process_slug}/requirements/<session-id>/requirements.md`
 - `{process_slug}/requirements/<session-id>/user-stories.md`
-- `{process_slug}/requirements/<session-id>/prd.md`
+- `{process_slug}/prd.md` (root-level PRD, versioned)
+- `{process_slug}/prd-v1.0.md` (immutable snapshot after approval)
 
 ## Traceability
 
@@ -71,4 +77,4 @@ Every requirement must reference the transcript timestamp where it originated, e
 
 ## Next Step
 
-After confirmation, tell the user to run: `claude propose-with-openspec <session-id> <change-name>`.
+After confirmation and snapshot freeze, tell the user the clarify stage is complete and the next stage is `product-design-docs`.

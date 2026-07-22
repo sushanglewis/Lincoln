@@ -38,7 +38,7 @@ workflow:
 
     - id: clarify
       name: 需求澄清
-      description: 基于访谈内容与人类 PM 多轮澄清，形成统一需求文档
+      description: 基于访谈内容与人类 PM 多轮澄清，形成统一需求文档与根级 PRD 主线
       entry_checks:
         - check: summary_ready
           args: ["{session_id}"]
@@ -47,12 +47,16 @@ workflow:
       artifacts:
         - "{process_slug}/requirements/{session_id}/requirements.md"
         - "{process_slug}/requirements/{session_id}/user-stories.md"
-        - "{process_slug}/requirements/{session_id}/prd.md"
+        - "{process_slug}/prd.md"
+      optional_artifacts:
+        - "{process_slug}/prd-v*.md"
       exit_checks:
-        - check: requirements_has_background_problem_solution_acceptance
-          args: ["{session_id}"]
+        - check: prd_has_required_sections
+          args: ["{process_slug}/prd.md"]
         - check: human_approved
           args: ["{session_id}"]
+        - check: prd_snapshot_present
+          args: ["{process_slug}/prd.md"]
 
     - id: product-design-docs
       name: 产品设计文档

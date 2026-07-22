@@ -29,7 +29,7 @@ extends:
 
 - `{process_slug}/requirements/{session_id}/requirements.md`
 - `{process_slug}/requirements/{session_id}/user-stories.md`
-- `{process_slug}/requirements/{session_id}/prd.md`
+- `{process_slug}/prd.md`（根级 PRD，含版本标记与相关产物链接表）
 - `{process_slug}/designs/{design_id}/design-review.md`
 - `{process_slug}/designs/{design_id}/scenarios.md`
 - `{process_slug}/designs/{design_id}/feature-catalog.md`

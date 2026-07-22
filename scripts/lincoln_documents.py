@@ -27,6 +27,20 @@ DOCUMENTS_FILENAME = "documents.yaml"
 HANDOFF_DOC_PATTERN = re.compile(r"handoffs/pm-to-ux/master-handoff-pm-to-ux-v(\d+)\.(\d+)\.md$")
 HANDOFF_YAML_PATTERN = re.compile(r"handoffs/pm-to-ux/pm-to-ux\.handoff\.yaml$")
 
+# Matches prd-v{MAJOR}.{MINOR}.md at the issue-package root
+PRD_SNAPSHOT_PATTERN = re.compile(r"^prd-v(\d+)\.(\d+)\.md$")
+# Matches legacy or root PRD markdown files whose version lives in a marker
+PRD_PATH_PATTERN = re.compile(r"^(prd\.md|requirements/.*/prd\.md)$")
+
+
+def extract_markdown_version(path: Path) -> str | None:
+    """Look for `<!-- version: vX.Y -->` in a markdown file."""
+    if not path.exists():
+        return None
+    text = path.read_text(encoding="utf-8")
+    match = re.search(r"<!--\s*version:\s*(v\d+\.\d+)\s*-->", text, re.IGNORECASE)
+    return match.group(1) if match else None
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -44,7 +58,7 @@ def is_team_package_state(state_path: Path) -> bool:
 
 
 def _extract_document_version(rel_path: str, project_root: Path, process_slug: str) -> str | None:
-    """Detect version for PM→UX handoff documents; returns None for others."""
+    """Detect version for PM→UX handoff documents and PRDs; returns None for others."""
     full_path = project_root / process_slug / rel_path
     if not full_path.exists():
         return None
@@ -52,6 +66,13 @@ def _extract_document_version(rel_path: str, project_root: Path, process_slug: s
     md_match = HANDOFF_DOC_PATTERN.search(rel_path)
     if md_match:
         return f"v{md_match.group(1)}.{md_match.group(2)}"
+
+    snapshot_match = PRD_SNAPSHOT_PATTERN.search(rel_path)
+    if snapshot_match:
+        return f"v{snapshot_match.group(1)}.{snapshot_match.group(2)}"
+
+    if PRD_PATH_PATTERN.search(rel_path):
+        return extract_markdown_version(full_path)
 
     if HANDOFF_YAML_PATTERN.search(rel_path):
         try:

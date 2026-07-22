@@ -39,7 +39,8 @@ graph TD
 
 - 主流程: [`flows.md`](flows.md)
 - 功能清单: [`feature-catalog.md`](feature-catalog.md)
-- 需求规格: [`{process_slug}/requirements/{session_id}/prd.md`](../../requirements/{session_id}/prd.md)
+- UI 规格: [`ui-spec.md`](ui-spec.md)
+- 根级 PRD: [`{process_slug}/prd.md`](../../prd.md)
 
 ---
 *PM 确认时请添加 `<!-- status: approved -->` 或 `[x] PM 已确认页面关系`。*

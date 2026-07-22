@@ -216,7 +216,9 @@
             "human_approved",
             "gate_review_passed",
             "handoff_contract_valid",
-            "handoff_versions_match"
+            "handoff_versions_match",
+            "prd_has_required_sections",
+            "prd_snapshot_present"
           ]
         },
         "args": {

@@ -14,14 +14,19 @@ Create a product prototype source file that the PM can directly inspect and modi
 ## Steps
 
 1. Verify `{process_slug}/designs/<design_id>/design-review.md` contains `<!-- status: approved -->` or `[x] PM 已确认设计文档`.
-2. Read the approved design package under `{process_slug}/designs/<design_id>/`.
+2. Read the approved design package under `{process_slug}/designs/<design_id>/`, including `flows.md` and `page-map.md`.
 3. Write `fields.md` with screen/form fields, data type, required/optional status, validation, default value, copy, error state, and source data object.
-4. Write `ui-spec.md` with target user flow, screens, interactions, component states, empty/loading/error states, accessibility notes, and implementation constraints.
-5. Use Pencil tools to create or update `{process_slug}/designs/<design_id>/prototype.pen`.
+4. Write `ui-spec.md` covering the interaction-document delivery standards:
+   - 用户场景与流程: who, when, goal, trigger, completion criteria.
+   - 界面流转图: screen-to-screen flow mapped to the business flow in `flows.md`.
+   - 页面交互说明: per-screen layout elements, interaction rules (events, responses, navigation), and field validation/error handling.
+   - 交互 Demo/原型: link to `prototype.pen` and summarize key interactions.
+5. Use Pencil tools to create or update `{process_slug}/designs/<design_id>/prototype.pen` as a clickable prototype that realizes the screen flow and key interactions.
 6. Before using Pencil tools, call `get_editor_state(include_schema: true)` if the current `.pen` schema is not already known.
 7. After generating the prototype, use `snapshot_layout` to check for clipped or overlapping elements. Fix layout issues before asking for review.
-8. Ask the PM to open and edit `{process_slug}/designs/<design_id>/prototype.pen` in Pencil. Treat the saved `.pen` as the final development reference.
-9. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.md`.
+8. Update the root `{process_slug}/prd.md` section 9 "相关产物链接" with the `ui-spec.md` and `prototype.pen` links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze.
+9. Ask the PM to open and edit `{process_slug}/designs/<design_id>/prototype.pen` in Pencil. Treat the saved `.pen` as the final development reference.
+10. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.md`.
 
 ## Output Artifacts
 

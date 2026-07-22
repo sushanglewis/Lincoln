@@ -102,7 +102,7 @@
 ## 7. 需求规格
 
 - 需求文档: [`{process_slug}/requirements/{session_id}/requirements.md`](../../requirements/{session_id}/requirements.md)
-- PRD: [`{process_slug}/requirements/{session_id}/prd.md`](../../requirements/{session_id}/prd.md)
+- PRD: [`{process_slug}/prd.md`](../../prd.md)
 
 ---
 

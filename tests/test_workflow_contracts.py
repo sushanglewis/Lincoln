@@ -75,3 +75,19 @@ def test_sync_knowledge_uses_root_knowledge(workflow):
     artifacts = sync.get("artifacts", [])
     assert any(a.startswith("knowledge/03-features/") for a in artifacts)
     assert not any(a.startswith("docs/knowledge/") for a in artifacts)
+
+
+def test_clarify_artifacts_use_root_prd_path(workflow):
+    clarify = next(s for s in workflow["workflow"]["steps"] if s["id"] == "clarify")
+    artifacts = [a for a in clarify.get("artifacts", [])]
+    assert any(a == "{process_slug}/prd.md" for a in artifacts)
+    assert not any("requirements/{session_id}/prd.md" in a for a in artifacts)
+
+
+def test_clarify_exit_checks_include_prd_validators(workflow, validator_source):
+    clarify = next(s for s in workflow["workflow"]["steps"] if s["id"] == "clarify")
+    exit_checks = {c["check"] for c in clarify.get("exit_checks", [])}
+    exit_names = _extract_registry_names(validator_source, "EXIT_CHECKS")
+    assert "prd_has_required_sections" in exit_checks
+    assert "prd_snapshot_present" in exit_checks
+    assert exit_checks <= exit_names

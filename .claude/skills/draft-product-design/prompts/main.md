@@ -21,17 +21,19 @@ Create `{process_slug}/designs/<design_id>/` with enough product, data, flow, fe
 
 1. Validate that `{process_slug}/requirements/<session_id>/requirements.md` is approved.
 2. Create `{process_slug}/designs/<design_id>/`.
-3. Read `{process_slug}/requirements/<session_id>/requirements.md`, `user-stories.md`, and `prd.md`.
+3. Read `{process_slug}/requirements/<session_id>/requirements.md`, `user-stories.md`, and the root-level `{process_slug}/prd.md`.
 4. Produce the design package:
    - `design-review.md`: PM-facing entry point with decision summary, scope, links to all design docs, open questions, and approval checklist.
    - `scenarios.md`: target users, primary scenarios, boundary scenarios, and non-goals.
    - `feature-catalog.md`: concise feature list, priority, acceptance mapping, and source requirement links.
    - `data-model.md`: core entities, fields, constraints, validation rules, and state transitions.
-   - `flows.md`: Mermaid user flow, business flow, sequence diagram, and architecture diagram.
+   - `flows.md`: Mermaid user flow, business flow, screen flow, sequence diagram, and architecture diagram.
+   - `page-map.md`: page inventory, page relationships, navigation, and routing/state notes.
    - `feasibility.md`: business feasibility, technical feasibility, current official framework/library options, usable open-source projects, risks, and recommended stack.
 5. Keep all documents traceable to the approved requirement and transcript timestamps where available.
-6. Ask the PM to review `design-review.md` and linked docs.
-7. When the PM confirms, add `<!-- status: approved -->` to `design-review.md`.
+6. Update the root `{process_slug}/prd.md` section 9 "相关产物链接" with links to the new design documents. If the PRD already has an approved snapshot (`prd-v*.md`), warn the PM that any content change requires bumping the version marker and re-freezing via `python scripts/lincoln_prd.py freeze`.
+7. Ask the PM to review `design-review.md` and linked docs.
+8. When the PM confirms, add `<!-- status: approved -->` to `design-review.md`.
 
 ## Rules
 
