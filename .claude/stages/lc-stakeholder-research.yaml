@@ -13,7 +13,8 @@ agent:
   - lc-pm
   handoff_to: null
 skills:
-  required: []
+  required:
+  - lincoln:lc-stakeholder-research
   optional: []
 artifacts:
   required:

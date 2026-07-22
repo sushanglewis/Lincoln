@@ -4,8 +4,8 @@ name: 体系化论述
 description: '基于金字塔原理将研究成果结构化为可说服决策者的故事体系。'
 templates:
 - pm-research
-prerequisite_stage: lc-analyze-frameworks
-next_stage: lc-collect-intelligence
+prerequisite_stage: lc-collect-intelligence
+next_stage: lc-research-report
 human_gate: false
 agent:
   primary: lc-pm
@@ -13,7 +13,8 @@ agent:
   - lc-researcher
   handoff_to: null
 skills:
-  required: []
+  required:
+  - lincoln:lc-storytelling
   optional: []
 artifacts:
   required:
@@ -31,6 +32,6 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - lc-analyze-frameworks
+    - lc-collect-intelligence
   exit:
   - check: artifacts_present

@@ -69,9 +69,9 @@ Produce `{process_slug}/research/{session_id}/narrative.md` that presents the re
 ## Human Interaction Rules
 
 - Present the narrative and ask for PM confirmation.
-- Do not proceed to the final report until the PM confirms the narrative.
+- Present the narrative for PM feedback; incorporate any revisions, then proceed to the final report.
 - If the PM challenges a sub-thesis, return to the evidence and revise.
 
 ## Exit Criteria
 
-- `narrative.md` has a confirmed core thesis and evidence-backed sub-theses.
+- `narrative.md` has a reviewed core thesis and evidence-backed sub-theses (revisions incorporated if any).

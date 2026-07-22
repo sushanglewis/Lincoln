@@ -4,7 +4,7 @@ name: 研究报告
 description: '整合全流程产物，输出可交付、可沉淀的最终研究报告。'
 templates:
 - pm-research
-prerequisite_stage: lc-collect-intelligence
+prerequisite_stage: lc-storytelling
 next_stage: null
 human_gate: true
 agent:
@@ -13,7 +13,8 @@ agent:
   - lc-researcher
   handoff_to: null
 skills:
-  required: []
+  required:
+  - lincoln:lc-research-report
   optional: []
 artifacts:
   required:
@@ -31,7 +32,7 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - lc-collect-intelligence
+    - lc-storytelling
   exit:
   - check: artifacts_present
   - check: human_approved
