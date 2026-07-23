@@ -16,7 +16,7 @@ based_on:
     version: "v1.0"
   - path: "{process_slug}/requirements/{session_id}/user-stories.md"
     version: "v1.0"
-  - path: "{process_slug}/requirements/{session_id}/prd.md"
+  - path: "{process_slug}/prd.md"
     version: "v1.0"
   - path: "{process_slug}/designs/{design_id}/feature-catalog.md"
     version: "v1.0"

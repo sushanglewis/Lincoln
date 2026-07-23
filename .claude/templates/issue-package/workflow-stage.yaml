@@ -36,6 +36,13 @@ artifact_guidance: |
     `interviews/` for recorded session outputs, `openspec/` for implementation proposals,
     `docs/` for research and decision records, `handoffs/` for cross-role handoff documents
     (e.g. `handoffs/pm-to-ux/` for PM-to-UX handoff), and `recordings/` for raw input files only.
+  - The PRD lives at `{process_slug}/prd.md` (not under `requirements/`). It is the root-level
+    main-thread document that links to all other artifacts. It must carry a version marker
+    such as `<!-- version: v1.0 -->` near the top of the file.
+  - After the human PM approves the PRD, run `python scripts/lincoln_prd.py freeze` to create
+    an immutable snapshot `{process_slug}/prd-v{MAJOR}.{MINOR}.md`. Do not edit snapshots directly.
+  - If a legacy PRD still lives at `requirements/{session_id}/prd.md`, run
+    `python scripts/lincoln_prd.py migrate --session-id <session_id>` to move it to the root.
   - PM-to-UX handoff artifacts live under `handoffs/pm-to-ux/`:
     - `master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.md` — the human-readable entry doc.
     - `pm-to-ux.handoff.yaml` — the machine-readable agent-agent contract.

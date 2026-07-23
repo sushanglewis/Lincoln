@@ -32,6 +32,11 @@ except Exception:  # pragma: no cover - validator can be copied standalone
     load_yaml = None  # type: ignore[assignment]
     get_process_slug = None  # type: ignore[assignment]
 
+try:
+    from scripts.lincoln_documents import extract_markdown_version
+except Exception:  # pragma: no cover - validator can be copied standalone
+    extract_markdown_version = None  # type: ignore[assignment]
+
 
 def fail(message: str):
     print(f"FAIL: {message}")
@@ -542,6 +547,59 @@ def check_tdd_plan_complete(design_id: str):
 
 
 # ---------------------------------------------------------------------------
+# PRD checks
+# ---------------------------------------------------------------------------
+
+REQUIRED_PRD_SECTIONS = [
+    "## 1. 需求背景",
+    "## 2. 用户故事",
+    "## 3. 功能拆解",
+    "## 4. 业务流程图",
+    "## 5. 验收标准",
+    "## 6. 业务规则",
+    "## 7. 非功能需求",
+    "## 8. 关联系统/接口",
+    "## 9. 相关产物链接",
+    "## 10. 风险与开放问题",
+]
+
+
+def check_prd_has_required_sections(path: str):
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"PRD missing: {target}")
+
+    text = target.read_text(encoding="utf-8")
+    missing = [section for section in REQUIRED_PRD_SECTIONS if section not in text]
+    if missing:
+        fail(f"PRD missing required sections: {', '.join(missing)}")
+
+    pass_check("PRD has all required sections")
+
+
+def check_prd_snapshot_present(path: str):
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"PRD missing: {target}")
+
+    if extract_markdown_version is None:
+        fail("markdown version extraction is not available")
+
+    version = extract_markdown_version(target)
+    if not version:
+        fail(f"PRD missing version marker: {target}")
+
+    snapshot_path = target.with_name(f"prd-{version}.md")
+    if not snapshot_path.exists():
+        fail(
+            f"PRD snapshot missing: {snapshot_path}. "
+            "Run 'python scripts/lincoln_prd.py freeze' after approval."
+        )
+
+    pass_check(f"PRD snapshot present: {snapshot_path}")
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -576,6 +634,8 @@ EXIT_CHECKS = {
     "design_docs_human_approved": check_design_docs_human_approved,
     "prototype_artifact_complete": check_prototype_artifact_complete,
     "tdd_plan_complete": check_tdd_plan_complete,
+    "prd_has_required_sections": check_prd_has_required_sections,
+    "prd_snapshot_present": check_prd_snapshot_present,
 }
 
 

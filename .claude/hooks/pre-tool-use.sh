@@ -140,6 +140,11 @@ if [[ -n "$TARGET_PATH" ]]; then
         exit 1
     fi
 
+    if [[ "$NORMALIZED_TARGET" == "$PROCESS_SLUG/prd-v"*.md ]] && is_side_effect "$TOOL_NAME"; then
+        echo "BLOCKED: PRD snapshots are immutable. Create them with 'python scripts/lincoln_prd.py freeze'." >&2
+        exit 1
+    fi
+
     if [[ "$NORMALIZED_TARGET" == "$PROCESS_SLUG/workflow-stage.yaml" ]] && is_side_effect "$TOOL_NAME"; then
         echo "BLOCKED: workflow state must be updated through stage_loader, not $TOOL_NAME." >&2
         exit 1

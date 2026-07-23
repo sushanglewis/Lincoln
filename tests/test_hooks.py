@@ -603,3 +603,24 @@ def test_on_stop_session_stop_benchmark_dedup(process_package_state):
     assert result.returncode == 0
     files_after = _benchmark_files(process_package_state, "session_stop")
     assert len(files_after) == len(files_before) == 0
+
+
+def test_pre_tool_use_blocks_prd_snapshot_write(process_package_state):
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lc-test/prd-v1.0.md"}',
+    )
+    assert result.returncode == 1
+    assert "immutability" in result.stderr or "lincoln_prd.py freeze" in result.stderr
+
+
+def test_pre_tool_use_allows_prd_draft_write(process_package_state):
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Write",
+        '{"file_path": "lc-test/prd.md"}',
+    )
+    assert result.returncode == 0, result.stderr

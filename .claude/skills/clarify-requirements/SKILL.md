@@ -11,7 +11,7 @@ inputs:
 outputs:
   - "{process_slug}/requirements/{session_id}/requirements.md"
   - "{process_slug}/requirements/{session_id}/user-stories.md"
-  - "{process_slug}/requirements/{session_id}/prd.md"
+  - "{process_slug}/prd.md"
 required_tools:
   - Read
   - Bash

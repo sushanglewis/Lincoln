@@ -22,6 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.lincoln_documents import extract_markdown_version
 from scripts.lincoln_paths import get_process_slug, load_yaml, resolve_state_path
 
 
@@ -134,15 +135,6 @@ def check_human_approved() -> None:
     fail(f"Stage '{current_stage}' not approved")
 
 
-def _extract_markdown_version(path: Path) -> str | None:
-    """Look for `<!-- version: vX.Y -->` in markdown files."""
-    if not path.exists():
-        return None
-    text = path.read_text(encoding="utf-8")
-    match = re.search(r"<!--\s*version:\s*(v\d+\.\d+)\s*-->", text, re.IGNORECASE)
-    return match.group(1) if match else None
-
-
 def _extract_yaml_version(path: Path) -> str | None:
     """Read a top-level `version` or `contract_version` field from YAML."""
     if not path.exists():
@@ -158,7 +150,7 @@ def _extract_yaml_version(path: Path) -> str | None:
 
 def _extract_document_version(path: Path) -> str | None:
     if path.suffix in (".md", ".markdown"):
-        return _extract_markdown_version(path)
+        return extract_markdown_version(path)
     if path.suffix in (".yaml", ".yml"):
         return _extract_yaml_version(path)
     return None
@@ -243,6 +235,54 @@ def check_handoff_versions_match(path: str) -> None:
 
 
 # ---------------------------------------------------------------------------
+# PRD checks
+# ---------------------------------------------------------------------------
+
+
+REQUIRED_PRD_SECTIONS = [
+    "## 1. 需求背景",
+    "## 2. 用户故事",
+    "## 3. 功能拆解",
+    "## 4. 业务流程图",
+    "## 5. 验收标准",
+    "## 6. 业务规则",
+    "## 7. 非功能需求",
+    "## 8. 关联系统/接口",
+    "## 9. 相关产物链接",
+    "## 10. 风险与开放问题",
+]
+
+
+def check_prd_has_required_sections(path: str) -> None:
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"PRD missing: {target}")
+
+    text = target.read_text(encoding="utf-8")
+    missing = [section for section in REQUIRED_PRD_SECTIONS if section not in text]
+    if missing:
+        fail(f"PRD missing required sections: {', '.join(missing)}")
+
+    pass_check("PRD has all required sections")
+
+
+def check_prd_snapshot_present(path: str) -> None:
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"PRD missing: {target}")
+
+    version = extract_markdown_version(target)
+    if not version:
+        fail(f"PRD missing version marker: {target}")
+
+    snapshot_path = target.with_name(f"prd-{version}.md")
+    if not snapshot_path.exists():
+        fail(f"PRD snapshot missing: {snapshot_path}. Run 'python scripts/lincoln_prd.py freeze' after approval.")
+
+    pass_check(f"PRD snapshot present: {snapshot_path}")
+
+
+# ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
 
@@ -260,6 +300,8 @@ EXIT_CHECKS = {
     "human_approved": check_human_approved,
     "handoff_contract_valid": check_handoff_contract_valid,
     "handoff_versions_match": check_handoff_versions_match,
+    "prd_has_required_sections": check_prd_has_required_sections,
+    "prd_snapshot_present": check_prd_snapshot_present,
 }
 
 
