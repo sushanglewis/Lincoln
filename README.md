@@ -156,9 +156,6 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 - **安装与依赖合规**：初始化流程询问是否需要录音转写和 benchmark；外部 skills 改为 pin 到已知良好 ref；许可合规声明集中化（#39 / #41 / #42 / #43 / #44 / #45 / #46）。
 - **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现（#81）。
 
-## 新增能力（未发布）
-
-当前暂无未发布能力。后续路线图见 [开放 issues](https://github.com/sushanglewis/Lincoln/issues)。
 
 ---
 
