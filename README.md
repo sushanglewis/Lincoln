@@ -27,6 +27,18 @@ Lincoln 的 hooks 通常会在你第一次打开仓库时自动触发安装。�
 >
 > 安装任何全局工具或写入配置前，请先向我确认。
 
+### 终端安装向导（可选）
+
+如果你更喜欢在终端里以 TUI 方式完成初始化，可以直接运行 Lincoln 的独立安装器：
+
+```bash
+npx lincoln-install
+```
+
+它会引导你选择目标 agent harness（Claude Code、Cursor、Codex、OpenCode 等）、可选依赖和安装范围，最后调用当前仓库中的 `scripts/lincoln-setup.py` 完成配置。脚本化场景可使用 `--no-tui --format json`，CI 场景可使用 `--yes --dry-run`。
+
+> **注意**：`npx lincoln-install` 需要在 Lincoln 项目仓库根目录下运行，以便定位 `scripts/lincoln-setup.py`。若要在其他目录为指定项目安装，请使用 `--root <project-path>`。
+
 如果你只需要走[轻量个人路径](#快速开始)，可以跳过 `gh`、`ffmpeg`、`tools/lincoln-record/` 构建和 `.github/openspec-config.yml` 配置，只保留 `python3`、Claude Code 环境与 Lincoln 自身 hooks。
 
 > **我从哪里开始？**
