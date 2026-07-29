@@ -31,6 +31,7 @@ ALLOWLIST_FILES = (
     "RELEASE.md",
     ".version-bump.json",
     "requirements.txt",
+    "SKILL.md",
 )
 DENYLIST_NAMES = {
     ".git",
@@ -45,7 +46,12 @@ DENYLIST_NAMES = {
     "node_modules",
 }
 DENYLIST_PREFIXES = ("issue-",)
-SKIP_PATHS = (".claude/templates/issue-package",)
+SKIP_PATHS = (
+    ".claude/templates/issue-package",
+    "tools/lincoln-installer/dist",
+    "tools/lincoln-installer/node_modules",
+    "tools/lincoln-installer/coverage",
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
