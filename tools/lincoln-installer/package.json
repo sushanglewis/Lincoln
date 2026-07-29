@@ -7,7 +7,8 @@
   "module": "dist/main.js",
   "types": "dist/main.d.ts",
   "bin": {
-    "lincoln-install": "dist/main.js"
+    "lincoln-install": "dist/main.js",
+    "lincoln-update": "dist/update-main.js"
   },
   "files": [
     "dist"
@@ -24,12 +25,14 @@
   "dependencies": {
     "ink": "^5.2.0",
     "js-yaml": "^4.1.0",
-    "react": "^18.3.1"
+    "react": "^18.3.1",
+    "tar": "^7.4.3"
   },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.15.0",
     "@types/react": "^18.3.12",
+    "@types/tar": "^6.1.13",
     "@vitest/coverage-v8": "^4.1.10",
     "ink-testing-library": "^4.0.0",
     "tsup": "^8.5.0",

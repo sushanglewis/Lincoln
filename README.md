@@ -39,6 +39,16 @@ npx lincoln-install
 
 > **注意**：`npx lincoln-install` 需要在 Lincoln 项目仓库根目录下运行，以便定位 `scripts/lincoln-setup.py`。若要在其他目录为指定项目安装，请使用 `--root <project-path>`。
 
+### 终端更新向导（可选）
+
+当 Lincoln 发布新版本后，你可以在项目根目录运行更新器，将框架文件全量同步到最新 release：
+
+```bash
+npx lincoln-update
+```
+
+它会读取当前仓库的 `.version-bump.json`，从 GitHub Releases 获取最新版本，下载 release 压缩包，并按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/`、`README.md`、`CLAUDE.md` 等框架文件，同时保留 `.context/`、`.github/openspec-config.yml`、`recordings/`、`issue-*` 等用户数据。更新前会先进行 dry-run 检查并提示确认；使用 `--dry-run` 可只查看变更，`--no-tui --format json` 适合脚本调用。
+
 如果你只需要走[轻量个人路径](#快速开始)，可以跳过 `gh`、`ffmpeg`、`tools/lincoln-record/` 构建和 `.github/openspec-config.yml` 配置，只保留 `python3`、Claude Code 环境与 Lincoln 自身 hooks。
 
 > **我从哪里开始？**
@@ -168,6 +178,9 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 - **安装与依赖合规**：初始化流程询问是否需要录音转写和 benchmark；外部 skills 改为 pin 到已知良好 ref；许可合规声明集中化（#39 / #41 / #42 / #43 / #44 / #45 / #46）。
 - **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现（#81）。
 
+## 新增能力（未发布）
+
+- **终端更新向导 `npx lincoln-update`**：新增 Lincoln 全量更新器，从 GitHub Releases 拉取最新 release，按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/` 等框架文件并保留 `.context/`、`.github/openspec-config.yml`、`recordings/` 等用户数据，支持 TUI 确认与 `--dry-run` / `--no-tui` 脚本调用。
 
 ---
 
