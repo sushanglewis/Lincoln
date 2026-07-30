@@ -3,25 +3,42 @@ from pathlib import Path
 from .conftest import run_validator
 
 
+def _doc_source(markdown: str) -> str:
+    return f'<script type="text/markdown" id="docSource">\n{markdown}\n</script>\n'
+
+
 def write_design_package(root: Path, design_id: str, approved: bool = False):
-    base = root / "designs" / design_id
+    base = root / "lc-test" / "pages" / "docs"
     base.mkdir(parents=True, exist_ok=True)
-    review = base / "design-review.md"
+    review = base / "design-review.html"
     review.write_text(
-        "# Design Review\n\n"
-        "- [link](scenarios.md)\n"
-        "- [link](feature-catalog.md)\n"
-        "- [link](data-model.md)\n"
-        "- [link](flows.md)\n"
-        "- [link](feasibility.md)\n"
-        f"{'<!-- status: approved -->' if approved else ''}\n"
+        _doc_source(
+            "# Design Review\n\n"
+            "- [link](scenarios.html)\n"
+            "- [link](feature-catalog.html)\n"
+            "- [link](data-model.html)\n"
+            "- [link](flows.html)\n"
+            "- [link](feasibility.html)\n"
+            f"{'<!-- status: approved -->' if approved else ''}"
+        ),
+        encoding="utf-8",
     )
-    (base / "scenarios.md").write_text("# 场景\n")
-    (base / "feature-catalog.md").write_text("# 功能清单\n## 验收标准\n")
-    (base / "data-model.md").write_text("# 数据模型\n## 字段\n")
-    (base / "flows.md").write_text("# 流程\n```mermaid\ngraph TD\nA --> B\n```\n")
-    (base / "feasibility.md").write_text(
-        "# 可行性\n## 业务可行性\n## 技术可行性\n## 开源项目\n## 技术框架\n"
+    (base / "scenarios.html").write_text(_doc_source("# 场景\n"), encoding="utf-8")
+    (base / "feature-catalog.html").write_text(
+        _doc_source("# 功能清单\n## 验收标准\n"), encoding="utf-8"
+    )
+    (base / "data-model.html").write_text(
+        _doc_source("# 数据模型\n## 字段\n"), encoding="utf-8"
+    )
+    (base / "flows.html").write_text(
+        _doc_source("# 流程\n```mermaid\ngraph TD\nA --> B\n```\n"),
+        encoding="utf-8",
+    )
+    (base / "feasibility.html").write_text(
+        _doc_source(
+            "# 可行性\n## 业务可行性\n## 技术可行性\n## 开源项目\n## 技术框架\n"
+        ),
+        encoding="utf-8",
     )
 
 

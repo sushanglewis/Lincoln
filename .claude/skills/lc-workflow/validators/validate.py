@@ -37,6 +37,11 @@ try:
 except Exception:  # pragma: no cover - validator can be copied standalone
     extract_markdown_version = None  # type: ignore[assignment]
 
+try:
+    from scripts.lincoln_index import extract_html_markdown
+except Exception:  # pragma: no cover - validator can be copied standalone
+    extract_html_markdown = None  # type: ignore[assignment]
+
 
 def fail(message: str):
     print(f"FAIL: {message}")
@@ -130,6 +135,18 @@ def process_path(*parts: str) -> Path:
     return process_root().joinpath(*parts)
 
 
+def doc_page(name: str) -> Path:
+    """Return the path of an HTML doc page under pages/docs/."""
+    return process_path("pages", "docs", f"{name}.html")
+
+
+def read_document_file(path: Path) -> str:
+    """Return document text; HTML doc pages yield their embedded Markdown source."""
+    if path.suffix.lower() == ".html" and extract_html_markdown is not None:
+        return extract_html_markdown(path)
+    return path.read_text(encoding="utf-8")
+
+
 def design_base(design_id: str) -> Path:
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", design_id):
         fail(f"Invalid design_id '{design_id}'. Use kebab-case, e.g. checkout-redesign")
@@ -143,7 +160,7 @@ def require_nonempty_file(path: Path, label: str):
 
 def read_required_file(path: Path, label: str) -> str:
     require_nonempty_file(path, label)
-    return path.read_text(encoding="utf-8")
+    return read_document_file(path)
 
 
 def has_approval_marker(content: str, zh_label: str) -> bool:
@@ -177,10 +194,10 @@ def check_summary_ready(session_id: str):
 
 
 def check_requirements_approved(session_id: str):
-    req = process_path("requirements", session_id, "requirements.md")
+    req = doc_page("requirements")
     if not req.exists():
         fail(f"Requirements document missing: {req}")
-    content = req.read_text(encoding="utf-8")
+    content = read_document_file(req)
     if "<!-- status: approved -->" not in content and "[x] PM 已确认" not in content:
         fail("Requirements document exists but is not marked as approved")
     pass_check(str(req))
@@ -237,7 +254,7 @@ def check_design_docs_ready(design_id: str):
 
 def check_product_design_approved(design_id: str):
     validate_design_docs_complete(design_id)
-    content = read_required_file(design_base(design_id) / "design-review.md", "Design review")
+    content = read_required_file(doc_page("design-review"), "Design review")
     if not has_approval_marker(content, "设计文档"):
         fail("Product design docs are not marked as approved")
     pass_check(f"Product design approved: {design_id}")
@@ -245,7 +262,7 @@ def check_product_design_approved(design_id: str):
 
 def check_prototype_ready(design_id: str):
     validate_prototype_artifact_complete(design_id)
-    content = read_required_file(design_base(design_id) / "ui-spec.md", "UI spec")
+    content = read_required_file(doc_page("ui-spec"), "UI spec")
     if "<!-- prototype-status: approved -->" not in content and "[x] PM 已确认原型" not in content:
         fail("Prototype is not marked as approved")
     pass_check(f"Prototype ready: {design_id}")
@@ -253,7 +270,7 @@ def check_prototype_ready(design_id: str):
 
 def check_tdd_plan_ready(design_id: str):
     validate_tdd_plan_complete(design_id)
-    content = read_required_file(design_base(design_id) / "tdd-plan.md", "TDD plan")
+    content = read_required_file(doc_page("tdd-plan"), "TDD plan")
     if "<!-- status: ready-for-openspec -->" not in content:
         fail("TDD plan is not marked as ready for OpenSpec")
     pass_check(f"TDD plan ready: {design_id}")
@@ -290,10 +307,10 @@ def check_summary_has_key_topics(session_id: str):
 
 
 def check_requirements_has_background_problem_solution_acceptance(session_id: str):
-    req = process_path("requirements", session_id, "requirements.md")
+    req = doc_page("requirements")
     if not req.exists():
         fail(f"Requirements missing: {req}")
-    content = req.read_text(encoding="utf-8")
+    content = read_document_file(req)
     required = {
         "背景": ["背景", "Background"],
         "问题": ["问题", "Problem"],
@@ -308,10 +325,10 @@ def check_requirements_has_background_problem_solution_acceptance(session_id: st
 
 
 def check_human_approved(session_id: str):
-    req = process_path("requirements", session_id, "requirements.md")
+    req = doc_page("requirements")
     if not req.exists():
         fail(f"Requirements missing: {req}")
-    content = req.read_text(encoding="utf-8")
+    content = read_document_file(req)
     if "<!-- status: approved -->" not in content and "[x] PM 已确认" not in content:
         fail("Human PM approval marker not found")
     pass_check()
@@ -332,9 +349,9 @@ def check_openspec_artifact_complete(change_name: str, design_id: str = ""):
     if design_id:
         slug = process_slug()
         required_refs = [
-            f"{slug}/designs/{design_id}/tdd-plan.md",
-            f"{slug}/designs/{design_id}/prototype.pen",
-            f"{slug}/designs/{design_id}/design-review.md",
+            f"{slug}/pages/docs/tdd-plan.html",
+            f"{slug}/pages/prototype/",
+            f"{slug}/pages/docs/design-review.html",
         ]
         combined = "\n".join((base / f).read_text(encoding="utf-8") for f in required_files)
         missing_refs = [ref for ref in required_refs if ref not in combined]
@@ -366,12 +383,12 @@ def check_issues_created(session_id: str):
 
 def check_tasks_link_back_to_issues(session_id: str):
     linked = PROJECT_ROOT / ".github" / "linked-issues.yaml"
-    req = process_path("requirements", session_id, "requirements.md")
+    req = doc_page("requirements")
     if not linked.exists():
         fail("Linked issues file missing")
     if not req.exists():
         fail("Requirements file missing")
-    req_content = req.read_text(encoding="utf-8")
+    req_content = read_document_file(req)
     issues = re.findall(r"issue_number:\s*(\d+)", linked.read_text(encoding="utf-8"))
     missing = [i for i in issues if f"#{i}" not in req_content]
     if missing:
@@ -431,36 +448,35 @@ def check_no_conflict_with_existing_knowledge(feature_slug: str):
 
 
 def validate_design_docs_complete(design_id: str):
-    base = design_base(design_id)
     docs = [
-        "design-review.md",
-        "scenarios.md",
-        "feature-catalog.md",
-        "data-model.md",
-        "flows.md",
-        "feasibility.md",
+        "design-review.html",
+        "scenarios.html",
+        "feature-catalog.html",
+        "data-model.html",
+        "flows.html",
+        "feasibility.html",
     ]
     for doc in docs:
-        require_nonempty_file(base / doc, doc)
+        require_nonempty_file(process_path("pages", "docs", doc), doc)
 
-    review = read_required_file(base / "design-review.md", "Design review")
+    review = read_required_file(doc_page("design-review"), "Design review")
     missing_links = [doc for doc in docs[1:] if doc not in review]
     if missing_links:
         fail(f"Design review missing links to: {', '.join(missing_links)}")
 
-    flows = read_required_file(base / "flows.md", "Flows")
+    flows = read_required_file(doc_page("flows"), "Flows")
     if "```mermaid" not in flows:
-        fail("flows.md must contain at least one Mermaid diagram")
+        fail("flows.html must contain at least one Mermaid diagram")
 
-    feature_catalog = read_required_file(base / "feature-catalog.md", "Feature catalog")
+    feature_catalog = read_required_file(doc_page("feature-catalog"), "Feature catalog")
     if not has_any_heading(feature_catalog, ["验收", "Acceptance"]):
-        fail("feature-catalog.md must map features to acceptance criteria")
+        fail("feature-catalog.html must map features to acceptance criteria")
 
-    data_model = read_required_file(base / "data-model.md", "Data model")
+    data_model = read_required_file(doc_page("data-model"), "Data model")
     if not has_any_heading(data_model, ["字段", "Field", "约束", "Constraint"]):
-        fail("data-model.md must describe fields or constraints")
+        fail("data-model.html must describe fields or constraints")
 
-    feasibility = read_required_file(base / "feasibility.md", "Feasibility")
+    feasibility = read_required_file(doc_page("feasibility"), "Feasibility")
     required = {
         "业务可行性": ["业务可行性", "Business feasibility"],
         "技术可行性": ["技术可行性", "Technical feasibility"],
@@ -469,7 +485,7 @@ def validate_design_docs_complete(design_id: str):
     }
     missing = missing_heading_groups(feasibility, required)
     if missing:
-        fail(f"feasibility.md missing sections: {', '.join(missing)}")
+        fail(f"feasibility.html missing sections: {', '.join(missing)}")
 
 
 def check_design_docs_complete(design_id: str):
@@ -479,17 +495,24 @@ def check_design_docs_complete(design_id: str):
 
 def check_design_docs_human_approved(design_id: str):
     validate_design_docs_complete(design_id)
-    content = read_required_file(design_base(design_id) / "design-review.md", "Design review")
+    content = read_required_file(doc_page("design-review"), "Design review")
     if not has_approval_marker(content, "设计文档"):
         fail("Design docs approval marker not found")
     pass_check(f"Design docs approved: {design_id}")
 
 
 def validate_prototype_artifact_complete(design_id: str):
-    base = design_base(design_id)
-    require_nonempty_file(base / "prototype.pen", "Pencil prototype")
-    fields = read_required_file(base / "fields.md", "Fields")
-    ui_spec = read_required_file(base / "ui-spec.md", "UI spec")
+    fields = read_required_file(doc_page("fields"), "Fields")
+    ui_spec = read_required_file(doc_page("ui-spec"), "UI spec")
+
+    prototype_dir = process_path("pages", "prototype")
+    prototype_files = (
+        [p for p in prototype_dir.rglob("*") if p.is_file() and p.name != ".gitkeep"]
+        if prototype_dir.exists()
+        else []
+    )
+    if not prototype_files:
+        fail(f"Prototype artifact missing: no files under {prototype_dir}")
 
     required_fields = {
         "字段": ["字段", "Field"],
@@ -498,7 +521,7 @@ def validate_prototype_artifact_complete(design_id: str):
     }
     missing_fields = missing_heading_groups(fields, required_fields)
     if missing_fields:
-        fail(f"fields.md missing sections: {', '.join(missing_fields)}")
+        fail(f"fields.html missing sections: {', '.join(missing_fields)}")
 
     required_ui = {
         "界面": ["界面", "Screen", "UI"],
@@ -507,7 +530,7 @@ def validate_prototype_artifact_complete(design_id: str):
     }
     missing_ui = missing_heading_groups(ui_spec, required_ui)
     if missing_ui:
-        fail(f"ui-spec.md missing sections: {', '.join(missing_ui)}")
+        fail(f"ui-spec.html missing sections: {', '.join(missing_ui)}")
 
 
 def check_prototype_artifact_complete(design_id: str):
@@ -516,8 +539,7 @@ def check_prototype_artifact_complete(design_id: str):
 
 
 def validate_tdd_plan_complete(design_id: str):
-    base = design_base(design_id)
-    content = read_required_file(base / "tdd-plan.md", "TDD plan")
+    content = read_required_file(doc_page("tdd-plan"), "TDD plan")
     required = {
         "验收映射": ["验收映射", "Acceptance mapping", "验收标准映射"],
         "测试场景": ["测试场景", "Test scenarios"],
@@ -527,18 +549,18 @@ def validate_tdd_plan_complete(design_id: str):
     }
     missing = missing_heading_groups(content, required)
     if missing:
-        fail(f"tdd-plan.md missing sections: {', '.join(missing)}")
+        fail(f"tdd-plan.html missing sections: {', '.join(missing)}")
     slug = process_slug()
     required_refs = [
-        f"{slug}/requirements/",
-        f"{slug}/designs/{design_id}/design-review.md",
-        f"{slug}/designs/{design_id}/fields.md",
-        f"{slug}/designs/{design_id}/ui-spec.md",
-        f"{slug}/designs/{design_id}/prototype.pen",
+        f"{slug}/pages/docs/requirements.html",
+        f"{slug}/pages/docs/design-review.html",
+        f"{slug}/pages/docs/fields.html",
+        f"{slug}/pages/docs/ui-spec.html",
+        f"{slug}/pages/prototype/",
     ]
     missing_refs = [ref for ref in required_refs if ref not in content]
     if missing_refs:
-        fail(f"tdd-plan.md missing source references: {', '.join(missing_refs)}")
+        fail(f"tdd-plan.html missing source references: {', '.join(missing_refs)}")
 
 
 def check_tdd_plan_complete(design_id: str):
@@ -569,7 +591,7 @@ def check_prd_has_required_sections(path: str):
     if not target.exists():
         fail(f"PRD missing: {target}")
 
-    text = target.read_text(encoding="utf-8")
+    text = read_document_file(target)
     missing = [section for section in REQUIRED_PRD_SECTIONS if section not in text]
     if missing:
         fail(f"PRD missing required sections: {', '.join(missing)}")
@@ -589,7 +611,10 @@ def check_prd_snapshot_present(path: str):
     if not version:
         fail(f"PRD missing version marker: {target}")
 
-    snapshot_path = target.with_name(f"prd-{version}.md")
+    if target.suffix.lower() == ".html":
+        snapshot_path = target.parent / "snapshots" / f"prd-{version}.html"
+    else:
+        snapshot_path = target.with_name(f"prd-{version}.md")
     if not snapshot_path.exists():
         fail(
             f"PRD snapshot missing: {snapshot_path}. "

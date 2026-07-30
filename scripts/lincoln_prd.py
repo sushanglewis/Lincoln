@@ -13,7 +13,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.lincoln_documents import extract_markdown_version
+from scripts.lincoln_index import VERSION_COMMENT_RE
 from scripts.lincoln_paths import (
     atomic_write_text,
     get_process_slug,
@@ -22,8 +22,18 @@ from scripts.lincoln_paths import (
     resolve_state_path,
 )
 
+
+def extract_prd_version(prd_path: Path) -> str | None:
+    """Return the version marker from an HTML PRD or a legacy Markdown PRD."""
+    if not prd_path.exists():
+        return None
+    text = prd_path.read_text(encoding="utf-8")
+    match = VERSION_COMMENT_RE.search(text)
+    return match.group(1) if match else None
+
+
 # Backwards-compatible alias used by early tests.
-extract_version = extract_markdown_version
+extract_version = extract_prd_version
 
 VERSION_MARKER_RE = re.compile(r"\n?\s*\n?\Z", re.MULTILINE)
 
@@ -64,25 +74,44 @@ def _package_root(args: argparse.Namespace) -> Path:
     )
 
 
+def _prd_path(root: Path) -> Path:
+    """Return the primary HTML PRD path, falling back to legacy root prd.md."""
+    html_path = root / "pages" / "docs" / "prd.html"
+    if html_path.exists():
+        return html_path
+    legacy_path = root / "prd.md"
+    if legacy_path.exists():
+        return legacy_path
+    return html_path
+
+
+def _snapshot_path(prd_path: Path, version: str) -> Path:
+    """Return the immutable snapshot path next to the PRD source."""
+    if prd_path.name == "prd.html":
+        return prd_path.parent / "snapshots" / f"prd-{version}.html"
+    return prd_path.with_name(f"prd-{version}.md")
+
+
 def freeze(package_root: Path | None = None, *, args: argparse.Namespace | None = None) -> Path:
-    """Copy prd.md to an immutable prd-v{X}.{Y}.md snapshot based on its version marker."""
+    """Copy the PRD to an immutable versioned snapshot based on its version marker."""
     root = package_root or (args and _package_root(args))
     if not root:
         _error("package_root is required")
-    prd_path = root / "prd.md"
+    prd_path = _prd_path(root)
     if not prd_path.exists():
-        _error(f"prd.md not found: {prd_path}")
+        _error(f"PRD not found: {prd_path}")
 
-    version = extract_markdown_version(prd_path)
+    version = extract_prd_version(prd_path)
     if not version:
         _error(f"No version marker found in {prd_path}; add '<!-- version: vX.Y -->' before freezing.")
 
-    snapshot_path = root / f"prd-{version}.md"
+    snapshot_path = _snapshot_path(prd_path, version)
+    snapshot_path.parent.mkdir(parents=True, exist_ok=True)
     if snapshot_path.exists():
         _error(
             f"Snapshot already exists: {snapshot_path}. "
             "PRD snapshots are protected by an immutability guarantee. "
-            "Bump the version marker in prd.md and freeze again."
+            "Bump the version marker in the PRD and freeze again."
         )
 
     atomic_write_text(snapshot_path, prd_path.read_text(encoding="utf-8"))
@@ -91,20 +120,39 @@ def freeze(package_root: Path | None = None, *, args: argparse.Namespace | None 
 
 
 def current_version(package_root: Path | None = None, *, args: argparse.Namespace | None = None) -> str:
-    """Print the version marker from prd.md."""
+    """Print the version marker from the PRD."""
     root = package_root or (args and _package_root(args))
     if not root:
         _error("package_root is required")
-    prd_path = root / "prd.md"
+    prd_path = _prd_path(root)
     if not prd_path.exists():
-        _error(f"prd.md not found: {prd_path}")
+        _error(f"PRD not found: {prd_path}")
 
-    version = extract_markdown_version(prd_path)
+    version = extract_prd_version(prd_path)
     if not version:
         _error(f"No version marker found in {prd_path}.")
 
     print(version)
     return version
+
+
+def _render_prd_html(title: str, version: str, markdown: str) -> str:
+    """Wrap legacy Markdown PRD content in the page-doc HTML template."""
+    template_path = PROJECT_ROOT / ".claude" / "templates" / "issue-package" / "page-doc.html.tpl"
+    if not template_path.exists():
+        return markdown
+    template = template_path.read_text(encoding="utf-8")
+    replacements = {
+        "{TITLE}": title,
+        "{NAV_GROUP}": "Docs",
+        "{VERSION}": version,
+        "{STAGE}": "clarify",
+        "{UID}": "",
+        "{MARKDOWN_SOURCE}": markdown,
+    }
+    for placeholder, value in replacements.items():
+        template = template.replace(placeholder, value)
+    return template
 
 
 def migrate(
@@ -113,7 +161,7 @@ def migrate(
     *,
     args: argparse.Namespace | None = None,
 ) -> Path:
-    """Move a legacy requirements/{session_id}/prd.md to the issue-package root."""
+    """Move a legacy requirements/{session_id}/prd.md into the HTML portal."""
     root = package_root or (args and _package_root(args))
     if not root:
         _error("package_root is required")
@@ -126,17 +174,23 @@ def migrate(
     if not legacy_path.exists():
         _error(f"Legacy PRD not found: {legacy_path}")
 
-    target_path = root / "prd.md"
+    target_path = root / "pages" / "docs" / "prd.html"
     if target_path.exists():
         _error(f"Root PRD already exists: {target_path}. Manual merge required.")
 
     content = legacy_path.read_text(encoding="utf-8")
-    if not extract_markdown_version(legacy_path):
-        # Inject a v1.0 marker at the top if the legacy file lacks one.
-        marker = "<!-- version: v1.0 -->\n\n"
-        content = marker + content.lstrip("\n")
+    version = extract_prd_version(legacy_path)
+    if not version:
+        version = "v1.0"
+        content = f"<!-- version: {version} -->\n\n" + content.lstrip("\n")
+    else:
+        # Avoid duplicating the version marker once the template injects it.
+        content = VERSION_COMMENT_RE.sub("", content, count=1).strip("\n")
 
-    atomic_write_text(target_path, content)
+    html = _render_prd_html("PRD", version, content)
+
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    atomic_write_text(target_path, html)
     legacy_path.unlink()
     print(f"Migrated {legacy_path} -> {target_path}")
     return target_path
@@ -148,9 +202,9 @@ def main() -> int:
     parser.add_argument("--session-id", help="Interview session id (required for migrate)")
     subparsers = parser.add_subparsers(dest="action", required=True)
 
-    subparsers.add_parser("freeze", help="Freeze prd.md into an immutable versioned snapshot")
-    subparsers.add_parser("current-version", help="Print the current prd.md version marker")
-    migrate_parser = subparsers.add_parser("migrate", help="Move legacy requirements/{session_id}/prd.md to root")
+    subparsers.add_parser("freeze", help="Freeze pages/docs/prd.html into an immutable versioned snapshot")
+    subparsers.add_parser("current-version", help="Print the current PRD version marker")
+    migrate_parser = subparsers.add_parser("migrate", help="Move legacy requirements/{session_id}/prd.md into pages/docs/prd.html")
     migrate_parser.add_argument("--session-id", required=True, help="Legacy session directory name")
 
     args = parser.parse_args()

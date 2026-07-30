@@ -23,6 +23,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.lincoln_documents import extract_markdown_version
+from scripts.lincoln_index import VERSION_COMMENT_RE, extract_html_markdown
 from scripts.lincoln_paths import get_process_slug, load_yaml, resolve_state_path
 
 
@@ -153,6 +154,10 @@ def _extract_document_version(path: Path) -> str | None:
         return extract_markdown_version(path)
     if path.suffix in (".yaml", ".yml"):
         return _extract_yaml_version(path)
+    if path.suffix == ".html":
+        text = path.read_text(encoding="utf-8")
+        match = VERSION_COMMENT_RE.search(text)
+        return match.group(1) if match else None
     return None
 
 
@@ -234,6 +239,13 @@ def check_handoff_versions_match(path: str) -> None:
     pass_check("handoff versions match")
 
 
+def check_portal_index_exists() -> None:
+    target = process_root() / "index.html"
+    if not target.exists():
+        fail(f"Portal index missing: {target}")
+    pass_check(f"portal index exists: {target}")
+
+
 # ---------------------------------------------------------------------------
 # PRD checks
 # ---------------------------------------------------------------------------
@@ -258,7 +270,11 @@ def check_prd_has_required_sections(path: str) -> None:
     if not target.exists():
         fail(f"PRD missing: {target}")
 
-    text = target.read_text(encoding="utf-8")
+    if target.suffix == ".html":
+        text = extract_html_markdown(target)
+    else:
+        text = target.read_text(encoding="utf-8")
+
     missing = [section for section in REQUIRED_PRD_SECTIONS if section not in text]
     if missing:
         fail(f"PRD missing required sections: {', '.join(missing)}")
@@ -271,11 +287,14 @@ def check_prd_snapshot_present(path: str) -> None:
     if not target.exists():
         fail(f"PRD missing: {target}")
 
-    version = extract_markdown_version(target)
+    version = extract_markdown_version(target) if target.suffix != ".html" else _extract_document_version(target)
     if not version:
         fail(f"PRD missing version marker: {target}")
 
-    snapshot_path = target.with_name(f"prd-{version}.md")
+    if target.suffix == ".html":
+        snapshot_path = target.parent / "snapshots" / f"prd-{version}.html"
+    else:
+        snapshot_path = target.with_name(f"prd-{version}.md")
     if not snapshot_path.exists():
         fail(f"PRD snapshot missing: {snapshot_path}. Run 'python scripts/lincoln_prd.py freeze' after approval.")
 
@@ -302,6 +321,7 @@ EXIT_CHECKS = {
     "handoff_versions_match": check_handoff_versions_match,
     "prd_has_required_sections": check_prd_has_required_sections,
     "prd_snapshot_present": check_prd_snapshot_present,
+    "portal_index_exists": check_portal_index_exists,
 }
 
 

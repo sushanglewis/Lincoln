@@ -3,31 +3,46 @@ from pathlib import Path
 from .conftest import run_validator
 
 
+def _doc_source(markdown: str) -> str:
+    return f'<script type="text/markdown" id="docSource">\n{markdown}\n</script>\n'
+
+
 def write_prototype_package(root: Path, design_id: str, prototype_approved: bool = False):
-    base = root / "designs" / design_id
-    base.mkdir(parents=True, exist_ok=True)
-    (base / "prototype.pen").write_text("pen-placeholder")
-    (base / "fields.md").write_text("# 字段\n## 校验\n## 错误状态\n")
-    ui = base / "ui-spec.md"
+    docs = root / "lc-test" / "pages" / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    prototype_dir = root / "lc-test" / "pages" / "prototype"
+    prototype_dir.mkdir(parents=True, exist_ok=True)
+    (prototype_dir / "index.html").write_text("prototype", encoding="utf-8")
+
+    (docs / "fields.html").write_text(
+        _doc_source("# 字段\n## 校验\n## 错误状态\n"), encoding="utf-8"
+    )
+    ui = docs / "ui-spec.html"
     ui.write_text(
-        "# UI 规格\n## 界面\n## 交互\n## 状态\n"
-        f"{'<!-- prototype-status: approved -->' if prototype_approved else ''}\n"
+        _doc_source(
+            "# UI 规格\n## 界面\n## 交互\n## 状态\n"
+            f"{'<!-- prototype-status: approved -->' if prototype_approved else ''}"
+        ),
+        encoding="utf-8",
     )
 
 
 def write_tdd_plan(root: Path, design_id: str, ready: bool = False):
-    base = root / "designs" / design_id
-    base.mkdir(parents=True, exist_ok=True)
-    tdd = base / "tdd-plan.md"
+    docs = root / "lc-test" / "pages" / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    tdd = docs / "tdd-plan.html"
     tdd.write_text(
-        "# TDD Plan\n\n"
-        "- Source: lc-test/requirements/2026-06-27-stakeholder/requirements.md\n"
-        f"- Source: lc-test/designs/{design_id}/design-review.md\n"
-        f"- Source: lc-test/designs/{design_id}/fields.md\n"
-        f"- Source: lc-test/designs/{design_id}/ui-spec.md\n"
-        f"- Source: lc-test/designs/{design_id}/prototype.pen\n\n"
-        "## 验收映射\n## 测试场景\n## 红/绿/重构\n## 任务切片\n## 回归范围\n"
-        f"{'<!-- status: ready-for-openspec -->' if ready else ''}\n"
+        _doc_source(
+            "# TDD Plan\n\n"
+            "- Source: lc-test/pages/docs/requirements.html\n"
+            "- Source: lc-test/pages/docs/design-review.html\n"
+            "- Source: lc-test/pages/docs/fields.html\n"
+            "- Source: lc-test/pages/docs/ui-spec.html\n"
+            "- Source: lc-test/pages/prototype/\n\n"
+            "## 验收映射\n## 测试场景\n## 红/绿/重构\n## 任务切片\n## 回归范围\n"
+            f"{'<!-- status: ready-for-openspec -->' if ready else ''}"
+        ),
+        encoding="utf-8",
     )
 
 
@@ -42,9 +57,9 @@ class TestPrototypeArtifactComplete:
 
 class TestTddPlanComplete:
     def test_fails_when_sections_missing(self, tmp_project, design_id):
-        base = tmp_project / "designs" / design_id
-        base.mkdir(parents=True, exist_ok=True)
-        (base / "tdd-plan.md").write_text("# TDD Plan\n")
+        docs = tmp_project / "lc-test" / "pages" / "docs"
+        docs.mkdir(parents=True, exist_ok=True)
+        (docs / "tdd-plan.html").write_text(_doc_source("# TDD Plan\n"), encoding="utf-8")
         assert run_validator(tmp_project, "tdd_plan_complete", design_id) == 1
 
     def test_passes_when_all_sections_present(self, tmp_project, design_id):

@@ -182,27 +182,30 @@ def test_validate_exit_clarify_artifacts_present_at_root_prd(minimal_state_file)
     created_paths = []
     try:
         process_dir.mkdir(parents=True, exist_ok=True)
-        prd = process_dir / "prd.md"
+        docs_dir = process_dir / "pages" / "docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        prd = docs_dir / "prd.html"
         prd.write_text(
-            "<!-- version: v1.0 -->\n# PRD\n\n"
+            "<!-- version: v1.0 -->\n"
+            '<script type="text/markdown" id="docSource">\n'
+            "# PRD\n\n"
             "## 1. 需求背景\n## 2. 用户故事\n## 3. 功能拆解\n"
             "## 4. 业务流程图\n## 5. 验收标准\n## 6. 业务规则\n"
             "## 7. 非功能需求\n## 8. 关联系统/接口\n"
-            "## 9. 相关产物链接\n## 10. 风险与开放问题\n",
+            "## 9. 相关产物链接\n## 10. 风险与开放问题\n"
+            "</script>\n",
             encoding="utf-8",
         )
         created_paths.append(prd)
-        snapshot = process_dir / "prd-v1.0.md"
+        snapshot = docs_dir / "snapshots" / "prd-v1.0.html"
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
         snapshot.write_text(prd.read_text(encoding="utf-8"), encoding="utf-8")
         created_paths.append(snapshot)
 
-        # requirements.md and user-stories.md are still required by clarify
-        req_dir = process_dir / "requirements" / session_id
-        req_dir.mkdir(parents=True, exist_ok=True)
-        req_file = req_dir / "requirements.md"
+        req_file = docs_dir / "requirements.html"
         req_file.write_text("<!-- status: approved -->\n# Requirements", encoding="utf-8")
         created_paths.append(req_file)
-        us_file = req_dir / "user-stories.md"
+        us_file = docs_dir / "user-stories.html"
         us_file.write_text("# User Stories", encoding="utf-8")
         created_paths.append(us_file)
 
@@ -231,16 +234,20 @@ def test_record_artifacts_captures_root_prd_and_snapshot(minimal_state_file):
     created_paths = []
     try:
         process_dir.mkdir(parents=True, exist_ok=True)
-        prd = process_dir / "prd.md"
+        docs_dir = process_dir / "pages" / "docs"
+        docs_dir.mkdir(parents=True, exist_ok=True)
+        prd = docs_dir / "prd.html"
         prd.write_text("<!-- version: v1.0 -->\n# PRD", encoding="utf-8")
         created_paths.append(prd)
-        snapshot = process_dir / "prd-v1.0.md"
+        snapshot_dir = docs_dir / "snapshots"
+        snapshot_dir.mkdir(parents=True, exist_ok=True)
+        snapshot = snapshot_dir / "prd-v1.0.html"
         snapshot.write_text("<!-- version: v1.0 -->\n# PRD", encoding="utf-8")
         created_paths.append(snapshot)
 
         recorded = loader_mod.action_record_artifacts("clarify", state, minimal_state_file)
-        assert any("prd.md" in a and "prd-v" not in a for a in recorded)
-        assert any("prd-v1.0.md" in a for a in recorded)
+        assert any("prd.html" in a and "prd-v" not in a for a in recorded)
+        assert any("prd-v1.0.html" in a for a in recorded)
     finally:
         for path in created_paths:
             path.unlink(missing_ok=True)

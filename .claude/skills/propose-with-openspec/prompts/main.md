@@ -14,12 +14,12 @@ Invoke `openspec propose` using the confirmed TDD development plan to create the
 
 ## Steps
 
-1. Read `{process_slug}/requirements/<session_id>/requirements.md`.
-2. Read `{process_slug}/designs/<design_id>/tdd-plan.md`, `design-review.md`, `feature-catalog.md`, `data-model.md`, `flows.md`, `feasibility.md`, `fields.md`, and `ui-spec.md`.
-3. Verify `{process_slug}/designs/<design_id>/tdd-plan.md` contains `<!-- status: ready-for-openspec -->`.
+1. Read `{process_slug}/pages/docs/requirements.html` (extract Markdown from the `docSource` block).
+2. Read `{process_slug}/pages/docs/tdd-plan.html`, `design-review.html`, `feature-catalog.html`, `data-model.html`, `flows.html`, `feasibility.html`, `fields.html`, and `ui-spec.html` (extract embedded Markdown where needed).
+3. Verify `{process_slug}/pages/docs/tdd-plan.html` contains `<!-- status: ready-for-openspec -->`.
 4. Ensure `{process_slug}/openspec/changes/<change_name>/` does not already exist, or ask the user if they want to overwrite.
 5. Call the OpenSpec CLI. Try the following forms in order:
-   - `openspec propose <change_name> --from {process_slug}/designs/<design_id>/tdd-plan.md`
+   - `openspec propose <change_name> --from {process_slug}/pages/docs/tdd-plan.html`
    - `openspec propose <change_name>` and pipe the TDD plan plus design summary into stdin
    - If neither works, read the OpenSpec CLI help (`openspec propose --help`) and adapt.
 6. Verify the generated artifacts:
@@ -28,14 +28,15 @@ Invoke `openspec propose` using the confirmed TDD development plan to create the
    - `{process_slug}/openspec/changes/<change_name>/design.md`
    - `{process_slug}/openspec/changes/<change_name>/tasks.md`
 7. Ensure the OpenSpec artifact references:
-   - `{process_slug}/designs/<design_id>/tdd-plan.md`
+   - `{process_slug}/pages/docs/tdd-plan.html`
    - `{process_slug}/designs/<design_id>/prototype.pen`
-   - Core design docs under `{process_slug}/designs/<design_id>/`
+   - Core design docs under `{process_slug}/pages/docs/`
 8. Call `superpowers:verification-before-completion` to verify the artifacts before claiming completion:
    - Run `python scripts/validate_stage.py --phase exit --check openspec_artifact_complete --args <change_name>,<design_id>`
    - Run `python scripts/validate_stage.py --phase exit --check tasks_extracted --args <change_name>`
    - Read the output and confirm PASS. Do not claim completion without fresh verification evidence.
 9. If any artifact is missing, empty, or missing design references, report the error and pause for human intervention.
+10. Run `python scripts/stage_loader.py --stage propose --action record-artifacts`.
 
 ## Output Artifacts
 
@@ -48,5 +49,5 @@ Invoke `openspec propose` using the confirmed TDD development plan to create the
 
 - Do not bypass the OpenSpec CLI by manually writing the artifact files.
 - Preserve the OpenSpec structure exactly as the CLI generates it.
-- OpenSpec tasks must be driven by `{process_slug}/designs/<design_id>/tdd-plan.md`.
+- OpenSpec tasks must be driven by `{process_slug}/pages/docs/tdd-plan.html`.
 - After success, tell the user to run: `claude split-to-github <session_id> <change_name>`.

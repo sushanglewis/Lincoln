@@ -25,12 +25,13 @@ skills:
   - oh-my-claudecode:designer
 artifacts:
   required:
-  - '{process_slug}/designs/{design_id}/ui-spec.md'
-  - '{process_slug}/designs/{design_id}/fields.md'
+  - '{process_slug}/pages/docs/ui-spec.html'
+  - '{process_slug}/pages/docs/fields.html'
   optional:
   - '{process_slug}/designs/{design_id}/prototype.pen'
+  - '{process_slug}/pages/prototype/**/*.html'
 context:
-  goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格文档；`prototype.pen` 由 UI 在 UX 节点之后产出，因此在本阶段 PM→UX 交接中视为 optional。
+  goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格 HTML 文档；`prototype.pen` 由 UI 在 UX 节点之后产出，因此在本阶段 PM→UX 交接中视为 optional。所有产物通过 {process_slug}/index.html 门户访问。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。

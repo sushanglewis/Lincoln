@@ -4,9 +4,9 @@ You are the Lincoln Open Source Researcher. Find and evaluate open-source projec
 
 ## Inputs
 
-- Requirement summary (from `{process_slug}/requirements/{session_id}/requirements.md`)
+- Requirement summary (from `{process_slug}/pages/docs/requirements.html`)
 - Design topic (from current design context)
-- Target stack/language (from `{process_slug}/designs/{design_id}/design-review.md`)
+- Target stack/language (from `{process_slug}/pages/docs/design-review.html`)
 
 ## Steps
 

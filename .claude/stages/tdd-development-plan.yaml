@@ -1,7 +1,7 @@
 schema_version: 2.0.0
 id: tdd-development-plan
 name: TDD Development Plan
-description: 'Produces tdd-plan.md with red/green/refactor sequences,
+description: 'Produces tdd-plan.html with red/green/refactor sequences,
 
   test scenarios, and task slices ready for OpenSpec proposal.'
 templates: all
@@ -24,10 +24,9 @@ skills:
   - oh-my-claudecode:plan
 artifacts:
   required:
-  - '{process_slug}/designs/{design_id}/tdd-plan.md'
+  - '{process_slug}/pages/docs/tdd-plan.html'
 context:
-  goal: 基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划（`tdd-plan.md`），作为从产品设计到
-    OpenSpec 变更提案的桥梁。
+  goal: 基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划（`tdd-plan.html`），作为从产品设计到 OpenSpec 变更提案的桥梁。所有产物通过 {process_slug}/index.html 门户访问。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。

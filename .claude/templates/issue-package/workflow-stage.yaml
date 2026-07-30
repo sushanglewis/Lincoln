@@ -32,29 +32,35 @@ artifact_guidance: |
     read the matching `.tpl` file there as a format reference and author the
     document directly in the appropriate package directory, replacing
     placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).
-  - Use `designs/` for product design docs, `requirements/` for clarified needs,
-    `interviews/` for recorded session outputs, `openspec/` for implementation proposals,
-    `docs/` for research and decision records, `handoffs/` for cross-role handoff documents
-    (e.g. `handoffs/pm-to-ux/` for PM-to-UX handoff), and `recordings/` for raw input files only.
-  - The PRD lives at `{process_slug}/prd.md` (not under `requirements/`). It is the root-level
-    main-thread document that links to all other artifacts. It must carry a version marker
-    such as `<!-- version: v1.0 -->` near the top of the file.
-  - After the human PM approves the PRD, run `python scripts/lincoln_prd.py freeze` to create
-    an immutable snapshot `{process_slug}/prd-v{MAJOR}.{MINOR}.md`. Do not edit snapshots directly.
-  - If a legacy PRD still lives at `requirements/{session_id}/prd.md`, run
-    `python scripts/lincoln_prd.py migrate --session-id <session_id>` to move it to the root.
-  - PM-to-UX handoff artifacts live under `handoffs/pm-to-ux/`:
-    - `master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.md` — the human-readable entry doc.
-    - `pm-to-ux.handoff.yaml` — the machine-readable agent-agent contract.
-    - Both use version `v{MAJOR}.{MINOR}` (e.g. `v1.0`).
+  - The human-facing portal is `{process_slug}/index.html`. Open it in a browser
+    to review stage status, navigate documents, and inspect prototypes.
+  - Machine state stays in `{process_slug}/workflow-stage.yaml`; agents must
+    update it only through `scripts/stage_loader.py`.
+  - Deliverable documents and prototypes live under `{process_slug}/pages/`:
+    - `pages/docs/*.html` — finalized docs (PRD, requirements, design review,
+      feature catalog, data model, flows, feasibility, page map, UI spec,
+      fields, TDD plan, version log, API list, PM→UX handoff).
+    - `pages/prototype/{web,mobile,overlays}/*.html` — interactive HTML
+      prototypes. Every interactive element must carry a stable `data-uid`.
+  - Doc pages must embed their Markdown source in a
+    `<script type="text/markdown" id="docSource">` block so the portal can
+    render it and provide copy-to-Markdown. Include a version marker such as
+    `<!-- version: v1.0 -->` near the top of that block.
+  - Use `pages/docs/snapshots/` for immutable PRD snapshots named
+    `prd-v{MAJOR}.{MINOR}.html`. Do not edit snapshots directly.
+  - Raw inputs and machine contracts stay outside `pages/`:
+    - `interviews/` for recorded session outputs.
+    - `openspec/` for implementation proposals (managed by OpenSpec CLI).
+    - `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` for agent-agent contracts.
+    - `recordings/` for raw input files only.
   - When a stage completes, run `scripts/stage_loader.py --stage <stage> --action record-artifacts`
     to persist produced artifact paths back into this workflow-stage.yaml; this also
-    refreshes `documents.yaml`, the document index in the package root. Read that
-    index first to learn which documents exist and their approval status.
+    refreshes `assets/js/package-data.js`, the portal data index. Open
+    `{process_slug}/index.html` to review package contents and approval status.
 
   Approval convention:
-  - Add `<!-- status: approved -->` or `[x] PM 已确认<文档类型>` to mark a document
-    as reviewed by the human PM before handoff.
+  - Add `<!-- status: approved -->` inside the docSource block or mark
+    `human_confirmed: true` via `approve-gate` to indicate PM review.
 nodes: []
 recovery:
   last_validated_checkpoint: ""

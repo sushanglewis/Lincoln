@@ -173,8 +173,9 @@ def test_build_index_extracts_root_prd_version_from_marker(tmp_path):
 
 def test_build_index_extracts_prd_snapshot_version_from_filename(tmp_path):
     package = tmp_path / "issue-52"
-    package.mkdir()
-    (package / "prd-v1.0.md").write_text("# PRD", encoding="utf-8")
+    snapshot_dir = package / "pages" / "docs" / "snapshots"
+    snapshot_dir.mkdir(parents=True)
+    (snapshot_dir / "prd-v1.0.html").write_text("# PRD", encoding="utf-8")
 
     state = make_state([
         {
@@ -183,12 +184,12 @@ def test_build_index_extracts_prd_snapshot_version_from_filename(tmp_path):
             "status": "completed",
             "gate_passed": True,
             "approved_by": "human-pm",
-            "artifacts": ["issue-52/prd-v1.0.md"],
+            "artifacts": ["issue-52/pages/docs/snapshots/prd-v1.0.html"],
         },
     ])
     index = build_documents_index(state, "issue-52", project_root=tmp_path)
     docs = {d["path"]: d for d in index["documents"]}
-    assert docs["prd-v1.0.md"]["version"] == "v1.0"
+    assert docs["pages/docs/snapshots/prd-v1.0.html"]["version"] == "v1.0"
 
 
 def test_build_index_extracts_legacy_prd_version_from_marker(tmp_path):
@@ -239,9 +240,9 @@ def test_extract_markdown_version_returns_none_for_missing_file(tmp_path):
 
 def test_build_index_extracts_handoff_doc_version_from_filename(tmp_path):
     package = tmp_path / "issue-52"
-    handoff_dir = package / "handoffs" / "pm-to-ux"
-    handoff_dir.mkdir(parents=True)
-    (handoff_dir / "master-handoff-pm-to-ux-v2.1.md").write_text("# Handoff", encoding="utf-8")
+    docs_dir = package / "pages" / "docs"
+    docs_dir.mkdir(parents=True)
+    (docs_dir / "master-handoff-pm-to-ux-v2.1.html").write_text("# Handoff", encoding="utf-8")
 
     state = make_state([
         {
@@ -250,12 +251,12 @@ def test_build_index_extracts_handoff_doc_version_from_filename(tmp_path):
             "status": "completed",
             "gate_passed": True,
             "approved_by": "human-pm",
-            "artifacts": ["issue-52/handoffs/pm-to-ux/master-handoff-pm-to-ux-v2.1.md"],
+            "artifacts": ["issue-52/pages/docs/master-handoff-pm-to-ux-v2.1.html"],
         },
     ])
     index = build_documents_index(state, "issue-52", project_root=tmp_path)
     docs = {d["path"]: d for d in index["documents"]}
-    assert docs["handoffs/pm-to-ux/master-handoff-pm-to-ux-v2.1.md"]["version"] == "v2.1"
+    assert docs["pages/docs/master-handoff-pm-to-ux-v2.1.html"]["version"] == "v2.1"
 
 
 def test_build_index_extracts_handoff_yaml_version(tmp_path):

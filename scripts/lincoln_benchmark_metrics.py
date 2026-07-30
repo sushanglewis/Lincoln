@@ -209,13 +209,8 @@ def _artifact_completion_rate(
 
 
 def _requirements_clarity_score(process_root: Path, process_slug: str, variables: dict[str, Any]) -> int:
-    session_id = _safe_path_component(variables.get("session_id", ""))
-    candidates = [
-        process_root / process_slug / "requirements" / session_id / "requirements.md",
-        process_root / process_slug / "requirements" / "requirements.md",
-    ]
-    req_path = next((p for p in candidates if p.exists()), None)
-    if not req_path:
+    req_path = process_root / process_slug / "pages" / "docs" / "requirements.html"
+    if not req_path.exists():
         return 0
     text = req_path.read_text(encoding="utf-8").lower()
     checks = [
@@ -233,24 +228,21 @@ def _design_doc_completeness(
     process_root: Path,
     process_slug: str,
 ) -> float:
-    design_id = _safe_path_component(variables.get("design_id", ""))
-    if not design_id:
-        return 0.0
     stage_id = "product-design-docs"
     artifacts = _artifact_paths_for_stage(workflow_steps, stage_id, variables)
-    # Only count design docs under designs/{design_id}; handoff artifacts are tracked separately.
-    design_prefix = f"{process_slug}/designs/{design_id}/"
-    artifacts = [p for p in artifacts if design_prefix in p]
+    # Only count design docs under pages/docs; handoff artifacts are tracked separately.
+    design_prefix = f"{process_slug}/pages/docs/"
+    artifacts = [p for p in artifacts if design_prefix in p and "*" not in p]
     if not artifacts:
-        base = process_root / process_slug / "designs" / design_id
+        base = process_root / process_slug / "pages" / "docs"
         artifacts = [
-            str(base / "design-review.md"),
-            str(base / "scenarios.md"),
-            str(base / "feature-catalog.md"),
-            str(base / "data-model.md"),
-            str(base / "flows.md"),
-            str(base / "feasibility.md"),
-            str(base / "page-map.md"),
+            str(base / "design-review.html"),
+            str(base / "scenarios.html"),
+            str(base / "feature-catalog.html"),
+            str(base / "data-model.html"),
+            str(base / "flows.html"),
+            str(base / "feasibility.html"),
+            str(base / "page-map.html"),
         ]
     existing = sum(1 for p in artifacts if (process_root / p).exists())
     return round(existing / len(artifacts), 2) if artifacts else 0.0
@@ -259,8 +251,7 @@ def _design_doc_completeness(
 def _tdd_plan_red_green_refactor(
     process_root: Path, process_slug: str, variables: dict[str, Any]
 ) -> dict[str, bool]:
-    design_id = _safe_path_component(variables.get("design_id", ""))
-    path = process_root / process_slug / "designs" / design_id / "tdd-plan.md"
+    path = process_root / process_slug / "pages" / "docs" / "tdd-plan.html"
     result = {"red": False, "green": False, "refactor": False}
     if not path.exists():
         return result

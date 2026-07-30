@@ -12,7 +12,7 @@ inputs:
     description: 产品设计 ID
     required: true
 outputs:
-  - "{process_slug}/designs/{design_id}/tdd-plan.md"
+  - "{process_slug}/pages/docs/tdd-plan.html"
 required_tools:
   - Read
   - Bash

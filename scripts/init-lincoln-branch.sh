@@ -227,14 +227,36 @@ state_path.write_text(yaml.dump(state, allow_unicode=True, sort_keys=False), enc
 print(f"Initialized workflow-stage.yaml for issue #{issue_number} on branch {branch_name} (workflow: {workflow_name}, first stage: {first_stage})")
 PY
 
-# Add gitkeep files for empty directories to ensure they are tracked
-for dir in "$PROCESS_ROOT/designs/$DESIGN_ID" "$PROCESS_ROOT/docs/research" "$PROCESS_ROOT/handoffs" "$PROCESS_ROOT/handoffs/pm-to-ux" "$PROCESS_ROOT/interviews/$SESSION_ID" "$PROCESS_ROOT/openspec/changes" "$PROCESS_ROOT/openspec/specs" "$PROCESS_ROOT/recordings" "$PROCESS_ROOT/requirements/$SESSION_ID" ".github/lincoln-sync-queue"; do
+# Add gitkeep files for empty directories to ensure they are tracked.
+# The HTML portal lives at {process_slug}/index.html; deliverable docs/prototypes
+# go under {process_slug}/pages/. Raw inputs stay in interviews/, openspec/,
+# recordings/, and handoffs/pm-to-ux/.
+for dir in \
+    "$PROCESS_ROOT/pages/docs/snapshots" \
+    "$PROCESS_ROOT/pages/prototype/web" \
+    "$PROCESS_ROOT/pages/prototype/mobile" \
+    "$PROCESS_ROOT/pages/prototype/overlays" \
+    "$PROCESS_ROOT/handoffs" \
+    "$PROCESS_ROOT/handoffs/pm-to-ux" \
+    "$PROCESS_ROOT/interviews/$SESSION_ID" \
+    "$PROCESS_ROOT/openspec/changes" \
+    "$PROCESS_ROOT/openspec/specs" \
+    "$PROCESS_ROOT/recordings" \
+    ".github/lincoln-sync-queue"; do
     mkdir -p "$dir"
     touch "$dir/.gitkeep"
 done
 
-# Generate the package document index (documents.yaml) in the package root
-python3 "$ROOT/scripts/lincoln_documents.py" --state-file "$PROCESS_ROOT/workflow-stage.yaml"
+# Copy the HTML portal scaffold from read-only templates.
+# Templates stay in .claude/templates/issue-package/; only the rendered shell and
+# shared assets are copied into the package.
+echo "==> Copying HTML portal scaffold"
+cp "$ROOT/.claude/templates/issue-package/index.html.tpl" "$PROCESS_ROOT/index.html"
+mkdir -p "$PROCESS_ROOT/assets/js"
+cp -R "$ROOT/.claude/templates/issue-package/assets/"* "$PROCESS_ROOT/assets/"
+
+# Generate the portal index (assets/js/package-data.js) from workflow-stage.yaml.
+python3 "$ROOT/scripts/lincoln_index.py" --state-file "$PROCESS_ROOT/workflow-stage.yaml"
 
 if [[ -n "$NO_COMMIT" ]]; then
     echo "==> Skipping git commit (--no-commit requested)"
@@ -262,5 +284,6 @@ echo ""
 echo "Lincoln issue work package created for issue #$ISSUE_NUMBER"
 echo "Branch: $BRANCH_NAME"
 echo "Process package: $PROCESS_ROOT/"
+echo "Portal: $PROCESS_ROOT/index.html"
 echo "Next step: place the recording in $PROCESS_ROOT/recordings/ and say:"
 echo "  '处理一下这个访谈录音 $PROCESS_ROOT/recordings/<recording-file>'"

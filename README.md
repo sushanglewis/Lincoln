@@ -88,7 +88,7 @@ Lincoln 提供两种启动方式，选择适合你的即可。
      > 请使用 Lincoln 的 `design-spike` 模板，帮我澄清这个想法并产出设计评审与原型。
 5. 后续如果决定引入团队流程或需要 GitHub issue 跟踪，对 Agent 说"开始处理 issue <N>"——Agent 会新建 issue 工作包，你再把手头已确认的需求/设计产物交给它整理到新的 `issue-<number>/` 目录。
 
-> 个人路径的产物默认落在由模板自动选择的工作包目录（如 workspace 名或仓库名）下，其中代码知识库产物写入 `knowledge/`，设计、需求、调研产物分别写入 `<process_slug>/designs/`、`<process_slug>/requirements/`、`<process_slug>/docs/research/`。
+> 个人路径的产物默认落在由模板自动选择的工作包目录（如 workspace 名或仓库名）下，其中代码知识库产物写入 `knowledge/`，设计、需求、调研产物写入 `<process_slug>/pages/docs/` 下的 HTML 页面，原型产物写入 `<process_slug>/pages/prototype/`。
 
 ### 路径 B：团队 issue 路径（默认）
 
@@ -96,7 +96,7 @@ Lincoln 提供两种启动方式，选择适合你的即可。
 
 #### 初始化一个 issue 工作包
 
-每个需求都对应一个 GitHub issue 和一个 Lincoln feature 分支。对 Agent 说"开始处理 issue <N>"，Agent 会基于 issue 编号创建分支，生成该 issue 专属的工作包目录（初始化 `workflow-stage.yaml` 与文档索引 `documents.yaml`；`.claude/templates/issue-package/` 下的 `.tpl` 模板只读保留，不再复制进工作包，Agent 需要文档时参考模板格式直接撰写）。
+每个需求都对应一个 GitHub issue 和一个 Lincoln feature 分支。对 Agent 说"开始处理 issue <N>"，Agent 会基于 issue 编号创建分支，生成该 issue 专属的工作包目录（初始化 `workflow-stage.yaml`、HTML 门户 `index.html` 与共享资源；`.claude/templates/issue-package/` 下的 `.tpl` 模板只读保留，不再复制进工作包，Agent 需要文档时参考模板格式直接撰写 HTML 页面）。
 
 你也可以提供更细的偏好，Agent 会翻译成对应的初始化参数：
 
@@ -112,18 +112,22 @@ Lincoln 提供两种启动方式，选择适合你的即可。
 
 ```
 issue-<N>/
-├── workflow-stage.yaml          # issue 运行时状态与 handoff 协议
+├── index.html                   # 人读门户：聚合阶段状态、导航与产物
+├── assets/                      # 门户共享样式与运行时
+│   ├── style.css
+│   ├── app.js
+│   └── js/package-data.js       # 由 workflow-stage.yaml 生成的导航数据
+├── workflow-stage.yaml          # issue 运行时状态与 handoff 协议（机器状态）
 ├── documents.yaml               # 文档索引：各阶段产物与 human 确认状态（自动生成）
 ├── recordings/                  # 原始录音（gitignored）
 ├── interviews/<session-id>/     # 转写、摘要、原始洞察
-├── requirements/<session-id>/   # 需求文档、用户故事、PRD
-├── designs/<design-id>/         # 设计评审、场景、数据模型、流程、原型、TDD 计划
+├── pages/docs/                  # 需求、PRD、设计、TDD 计划等可交互 HTML 页面
+├── pages/prototype/             # 可交互原型 HTML 页面
 ├── openspec/changes/            # OpenSpec 变更提案
-├── docs/research/               # 开源方案调研、决策记录
 └── handoffs/                    # 阶段交接文档
 ```
 
-`issue-<N>/workflow-stage.yaml` 是人类、Agent 之间共享的阶段交接协议；`.claude/templates/issue-package/workflow-stage.yaml` 只是生成它的模板。`issue-<N>/documents.yaml` 是工作包文档索引，每次状态保存时自动刷新，记录每个产物所属阶段、gate 与 human 确认状态——Agent 开始工作前先读它即可了解工作包内已有文档。
+`issue-<N>/workflow-stage.yaml` 是人类、Agent 之间共享的阶段交接协议；`.claude/templates/issue-package/workflow-stage.yaml` 只是生成它的模板。`issue-<N>/index.html` 是人类查看工作包状态与文档的入口，每次状态保存时由 `lincoln_index.py` 自动刷新 `assets/js/package-data.js`，驱动左侧导航、iframe 画布与右侧信息面板。`issue-<N>/documents.yaml` 继续作为机器可读的文档索引保留，记录每个产物所属阶段、gate 与 human 确认状态。
 
 **跨成员、跨 Agent 协作**：分支名必须严格使用 `issue-<number>` 约定。任何成员或 Agent 收到上游节点的 handoff 时，按分支名即可定位对应 issue 与工作包（`{process_slug}/workflow-stage.yaml`），从而保障从需求到最终验收，issue、branch、PR 端到端一一对应。对 Agent 说"列出所有活跃的 Lincoln 分支"，即可查看所有 issue 分支的阶段状态与等待对象。
 
@@ -157,8 +161,8 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 ## 新增能力（v1.2.0）
 
 - **Issue 驱动的工作包**：`scripts/init-lincoln-branch.sh --issue-number ...` 生成 issue 专属分支与 `{process_slug}/` 工作包，过程文档不再污染 `main`。
-- **模板化工作包**：`.claude/templates/issue-package/` 提供统一目录结构与只读 `.tpl` 参考模板（初始化不再复制进工作包，Agent 按需参考生成）。
-- **工作包文档索引**：`{process_slug}/documents.yaml` 由 `scripts/lincoln_documents.py` 在每次状态保存时自动刷新，记录各阶段产物及其 gate / human 确认状态。
+- **模板化 HTML 门户工作包**：`.claude/templates/issue-package/` 提供 HTML 门户模板与只读 `.tpl` 参考模板（初始化时复制 `index.html` 与 `assets/` 到工作包，Agent 按需参考 `page-doc.html.tpl` / `page-prototype.html.tpl` 生成 HTML 页面）。
+- **工作包文档索引**：`{process_slug}/documents.yaml` 由 `lincoln_documents.py` 在每次状态保存时自动刷新，记录各阶段产物及其 gate / human 确认状态；`{process_slug}/assets/js/package-data.js` 由 `lincoln_index.py` 生成，驱动人读门户。
 - **main 合并卫生检查**：`scripts/check-main-merge-hygiene.py`（PR → main 的 CI 门禁）将任何含 `workflow-stage.yaml` 的工作包目录下所有文件拒之门外，杜绝 issue 工作包被错误并入 main。
 - **状态文件实例化**：运行时状态保存在 `{process_slug}/workflow-stage.yaml`，而非 `.claude/workflow-stage.yaml`。
 - **工作流统一入口 `lc-wf-*`**：[`.claude/workflows/README.md`](.claude/workflows/README.md) 集中维护所有 SOP 模板；`lc-wf-*` 命令（底层 `scripts/lincoln_workflow.py`）统一 solo / team 两种 `execution_mode` 的启动方式。
@@ -179,6 +183,8 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 - **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现（#81）。
 
 ## 新增能力（未发布）
+
+- **HTML 中心工作包（issue #90）**：将 issue 工作包从 Markdown/YAML 为主的人读产物升级为 HTML 门户。`workflow-stage.yaml` 继续作为机器状态，`index.html` 成为人读入口；所有说明文档渲染为嵌入 Markdown 源码的 HTML 页面，原型渲染为可交互 HTML 页面；`scripts/lincoln_index.py` 生成 `assets/js/package-data.js` 驱动门户导航与状态面板。
 
 - **终端更新向导 `npx lincoln-update`**：新增 Lincoln 全量更新器，从 GitHub Releases 拉取最新 release，按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/` 等框架文件并保留 `.context/`、`.github/openspec-config.yml`、`recordings/` 等用户数据，支持 TUI 确认与 `--dry-run` / `--no-tui` 脚本调用。
 
