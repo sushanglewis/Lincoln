@@ -271,18 +271,18 @@ def test_compute_metrics_quality_with_artifacts(base_state):
     design_id = variables["design_id"]
     change_name = variables["change_name"]
 
-    req_dir = project_root / slug / "requirements" / session_id
-    req_dir.mkdir(parents=True)
-    req_dir.joinpath("requirements.md").write_text(
+    req_path = project_root / slug / "pages" / "docs" / "requirements.html"
+    req_path.parent.mkdir(parents=True)
+    req_path.write_text(
         "# Requirements\n\n## Background\n## Problem\n## Solution\n## Acceptance Criteria\n",
         encoding="utf-8",
     )
 
-    design_dir = project_root / slug / "designs" / design_id
-    design_dir.mkdir(parents=True)
-    for name in ["design-review.md", "scenarios.md", "feature-catalog.md", "data-model.md", "flows.md", "feasibility.md", "page-map.md"]:
+    design_dir = project_root / slug / "pages" / "docs"
+    design_dir.mkdir(parents=True, exist_ok=True)
+    for name in ["design-review.html", "scenarios.html", "feature-catalog.html", "data-model.html", "flows.html", "feasibility.html", "page-map.html", "version-log.html", "api-list.html", "handoff-pm-to-ux-v1.0.html"]:
         design_dir.joinpath(name).write_text("ok", encoding="utf-8")
-    design_dir.joinpath("tdd-plan.md").write_text(
+    design_dir.joinpath("tdd-plan.html").write_text(
         "# TDD Plan\n\n## Red\n## Green\n## Refactor\n", encoding="utf-8"
     )
 

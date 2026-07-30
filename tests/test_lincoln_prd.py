@@ -24,8 +24,46 @@ def prd_mod():
 
 
 @pytest.fixture
-def sample_prd():
+def sample_prd_html():
+    return (
+        "<!DOCTYPE html>\n"
+        '<html lang="zh-CN"><head><meta charset="UTF-8">\n'
+        '<meta name="doc-title" content="PRD">\n'
+        '<meta name="doc-version" content="v1.0">\n'
+        '<title>PRD</title></head><body>\n'
+        '<script type="text/markdown" id="docSource">\n'
+        "<!-- version: v1.0 -->\n\n"
+        "# PRD: test\n\n"
+        "## 1. 需求背景\n\n"
+        "- background\n"
+        "</script></body></html>\n"
+    )
+
+
+@pytest.fixture
+def sample_prd_md():
     return "# PRD: test\n\n<!-- version: v1.0 -->\n\n## 1. 需求背景\n\n- background\n"
+
+
+def _write_html_prd(package: Path, content: str | None = None, version: str = "v1.0") -> Path:
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    if content is None:
+        content = (
+            "<!DOCTYPE html>\n"
+            '<html lang="zh-CN"><head><meta charset="UTF-8">\n'
+            f'<meta name="doc-title" content="PRD">\n'
+            f'<meta name="doc-version" content="{version}">\n'
+            '<title>PRD</title></head><body>\n'
+            '<script type="text/markdown" id="docSource">\n'
+            f"<!-- version: {version} -->\n\n"
+            "# PRD: test\n\n"
+            "## 1. 需求背景\n\n"
+            "- background\n"
+            "</script></body></html>\n"
+        )
+    prd_path.write_text(content, encoding="utf-8")
+    return prd_path
 
 
 # ---------------------------------------------------------------------------
@@ -33,7 +71,12 @@ def sample_prd():
 # ---------------------------------------------------------------------------
 
 
-def test_extract_version_reads_marker(prd_mod, tmp_path):
+def test_extract_version_reads_html_meta(prd_mod, tmp_path):
+    prd = _write_html_prd(tmp_path, version="v2.3")
+    assert prd_mod.extract_version(prd) == "v2.3"
+
+
+def test_extract_version_reads_legacy_markdown(prd_mod, tmp_path):
     path = tmp_path / "prd.md"
     path.write_text("<!-- version: v2.3 -->\n# PRD", encoding="utf-8")
     assert prd_mod.extract_version(path) == "v2.3"
@@ -50,25 +93,28 @@ def test_extract_version_returns_none_when_missing(prd_mod, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_freeze_creates_snapshot(prd_mod, tmp_path, sample_prd):
+def test_freeze_creates_html_snapshot(prd_mod, tmp_path, sample_prd_html):
     package = tmp_path / "issue-52"
     package.mkdir()
-    prd_path = package / "prd.md"
-    prd_path.write_text(sample_prd, encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text(sample_prd_html, encoding="utf-8")
 
     prd_mod.freeze(package_root=package)
 
-    snapshot = package / "prd-v1.0.md"
+    snapshot = package / "pages" / "docs" / "snapshots" / "prd-v1.0.html"
     assert snapshot.exists()
-    assert snapshot.read_text(encoding="utf-8") == sample_prd
+    assert snapshot.read_text(encoding="utf-8") == sample_prd_html
 
 
-def test_freeze_refuses_overwrite(prd_mod, tmp_path, sample_prd):
+def test_freeze_refuses_overwrite(prd_mod, tmp_path, sample_prd_html):
     package = tmp_path / "issue-52"
     package.mkdir()
-    prd_path = package / "prd.md"
-    prd_path.write_text(sample_prd, encoding="utf-8")
-    snapshot = package / "prd-v1.0.md"
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text(sample_prd_html, encoding="utf-8")
+    snapshot = package / "pages" / "docs" / "snapshots" / "prd-v1.0.html"
+    snapshot.parent.mkdir(parents=True, exist_ok=True)
     snapshot.write_text("existing", encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="immutability"):
@@ -78,11 +124,24 @@ def test_freeze_refuses_overwrite(prd_mod, tmp_path, sample_prd):
 def test_freeze_fails_without_version_marker(prd_mod, tmp_path):
     package = tmp_path / "issue-52"
     package.mkdir()
-    prd_path = package / "prd.md"
-    prd_path.write_text("# PRD\n", encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text("<!DOCTYPE html><html><body><p>no version</p></body></html>", encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="version marker"):
         prd_mod.freeze(package_root=package)
+
+
+def test_freeze_still_supports_legacy_markdown(prd_mod, tmp_path, sample_prd_md):
+    package = tmp_path / "issue-52"
+    package.mkdir()
+    (package / "prd.md").write_text(sample_prd_md, encoding="utf-8")
+
+    prd_mod.freeze(package_root=package)
+
+    snapshot = package / "prd-v1.0.md"
+    assert snapshot.exists()
+    assert snapshot.read_text(encoding="utf-8") == sample_prd_md
 
 
 # ---------------------------------------------------------------------------
@@ -90,17 +149,21 @@ def test_freeze_fails_without_version_marker(prd_mod, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_current_version_returns_marker(prd_mod, tmp_path, sample_prd):
+def test_current_version_returns_html_marker(prd_mod, tmp_path, sample_prd_html):
     package = tmp_path / "issue-52"
     package.mkdir()
-    (package / "prd.md").write_text(sample_prd, encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text(sample_prd_html, encoding="utf-8")
     assert prd_mod.current_version(package_root=package) == "v1.0"
 
 
 def test_current_version_fails_without_marker(prd_mod, tmp_path):
     package = tmp_path / "issue-52"
     package.mkdir()
-    (package / "prd.md").write_text("# PRD\n", encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text("<!DOCTYPE html><html><body><p>no version</p></body></html>", encoding="utf-8")
     with pytest.raises(RuntimeError, match="version marker"):
         prd_mod.current_version(package_root=package)
 
@@ -110,7 +173,7 @@ def test_current_version_fails_without_marker(prd_mod, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_migrate_moves_legacy_prd_and_injects_marker(prd_mod, tmp_path):
+def test_migrate_moves_legacy_prd_to_html_portal(prd_mod, tmp_path):
     package = tmp_path / "issue-52"
     package.mkdir()
     legacy_dir = package / "requirements" / "2026-07-22-issue-52"
@@ -120,7 +183,7 @@ def test_migrate_moves_legacy_prd_and_injects_marker(prd_mod, tmp_path):
 
     prd_mod.migrate(package_root=package, session_id="2026-07-22-issue-52")
 
-    root_prd = package / "prd.md"
+    root_prd = package / "pages" / "docs" / "prd.html"
     assert root_prd.exists()
     assert not legacy_prd.exists()
     content = root_prd.read_text(encoding="utf-8")
@@ -137,7 +200,7 @@ def test_migrate_preserves_existing_marker(prd_mod, tmp_path):
 
     prd_mod.migrate(package_root=package, session_id="2026-07-22-issue-52")
 
-    content = (package / "prd.md").read_text(encoding="utf-8")
+    content = (package / "pages" / "docs" / "prd.html").read_text(encoding="utf-8")
     assert "<!-- version: v1.2 -->" in content
 
 
@@ -154,7 +217,9 @@ def test_migrate_fails_when_root_prd_already_exists(prd_mod, tmp_path):
     legacy_dir = package / "requirements" / "2026-07-22-issue-52"
     legacy_dir.mkdir(parents=True)
     (legacy_dir / "prd.md").write_text("# PRD\n", encoding="utf-8")
-    (package / "prd.md").write_text("# Existing\n", encoding="utf-8")
+    existing = package / "pages" / "docs" / "prd.html"
+    existing.parent.mkdir(parents=True, exist_ok=True)
+    existing.write_text("# Existing\n", encoding="utf-8")
 
     with pytest.raises(RuntimeError, match="already exists"):
         prd_mod.migrate(package_root=package, session_id="2026-07-22-issue-52")
@@ -165,10 +230,12 @@ def test_migrate_fails_when_root_prd_already_exists(prd_mod, tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_cli_freeze_invokes_function(prd_mod, tmp_path, sample_prd, monkeypatch):
+def test_cli_freeze_invokes_function(prd_mod, tmp_path, sample_prd_html, monkeypatch):
     package = tmp_path / "issue-52"
     package.mkdir()
-    (package / "prd.md").write_text(sample_prd, encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text(sample_prd_html, encoding="utf-8")
     monkeypatch.setattr(prd_mod, "PROJECT_ROOT", tmp_path)
     monkeypatch.setattr(
         prd_mod, "resolve_state_path", lambda _path=None, _root=None: package / "workflow-stage.yaml"
@@ -178,13 +245,15 @@ def test_cli_freeze_invokes_function(prd_mod, tmp_path, sample_prd, monkeypatch)
     with pytest.raises(SystemExit) as exc_info:
         prd_mod.main()
     assert exc_info.value.code == 0
-    assert (package / "prd-v1.0.md").exists()
+    assert (package / "pages" / "docs" / "snapshots" / "prd-v1.0.html").exists()
 
 
-def test_cli_current_version_prints_version(tmp_path, sample_prd, monkeypatch):
+def test_cli_current_version_prints_version(tmp_path, sample_prd_html, monkeypatch):
     package = tmp_path / "issue-52"
     package.mkdir()
-    (package / "prd.md").write_text(sample_prd, encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text(sample_prd_html, encoding="utf-8")
     monkeypatch.setenv("LINCOLN_PROCESS_SLUG", "issue-52")
 
     result = subprocess.run(
@@ -212,7 +281,7 @@ def test_cli_migrate_invokes_function(prd_mod, tmp_path, monkeypatch):
         text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert (package / "prd.md").exists()
+    assert (package / "pages" / "docs" / "prd.html").exists()
 
 
 def test_freeze_requires_package_root(prd_mod):
@@ -223,7 +292,7 @@ def test_freeze_requires_package_root(prd_mod):
 def test_freeze_fails_when_prd_missing(prd_mod, tmp_path):
     package = tmp_path / "issue-52"
     package.mkdir()
-    with pytest.raises(RuntimeError, match="prd.md not found"):
+    with pytest.raises(RuntimeError, match="PRD not found"):
         prd_mod.freeze(package_root=package)
 
 
@@ -235,7 +304,7 @@ def test_current_version_requires_package_root(prd_mod):
 def test_current_version_fails_when_prd_missing(prd_mod, tmp_path):
     package = tmp_path / "issue-52"
     package.mkdir()
-    with pytest.raises(RuntimeError, match="prd.md not found"):
+    with pytest.raises(RuntimeError, match="PRD not found"):
         prd_mod.current_version(package_root=package)
 
 
@@ -286,10 +355,12 @@ def test_package_root_state_load_failure_errors(prd_mod, tmp_path, monkeypatch):
         prd_mod._package_root(args)
 
 
-def test_cli_uses_env_slug_fallback_in_cwd(tmp_path, sample_prd):
+def test_cli_uses_env_slug_fallback_in_cwd(tmp_path, sample_prd_html):
     package = tmp_path / "issue-52"
     package.mkdir()
-    (package / "prd.md").write_text(sample_prd, encoding="utf-8")
+    prd_path = package / "pages" / "docs" / "prd.html"
+    prd_path.parent.mkdir(parents=True, exist_ok=True)
+    prd_path.write_text(sample_prd_html, encoding="utf-8")
     result = subprocess.run(
         [sys.executable, str(PRD_SCRIPT), "freeze"],
         cwd=str(tmp_path),
@@ -298,7 +369,7 @@ def test_cli_uses_env_slug_fallback_in_cwd(tmp_path, sample_prd):
         text=True,
     )
     assert result.returncode == 0, result.stderr
-    assert (package / "prd-v1.0.md").exists()
+    assert (package / "pages" / "docs" / "snapshots" / "prd-v1.0.html").exists()
 
 
 def test_cli_env_slug_fallback_returns_cwd_candidate_on_error(tmp_path):
@@ -313,7 +384,7 @@ def test_cli_env_slug_fallback_returns_cwd_candidate_on_error(tmp_path):
     assert "ERROR:" in result.stderr
 
 
-def test_cli_freeze_failure_exits_one(tmp_path, sample_prd, monkeypatch):
+def test_cli_freeze_failure_exits_one(tmp_path, sample_prd_html, monkeypatch):
     monkeypatch.setenv("LINCOLN_PROCESS_SLUG", "issue-52")
     result = subprocess.run(
         [sys.executable, str(PRD_SCRIPT), "freeze"],

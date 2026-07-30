@@ -12,9 +12,10 @@ inputs:
     description: 产品设计 ID
     required: true
 outputs:
-  - "{process_slug}/designs/{design_id}/fields.md"
-  - "{process_slug}/designs/{design_id}/ui-spec.md"
+  - "{process_slug}/pages/docs/fields.html"
+  - "{process_slug}/pages/docs/ui-spec.html"
   - "{process_slug}/designs/{design_id}/prototype.pen"
+  - "{process_slug}/pages/prototype/**/*.html"
 required_tools:
   - Read
   - Bash

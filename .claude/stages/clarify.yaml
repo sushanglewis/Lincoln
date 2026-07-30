@@ -23,20 +23,20 @@ skills:
   - openspec:explore
 artifacts:
   required:
-  - '{process_slug}/requirements/{session_id}/requirements.md'
-  - '{process_slug}/requirements/{session_id}/user-stories.md'
-  - '{process_slug}/prd.md'
+  - '{process_slug}/pages/docs/requirements.html'
+  - '{process_slug}/pages/docs/user-stories.html'
+  - '{process_slug}/pages/docs/prd.html'
   optional:
-  - '{process_slug}/prd-v*.md'
+  - '{process_slug}/pages/docs/snapshots/prd-v*.html'
 context:
-  goal: 基于访谈产物（逐字稿、摘要、初始洞察）与人类 PM 进行多轮澄清，形成统一、可追溯、已确认的需求文档，并将 PRD 置于 issue-package 根级（{process_slug}/prd.md）作为串联后续所有阶段的主线文档与单一事实来源。
+  goal: 基于访谈产物（逐字稿、摘要、初始洞察）与人类 PM 进行多轮澄清，形成统一、可追溯、已确认的需求文档，并将 PRD 置于 HTML 门户（{process_slug}/pages/docs/prd.html）作为串联后续所有阶段的主线文档与单一事实来源。人类读者通过 {process_slug}/index.html 浏览所有产物。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
     - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
 
-    - PRD 必须位于 {process_slug}/prd.md，并携带 <!-- version: vX.Y --> 版本标记；确认后通过 scripts/lincoln_prd.py freeze 生成不可变的 prd-vX.Y.md 快照。
+    - PRD 必须位于 {process_slug}/pages/docs/prd.html，并携带 <!-- version: vX.Y --> 版本标记；确认后通过 scripts/lincoln_prd.py freeze 生成不可变的 pages/docs/snapshots/prd-vX.Y.html 快照。
 
     - PRD 是产研流程的主线文档，需在后续阶段持续维护「相关产物链接」章节，指向设计、原型、OpenSpec、实现等产物。
 
@@ -52,8 +52,8 @@ gates:
   - check: artifacts_present
   - check: prd_has_required_sections
     args:
-    - '{process_slug}/prd.md'
+    - '{process_slug}/pages/docs/prd.html'
   - check: human_approved
   - check: prd_snapshot_present
     args:
-    - '{process_slug}/prd.md'
+    - '{process_slug}/pages/docs/prd.html'

@@ -17,7 +17,7 @@ workflow:
       human_gate: true
       action: clarify-requirements
       artifacts:
-        - "{process_slug}/requirements/{session_id}/requirements.md"
+        - "{process_slug}/pages/docs/requirements.html"
       exit_checks:
         - check: requirements_has_background_problem_solution_acceptance
         - check: human_approved
@@ -28,7 +28,7 @@ workflow:
       human_gate: true
       action: draft-product-design
       artifacts:
-        - "{process_slug}/designs/{design_id}/design-review.md"
+        - "{process_slug}/pages/docs/design-review.html"
       exit_checks:
         - check: design_docs_complete
         - check: design_docs_human_approved
@@ -38,7 +38,7 @@ workflow:
       description: 产出 TDD 研发计划（验收映射、测试场景、任务切片）
       action: plan-tdd-development
       artifacts:
-        - "{process_slug}/designs/{design_id}/tdd-plan.md"
+        - "{process_slug}/pages/docs/tdd-plan.html"
       exit_checks:
         - check: tdd_plan_complete
 

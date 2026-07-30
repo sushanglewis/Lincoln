@@ -12,12 +12,16 @@ inputs:
     description: 产品设计 ID，如 checkout-redesign
     required: true
 outputs:
-  - "{process_slug}/designs/{design_id}/design-review.md"
-  - "{process_slug}/designs/{design_id}/scenarios.md"
-  - "{process_slug}/designs/{design_id}/feature-catalog.md"
-  - "{process_slug}/designs/{design_id}/data-model.md"
-  - "{process_slug}/designs/{design_id}/flows.md"
-  - "{process_slug}/designs/{design_id}/feasibility.md"
+  - "{process_slug}/pages/docs/design-review.html"
+  - "{process_slug}/pages/docs/scenarios.html"
+  - "{process_slug}/pages/docs/feature-catalog.html"
+  - "{process_slug}/pages/docs/data-model.html"
+  - "{process_slug}/pages/docs/flows.html"
+  - "{process_slug}/pages/docs/feasibility.html"
+  - "{process_slug}/pages/docs/page-map.html"
+  - "{process_slug}/pages/docs/version-log.html"
+  - "{process_slug}/pages/docs/api-list.html"
+  - "{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml"
 required_tools:
   - Read
   - Bash

@@ -23,14 +23,14 @@ from scripts.lincoln_paths import STATE_FILENAME
 
 DOCUMENTS_FILENAME = "documents.yaml"
 
-# Matches master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.md
-HANDOFF_DOC_PATTERN = re.compile(r"handoffs/pm-to-ux/master-handoff-pm-to-ux-v(\d+)\.(\d+)\.md$")
+# Matches master-handoff-pm-to-ux-v{MAJOR}.{MINOR}.html under pages/docs/
+HANDOFF_DOC_PATTERN = re.compile(r"pages/docs/master-handoff-pm-to-ux-v(\d+)\.(\d+)\.html$")
 HANDOFF_YAML_PATTERN = re.compile(r"handoffs/pm-to-ux/pm-to-ux\.handoff\.yaml$")
 
-# Matches prd-v{MAJOR}.{MINOR}.md at the issue-package root
-PRD_SNAPSHOT_PATTERN = re.compile(r"^prd-v(\d+)\.(\d+)\.md$")
-# Matches legacy or root PRD markdown files whose version lives in a marker
-PRD_PATH_PATTERN = re.compile(r"^(prd\.md|requirements/.*/prd\.md)$")
+# Matches prd-v{MAJOR}.{MINOR}.html under pages/docs/snapshots/
+PRD_SNAPSHOT_PATTERN = re.compile(r"pages/docs/snapshots/prd-v(\d+)\.(\d+)\.html$")
+# Matches current HTML PRD or legacy Markdown PRD paths
+PRD_PATH_PATTERN = re.compile(r"^(pages/docs/prd\.html|prd\.md|requirements/.*/prd\.md)$")
 
 
 def extract_markdown_version(path: Path) -> str | None:

@@ -12,45 +12,46 @@ TEMPLATE_ROOT = ROOT / ".claude" / "templates" / "issue-package"
 SCHEMA_PATH = ROOT / ".claude" / "schemas" / "workflow-stage.schema.json"
 
 
-REQUIRED_DIRS = [
-    "designs",
-    "docs",
-    "docs/research",
-    "interviews",
-    "openspec",
-    "openspec/changes",
-    "openspec/specs",
-    "recordings",
-    "requirements",
+REQUIRED_PORTAL_TEMPLATES = [
+    "index.html.tpl",
+    "page-doc.html.tpl",
+    "page-prototype.html.tpl",
 ]
 
-REQUIRED_TEMPLATES = {
-    "designs": ["design-review.md.tpl", "scenarios.md.tpl", "feature-catalog.md.tpl", "data-model.md.tpl", "flows.md.tpl", "feasibility.md.tpl", "ui-spec.md.tpl"],
-    "docs": ["research-note.md.tpl", "decision-record.md.tpl"],
-    "interviews": ["metadata.json.tpl", "transcript.md.tpl", "summary.md.tpl", "raw-insights.md.tpl"],
-    "openspec": ["proposal.md.tpl", "design.md.tpl", "tasks.md.tpl"],
-    "requirements": ["requirements.md.tpl", "user-stories.md.tpl"],
-}
+REQUIRED_ASSETS = [
+    "assets/style.css",
+    "assets/app.js",
+]
 
-ROOT_TEMPLATES = ["prd.md.tpl"]
+OBSOLETE_MD_TEMPLATES = [
+    "prd.md.tpl",
+    "requirements/requirements.md.tpl",
+    "requirements/user-stories.md.tpl",
+    "designs/design-review.md.tpl",
+    "designs/scenarios.md.tpl",
+    "designs/feature-catalog.md.tpl",
+    "designs/data-model.md.tpl",
+    "designs/flows.md.tpl",
+    "designs/feasibility.md.tpl",
+    "designs/ui-spec.md.tpl",
+    "designs/page-map.md.tpl",
+    "docs/decision-record.md.tpl",
+    "docs/research-note.md.tpl",
+]
 
 
 def test_issue_package_template_has_state_file():
     assert (TEMPLATE_ROOT / "workflow-stage.yaml").exists()
 
 
-def test_issue_package_template_has_required_directories():
-    for rel in REQUIRED_DIRS:
-        assert (TEMPLATE_ROOT / rel).is_dir(), f"Missing directory: {rel}"
+def test_issue_package_template_has_portal_templates():
+    for tpl in REQUIRED_PORTAL_TEMPLATES:
+        assert (TEMPLATE_ROOT / tpl).exists(), f"Missing portal template: {tpl}"
 
 
-def test_issue_package_template_has_multiple_templates_per_directory():
-    for directory, templates in REQUIRED_TEMPLATES.items():
-        dir_path = TEMPLATE_ROOT / directory
-        found = [p.name for p in dir_path.glob("*.tpl")]
-        assert len(found) > 1, f"Expected >1 template in {directory}, found {found}"
-        for tpl in templates:
-            assert (dir_path / tpl).exists(), f"Missing template: {directory}/{tpl}"
+def test_issue_package_template_has_shared_assets():
+    for asset in REQUIRED_ASSETS:
+        assert (TEMPLATE_ROOT / asset).exists(), f"Missing shared asset: {asset}"
 
 
 def test_issue_package_workflow_stage_has_issue_number_and_guidance():
@@ -61,9 +62,9 @@ def test_issue_package_workflow_stage_has_issue_number_and_guidance():
     assert "{issue_number}" in state["artifact_guidance"]
 
 
-def test_issue_package_template_has_root_templates():
-    for tpl in ROOT_TEMPLATES:
-        assert (TEMPLATE_ROOT / tpl).exists(), f"Missing root template: {tpl}"
+def test_issue_package_template_does_not_include_obsolete_markdown_templates():
+    for rel in OBSOLETE_MD_TEMPLATES:
+        assert not (TEMPLATE_ROOT / rel).exists(), f"Obsolete Markdown template should be removed: {rel}"
 
 
 def test_schema_allows_issue_number_in_current_run():

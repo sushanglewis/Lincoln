@@ -4,7 +4,7 @@ You are executing the Lincoln workflow step `clarify`: turn interview artifacts 
 
 ## Goal
 
-Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requirements.md` and the root-level `{process_slug}/prd.md` that serves as the single source of truth and main thread for this issue.
+Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and the root-level `{process_slug}/pages/docs/prd.html` that serves as the single source of truth and main thread for this issue.
 
 ## Input
 
@@ -20,8 +20,7 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
 ## Steps
 
 1. Read `{process_slug}/interviews/<session-id>/transcript.md`, `summary.md`, and `raw-insights.md`.
-2. Create `{process_slug}/requirements/<session-id>/` if it does not exist.
-3. Draft an initial `requirements.md` using the template:
+2. Draft an initial `{process_slug}/pages/docs/requirements.html` using `.claude/templates/issue-package/page-doc.html.tpl`. Embed the Markdown source in the `<script type="text/markdown" id="docSource">` block and include a `<!-- version: v1.0 -->` marker. Required sections:
    - `背景`
    - `问题`
    - `用户`
@@ -29,23 +28,25 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
    - `验收标准`
    - `非目标`
    - `开放问题`
-4. Identify 1-3 ambiguities or missing details, and tag each with its Johari quadrant (认知象限): 知道自己知道 → 复述确认题; 知道自己不知道 → 直接回答 + coach; 不知道自己知道 → 展示已有资产; 不知道自己不知道 → 探查题.
-5. Ask the human PM these questions one batch at a time in the terminal, using the quadrant-appropriate style.
-6. Update `requirements.md` based on the answers.
-7. Repeat until the PM confirms the requirements are clear.
-8. Also generate `user-stories.md` from the finalized requirements.
-9. Generate the root-level PRD at `{process_slug}/prd.md` using `.claude/templates/issue-package/prd.md.tpl`. It must include:
-   - `<!-- version: v1.0 -->` marker at the top.
+3. Identify 1-3 ambiguities or missing details, and tag each with its Johari quadrant (认知象限): 知道自己知道 → 复述确认题; 知道自己不知道 → 直接回答 + coach; 不知道自己知道 → 展示已有资产; 不知道自己不知道 → 探查题.
+4. Ask the human PM these questions one batch at a time in the terminal, using the quadrant-appropriate style.
+5. Update `requirements.html` based on the answers (always rewrite the full file; do not mutate in-place).
+6. Repeat until the PM confirms the requirements are clear.
+7. Also generate `{process_slug}/pages/docs/user-stories.html` from the finalized requirements using the same doc-page template.
+8. Generate the root-level PRD at `{process_slug}/pages/docs/prd.html` using `.claude/templates/issue-package/page-doc.html.tpl`. It must include:
+   - `<!-- version: v1.0 -->` marker inside the `docSource` block.
+   - Meta tags: `doc-title`, `nav-group="Docs"`, `doc-version="v1.0"`, and a stable `doc-uid`.
    - All required sections: 1.需求背景, 2.用户故事, 3.功能拆解, 4.业务流程图, 5.验收标准, 6.业务规则, 7.非功能需求, 8.关联系统/接口, 9.相关产物链接, 10.风险与开放问题.
-   - A links table in section 9 pointing to interviews, requirements, and downstream design/prototype/OpenSpec artifacts.
-10. When the PM confirms, add an approval marker to `requirements.md`: `<!-- status: approved -->`.
-11. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/prd-v1.0.md`.
+   - A links table in section 9 pointing to interviews, requirements.html, user-stories.html, and downstream design/prototype/OpenSpec artifacts.
+9. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
+10. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
+11. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
 
 ## Human Interaction Rules
 
 - Ask at most 3 questions per turn.
 - After each answer, update the document and show the changed sections.
-- If the PM edits `requirements.md` or `prd.md` directly and runs `workflow-continue`, re-read the file and continue from there.
+- If the PM edits `requirements.html` or `prd.html` directly and runs `workflow-continue`, re-read the file and continue from there.
 - Do not proceed to the next step until the PM explicitly confirms (e.g., says "confirm" or "确认").
 
 ## 认知象限确认（Johari）
@@ -66,10 +67,10 @@ Produce a clear, agreed-upon `{process_slug}/requirements/<session-id>/requireme
 
 ## Output Artifacts
 
-- `{process_slug}/requirements/<session-id>/requirements.md`
-- `{process_slug}/requirements/<session-id>/user-stories.md`
-- `{process_slug}/prd.md` (root-level PRD, versioned)
-- `{process_slug}/prd-v1.0.md` (immutable snapshot after approval)
+- `{process_slug}/pages/docs/requirements.html`
+- `{process_slug}/pages/docs/user-stories.html`
+- `{process_slug}/pages/docs/prd.html` (root-level PRD, versioned)
+- `{process_slug}/pages/docs/snapshots/prd-v1.0.html` (immutable snapshot after approval)
 
 ## Traceability
 

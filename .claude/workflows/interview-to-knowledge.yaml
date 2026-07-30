@@ -45,18 +45,18 @@ workflow:
       action: clarify-requirements
       human_gate: true
       artifacts:
-        - "{process_slug}/requirements/{session_id}/requirements.md"
-        - "{process_slug}/requirements/{session_id}/user-stories.md"
-        - "{process_slug}/prd.md"
+        - "{process_slug}/pages/docs/requirements.html"
+        - "{process_slug}/pages/docs/user-stories.html"
+        - "{process_slug}/pages/docs/prd.html"
       optional_artifacts:
-        - "{process_slug}/prd-v*.md"
+        - "{process_slug}/pages/docs/snapshots/prd-v*.html"
       exit_checks:
         - check: prd_has_required_sections
-          args: ["{process_slug}/prd.md"]
+          args: ["{process_slug}/pages/docs/prd.html"]
         - check: human_approved
           args: ["{session_id}"]
         - check: prd_snapshot_present
-          args: ["{process_slug}/prd.md"]
+          args: ["{process_slug}/pages/docs/prd.html"]
 
     - id: product-design-docs
       name: 产品设计文档
@@ -67,14 +67,16 @@ workflow:
       action: draft-product-design
       human_gate: true
       artifacts:
-        - "{process_slug}/designs/{design_id}/design-review.md"
-        - "{process_slug}/designs/{design_id}/scenarios.md"
-        - "{process_slug}/designs/{design_id}/feature-catalog.md"
-        - "{process_slug}/designs/{design_id}/data-model.md"
-        - "{process_slug}/designs/{design_id}/flows.md"
-        - "{process_slug}/designs/{design_id}/feasibility.md"
-        - "{process_slug}/designs/{design_id}/page-map.md"
-        - "{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md"
+        - "{process_slug}/pages/docs/design-review.html"
+        - "{process_slug}/pages/docs/scenarios.html"
+        - "{process_slug}/pages/docs/feature-catalog.html"
+        - "{process_slug}/pages/docs/data-model.html"
+        - "{process_slug}/pages/docs/flows.html"
+        - "{process_slug}/pages/docs/feasibility.html"
+        - "{process_slug}/pages/docs/page-map.html"
+        - "{process_slug}/pages/docs/version-log.html"
+        - "{process_slug}/pages/docs/api-list.html"
+        - "{process_slug}/pages/docs/handoff-pm-to-ux-v*.html"
         - "{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml"
       exit_checks:
         - check: design_docs_complete
@@ -91,9 +93,10 @@ workflow:
       action: build-product-prototype
       human_gate: true
       artifacts:
-        - "{process_slug}/designs/{design_id}/ui-spec.md"
-        - "{process_slug}/designs/{design_id}/fields.md"
+        - "{process_slug}/pages/docs/ui-spec.html"
+        - "{process_slug}/pages/docs/fields.html"
       optional_artifacts:
+        - "{process_slug}/pages/prototype/**/*.html"
         - "{process_slug}/designs/{design_id}/prototype.pen"
       exit_checks:
         - check: prototype_artifact_complete
@@ -107,7 +110,7 @@ workflow:
           args: ["{design_id}"]
       action: plan-tdd-development
       artifacts:
-        - "{process_slug}/designs/{design_id}/tdd-plan.md"
+        - "{process_slug}/pages/docs/tdd-plan.html"
       exit_checks:
         - check: tdd_plan_complete
           args: ["{design_id}"]
@@ -120,7 +123,7 @@ workflow:
           args: ["{design_id}"]
       action: propose-with-openspec
       cli_command: "openspec propose {change_name}"
-      input_file: "{process_slug}/designs/{design_id}/tdd-plan.md"
+      input_file: "{process_slug}/pages/docs/tdd-plan.html"
       artifacts:
         - "{process_slug}/openspec/changes/{change_name}/proposal.md"
         - "{process_slug}/openspec/changes/{change_name}/specs/"

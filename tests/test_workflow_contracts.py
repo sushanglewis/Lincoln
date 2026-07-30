@@ -51,7 +51,7 @@ def test_propose_step_requires_tdd_plan_ready(workflow):
 
 def test_propose_step_uses_tdd_plan_as_input_file(workflow):
     propose = next(s for s in workflow["workflow"]["steps"] if s["id"] == "propose")
-    assert propose.get("input_file") == "{process_slug}/designs/{design_id}/tdd-plan.md"
+    assert propose.get("input_file") == "{process_slug}/pages/docs/tdd-plan.html"
 
 
 def test_process_artifacts_are_scoped_to_process_slug(workflow):
@@ -80,7 +80,7 @@ def test_sync_knowledge_uses_root_knowledge(workflow):
 def test_clarify_artifacts_use_root_prd_path(workflow):
     clarify = next(s for s in workflow["workflow"]["steps"] if s["id"] == "clarify")
     artifacts = [a for a in clarify.get("artifacts", [])]
-    assert any(a == "{process_slug}/prd.md" for a in artifacts)
+    assert any(a == "{process_slug}/pages/docs/prd.html" for a in artifacts)
     assert not any("requirements/{session_id}/prd.md" in a for a in artifacts)
 
 

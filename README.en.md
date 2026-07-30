@@ -65,7 +65,7 @@ If you already have a local project, or just an idea you want to iterate on quic
      > Please use Lincoln's `design-spike` template to help me clarify this idea and produce a design review and prototype.
 5. If you later decide to adopt the team flow or need GitHub issue tracking, tell the Agent "start working on issue <N>" — it creates a new issue work package, and you hand the confirmed requirements/design artifacts from your solo path to it for filing into the new `issue-<number>/` directory.
 
-> Solo-path artifacts land in the work-package directory chosen automatically by the template (e.g. workspace name or repo name): codebase-knowledge artifacts go to `knowledge/`, while design, requirements, and research artifacts go to `<process_slug>/designs/`, `<process_slug>/requirements/`, and `<process_slug>/docs/research/` respectively.
+> Solo-path artifacts land in the work-package directory chosen automatically by the template (e.g. workspace name or repo name): codebase-knowledge artifacts go to `knowledge/`, while design, requirements, and research artifacts become HTML pages under `<process_slug>/pages/docs/`, and prototypes become interactive HTML pages under `<process_slug>/pages/prototype/`.
 
 ### Path B: Team issue path (default)
 
@@ -73,7 +73,7 @@ On GitHub, click **Use this template** to create your project repo, then clone i
 
 #### Initialize an issue work package
 
-Every requirement maps to one GitHub issue and one Lincoln feature branch. Tell the Agent "start working on issue <N>" — it creates a branch from the issue number and generates the issue-specific work-package directory (initializing `workflow-stage.yaml` and the document index `documents.yaml`; the `.tpl` templates under `.claude/templates/issue-package/` stay read-only and are no longer copied into the package — agents consult them for format and author documents directly).
+Every requirement maps to one GitHub issue and one Lincoln feature branch. Tell the Agent "start working on issue <N>" — it creates a branch from the issue number and generates the issue-specific work-package directory (initializing `workflow-stage.yaml`, the HTML portal `index.html`, and shared assets; the `.tpl` templates under `.claude/templates/issue-package/` stay read-only and are no longer copied into the package — agents consult them for format and author HTML pages directly).
 
 You can also provide finer preferences, and the Agent translates them into the corresponding init parameters:
 
@@ -89,18 +89,22 @@ After running, the branch contains:
 
 ```
 issue-<N>/
-├── workflow-stage.yaml          # issue runtime state & handoff protocol
+├── index.html                   # human-facing portal: stage status, nav, and artifacts
+├── assets/                      # portal shared styles and runtime
+│   ├── style.css
+│   ├── app.js
+│   └── js/package-data.js       # nav data generated from workflow-stage.yaml
+├── workflow-stage.yaml          # issue runtime state & handoff protocol (machine state)
 ├── documents.yaml               # document index: per-stage artifacts & human-approval status (auto-generated)
 ├── recordings/                  # raw recordings (gitignored)
 ├── interviews/<session-id>/     # transcripts, summaries, raw insights
-├── requirements/<session-id>/   # requirements docs, user stories, PRD
-├── designs/<design-id>/         # design review, scenarios, data model, flows, prototype, TDD plan
+├── pages/docs/                  # interactive HTML pages for requirements, PRD, design, TDD plan
+├── pages/prototype/             # interactive prototype HTML pages
 ├── openspec/changes/            # OpenSpec change proposals
-├── docs/research/               # OSS research notes, decision records
 └── handoffs/                    # stage handoff documents
 ```
 
-`issue-<N>/workflow-stage.yaml` is the stage handoff protocol shared between humans and Agents; `.claude/templates/issue-package/workflow-stage.yaml` is only the template used to generate it. `issue-<N>/documents.yaml` is the package document index, refreshed automatically on every state save, recording each artifact's stage, gate, and human-confirmation status — an Agent reads it first to learn which documents already exist in the package.
+`issue-<N>/workflow-stage.yaml` is the stage handoff protocol shared between humans and Agents; `.claude/templates/issue-package/workflow-stage.yaml` is only the template used to generate it. `issue-<N>/index.html` is the human entry point for viewing package status and documents; on every state save, `lincoln_index.py` refreshes `assets/js/package-data.js`, driving the left nav, iframe canvas, and right info panel. `issue-<N>/documents.yaml` remains the machine-readable document index, refreshed automatically on every state save and recording each artifact's stage, gate, and human-confirmation status.
 
 **Cross-member, cross-Agent collaboration**: branch names must strictly follow the `issue-<number>` convention. When any member or Agent receives a handoff from an upstream node, the branch name alone locates the issue and its work package (`{process_slug}/workflow-stage.yaml`), keeping issue, branch, and PR in end-to-end one-to-one correspondence from requirements to final acceptance. Tell the Agent "list all active Lincoln branches" to view the stage status and waiting-on of all active issue branches.
 
@@ -134,8 +138,8 @@ The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying
 ## What's New (v1.2.0)
 
 - **Issue-driven work packages**: `scripts/init-lincoln-branch.sh --issue-number ...` creates an issue-specific branch and `{process_slug}/` work package, so process documents no longer pollute `main`.
-- **Templated work packages**: `.claude/templates/issue-package/` provides a unified directory structure and read-only `.tpl` reference templates (no longer copied into the package at init; agents consult them on demand).
-- **Package document index**: `{process_slug}/documents.yaml` is refreshed automatically by `scripts/lincoln_documents.py` on every state save, recording per-stage artifacts and their gate / human-confirmation status.
+- **Templated HTML-portal work packages**: `.claude/templates/issue-package/` provides an HTML portal template and read-only `.tpl` reference templates (`index.html.tpl`, `page-doc.html.tpl`, `page-prototype.html.tpl`, plus shared `assets/`). `index.html` and `assets/` are copied into the package at init; agents consult the `.tpl` files on demand to generate HTML pages.
+- **Package document index**: `{process_slug}/documents.yaml` is refreshed automatically by `lincoln_documents.py` on every state save, recording per-stage artifacts and their gate / human-confirmation status; `{process_slug}/assets/js/package-data.js` is generated by `lincoln_index.py` to power the human portal.
 - **Main merge-hygiene check**: `scripts/check-main-merge-hygiene.py` (the CI gate for PRs → main) rejects every file under any directory containing `workflow-stage.yaml`, preventing issue work packages from being merged into main by mistake.
 - **Instantiated state files**: runtime state lives in `{process_slug}/workflow-stage.yaml`, not `.claude/workflow-stage.yaml`.
 - **Unified workflow entry `lc-wf-*`**: [`.claude/workflows/README.md`](.claude/workflows/README.md) maintains all SOP templates; `lc-wf-*` commands (backed by `scripts/lincoln_workflow.py`) unify how solo / team `execution_mode` workflows start.
