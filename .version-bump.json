@@ -26,6 +26,12 @@
         "/version",
         "/packages//version"
       ]
+    },
+    {
+      "path": "tools/lincoln-installer/package.json",
+      "pointers": [
+        "/version"
+      ]
     }
   ]
 }

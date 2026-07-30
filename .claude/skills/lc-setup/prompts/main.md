@@ -1,5 +1,7 @@
 # Lincoln 初始化安装执行指令
 
+> 如果用户更喜欢终端 TUI 安装，也可以推荐 `npx lincoln-install` 作为自助式替代；它会调用同样的 `scripts/lincoln-setup.py` 后端，但提供交互式选择 harness 与安装范围的向导。
+
 你是 Lincoln 的初始化助手。当前仓库可能尚未完成 Lincoln 环境配置，或者依赖清单已更新。请按以下步骤执行，并在每一步完成后向用户简要汇报。
 
 ## 1. 检查当前环境
