@@ -133,6 +133,30 @@
         }
     }
 
+    function selectByPath(path, nav, frame, panel, pages) {
+        var link = null;
+        var links = nav.querySelectorAll('.pnav-link');
+        for (var i = 0; i < links.length; i++) {
+            if (links[i].getAttribute('data-path') === path) link = links[i];
+        }
+        if (link) {
+            link.click();
+            return;
+        }
+        // Path not in registry: load iframe directly without updating the panel.
+        if (frame) frame.src = path;
+    }
+
+    function bindPrototypeLinks(nav, frame, panel, pages) {
+        window.addEventListener('message', function (e) {
+            if (e.source !== frame.contentWindow) return;
+            var data = e.data || {};
+            if (data.type === 'lincoln-navigate' && data.path) {
+                selectByPath(data.path, nav, frame, panel, pages);
+            }
+        });
+    }
+
     function init() {
         var packageData = window.LINC_PACKAGE || {};
         var nav = document.getElementById('pnav');
@@ -140,6 +164,7 @@
         var panel = document.getElementById('pannInner');
         if (nav) renderNav(nav, packageData);
         if (frame && panel) bindPortal(nav, frame, panel, packageData);
+        if (nav && frame) bindPrototypeLinks(nav, frame, panel, packageData.nav || []);
         initPanelToggle();
     }
 

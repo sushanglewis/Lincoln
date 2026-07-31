@@ -233,8 +233,11 @@ PY
 # recordings/, and handoffs/pm-to-ux/.
 for dir in \
     "$PROCESS_ROOT/pages/docs/snapshots" \
-    "$PROCESS_ROOT/pages/prototype/web" \
-    "$PROCESS_ROOT/pages/prototype/mobile" \
+    "$PROCESS_ROOT/pages/prototype/main" \
+    "$PROCESS_ROOT/pages/prototype/onboarding" \
+    "$PROCESS_ROOT/pages/prototype/settings" \
+    "$PROCESS_ROOT/pages/prototype/org" \
+    "$PROCESS_ROOT/pages/prototype/tray" \
     "$PROCESS_ROOT/pages/prototype/overlays" \
     "$PROCESS_ROOT/handoffs" \
     "$PROCESS_ROOT/handoffs/pm-to-ux" \

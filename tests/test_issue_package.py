@@ -23,6 +23,20 @@ REQUIRED_ASSETS = [
     "assets/app.js",
 ]
 
+REQUIRED_PROTOTYPE_ASSETS = [
+    "assets/prototype.css",
+    "assets/prototype.js",
+]
+
+REQUIRED_PROTOTYPE_EXAMPLES = [
+    "prototypes/main/page.html.tpl",
+    "prototypes/onboarding/page.html.tpl",
+    "prototypes/settings/page.html.tpl",
+    "prototypes/overlays/page.html.tpl",
+    "prototypes/tray/page.html.tpl",
+    "prototypes/org/page.html.tpl",
+]
+
 OBSOLETE_MD_TEMPLATES = [
     "prd.md.tpl",
     "requirements/requirements.md.tpl",
@@ -52,6 +66,43 @@ def test_issue_package_template_has_portal_templates():
 def test_issue_package_template_has_shared_assets():
     for asset in REQUIRED_ASSETS:
         assert (TEMPLATE_ROOT / asset).exists(), f"Missing shared asset: {asset}"
+
+
+def test_issue_package_template_has_prototype_assets():
+    for asset in REQUIRED_PROTOTYPE_ASSETS:
+        assert (TEMPLATE_ROOT / asset).exists(), f"Missing prototype asset: {asset}"
+
+
+def test_issue_package_template_has_prototype_example_templates():
+    for tpl in REQUIRED_PROTOTYPE_EXAMPLES:
+        assert (TEMPLATE_ROOT / tpl).exists(), f"Missing prototype example template: {tpl}"
+
+
+def test_prototype_assets_do_not_contain_unrendered_placeholders():
+    """Shared CSS/JS are static assets, not templates, so they must not contain {PLACEHOLDER} variables."""
+    import re
+    placeholder = re.compile(r"\{[A-Z_][A-Z0-9_]*\}")
+    for asset in REQUIRED_PROTOTYPE_ASSETS:
+        text = (TEMPLATE_ROOT / asset).read_text(encoding="utf-8")
+        matches = placeholder.findall(text)
+        assert not matches, f"Static asset contains unrendered placeholders: {asset} {matches}"
+
+
+def test_page_prototype_template_uses_prototype_kit():
+    text = (TEMPLATE_ROOT / "page-prototype.html.tpl").read_text(encoding="utf-8")
+    assert "prototype.css" in text
+    assert "prototype.js" in text
+    assert 'name="prototype-base"' in text
+    assert "data-uid" in text
+
+
+def test_prototype_js_is_syntactically_valid():
+    js_path = TEMPLATE_ROOT / "assets" / "prototype.js"
+    node = subprocess.run(["which", "node"], capture_output=True, text=True)
+    if node.returncode != 0:
+        pytest.skip("node not available")
+    check = subprocess.run(["node", "--check", str(js_path)], capture_output=True, text=True)
+    assert check.returncode == 0, f"prototype.js syntax error: {check.stderr}"
 
 
 def test_issue_package_workflow_stage_has_issue_number_and_guidance():
