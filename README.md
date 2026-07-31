@@ -27,6 +27,28 @@ Lincoln 的 hooks 通常会在你第一次打开仓库时自动触发安装。�
 >
 > 安装任何全局工具或写入配置前，请先向我确认。
 
+### 终端安装向导（可选）
+
+如果你更喜欢在终端里以 TUI 方式完成初始化，可以直接运行 Lincoln 的独立安装器：
+
+```bash
+npx lincoln-install
+```
+
+它会引导你选择目标 agent harness（Claude Code、Cursor、Codex、OpenCode 等）、可选依赖和安装范围，最后调用当前仓库中的 `scripts/lincoln-setup.py` 完成配置。脚本化场景可使用 `--no-tui --format json`，CI 场景可使用 `--yes --dry-run`。
+
+> **注意**：`npx lincoln-install` 需要在 Lincoln 项目仓库根目录下运行，以便定位 `scripts/lincoln-setup.py`。若要在其他目录为指定项目安装，请使用 `--root <project-path>`。
+
+### 终端更新向导（可选）
+
+当 Lincoln 发布新版本后，你可以在项目根目录运行更新器，将框架文件全量同步到最新 release：
+
+```bash
+npx lincoln-update
+```
+
+它会读取当前仓库的 `.version-bump.json`，从 GitHub Releases 获取最新版本，下载 release 压缩包，并按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/`、`README.md`、`CLAUDE.md` 等框架文件，同时保留 `.context/`、`.github/openspec-config.yml`、`recordings/`、`issue-*` 等用户数据。更新前会先进行 dry-run 检查并提示确认；使用 `--dry-run` 可只查看变更，`--no-tui --format json` 适合脚本调用。
+
 如果你只需要走[轻量个人路径](#快速开始)，可以跳过 `gh`、`ffmpeg`、`tools/lincoln-record/` 构建和 `.github/openspec-config.yml` 配置，只保留 `python3`、Claude Code 环境与 Lincoln 自身 hooks。
 
 > **我从哪里开始？**
@@ -164,6 +186,7 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 
 - **HTML 中心工作包（issue #90）**：将 issue 工作包从 Markdown/YAML 为主的人读产物升级为 HTML 门户。`workflow-stage.yaml` 继续作为机器状态，`index.html` 成为人读入口；所有说明文档渲染为嵌入 Markdown 源码的 HTML 页面，原型渲染为可交互 HTML 页面；`scripts/lincoln_index.py` 生成 `assets/js/package-data.js` 驱动门户导航与状态面板。
 
+- **终端更新向导 `npx lincoln-update`**：新增 Lincoln 全量更新器，从 GitHub Releases 拉取最新 release，按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/` 等框架文件并保留 `.context/`、`.github/openspec-config.yml`、`recordings/` 等用户数据，支持 TUI 确认与 `--dry-run` / `--no-tui` 脚本调用。
 
 ---
 

@@ -1,6 +1,7 @@
 """Tests for scripts/lincoln-setup.py."""
 
 import importlib.util
+import json
 from pathlib import Path
 from unittest.mock import patch
 
@@ -455,3 +456,173 @@ def test_confirm_no_for_all_matches_single_n():
 def test_confirm_auto_yes_returns_true_without_input():
     setup_mod = _load_setup_module()
     assert setup_mod.confirm("Install X?", auto_yes=True) is True
+
+
+def test_check_format_json_reports_missing_dependencies(setup_mod, tmp_project, capsys):
+    dep_mod = setup_mod.lincoln_dependency_manager
+    missing_skill = {
+        "name": "superpowers",
+        "type": "skill",
+        "required": True,
+        "default_install": True,
+        "source": "https://github.com/obra/superpowers.git",
+        "ref": "main",
+        "install_command": "git clone ...",
+    }
+    with patch.object(dep_mod, "check_skills", return_value=[missing_skill]), patch.object(
+        dep_mod, "check_clis", return_value=[]
+    ), patch.object(dep_mod, "detect_platform", return_value="macos"):
+        exit_code = setup_mod.main(["check", "--root", str(tmp_project), "--format", "json"])
+        captured = capsys.readouterr()
+
+    assert exit_code == 1
+    result = json.loads(captured.out)
+    assert result["complete"] is False
+    assert len(result["required"]) == 1
+    assert result["required"][0]["name"] == "superpowers"
+
+
+def test_check_format_json_reports_complete(setup_mod, tmp_project, capsys):
+    dep_mod = setup_mod.lincoln_dependency_manager
+    with patch.object(dep_mod, "check_skills", return_value=[]), patch.object(
+        dep_mod, "check_clis", return_value=[]
+    ), patch.object(dep_mod, "detect_platform", return_value="macos"):
+        exit_code = setup_mod.main(["check", "--root", str(tmp_project), "--format", "json"])
+        captured = capsys.readouterr()
+
+    assert exit_code == 0
+    result = json.loads(captured.out)
+    assert result["complete"] is True
+    assert result["required"] == []
+    assert result["optional"] == []
+
+
+def test_generate_harness_format_json_reports_written_artifacts(setup_mod, tmp_project, tmp_path, capsys):
+    _write_harness_files(tmp_project)
+    home = tmp_path / "home"
+    code = setup_mod.main(
+        [
+            "generate-harness",
+            "--root",
+            str(tmp_project),
+            "--harness",
+            "opencode",
+            "--project-dir",
+            str(tmp_project),
+            "--home-dir",
+            str(home),
+            "--format",
+            "json",
+        ]
+    )
+    assert code == 0
+    captured = capsys.readouterr()
+    results = json.loads(captured.out)
+    opencode = next(r for r in results if r["harness"] == "opencode")
+    assert any("default.md" in path for path in opencode["written"])
+    assert any("lc-status.md" in path for path in opencode["written"])
+
+
+def test_install_skills_format_json_reports_results(setup_mod, tmp_project, capsys):
+    dep_mod = setup_mod.lincoln_dependency_manager
+    missing = {
+        "name": "superpowers",
+        "type": "skill",
+        "required": True,
+        "default_install": True,
+        "source": "https://github.com/obra/superpowers.git",
+        "ref": "main",
+        "install_command": "git clone ...",
+    }
+    with patch.object(dep_mod, "check_skills", return_value=[missing]), patch.object(
+        dep_mod,
+        "install_skill",
+        return_value={"name": "superpowers", "installed": True, "error": ""},
+    ):
+        exit_code = setup_mod.main(
+            ["install-skills", "--root", str(tmp_project), "--yes", "--format", "json"]
+        )
+        captured = capsys.readouterr()
+
+    assert exit_code == 0
+    result = json.loads(captured.out)
+    assert result["success"] is True
+    assert any(r["name"] == "superpowers" and r["status"] == "installed" for r in result["results"])
+
+
+def test_install_clis_format_json_reports_results(setup_mod, tmp_project, capsys):
+    dep_mod = setup_mod.lincoln_dependency_manager
+    missing = {
+        "name": "openspec",
+        "type": "cli",
+        "binary": "openspec",
+        "required": True,
+        "install_command": "npm install -g @fission-ai/openspec",
+    }
+    with patch.object(dep_mod, "check_clis", return_value=[missing]), patch.object(
+        dep_mod,
+        "install_cli",
+        return_value={"name": "openspec", "installed": True, "error": ""},
+    ):
+        exit_code = setup_mod.main(
+            ["install-clis", "--root", str(tmp_project), "--yes", "--format", "json"]
+        )
+        captured = capsys.readouterr()
+
+    assert exit_code == 0
+    result = json.loads(captured.out)
+    assert result["success"] is True
+    assert any(r["name"] == "openspec" and r["status"] == "installed" for r in result["results"])
+
+
+def test_init_repo_config_format_json_reports_update(setup_mod, tmp_project, capsys):
+    config_path = tmp_project / ".github" / "openspec-config.yml"
+    config_path.parent.mkdir(parents=True)
+    config_path.write_text(
+        "repository:\n  owner: your-org\n  name: your-repo\n  default_branch: main\n",
+        encoding="utf-8",
+    )
+    dep_mod = setup_mod.lincoln_dependency_manager
+    with patch.object(
+        dep_mod,
+        "init_openspec_config",
+        return_value={"updated": True, "skipped": False, "error": ""},
+    ):
+        exit_code = setup_mod.main(
+            [
+                "init-repo-config",
+                "--root",
+                str(tmp_project),
+                "--owner",
+                "my-org",
+                "--name",
+                "my-repo",
+                "--format",
+                "json",
+            ]
+        )
+        captured = capsys.readouterr()
+
+    assert exit_code == 0
+    result = json.loads(captured.out)
+    assert result["success"] is True
+    assert result["owner"] == "my-org"
+    assert result["name"] == "my-repo"
+
+
+def test_init_project_format_json_reports_completion(setup_mod, tmp_project, capsys):
+    script = tmp_project / "scripts" / "init-project.sh"
+    script.parent.mkdir(parents=True)
+    script.write_text("#!/bin/bash\nexit 0\n", encoding="utf-8")
+    with patch.object(setup_mod, "confirm", return_value=True):
+        exit_code = setup_mod.main(
+            ["init-project", "--root", str(tmp_project), "--format", "json"]
+        )
+        captured = capsys.readouterr()
+
+    assert exit_code == 0
+    result = json.loads(captured.out)
+    assert result["success"] is True
+    assert result["step"] == "init_project"
+    state_file = tmp_project / ".context" / "lc-setup-state.yaml"
+    assert state_file.exists()

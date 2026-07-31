@@ -19,6 +19,7 @@ Usage (called by Claude):
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import subprocess
 import sys
@@ -41,7 +42,6 @@ _SETUP_STATE_PATH = Path(".context") / "lc-setup-state.yaml"
 def confirm(prompt: str, auto_yes: bool = False) -> bool:
     """Ask the user for confirmation, or return True when auto_yes is set."""
     if auto_yes:
-        print(f"{prompt} [Y/n] (auto-yes)")
         return True
     try:
         answer = input(f"{prompt} [y/N] ").strip().lower()
@@ -122,7 +122,10 @@ def run_check(args: argparse.Namespace) -> int:
     try:
         manifest = lincoln_dependency_manager.load_dependencies(root)
     except FileNotFoundError as exc:
-        print(f"❌ {exc}")
+        if args.format == "json":
+            print(json.dumps({"complete": False, "required": [], "optional": [], "error": str(exc)}))
+        else:
+            print(f"❌ {exc}")
         return 1
 
     skills_dir = Path.home() / ".claude" / "skills"
@@ -131,6 +134,18 @@ def run_check(args: argparse.Namespace) -> int:
 
     required_missing = [m for m in missing_skills + missing_clis if m.get("required")]
     optional_missing = [m for m in missing_skills + missing_clis if not m.get("required")]
+
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "complete": not required_missing and not optional_missing,
+                    "required": required_missing,
+                    "optional": optional_missing,
+                }
+            )
+        )
+        return 1 if required_missing else 0
 
     if required_missing:
         print("❌ Required dependencies missing:")
@@ -180,41 +195,55 @@ def run_install_skills(args: argparse.Namespace) -> int:
     try:
         manifest = lincoln_dependency_manager.load_dependencies(root)
     except FileNotFoundError as exc:
-        print(f"❌ {exc}")
+        if args.format == "json":
+            print(json.dumps({"success": False, "results": [], "error": str(exc)}))
+        else:
+            print(f"❌ {exc}")
         return 1
 
     skills_dir = Path.home() / ".claude" / "skills"
-    _warn_legacy_skills(skills_dir)
+    if args.format != "json":
+        _warn_legacy_skills(skills_dir)
     missing = lincoln_dependency_manager.check_skills(manifest, root, skills_dir)
 
     if not missing:
-        print("✅ All skills already present.")
         _mark_step(root, "skills", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "results": []}))
+        else:
+            print("✅ All skills already present.")
         return 0
 
     auto_yes = args.yes or args.dry_run
     offline_cache = Path(args.offline_cache) if args.offline_cache else None
     all_ok = True
+    results = []
 
     for dep in missing:
         if not dep.get("default_install", dep.get("required", True)):
-            print(f"⏭️ Skipping optional {dep['name']} (not default_install).")
+            if args.format != "json":
+                print(f"⏭️ Skipping optional {dep['name']} (not default_install).")
+            results.append({"name": dep["name"], "status": "skipped_optional", "reason": "not default_install"})
             continue
 
         cmd = dep.get("install_command")
         if not cmd:
-            print(f"⚠️ No install command for {dep['name']}; skipping.")
+            if args.format != "json":
+                print(f"⚠️ No install command for {dep['name']}; skipping.")
             all_ok = False
+            results.append({"name": dep["name"], "status": "failed", "reason": "no install command"})
             continue
 
         prompt = f"Install {dep['name']} ({dep['type']})? Command: {cmd}"
         if not confirm(prompt, auto_yes=auto_yes):
-            print(f"⏭️ Skipped {dep['name']}.")
+            if args.format != "json":
+                print(f"⏭️ Skipped {dep['name']}.")
             all_ok = False
+            results.append({"name": dep["name"], "status": "declined"})
             continue
 
         if dep["type"] in ("skill", "plugin"):
-            result = lincoln_dependency_manager.install_skill(
+            install_result = lincoln_dependency_manager.install_skill(
                 dep["name"],
                 dep["source"],
                 dep.get("ref", ""),
@@ -223,21 +252,34 @@ def run_install_skills(args: argparse.Namespace) -> int:
                 dry_run=args.dry_run,
             )
         else:
-            result = lincoln_dependency_manager.install_cli(dep["name"], cmd, dry_run=args.dry_run)
+            install_result = lincoln_dependency_manager.install_cli(dep["name"], cmd, dry_run=args.dry_run)
 
-        if result.get("installed"):
-            print(f"✅ Installed {dep['name']}.")
-        elif result.get("skipped"):
-            print(f"⏭️ {dep['name']} already up to date.")
-        elif result.get("dry_run"):
-            print(f"🔍 Dry-run: would have installed {dep['name']}.")
+        if install_result.get("installed"):
+            if args.format != "json":
+                print(f"✅ Installed {dep['name']}.")
+            results.append({"name": dep["name"], "status": "installed"})
+        elif install_result.get("skipped"):
+            if args.format != "json":
+                print(f"⏭️ {dep['name']} already up to date.")
+            results.append({"name": dep["name"], "status": "skipped"})
+        elif install_result.get("dry_run"):
+            if args.format != "json":
+                print(f"🔍 Dry-run: would have installed {dep['name']}.")
+            results.append({"name": dep["name"], "status": "dry_run"})
         else:
-            print(f"❌ Failed to install {dep['name']}: {result.get('error', 'unknown error')}")
+            error = install_result.get("error", "unknown error")
+            if args.format != "json":
+                print(f"❌ Failed to install {dep['name']}: {error}")
             all_ok = False
+            results.append({"name": dep["name"], "status": "failed", "error": error})
 
     if all_ok:
         _mark_step(root, "skills", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "results": results}))
         return 0
+    if args.format == "json":
+        print(json.dumps({"success": False, "results": results}))
     return 1
 
 
@@ -249,44 +291,66 @@ def run_install_clis(args: argparse.Namespace) -> int:
     try:
         manifest = lincoln_dependency_manager.load_dependencies(root)
     except FileNotFoundError as exc:
-        print(f"❌ {exc}")
+        if args.format == "json":
+            print(json.dumps({"success": False, "results": [], "error": str(exc)}))
+        else:
+            print(f"❌ {exc}")
         return 1
 
     missing = lincoln_dependency_manager.check_clis(manifest, platform_name)
     if not missing:
-        print("✅ All CLI dependencies already present.")
         _mark_step(root, "clis", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "results": []}))
+        else:
+            print("✅ All CLI dependencies already present.")
         return 0
 
     auto_yes = args.yes
     all_ok = True
+    results = []
 
     for dep in missing:
         cmd = dep.get("install_command")
         if not cmd:
-            print(f"⚠️ No install command for {dep['name']} on this platform.")
-            print(f"   Manual install note: {dep.get('install_note', 'N/A')}")
+            if args.format != "json":
+                print(f"⚠️ No install command for {dep['name']} on this platform.")
+                print(f"   Manual install note: {dep.get('install_note', 'N/A')}")
             all_ok = False
+            results.append({"name": dep["name"], "status": "failed", "reason": "no install command"})
             continue
 
         prompt = f"Install {dep['name']} ({dep['binary']})? Command: {cmd}"
         if not confirm(prompt, auto_yes=auto_yes):
-            print(f"⏭️ Skipped {dep['name']}.")
+            if args.format != "json":
+                print(f"⏭️ Skipped {dep['name']}.")
             all_ok = False
+            results.append({"name": dep["name"], "status": "declined"})
             continue
 
-        result = lincoln_dependency_manager.install_cli(dep["name"], cmd, dry_run=args.dry_run)
-        if result.get("installed"):
-            print(f"✅ Installed {dep['name']}.")
-        elif result.get("dry_run"):
-            print(f"🔍 Dry-run: would have installed {dep['name']}.")
+        install_result = lincoln_dependency_manager.install_cli(dep["name"], cmd, dry_run=args.dry_run)
+        if install_result.get("installed"):
+            if args.format != "json":
+                print(f"✅ Installed {dep['name']}.")
+            results.append({"name": dep["name"], "status": "installed"})
+        elif install_result.get("dry_run"):
+            if args.format != "json":
+                print(f"🔍 Dry-run: would have installed {dep['name']}.")
+            results.append({"name": dep["name"], "status": "dry_run"})
         else:
-            print(f"❌ Failed to install {dep['name']}: {result.get('error', 'unknown error')}")
+            error = install_result.get("error", "unknown error")
+            if args.format != "json":
+                print(f"❌ Failed to install {dep['name']}: {error}")
             all_ok = False
+            results.append({"name": dep["name"], "status": "failed", "error": error})
 
     if all_ok:
         _mark_step(root, "clis", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "results": results}))
         return 0
+    if args.format == "json":
+        print(json.dumps({"success": False, "results": results}))
     return 1
 
 
@@ -307,25 +371,42 @@ def run_init_repo_config(args: argparse.Namespace) -> int:
             name = name or default_name
 
     if not owner or not name:
-        print("❌ Could not determine GitHub owner/name.")
-        print("   Please provide --owner and --name, or ensure origin remote points to GitHub.")
+        message = "Could not determine GitHub owner/name."
+        if args.format == "json":
+            print(json.dumps({"success": False, "owner": owner, "name": name, "error": message}))
+        else:
+            print(f"❌ {message}")
+            print("   Please provide --owner and --name, or ensure origin remote points to GitHub.")
         return 1
 
     if args.dry_run:
-        print(f"🔍 Dry-run: would write {config_path} with owner={owner}, name={name}, branch={branch}.")
+        if args.format == "json":
+            print(json.dumps({"success": True, "owner": owner, "name": name, "branch": branch, "dry_run": True}))
+        else:
+            print(f"🔍 Dry-run: would write {config_path} with owner={owner}, name={name}, branch={branch}.")
         return 0
 
     result = lincoln_dependency_manager.init_openspec_config(owner, name, branch, config_path)
     if result.get("updated"):
-        print(f"✅ Updated {config_path}: {owner}/{name} ({branch}).")
         _mark_step(root, "repo_config", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "owner": owner, "name": name, "branch": branch, "updated": True}))
+        else:
+            print(f"✅ Updated {config_path}: {owner}/{name} ({branch}).")
         return 0
     if result.get("skipped"):
-        print(f"ℹ️ {config_path} already contains real values; leaving unchanged.")
         _mark_step(root, "repo_config", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "owner": owner, "name": name, "branch": branch, "skipped": True}))
+        else:
+            print(f"ℹ️ {config_path} already contains real values; leaving unchanged.")
         return 0
 
-    print(f"❌ Failed to update {config_path}: {result.get('error', 'unknown error')}")
+    error = result.get("error", "unknown error")
+    if args.format == "json":
+        print(json.dumps({"success": False, "owner": owner, "name": name, "error": error}))
+    else:
+        print(f"❌ Failed to update {config_path}: {error}")
     return 1
 
 
@@ -335,17 +416,27 @@ def run_init_project(args: argparse.Namespace) -> int:
     script = root / "scripts" / "init-project.sh"
 
     if not script.exists():
-        print(f"❌ {script} not found.")
+        message = f"{script} not found."
+        if args.format == "json":
+            print(json.dumps({"success": False, "step": "init_project", "error": message}))
+        else:
+            print(f"❌ {message}")
         return 1
 
     prompt = f"Run {script} to initialize the project directory structure?"
     if not args.yes and not confirm(prompt, auto_yes=False):
-        print("⏭️ Skipped project initialization.")
+        if args.format == "json":
+            print(json.dumps({"success": False, "step": "init_project", "status": "declined"}))
+        else:
+            print("⏭️ Skipped project initialization.")
         return 1
 
     if args.dry_run:
-        print(f"🔍 Dry-run: would run {script}")
         _mark_step(root, "init_project", "completed")
+        if args.format == "json":
+            print(json.dumps({"success": True, "step": "init_project", "dry_run": True}))
+        else:
+            print(f"🔍 Dry-run: would run {script}")
         return 0
 
     try:
@@ -355,15 +446,24 @@ def run_init_project(args: argparse.Namespace) -> int:
             check=False,
         )
     except Exception as exc:
-        print(f"❌ Failed to run {script}: {exc}")
+        if args.format == "json":
+            print(json.dumps({"success": False, "step": "init_project", "error": str(exc)}))
+        else:
+            print(f"❌ Failed to run {script}: {exc}")
         return 1
 
     if proc.returncode != 0:
-        print(f"❌ {script} exited with code {proc.returncode}")
+        if args.format == "json":
+            print(json.dumps({"success": False, "step": "init_project", "error": f"script exited with code {proc.returncode}"}))
+        else:
+            print(f"❌ {script} exited with code {proc.returncode}")
         return proc.returncode
 
     _mark_step(root, "init_project", "completed")
-    print("✅ Project initialization complete.")
+    if args.format == "json":
+        print(json.dumps({"success": True, "step": "init_project"}))
+    else:
+        print("✅ Project initialization complete.")
     return 0
 
 
@@ -444,18 +544,28 @@ def run_generate_harness(args: argparse.Namespace) -> int:
     project_dir = Path(args.project_dir).resolve() if args.project_dir else root
     home_dir = Path(args.home_dir).resolve() if args.home_dir else Path.home()
     harnesses = args.harness or []
+    results = []
     for name in harnesses:
         try:
             if getattr(args, "dry_run", False):
-                print(f"[dry-run] would generate harness '{name}' into {project_dir} / {home_dir}")
+                if args.format != "json":
+                    print(f"[dry-run] would generate harness '{name}' into {project_dir} / {home_dir}")
+                results.append({"harness": name, "written": [], "dry_run": True})
                 continue
             written = lincoln_harness_adapter.generate(root, name, project_dir, home_dir)
-            print(f"✅ Harness '{name}': {len(written)} artifacts generated.")
-            for path in written:
-                print(f"   - {path}")
+            written_str = [str(path) for path in written]
+            if args.format != "json":
+                print(f"✅ Harness '{name}': {len(written_str)} artifacts generated.")
+                for path in written_str:
+                    print(f"   - {path}")
+            results.append({"harness": name, "written": written_str})
         except lincoln_harness_adapter.HarnessAdapterError as exc:
-            print(f"❌ Harness '{name}' failed: {exc}", file=sys.stderr)
+            if args.format != "json":
+                print(f"❌ Harness '{name}' failed: {exc}", file=sys.stderr)
+            results.append({"harness": name, "written": [], "error": str(exc)})
             return 2
+    if args.format == "json":
+        print(json.dumps(results))
     return 0
 
 
@@ -465,6 +575,12 @@ def _add_common_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--yes", action="store_true", help="Auto-confirm all installations")
     p.add_argument("--dry-run", action="store_true", help="Show what would be done without executing")
     p.add_argument("--offline-cache", default=None, help="Directory with cached skill clones")
+    p.add_argument(
+        "--format",
+        choices=("human", "json"),
+        default="human",
+        help="Output format (default: human)",
+    )
 
 
 def main(args: list[str] | None = None) -> int:

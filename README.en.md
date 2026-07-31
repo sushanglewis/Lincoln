@@ -161,7 +161,7 @@ The `/lc-stage` skill covers the full stage-lifecycle intent mapping. Underlying
 
 ## What's New (Unreleased)
 
-There are currently no unreleased capabilities. See [open issues](https://github.com/sushanglewis/Lincoln/issues) for the roadmap.
+- **Terminal update wizard `npx lincoln-update`**: adds a full updater that fetches the latest Lincoln release from GitHub Releases, merges allowlisted framework files (`.claude/`, `.claude-plugin/`, `scripts/`, `tools/`) while preserving user data (`.context/`, `.github/openspec-config.yml`, `recordings/`), and supports TUI confirmation plus `--dry-run` / `--no-tui` scripting.
 
 ---
 
