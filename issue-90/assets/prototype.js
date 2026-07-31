@@ -120,74 +120,12 @@ LincolnPrototype.ui = (function () {
         return html;
     }
 
-    function frameApp(contentHtml, opts) {
+    function frameMain(contentHtml, opts) {
         opts = opts || {};
         // mount() wraps this in .window.full#win, so we only emit the app body here.
         return '<div class="appbody">'
             + sidebar(opts.active || '', opts)
             + '<div class="app-main">' + contentHtml + '</div>'
-            + '</div>';
-    }
-
-    // Backward-compatible alias.
-    function frameMain(contentHtml, opts) {
-        return frameApp(contentHtml, opts);
-    }
-
-    function frameWeb(contentHtml, opts) {
-        opts = opts || {};
-        var base = opts.base || './';
-        var logoText = escapeHtml(opts.logoText || D().appInitial || 'L');
-        var logoLabel = escapeHtml(opts.logoLabel || D().appName || 'Lincoln');
-        var navItems = opts.navItems || [
-            { id: 'dashboard', label: '概览', href: base + 'dashboard/page.html' },
-            { id: 'list', label: '列表', href: base + 'list/page.html' },
-            { id: 'form', label: '表单', href: base + 'form/page.html' },
-            { id: 'detail', label: '详情', href: base + 'detail/page.html' }
-        ];
-        var active = opts.active || '';
-        var navHtml = navItems.map(function (it) {
-            var isActive = active === it.id ? ' active' : '';
-            return '<a class="' + isActive + '" href="' + escapeHtml(it.href) + '" data-uid="web-nav-' + escapeHtml(it.id) + '">' + escapeHtml(it.label) + '</a>';
-        }).join('');
-        // Wrap in web-nav class for styling
-        navHtml = '<nav class="web-nav">' + navHtml + '</nav>';
-        return '<div class="web-shell">'
-            + '<header class="web-topbar" data-uid="web-topbar">'
-            + '<div class="web-logo" data-uid="web-logo">' + appLogo() + '<span>' + logoLabel + '</span></div>'
-            + navHtml
-            + '</header>'
-            + '<main class="web-main" data-uid="web-main">' + contentHtml + '</main>'
-            + '<footer class="web-footer" data-uid="web-footer">' + escapeHtml(opts.footer || '© 2026 Lincoln') + '</footer>'
-            + '</div>';
-    }
-
-    function frameMobile(contentHtml, opts) {
-        opts = opts || {};
-        var base = opts.base || './';
-        var title = escapeHtml(opts.title || D().appName || 'Lincoln');
-        var tabs = opts.tabs || [
-            { id: 'home', label: '首页', icon: '⌂' },
-            { id: 'chat', label: '消息', icon: '✉' },
-            { id: 'settings', label: '设置', icon: '⚙' },
-            { id: 'profile', label: '我的', icon: '👤' }
-        ];
-        var active = opts.active || '';
-        var tabsHtml = tabs.map(function (t) {
-            var isActive = active === t.id ? ' active' : '';
-            return '<a class="' + isActive + '" href="' + base + t.id + '/page.html" data-uid="mobile-tab-' + escapeHtml(t.id) + '">'
-                + '<span class="tab-icon">' + escapeHtml(t.icon) + '</span>'
-                + '<span>' + escapeHtml(t.label) + '</span>'
-                + '</a>';
-        }).join('');
-        return '<div class="mobile-shell">'
-            + '<header class="mobile-topbar" data-uid="mobile-topbar">'
-            + '<button class="btn default sm" data-uid="mobile-back" onclick="history.back()">返回</button>'
-            + '<h1 data-uid="mobile-title">' + title + '</h1>'
-            + '<button class="btn default sm" data-uid="mobile-more">更多</button>'
-            + '</header>'
-            + '<main class="mobile-main" data-uid="mobile-main">' + contentHtml + '</main>'
-            + '<nav class="mobile-bottom" data-uid="mobile-bottom">' + tabsHtml + '</nav>'
             + '</div>';
     }
 
@@ -376,10 +314,7 @@ LincolnPrototype.ui = (function () {
         appLogo: appLogo,
         orgLogo: orgLogo,
         sidebar: sidebar,
-        frameApp: frameApp,
         frameMain: frameMain,
-        frameWeb: frameWeb,
-        frameMobile: frameMobile,
         wvPlaceholder: wvPlaceholder,
         wvLoading: wvLoading,
         wvError: wvError,

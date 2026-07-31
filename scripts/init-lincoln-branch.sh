@@ -233,12 +233,20 @@ PY
 # recordings/, and handoffs/pm-to-ux/.
 for dir in \
     "$PROCESS_ROOT/pages/docs/snapshots" \
-    "$PROCESS_ROOT/pages/prototype/main" \
-    "$PROCESS_ROOT/pages/prototype/onboarding" \
-    "$PROCESS_ROOT/pages/prototype/settings" \
-    "$PROCESS_ROOT/pages/prototype/org" \
-    "$PROCESS_ROOT/pages/prototype/tray" \
-    "$PROCESS_ROOT/pages/prototype/overlays" \
+    "$PROCESS_ROOT/pages/prototype/app/main" \
+    "$PROCESS_ROOT/pages/prototype/app/onboarding" \
+    "$PROCESS_ROOT/pages/prototype/app/settings" \
+    "$PROCESS_ROOT/pages/prototype/app/org" \
+    "$PROCESS_ROOT/pages/prototype/app/tray" \
+    "$PROCESS_ROOT/pages/prototype/app/overlays" \
+    "$PROCESS_ROOT/pages/prototype/web/dashboard" \
+    "$PROCESS_ROOT/pages/prototype/web/list" \
+    "$PROCESS_ROOT/pages/prototype/web/form" \
+    "$PROCESS_ROOT/pages/prototype/web/detail" \
+    "$PROCESS_ROOT/pages/prototype/mobile/home" \
+    "$PROCESS_ROOT/pages/prototype/mobile/chat" \
+    "$PROCESS_ROOT/pages/prototype/mobile/settings" \
+    "$PROCESS_ROOT/pages/prototype/mobile/profile" \
     "$PROCESS_ROOT/handoffs" \
     "$PROCESS_ROOT/handoffs/pm-to-ux" \
     "$PROCESS_ROOT/interviews/$SESSION_ID" \

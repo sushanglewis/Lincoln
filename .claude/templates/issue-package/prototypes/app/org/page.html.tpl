@@ -6,13 +6,13 @@
 <meta name="doc-title" content="{TITLE}">
 <meta name="nav-group" content="{NAV_GROUP}">
 <meta name="page-uid" content="{UID}">
-<meta name="prototype-base" content="../../../">
+<meta name="prototype-base" content="../../../../">
 <title>{TITLE}</title>
-<link rel="stylesheet" href="../../../assets/prototype.css">
+<link rel="stylesheet" href="../../../../assets/prototype.css">
 </head>
 <body>
 
-<script src="../../../assets/prototype.js"></script>
+<script src="../../../../assets/prototype.js"></script>
 <script>
 (function () {
     var ui = LincolnPrototype.ui;

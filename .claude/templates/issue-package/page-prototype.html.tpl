@@ -19,8 +19,11 @@
      issue-package assets directory (paths above are correct for pages/prototype/*).
   2. Every interactive element must carry a stable data-uid attribute.
   3. Replace {TITLE}, {NAV_GROUP}, {UID} when copying this template.
-  4. See .claude/templates/issue-package/prototypes/ for fuller examples
-     (main, onboarding, settings, overlays, tray, org).
+  4. Choose the right shell from LincolnPrototype.ui (frameApp / frameWeb / frameMobile)
+     based on the product form-factor.
+  5. See .claude/templates/issue-package/prototypes/ for categorized examples:
+     app/{main,onboarding,settings,overlays,tray,org}, web/{dashboard,list,form,detail},
+     mobile/{home,chat,settings,profile}.
 -->
 
 <div class="window full" id="win"></div>
@@ -28,6 +31,57 @@
 <script src="../../../assets/prototype.js"></script>
 <script>
 (function () {
+    'use strict';
+
+    var THEME_KEY = 'lincoln-theme';
+
+    function getQueryTheme() {
+        var m = window.location.search.match(/[?&]theme=(light|dark)(?:&|$)/);
+        return m ? m[1] : null;
+    }
+
+    function getStoredTheme() {
+        try {
+            return localStorage.getItem(THEME_KEY);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function setStoredTheme(theme) {
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    function applyTheme(theme) {
+        if (theme !== 'light' && theme !== 'dark') return;
+        document.documentElement.setAttribute('data-theme', theme);
+        setStoredTheme(theme);
+    }
+
+    function initTheme() {
+        var theme = getQueryTheme() || getStoredTheme() || 'light';
+        applyTheme(theme);
+
+        window.addEventListener('message', function (e) {
+            var data = e.data || {};
+            if (data.type === 'lincoln-theme' && (data.theme === 'light' || data.theme === 'dark')) {
+                applyTheme(data.theme);
+            }
+        });
+
+        window.addEventListener('load', function () {
+            if (window.parent) {
+                window.parent.postMessage({ type: 'lincoln-theme-ready' }, '*');
+            }
+        });
+    }
+
+    initTheme();
+
     var ui = LincolnPrototype.ui;
     var hero = '<div style="display:flex;justify-content:center">' + ui.appLogo('lg') + '</div>';
     var body = '<p data-uid="{UID}-desc">在此放置原型内容。所有交互元素必须携带 <code>data-uid</code> 属性。</p>'

@@ -10,15 +10,23 @@ Create field and UI specifications as HTML doc pages, and produce a high-fidelit
 
 Use the following read-only templates as the style/layout reference. Copy/adapt them into the issue package; do not modify the templates themselves.
 
-- `.claude/templates/issue-package/page-prototype.html.tpl` — minimal starter page.
-- `.claude/templates/issue-package/prototypes/main/page.html.tpl` — main app window with sidebar + WebView placeholder.
-- `.claude/templates/issue-package/prototypes/onboarding/page.html.tpl` — login/onboarding card.
-- `.claude/templates/issue-package/prototypes/settings/page.html.tpl` — two-column settings page.
-- `.claude/templates/issue-package/prototypes/overlays/page.html.tpl` — avatar menu / about / toast overlays.
-- `.claude/templates/issue-package/prototypes/tray/page.html.tpl` — system-tray simulation.
-- `.claude/templates/issue-package/prototypes/org/page.html.tpl` — organization list.
-- `.claude/templates/issue-package/assets/prototype.css` — shared styles (tokens, window shell, sidebar, forms, overlays).
-- `.claude/templates/issue-package/assets/prototype.js` — shared UI builders and mock data (`window.LincolnPrototype`).
+- `.claude/templates/issue-package/page-prototype.html.tpl` — minimal starter page with theme sync support.
+- `.claude/templates/issue-package/prototypes/app/main/page.html.tpl` — main app window with sidebar + WebView placeholder.
+- `.claude/templates/issue-package/prototypes/app/onboarding/page.html.tpl` — login/onboarding card.
+- `.claude/templates/issue-package/prototypes/app/settings/page.html.tpl` — two-column settings page.
+- `.claude/templates/issue-package/prototypes/app/overlays/page.html.tpl` — avatar menu / about / toast overlays.
+- `.claude/templates/issue-package/prototypes/app/tray/page.html.tpl` — system-tray simulation.
+- `.claude/templates/issue-package/prototypes/app/org/page.html.tpl` — organization list.
+- `.claude/templates/issue-package/prototypes/web/dashboard/page.html.tpl` — web dashboard shell.
+- `.claude/templates/issue-package/prototypes/web/list/page.html.tpl` — web list view shell.
+- `.claude/templates/issue-package/prototypes/web/form/page.html.tpl` — web form shell.
+- `.claude/templates/issue-package/prototypes/web/detail/page.html.tpl` — web detail shell.
+- `.claude/templates/issue-package/prototypes/mobile/home/page.html.tpl` — mobile home feed shell.
+- `.claude/templates/issue-package/prototypes/mobile/chat/page.html.tpl` — mobile chat shell.
+- `.claude/templates/issue-package/prototypes/mobile/settings/page.html.tpl` — mobile settings list shell.
+- `.claude/templates/issue-package/prototypes/mobile/profile/page.html.tpl` — mobile profile shell.
+- `.claude/templates/issue-package/assets/prototype.css` — shared styles (tokens, dark mode, window shell, sidebar, forms, overlays, web/mobile shells).
+- `.claude/templates/issue-package/assets/prototype.js` — shared UI builders and mock data (`window.LincolnPrototype`), including `frameApp`, `frameWeb`, `frameMobile`.
 
 ## Input
 
@@ -35,9 +43,10 @@ Use the following read-only templates as the style/layout reference. Copy/adapt 
    - 界面流转图: screen-to-screen flow mapped to the business flow in `flows.html`.
    - 页面交互说明: per-screen layout elements, interaction rules (events, responses, navigation), and field validation/error handling.
    - 交互 Demo/原型: links to the HTML prototype pages under `pages/prototype/` and a summary of key interactions.
-5. Create interactive HTML prototypes under `{process_slug}/pages/prototype/{main,onboarding,settings,overlays,tray,org}/` by adapting the reference templates above. Every page must:
-   - Link to `../../../assets/prototype.css` and `../../../assets/prototype.js`.
-   - Include the `<meta name="prototype-base" content="../../../">` tag.
+5. Create interactive HTML prototypes under `{process_slug}/pages/prototype/{app,web,mobile}/` by adapting the reference templates above. Pick the right shell (`frameApp`, `frameWeb`, or `frameMobile`) from `LincolnPrototype.ui` for the product form-factor. Every page must:
+   - Link to `../../../assets/prototype.css` and `../../../assets/prototype.js` (depth 3) or `../../../../assets/...` (depth 4) depending on its path.
+   - Include the theme sync IIFE shown in the starter template.
+   - Include `<meta name="prototype-base" content="../../../">` (or `../../../../` for depth 4).
    - Include `<meta name="page-uid" content="...">` and `<meta name="nav-group" content="...">`.
    - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).

@@ -29,12 +29,23 @@ REQUIRED_PROTOTYPE_ASSETS = [
 ]
 
 REQUIRED_PROTOTYPE_EXAMPLES = [
-    "prototypes/main/page.html.tpl",
-    "prototypes/onboarding/page.html.tpl",
-    "prototypes/settings/page.html.tpl",
-    "prototypes/overlays/page.html.tpl",
-    "prototypes/tray/page.html.tpl",
-    "prototypes/org/page.html.tpl",
+    # App (desktop) shells
+    "prototypes/app/main/page.html.tpl",
+    "prototypes/app/onboarding/page.html.tpl",
+    "prototypes/app/settings/page.html.tpl",
+    "prototypes/app/overlays/page.html.tpl",
+    "prototypes/app/tray/page.html.tpl",
+    "prototypes/app/org/page.html.tpl",
+    # Web shells
+    "prototypes/web/dashboard/page.html.tpl",
+    "prototypes/web/list/page.html.tpl",
+    "prototypes/web/form/page.html.tpl",
+    "prototypes/web/detail/page.html.tpl",
+    # Mobile shells
+    "prototypes/mobile/home/page.html.tpl",
+    "prototypes/mobile/chat/page.html.tpl",
+    "prototypes/mobile/settings/page.html.tpl",
+    "prototypes/mobile/profile/page.html.tpl",
 ]
 
 OBSOLETE_MD_TEMPLATES = [
@@ -94,6 +105,30 @@ def test_page_prototype_template_uses_prototype_kit():
     assert "prototype.js" in text
     assert 'name="prototype-base"' in text
     assert "data-uid" in text
+
+
+def test_portal_and_prototype_templates_support_theme_sync():
+    for tpl in ["index.html.tpl", "page-doc.html.tpl", "page-prototype.html.tpl"]:
+        text = (TEMPLATE_ROOT / tpl).read_text(encoding="utf-8")
+        assert "data-theme" in text or "lincoln-theme" in text, f"{tpl} should support theme sync"
+
+
+def test_prototype_css_has_dark_mode_override():
+    text = (TEMPLATE_ROOT / "assets" / "prototype.css").read_text(encoding="utf-8")
+    assert '[data-theme="dark"]' in text, "prototype.css should define dark theme override"
+
+
+def test_app_js_has_theme_helpers():
+    text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert "lincoln-theme" in text
+    assert "toggleTheme" in text
+    assert "artifactChecklist" in text
+
+
+def test_prototype_js_has_frame_helpers():
+    text = (TEMPLATE_ROOT / "assets" / "prototype.js").read_text(encoding="utf-8")
+    for helper in ["frameApp", "frameWeb", "frameMobile"]:
+        assert helper in text, f"prototype.js should export {helper}"
 
 
 def test_prototype_js_is_syntactically_valid():
