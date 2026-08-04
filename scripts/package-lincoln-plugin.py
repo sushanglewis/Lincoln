@@ -26,6 +26,9 @@ ROOT = Path(__file__).resolve().parents[1]
 ALLOWLIST_DIRS = (".claude", ".claude-plugin", "scripts", "tools")
 ALLOWLIST_FILES = (
     "README.md",
+    "README.en.md",
+    "USAGE.md",
+    "CONTRIBUTING.md",
     "CLAUDE.md",
     "LICENSE",
     "RELEASE.md",
