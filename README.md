@@ -2,426 +2,125 @@
 
 > 中文 | [English](README.en.md)
 
-> **Lincoln 是什么？** Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、技能、插件与自动化程序**的 AI-Native 研发工作流体系，致力于服务所有独立开发者和产研团队，帮助他们在产研全流程的各个阶段更恰当地使用 Agent、Skills 与插件，并遵循更规范化的研发流程、代码管理与知识沉淀。它以**阶段**为节奏、以**门控**为质量保障、以**可重复 SOP** 为骨架，把需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、任务拆分、研发实现和知识库沉淀串成一条可人机协作的流水线；既适合 **vibe-coding 开发者、独立 maker** 在本地项目上与 Agent 结对迭代，也适合 **产品、设计、研发、QA** 团队以 GitHub issue 为单元进行多角色协作。优先推荐在 **Conductor** 中使用（也可接入其他 IDE/CLI），角色契约、`lc-*` 命令与阶段工作流可多 harness 派生到 **codex / opencode**。
+Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、技能、插件与自动化程序** 的 AI-Native 研发工作流体系。它以**阶段**为节奏、以**门控**为质量保障、以**可重复 SOP** 为骨架，把需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、任务拆分、研发实现和知识库沉淀串成一条可人机协作的流水线。
 
-- **全流程，而非单点工具**：从需求澄清、产品设计、原型、TDD 计划到实现与验收，每个阶段都有明确的角色、技能与产物约定——Agent 在恰当的节点介入，而不是替代人的判断。
-- **规范化，但不繁琐**：阶段门控、human gate、分支卫生，以及"过程文档留分支、耐用知识入 vault"的双轨机制，让协作可追溯、可交接、可审计。
+- **全流程，而非单点工具**：每个阶段都有明确的角色、技能与产物约定——Agent 在恰当的节点介入，而不是替代人的判断。
+- **规范化，但不繁琐**：阶段门控、human gate、分支卫生，以及「过程文档留分支、耐用知识入 vault」的双轨机制，让协作可追溯、可交接、可审计。
 - **低侵入、可插拔**：以 harness 插件的形态融入你的项目——技能、hooks、工作流模板与多 harness 适配沿同一元模型扩展，不要求你为它改造自己的项目。
 
-## 首次打开？让 Claude 帮你完成安装
+## 最新版本
 
-Lincoln 的 hooks 通常会在你第一次打开仓库时自动触发安装。如果 Claude 没有自动开始，请复制下面的提示词发送给 Claude：
+[![Release](https://img.shields.io/badge/release-v1.4.0-blue)](RELEASE.md)
 
-> 请帮我完成 Lincoln 的初始化安装：
-> 1. 先问我两个问题，并根据回答决定安装范围：
->    - 是否需要**录音转写**能力（访谈录音 → 文字稿）？需要才安装 ffmpeg 并构建本地转写 CLI（`tools/lincoln-record/`）。
->    - 是否需要运行 **benchmark**（Lincoln 基准评测）？
-> 2. 检查当前仓库的 Lincoln 环境，列出所有缺失的依赖。
-> 3. 安装外部 skills：superpowers、gsd（均跟踪上游仓库 main 分支）到 `~/.claude/skills/`，并确保 ref 正确。
-> 4. 安装 CLI 工具：openspec、gh；仅当我需要录音转写时，再安装 ffmpeg 并构建 `tools/lincoln-record/`（Rust 本地录音转写 CLI）。
-> 5. 安装 oh-my-claudecode 插件。
-> 6. 交互式配置 `.github/openspec-config.yml`（询问我 GitHub owner 和 repo name）。
-> 7. 运行 `scripts/init-project.sh` 完成项目初始化。
-> 8. 如果我需要 benchmark，介绍 `scripts/lincoln_benchmark.py` 的用法。
-> 9. 完成后汇报状态。
->
-> 安装任何全局工具或写入配置前，请先向我确认。
+**v1.4.0** 已发布：HTML 门户化 issue 工作包、`npx lincoln-install` / `npx lincoln-update` 终端安装与更新器、root-level PRD 标准，以及全新的 README / USAGE.md / CONTRIBUTING.md 文档结构。
 
-### 终端安装向导（可选）
-
-如果你更喜欢在终端里以 TUI 方式完成初始化，可以直接运行 Lincoln 的独立安装器：
-
-```bash
-npx lincoln-install
-```
-
-它会引导你选择目标 agent harness（Claude Code、Cursor、Codex、OpenCode 等）、可选依赖和安装范围，最后调用当前仓库中的 `scripts/lincoln-setup.py` 完成配置。脚本化场景可使用 `--no-tui --format json`，CI 场景可使用 `--yes --dry-run`。
-
-> **注意**：`npx lincoln-install` 需要在 Lincoln 项目仓库根目录下运行，以便定位 `scripts/lincoln-setup.py`。若要在其他目录为指定项目安装，请使用 `--root <project-path>`。
-
-### 终端更新向导（可选）
-
-当 Lincoln 发布新版本后，你可以在项目根目录运行更新器，将框架文件全量同步到最新 release：
-
-```bash
-npx lincoln-update
-```
-
-它会读取当前仓库的 `.version-bump.json`，从 GitHub Releases 获取最新版本，下载 release 压缩包，并按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/`、`README.md`、`CLAUDE.md` 等框架文件，同时保留 `.context/`、`.github/openspec-config.yml`、`recordings/`、`issue-*` 等用户数据。更新前会先进行 dry-run 检查并提示确认；使用 `--dry-run` 可只查看变更，`--no-tui --format json` 适合脚本调用。
-
-如果你只需要走[轻量个人路径](#快速开始)，可以跳过 `gh`、`ffmpeg`、`tools/lincoln-record/` 构建和 `.github/openspec-config.yml` 配置，只保留 `python3`、Claude Code 环境与 Lincoln 自身 hooks。
-
-> **我从哪里开始？**
-> - **vibe-coding / 独立 maker**（个人项目、AI 结对编程）：跳到 [快速开始](#快速开始) 的轻量个人路径。
-> - **团队协作者**（产品、设计、研发、QA，以 GitHub issue 驱动）：跳到 [快速开始](#快速开始) 的团队 issue 路径。
-> - **框架开发者 / 贡献者**（扩展 agent、skills、hooks、工作流模板）：阅读 [框架文档](#框架文档)、[`CLAUDE.md`](CLAUDE.md) 和 [扩展与贡献 Lincoln](#扩展与贡献-lincoln)。
+查看完整发布说明：[RELEASE.md](RELEASE.md)
 
 ## 快速开始
 
-Lincoln 提供两种启动方式，选择适合你的即可。
+打开仓库后，直接用自然语言告诉 Agent 你的目标即可。Lincoln 会自动进入对应的工作流：
 
-### 打开之后，直接说
+- **开始处理 issue 55** → 初始化 `issue-55` 分支与工作包，进入 `interview-to-knowledge` 团队工作流
+- **使用 existing-project-iteration 理解这个代码库** → 扫描源码并生成 `knowledge/` 功能知识库，再规划下一个迭代
+- **用 design-spike 探索这个想法** → 澄清需求并产出设计评审与可交互原型
+- **现在什么状态** → 汇报当前阶段、等待对象、推荐技能与下一步动作
 
-在 Conductor / Claude Code 中打开仓库后，如果 Lincoln 还没有可驱动的工作状态（新仓库，或工作包尚未启动），Agent 会自动进入开场引导：
+第一次使用？阅读 [USAGE.md](USAGE.md) 获取完整安装与使用指南。
 
-1. **摸排**：Agent 对仓库做概览级侦察（顶层结构、README、知识索引、开放 issues），不读源码、不做深度扫描。
-2. **判断**：Agent 给出对你处境的评估——角色、流程位置、最可能的问题与目标，并标注置信度。
-3. **询问和确认**：Agent 按 Johari 认知象限设计确认动作，每轮最多 3 个问题：你知道且清楚的，它复述确认；你知道但缺方法的，它直接给背景；你其实已经拥有答案的，它展示仓库里的已有产物；你没意识到的盲区，它用具体场景探查。
-4. **有策略的开展**：只有当每个目标都有明确的验收标准、执行路径也确定之后，Agent 才开始实际工作。
+## Lincoln 能做什么
 
-已有进行中的工作时不会打扰——Agent 会直接继续当前阶段。下面的两种路径描述首次使用时的完整流程。
+### 阶段驱动的工作流引擎
 
-### 路径 A：轻量个人路径（vibe-coding / 独立 maker）
+每个阶段定义在 `.claude/stages/<stage-id>.yaml`，内含角色、可调用的技能、门控条件与产物要求。`workflow-stage.yaml` 作为运行时状态，由 Lincoln 的阶段加载器驱动阶段校验、产物记录与 gate 推进。
 
-如果你已经有一个本地项目，或者只是有一个想法想和 Agent 一起快速迭代，可以直接从 workflow 模板开始，无需先建 GitHub issue。
+### 预设 SOP 工作流模板
 
-1. 在 Conductor 中打开项目仓库。
-2. 对 Claude 说"检查一下 Lincoln 环境"——Agent 会运行环境检测并列出缺失依赖。
-3. 根据你的场景选择模板：
-   - **已有源码，想让 Agent 先读懂代码再迭代**：使用 `existing-project-iteration`
-   - **只有想法，先做方案/原型探索**：使用 `design-spike`
-   - **要做市场/竞品/用户/相关者研究或决策支持**：使用 `pm-research`
-4. 对 Claude 说：
-   - 如果你选择 `existing-project-iteration`：
-     > 请使用 Lincoln 的 `existing-project-iteration` 模板，帮我理解当前代码库并规划下一个功能迭代。
-   - 如果你选择 `design-spike`：
-     > 请使用 Lincoln 的 `design-spike` 模板，帮我澄清这个想法并产出设计评审与原型。
-5. 后续如果决定引入团队流程或需要 GitHub issue 跟踪，对 Agent 说"开始处理 issue <N>"——Agent 会新建 issue 工作包，你再把手头已确认的需求/设计产物交给它整理到新的 `issue-<number>/` 目录。
+| 工作流 | 场景 | 模式 |
+|--------|------|------|
+| `interview-to-knowledge` | 从访谈录音到 GitHub Issues 再到 Obsidian 知识库沉淀 | team |
+| `existing-project-iteration` | 已有源码，先建知识库再迭代 | solo |
+| `bug-fix` | 明确 bug，轻量设计后快速修复 | solo |
+| `design-spike` | 需求尚不清晰，做方案预研或原型 | solo |
+| `oss-first-design` | 强依赖开源方案，先调研再设计 | solo |
+| `pm-research` | 体系化完成竞品/市场/用户/相关者研究 | solo |
 
-> 个人路径的产物默认落在由模板自动选择的工作包目录（如 workspace 名或仓库名）下，其中代码知识库产物写入 `knowledge/`，设计、需求、调研产物写入 `<process_slug>/pages/docs/` 下的 HTML 页面，原型产物写入 `<process_slug>/pages/prototype/`。
+完整模板说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
 
-### 路径 B：团队 issue 路径（默认）
+### Issue 工作包（HTML 门户）
 
-在 GitHub 上点击 **Use this template** 创建项目仓库，然后 clone 到本地 Conductor 工作区。
+每个需求对应一个 GitHub issue 和一个 Lincoln feature 分支。工作包目录 `issue-<N>/` 包含：
 
-#### 初始化一个 issue 工作包
-
-每个需求都对应一个 GitHub issue 和一个 Lincoln feature 分支。对 Agent 说"开始处理 issue <N>"，Agent 会基于 issue 编号创建分支，生成该 issue 专属的工作包目录（初始化 `workflow-stage.yaml`、HTML 门户 `index.html` 与共享资源；`.claude/templates/issue-package/` 下的 `.tpl` 模板只读保留，不再复制进工作包，Agent 需要文档时参考模板格式直接撰写 HTML 页面）。
-
-你也可以提供更细的偏好，Agent 会翻译成对应的初始化参数：
-
-- 访谈/需求会话 ID（格式 `YYYY-MM-DD-descriptive-name`，省略时默认生成）
-- 设计主题 ID（kebab-case，省略时默认生成）
-- 工作包目录名（默认 `issue-<number>`）
-- 工作流模板（`.claude/workflows/` 下，默认 `interview-to-knowledge`）
-- 初始化后是否推送分支到远程
-
-> 也可以通过 `lc-wf-*` 技能启动工作流：对 Agent 说"列出所有工作流"或"用 interview-to-knowledge 启动 issue <N>"。team 工作流等价于初始化 issue 工作包，solo 工作流则在 `.context/workflow/` 生成 session 级实例（gitignored，不跨成员共享）。详见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
-
-执行后会在分支上生成：
-
-```
-issue-<N>/
-├── index.html                   # 人读门户：聚合阶段状态、导航与产物
-├── assets/                      # 门户共享样式与运行时
-│   ├── style.css
-│   ├── app.js
-│   └── js/package-data.js       # 由 workflow-stage.yaml 生成的导航数据
-├── workflow-stage.yaml          # issue 运行时状态与 handoff 协议（机器状态）
-├── documents.yaml               # 文档索引：各阶段产物与 human 确认状态（自动生成）
-├── recordings/                  # 原始录音（gitignored）
-├── interviews/<session-id>/     # 转写、摘要、原始洞察
-├── pages/docs/                  # 需求、PRD、设计、TDD 计划等可交互 HTML 页面
-├── pages/prototype/             # 可交互原型 HTML 页面
-├── openspec/changes/            # OpenSpec 变更提案
-└── handoffs/                    # 阶段交接文档
-```
-
-`issue-<N>/workflow-stage.yaml` 是人类、Agent 之间共享的阶段交接协议；`.claude/templates/issue-package/workflow-stage.yaml` 只是生成它的模板。`issue-<N>/index.html` 是人类查看工作包状态与文档的入口，每次状态保存时由 `lincoln_index.py` 自动刷新 `assets/js/package-data.js`，驱动左侧导航、iframe 画布与右侧信息面板。`issue-<N>/documents.yaml` 继续作为机器可读的文档索引保留，记录每个产物所属阶段、gate 与 human 确认状态。
-
-**跨成员、跨 Agent 协作**：分支名必须严格使用 `issue-<number>` 约定。任何成员或 Agent 收到上游节点的 handoff 时，按分支名即可定位对应 issue 与工作包（`{process_slug}/workflow-stage.yaml`），从而保障从需求到最终验收，issue、branch、PR 端到端一一对应。对 Agent 说"列出所有活跃的 Lincoln 分支"，即可查看所有 issue 分支的阶段状态与等待对象。
-
-> 全部模板的详细说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。工作流模板是场景参考，人类可以基于当前场景要求 Agent 按某个固定 workflow 执行，不强制自动路由。
-
----
+- `index.html` — 人读门户，聚合阶段状态、导航与产物
+- `workflow-stage.yaml` — 机器状态与 handoff 协议
+- `documents.yaml` — 产物索引与 human 确认状态
+- `pages/docs/` — 需求、PRD、设计、TDD 计划等 HTML 页面
+- `pages/prototype/` — 可交互原型 HTML 页面
+- `handoffs/` — 阶段交接文档
 
 ## 自然语言交互
 
-Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**。直接用自然语言描述意图，Agent 会自动翻译成对应脚本并代为执行；也可以在 agent harness 中用 `/lc-*` 显式调用技能：
+Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**。直接用自然语言描述意图，Agent 会自动翻译成对应脚本并代为执行。
 
 | 你说 | Agent 做 |
 |------|----------|
-| "开始处理 issue 55" | `/lc-wf-interview-to-knowledge`（或 `/lc-init-branch`）初始化分支与工作包 |
-| "现在什么状态" | `/lc-status` 汇报当前阶段、等待对象与下一步 |
-| "提交本阶段产物" | `/lc-stage` 记录产物并刷新 `documents.yaml` |
-| "确认通过" | `/lc-stage` 在人类 PM 显式确认后标记当前 gate |
-| "生成交接" | `/lc-handoff` 生成 handoff 文档 |
-| "进入下一阶段" | Agent 校验 gate 后执行阶段推进 |
-| "检查 Lincoln 环境" | `/lc-setup` 检测依赖并列出缺失项 |
-| "列出所有活跃分支" | Agent 列出所有 issue 分支的阶段状态与等待对象 |
-| "审计工作流健康度" | Agent 输出 PASS/WARN/FAIL 健康报告 |
-| "运行 benchmark" | `/lc-benchmark` 生成 Lincoln 会话基准评测报告 |
-| "启动 PM 研究工作流" | `/lc-wf-pm-research` 进入市场/竞品/用户/相关者研究 |
-| "调用研究员角色" | `/lc-agent-researcher` 输出 researcher 角色契约与上下文 |
-| "查看某 skill 的完整提示" | `/lc-skill-lc-first-principles` 输出对应 SKILL.md + prompts |
-| "执行一个场景" | `/lc-scenario-make-prd` 按场景组合角色与技能序列 |
+| 开始处理 issue 55 | 初始化分支与工作包，进入 `interview-to-knowledge` |
+| 现在什么状态 | 汇报当前阶段、等待对象与下一步 |
+| 提交本阶段产物 | 记录产物并刷新 `documents.yaml` |
+| 确认通过 | 在人类 PM 显式确认后标记 gate 通过 |
+| 生成交接 | 生成 handoff 文档 |
+| 检查 Lincoln 环境 | 检测依赖并列出缺失项 |
+| 列出所有活跃分支 | 列出所有 issue 分支的阶段状态与等待对象 |
+| 运行 benchmark | 生成 Lincoln 会话基准评测报告 |
+| 启动 PM 研究工作流 | 进入 `pm-research` 研究链路 |
 
-`/lc-stage` 技能覆盖完整的阶段生命周期意图映射。底层脚本始终由 Agent 执行，用户无需关心。
+更多命令与用法见 [USAGE.md](USAGE.md)。
 
-## 新增能力（v1.2.0）
+## 两种使用方式
 
-- **Issue 驱动的工作包**：`scripts/init-lincoln-branch.sh --issue-number ...` 生成 issue 专属分支与 `{process_slug}/` 工作包，过程文档不再污染 `main`。
-- **模板化 HTML 门户工作包**：`.claude/templates/issue-package/` 提供 HTML 门户模板与只读 `.tpl` 参考模板（初始化时复制 `index.html` 与 `assets/` 到工作包，Agent 按需参考 `page-doc.html.tpl` / `page-prototype.html.tpl` 生成 HTML 页面）。
-- **工作包文档索引**：`{process_slug}/documents.yaml` 由 `lincoln_documents.py` 在每次状态保存时自动刷新，记录各阶段产物及其 gate / human 确认状态；`{process_slug}/assets/js/package-data.js` 由 `lincoln_index.py` 生成，驱动人读门户。
-- **main 合并卫生检查**：`scripts/check-main-merge-hygiene.py`（PR → main 的 CI 门禁）将任何含 `workflow-stage.yaml` 的工作包目录下所有文件拒之门外，杜绝 issue 工作包被错误并入 main。
-- **状态文件实例化**：运行时状态保存在 `{process_slug}/workflow-stage.yaml`，而非 `.claude/workflow-stage.yaml`。
-- **工作流统一入口 `lc-wf-*`**：[`.claude/workflows/README.md`](.claude/workflows/README.md) 集中维护所有 SOP 模板；`lc-wf-*` 命令（底层 `scripts/lincoln_workflow.py`）统一 solo / team 两种 `execution_mode` 的启动方式。
-- **本地录音转写 CLI**：`tools/lincoln-record/`（Rust + whisper-rs/Metal + 说话人分离）提供本地录音与转写，配套重新设计的 `tools/lincoln/` TUI。
-- **多 harness 适配**：角色契约、`lc-*` 命令与阶段工作流可派生到 codex / opencode，详见下文 [多 harness 支持](#多-harness-支持codex--opencode)。
-- **Claude Code 插件化**：新增 `.claude-plugin/` 清单，支持作为 Claude Code 插件安装。
+### 轻量个人路径（vibe-coding / 独立 maker）
 
-## 新增能力（v1.3.0）
+适合本地项目、个人想法快速迭代。无需先建 GitHub issue，直接选择 workflow 模板即可开始。产物落在工作包目录下，可随时升级为团队流程。
 
-- **体系化的 `/lc-*` 命令面**：新增 `lc-agent-*`、`lc-skill-*`、`lc-scenario-*` 与 `lc-wf-*` 命令族，覆盖全部角色、技能、场景与工作流。命令表由 `scripts/lincoln_command_map.py --refresh` 从 `.claude/workflows/`、`.claude/agents/`、`.claude/skills/` 与 `.claude/harnesses/scenarios.yaml` 自动生成，确保命令与事实源一致（#78 / #79 / #81 / #82）。
-- **PM 研究 solo 工作流 `pm-research`**：支持从研究范围界定、第一性原理、相关者研究、市场/产品/竞品研究、信息收集、分析框架、故事化论述到最终研究报告的完整链路；对应新增 10 个研究 skill/stage：`lc-research-scope`、`lc-first-principles`、`lc-stakeholder-research`、`lc-market-research`、`lc-product-research`、`lc-competitive-analysis`、`lc-collect-intelligence`、`lc-analyze-frameworks`、`lc-storytelling`、`lc-research-report`（#79 / #81）。
-- **会话开场引导**：当 Lincoln 没有可驱动的工作状态（新仓库或工作包未启动）时，会话启动 hook 会注入开场引导——Agent 先做概览级摸排（≤ 8 次只读、不读源码），给出处境判断（角色 / 流程位置 / 问题 / 目标 + 置信度），按 Johari 认知象限确认（每轮 ≤ 3 问），并在每个目标有明确验收标准、执行路径确定后才开始工作；README 同步改为全自然语言入口（#59 / #70）。
-- **sub-Agent 调度原则**：agent contract 中新增 Red Flags 表与「fan-out 前必须向 PM 说明行为与必要性并获得许可」等原则，避免无节制派发子 agent，主 session 必须验证、整合子 agent 产物，不能替代人类确认（#75 / #80）。
-- **PM→UX 交接文档与门控**：`product-design-docs` 阶段新增 `handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md` 与 `pm-to-ux.handoff.yaml`，由 PM Agent 向 UX Agent 传递统一认知，确保跨成员、跨 Agent 协作时设计上下文不丢失（#76 / #77）。
-- **基础设施加固**：benchmark 改为显式 opt-in（`lc-benchmark` skill / `scripts/lc-benchmark-cli.py`，不再自动触发）；新增行为塑造写作模式（Red Flags / SUBAGENT-STOP / announce skill use）；新增基础设施测试层（`scripts/run-infrastructure-tests.py`）；多 manifest 锁步版本 bump（`scripts/bump_version.py` + `.version-bump.json`）；session-start 精简并暴露 token cost 指标（#58 / #63 / #65 / #67 / #68 / #72 / #73 / #74）。
-- **多 harness 缺省关闭验收测试**：codex 派生插件清单显式声明 `"hooks": {}`，并为 codex / opencode 增加「缺省即关闭」的验收测试，防止 harness 回退陷阱（#64 / #71）。
-- **安装与依赖合规**：初始化流程询问是否需要录音转写和 benchmark；外部 skills 改为 pin 到已知良好 ref；许可合规声明集中化（#39 / #41 / #42 / #43 / #44 / #45 / #46）。
-- **命令与提示辅助脚本**：新增 `scripts/lincoln_role.py`、`scripts/lincoln_skill_prompt.py`、`scripts/lincoln_scenario.py`，分别用于输出角色模板、skill 提示与场景组合，统一支撑各 harness 的命令实现（#81）。
+### 团队 issue 路径（产品 / 设计 / 研发 / QA）
 
-## 新增能力（未发布）
+每个需求使用独立的 Lincoln feature 分支（命名约定 `issue-<N>`）。阶段状态随分支提交，下游角色 checkout 同一分支继续。过程文档不合并到 `main`，通过 PR 只合并最终代码产物。
 
-- **HTML 中心工作包（issue #90）**：将 issue 工作包从 Markdown/YAML 为主的人读产物升级为 HTML 门户。`workflow-stage.yaml` 继续作为机器状态，`index.html` 成为人读入口；所有说明文档渲染为嵌入 Markdown 源码的 HTML 页面，原型渲染为可交互 HTML 页面；`scripts/lincoln_index.py` 生成 `assets/js/package-data.js` 驱动门户导航与状态面板。
-
-- **终端更新向导 `npx lincoln-update`**：新增 Lincoln 全量更新器，从 GitHub Releases 拉取最新 release，按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/` 等框架文件并保留 `.context/`、`.github/openspec-config.yml`、`recordings/` 等用户数据，支持 TUI 确认与 `--dry-run` / `--no-tui` 脚本调用。
-
----
-
-## 工作状态与交接
-
-### 查看当前分支状态
-
-对 Agent 说"现在什么状态"，Agent 会汇报：当前阶段、等待对象、已加载上下文、推荐技能、产物状态、下一步动作。需要机器可读的结果时，可以要求 JSON 或 Markdown 格式。
-
-### 生成交接文档
-
-暂停或切换协作者时，对 Agent 说"生成交接"，会生成 `.context/lc-handoff-<stage>.md` 或 `{process_slug}/handoffs/` 文档，包含当前阶段、已确认产物、待解决问题、下一角色、推荐技能。
-
-阶段通过人类确认后，对 Agent 说"确认通过"，Agent 会标记该阶段 gate 已审批通过。
-
-### PM→UX 交接
-
-在 `product-design-docs` 阶段结束时，PM Agent 会生成 `{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md` 与 `{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml`：
-
-- **master-handoff** 是人类可读的交接文档，汇总需求背景、设计决策、场景、功能目录、数据模型、流程与可行性结论。
-- **pm-to-ux.handoff.yaml** 是机器可读的 agent-agent 契约，定义接收方（lc-designer / lc-frontend-engineer）应读取的上下文包顺序与校验项。
-
-UX Agent 接手时应先读 `pm-to-ux.handoff.yaml`，再读 master-handoff，然后按 `context_pack` 顺序读取 Tier-2 设计文档，确保跨成员、跨 Agent 协作时设计上下文不丢失。
-
-### 查看所有进行中的 Lincoln 分支
-
-对 Agent 说"列出所有活跃的 Lincoln 分支"；只看等待自己的分支时说"哪些分支在等我"。
-
-### 审计工作流健康度
-
-对 Agent 说"审计工作流健康度"，Agent 会输出 PASS/WARN/FAIL 报告，覆盖状态一致性、产物完整性、门控合规性、技能覆盖、异常检测。
-
----
-
-## 框架文档
-
-Lincoln 框架的核心定义直接内联在 `.claude/` 中：
-
-- [`.claude/stages/`](.claude/stages/) — Stage、Gate、Artifact、Role 的注册表与能力边界：每个阶段一个 `<stage-id>.yaml`，其 `skills` 字段派生阶段到技能的映射。
-- [`.claude/workflows/README.md`](.claude/workflows/README.md) — 所有 SOP 工作流模板的索引与路由说明。
-- [`.claude/schemas/`](.claude/schemas/) — `workflow-stage`、`stage-definition`、`workflow-template` 的 JSON Schema。
-- [`.claude/harnesses/command-map.yaml`](.claude/harnesses/command-map.yaml) — `/lc-*` 命令单一事实源，由 `scripts/lincoln_command_map.py --refresh` 自动维护。
-- [`.claude/harnesses/scenarios.yaml`](.claude/harnesses/scenarios.yaml) — 跨角色/技能的组合场景目录（如 `make-prd`、`make-ux`、`pm-research`）。
-- [`CLAUDE.md`](CLAUDE.md) — Agent 启动自检、人类门控规则、handoff 协议、技能调用规范。
-
----
-
-## 分支级工作流与阶段状态
-
-- 每个需求使用独立的 Lincoln feature 分支（命名约定 `issue-<N>`，N 为 GitHub issue 编号）。
-- 阶段状态随分支提交，保存在 `{process_slug}/workflow-stage.yaml`。
-- 过程文档（`recordings/`、`interviews/`、`requirements/`、`designs/`、`openspec/`、`docs/research/`）随 feature 分支传递，**不合并到 `main`**。
-- 当前负责人在本地推进阶段后，push feature 分支到远程；下游角色 checkout 同一分支继续。
-- 每个阶段的专属上下文定义在 `.claude/stages/<stage-id>.yaml`（角色、技能、门控与产物约定内联其中）。
-
-Agent 启动时，`.claude/hooks/on-session-start.sh` 会自动解析 `{process_slug}/workflow-stage.yaml`、加载当前阶段上下文、读取 handoff 文档并注入推荐技能，无需手动先读 README 再读 CLAUDE.md。
-
----
-
-## 工作流概览
-
-### 完整团队链路
-
-```
-访谈录音 → 转写摘要 → 需求澄清 → 产品设计 → Pencil 原型 → TDD 研发计划 → OpenSpec 提案 → GitHub Issues → 代码实现 → PR 合并 → Obsidian 知识库
-```
-
-### 轻量个人链路（vibe-coding）
-
-```
-想法/本地代码 → 需求澄清 → 设计评审 → TDD 计划 → 代码实现 → 本地验证 → 知识库同步
-```
-
-个人路径可以跳过访谈录音、OpenSpec 提案和 GitHub Issues 拆分，直接在手边项目上与 Agent 迭代；当需要升级成团队协作时，再补齐中间阶段。
-
-详细模板选择见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
-
----
+详细路径说明见 [USAGE.md](USAGE.md)。
 
 ## 工具
 
-Lincoln 提供两个配套工具：
+- `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端
+- `tools/lincoln-record/` — Rust 本地录音转写 CLI（whisper-rs + Metal 加速、说话人分离）
+- `npx lincoln-install` — 终端 TUI 安装器
+- `npx lincoln-update` — 终端全量更新器
 
-- `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端（`lincoln` CLI）。
-- `tools/lincoln-record/` — Rust 本地录音转写 CLI（whisper-rs + Metal 加速、说话人分离），推荐用于访谈录音的本地转写；模型经 hf-mirror.com 镜像下载。
+## 多 harness 支持（codex / opencode）
 
-安装与使用说明见各自目录下的 README 或 `--help`。
+Lincoln 的端到端逻辑（角色契约、阶段工作流、`lc-*` 命令）可适配到 codex 与 opencode。`.claude/` 是唯一事实源，各 harness 产物由适配器自动生成，**不要手改生成产物**。
 
----
+需要对 Agent 说「生成 codex 适配」或「生成 opencode 适配」。生成产物不入 git，CI 会校验 manifest 可生成、本地产物未漂移。
 
-## 目录结构
+## 扩展与贡献
 
-```
-.
-├── issue-<number>/                     # issue 工作包（团队/协作场景；个人 vibe-coding 可先使用由模板自动选择的工作包目录，后续再迁移）
-│   ├── workflow-stage.yaml             # issue 运行时状态与 handoff 协议
-│   ├── documents.yaml                  # 文档索引：各阶段产物与 human 确认状态（自动生成）
-│   ├── recordings/                     # 原始音频（gitignored）
-│   ├── interviews/<session-id>/        # 转写与摘要
-│   ├── requirements/<session-id>/      # 需求文档
-│   ├── designs/<design-id>/            # 设计文档、Pencil 原型、TDD 计划
-│   ├── openspec/changes/               # OpenSpec 变更提案
-│   ├── docs/research/                  # 调研与决策记录
-│   └── handoffs/                       # 阶段交接文档
-├── knowledge/                          # 项目级 Obsidian vault（合并到 main）
-├── products/                           # 产品代码占位
-├── oss/                                # 开源候选跟踪
-├── .claude/                            # Claude Code 系统提示层（自动加载）
-│   ├── agents/                         # Agent 角色模板
-│   ├── hooks/                          # 生命周期 hooks（settings.json 自动挂接）
-│   ├── schemas/                        # JSON Schema 校验
-│   ├── skills/                         # 原生 skills（含 dependencies.yaml）
-│   ├── stages/                         # 阶段上下文
-│   ├── templates/issue-package/        # issue 工作包模板
-│   ├── workflows/                      # SOP 工作流模板
-│   │   └── README.md（工作流索引）       # ← 路由到这里看所有模板
-│   ├── settings.json                   # Claude Code 项目设置
-├── .context/                           # session 级临时文件（gitignored），含 solo 工作流实例 .context/workflow/<name>.yaml
-├── .github/                            # issue 模板、Actions、OpenSpec 配置
-├── scripts/                            # 初始化、状态、审计工具
-├── tests/                              # pytest 测试套件
-└── tools/                              # lincoln TUI + lincoln-record（Rust）
-```
+Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模型贡献新的 Agent 角色、skills、hooks 或工作流模板。
 
----
+提交 PR 前请阅读：
 
-## 依赖
-
-- `python3`（≥3.10 推荐）
-- `node` ≥ 20（用于 `tools/lincoln/`）
-- `gh` CLI（已登录）
-- `openspec` CLI：`npm install -g @fission-ai/openspec`
-- `ffmpeg`（可选，仅录音转写需要）
-- Rust 工具链（`cargo`，可选，仅构建 `tools/lincoln-record/` 本地转写 CLI 需要；本地转写由内置 whisper-rs 提供，无需 Python Whisper 依赖）
-- Pencil 应用或 Pencil MCP（用于 `.pen` 原型）
-- `ecc` CLI（来自 everything-claude-code）
-- Obsidian（可选，用于可视化浏览 vault）
-
-Benchmark（可选）：Lincoln 提供工作流基准评测入口，需要时对 Agent 说"运行 benchmark"了解用法。
-
-此外，Lincoln 依赖若干外部 skill/CLI，清单见 `.claude/skills/dependencies.yaml`。初始化或升级后请对 Agent 说"检查 Lincoln 环境"。外部 skills 已 pin 到已知良好的上游 ref（不再跟踪 main）——需要升级时对 Agent 说"升级 Lincoln 外部依赖"，Agent 会比对上游漂移、跑 benchmark 验证无回归后更新 pin。
-
----
-
-## 作为 Claude Code 插件安装
-
-Lincoln 支持以 Claude Code 插件形式安装。清单文件位于 `.claude-plugin/`：
-
-- `.claude-plugin/plugin.json` — 插件元数据与技能入口。
-- `.claude-plugin/marketplace.json` — Marketplace 注册信息。
-
-安装方式取决于你使用的 Claude Code 插件管理器（例如 oh-my-claudecode）。通常将本仓库作为插件源引用即可。
-
----
-
-## 多 harness 支持(codex / opencode)
-
-Lincoln 的端到端逻辑(角色契约、阶段工作流、`lc-*` 命令)可适配到 codex 与 opencode。`.claude/` 是唯一事实源,各 harness 产物由适配器按 `.claude/harnesses/<name>.yaml` manifest 派生,**不要手改生成产物**。
-
-需要对 Agent 说"生成 codex 适配"或"生成 opencode 适配"(也可说"安装时同时生成两个 harness 适配"一步到位)。生成产物:
-
-- codex: `AGENTS.md`、`~/.codex/prompts/lc-*.md` 以及 `.codex-plugin/plugin.json`。
-- opencode: `.opencode/agent/*.md` 与 `.opencode/command/lc-*.md`。
-
-生成产物不入 git(`.opencode/`、`.codex-plugin/`、`AGENTS.md` 已加入 `.gitignore`)。CI 会校验 manifest 可生成、本地产物未漂移。
-
-### Codex hooks 缺省回退陷阱
-
-Codex 在 `.codex-plugin/plugin.json` **省略** `hooks` 字段时,会回退到默认的 `hooks/hooks.json`(参见 superpowers 踩坑记录 obra/superpowers@7d8d3d4)。因此 Lincoln 派生的 codex 插件清单会**显式写入 `"hooks": {}`**;缺失字段或空数组 `[]` 都会触发回退路径。新增 harness 能力时,必须在 manifest 中显式声明,未配置的能力务必置空对象/空集合,而非省略字段。
-
-门控与 CI 从轻:阶段推进统一由 Agent 执行阶段校验完成,已写入各 harness 的命令模板;human_gate 仍需人类 PM 显式确认。
-
-### 命令命名迁移:`lincoln-*` → `lc-*`(破坏性)
-
-技能/命令入口已从 `lincoln-*` 统一重命名为 `lc-*`(如 `lincoln-status` → `lc-status`)。环境检测(对 Agent 说"检查 Lincoln 环境")会扫描 `~/.claude/skills/` 下的旧目录并打印迁移提示;确认无本地改动后手动删除旧目录即可。底层脚本文件名保持不变,对 Agent 透明。
-
----
-
-## 规范约束
-
-- Agent 启动时会由 `.claude/hooks/on-session-start.sh` 自动加载当前阶段上下文，无需手动遍历所有文件。
-- 具体行为契约见 [`CLAUDE.md`](CLAUDE.md)；阶段级上下文见 `.claude/stages/<stage-id>.yaml`。
-- `human_gate: true` 阶段必须获得人类最终确认后才能继续。
-- 阶段准出校验通过 `scripts/validate_stage.py` 运行。
-
----
-
-## 扩展与贡献 Lincoln
-
-Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模型贡献新的扩展：
-
-- **Agent 角色模板**（`.claude/agents/`）：为特定场景定义新的角色行为与上下文。
-- **Skills 子技能**（`.claude/skills/`）：封装方法论子技能或 Lincoln 原生技能。
-- **Hooks 生命周期扩展**（`.claude/hooks/`）：在会话启动、工具调用前后等时机注入自定义逻辑。
-- **Workflow 工作流模板**（`.claude/workflows/`）：为不同场景定义从需求输入到知识沉淀的完整阶段序列。
-
-提交 PR 前请参考：
-
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — 贡献者护栏、核心与领域包边界、测试分层与 eval 门禁规范。
-
-- [`CLAUDE.md`](CLAUDE.md) — Agent 契约、人类门控规则与产物规范。
-- [`.claude/workflows/README.md`](.claude/workflows/README.md) — 新增工作流模板的步骤。
-- [`.claude/stages/`](.claude/stages/) — 阶段、门控、产物与角色注册表；各 `<stage-id>.yaml` 的 `skills` 字段派生阶段到技能的映射。
-- [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml) — 外部 skill 与 CLI 依赖清单。
-
-> 提示：
-> - 新增 workflow 模板时，请同步更新 `.claude/workflows/README.md` 的快速路由表与模板详解，并运行 `python3 scripts/lincoln_command_map.py --refresh` 自动登记 `lc-wf-<name>` 命令。
-> - 新增 agent 角色或 skill 时，刷新命令表后会自动生成对应的 `lc-agent-*` / `lc-skill-*` 命令。
-> - 新增跨角色/技能场景时，请在 `.claude/harnesses/scenarios.yaml` 中登记，再由命令表脚本生成 `lc-scenario-*`。
-> - 新增 skills 或 hooks 时，请确保与 `.claude/settings.json` 和 `dependencies.yaml` 兼容，并补充必要的验证与测试。
-
----
-
-## License 与第三方致谢
-
-Lincoln 本体以 [MIT License](LICENSE) 发布,Copyright (c) 2026 苏尚lewis (sushanglewis)。
-
-Lincoln 引用以下开源项目作为外部 skills、插件与 CLI 依赖(声明见 [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml),均按其各自许可证使用):
-
-| 项目 | 来源 | 用途 | 许可证 |
-|---|---|---|---|
-| superpowers | [obra/superpowers](https://github.com/obra/superpowers) | 通用技能(brainstorming、TDD 等) | MIT |
-| gsd | [gsd-build/get-shit-done](https://github.com/gsd-build/get-shit-done) | 流程技能(import、docs-update 等) | MIT |
-| oh-my-claudecode | [Yeachan-Heo/oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode) | 可选多智能体编排插件 | MIT |
-| openspec | [Fission-AI/openspec](https://github.com/Fission-AI/openspec) | 变更提案 CLI | MIT |
-| gh | [cli/cli](https://github.com/cli/cli) | GitHub CLI | MIT |
-| ffmpeg | [FFmpeg](https://ffmpeg.org/) | 可选,录音转写 | LGPL/GPL(见官网) |
-| whisper-rs | [tazz4843/whisper-rs](https://github.com/tazz4843/whisper-rs) | 可选,`tools/lincoln-record/` 本地语音转写(whisper.cpp 绑定) | MIT |
-
-外部 agent 定义由 `scripts/sync-external-agents.sh` 按 manifest 同步,来源与许可证见 [`.claude/agents/external/NOTICES.md`](.claude/agents/external/NOTICES.md)(everything-claude-code、oh-my-claudecode、wshobson/agents,均为 MIT)。
-
----
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 贡献者护栏、核心与领域包边界、测试分层与 eval 门禁规范
+- [CLAUDE.md](CLAUDE.md) — Agent 契约、人类门控规则与产物规范
+- [`.claude/workflows/README.md`](.claude/workflows/README.md) — 新增工作流模板的步骤
 
 ## 了解更多
 
+- [USAGE.md](USAGE.md) — 完整用户手册
+- [CONTRIBUTING.md](CONTRIBUTING.md) — 贡献者指南
+- [RELEASE.md](RELEASE.md) — 发布说明与 Changelog
+- [`.claude/workflows/README.md`](.claude/workflows/README.md) — 工作流模板总览
 - [OpenSpec 文档](https://github.com/Fission-AI/openspec)
 - [Obsidian WikiLinks](https://help.obsidian.md/Linking+notes+and+files/Internal+links)
-- [`.claude/workflows/README.md`](.claude/workflows/README.md) — Lincoln 工作流模板总览
+
+## License
+
+Lincoln 本体以 [MIT License](LICENSE) 发布，Copyright (c) 2026 苏尚lewis (sushanglewis)。
+
+外部 skills、CLI 与插件的许可证声明见 [`.claude/skills/dependencies.yaml`](.claude/skills/dependencies.yaml) 与 [`.claude/agents/external/NOTICES.md`](.claude/agents/external/NOTICES.md)。

@@ -1,3 +1,61 @@
+# Lincoln v1.4.0 Release Notes
+
+**Release date:** 2026-08-04
+
+## Highlights
+
+Lincoln v1.4.0 ships an HTML-centric issue work package experience, a terminal-based installer/updater, and root-level PRD standards. The README is now a slim entry point, with detailed user and contributor guidance moved to `USAGE.md` and `CONTRIBUTING.md`.
+
+## New Features
+
+- **HTML-centric issue work packages** (#90 / #91 / #96)
+  - Refactors `issue-<N>/` process packages from Markdown/YAML-centric artifacts to an HTML portal (`issue-<N>/index.html`) as the human-readable entry point.
+  - `workflow-stage.yaml` remains the machine-readable state; `documents.yaml` remains the artifact index.
+  - Strengthens the HTML prototype kit with categorized shell templates and theme synchronization.
+  - Auto-generates `assets/js/package-data.js` to drive portal navigation and status panels.
+
+- **Terminal installer and updater** (#88 / #89)
+  - `npx lincoln-install` provides a TUI installer for first-time setup, selecting harness, optional dependencies, and install scope.
+  - `npx lincoln-update` downloads the latest Lincoln release and merges framework files by allowlist while preserving user data.
+  - Both support `--no-tui --format json` for scripting and `--dry-run` for safe preview.
+
+- **Root-level PRD and interaction-doc standards** (#85 / #86)
+  - Introduces a root-level PRD format with version management and interaction-document standards.
+  - Aligns design and implementation artifacts around a single source of truth at the repository root.
+
+## Tooling
+
+- `tools/lincoln` — Ink/React TUI for interview recording (version aligned to `1.4.0`).
+- `tools/lincoln-record` — Rust local recording & transcription CLI (version aligned to `1.4.0`).
+- `tools/lincoln-installer` — terminal TUI installer and updater for Lincoln (version aligned to `1.4.0`).
+- `scripts/lincoln_index.py` — generates portal navigation data for HTML issue packages.
+- `scripts/lincoln_documents.py` — refreshes `documents.yaml` artifact index.
+
+## Dependencies
+
+- `superpowers` v1.2.0
+- `gsd` v2.0.1
+- `openspec` v0.5.0
+
+## Migration Notes
+
+- Users upgrading from v1.3.0 should run `python3 scripts/bump_version.py --check` to verify all manifests are lockstep-aligned.
+- Issue work packages created before v1.4.0 continue to work; new packages are initialized with the HTML portal layout.
+- The README no longer contains detailed installation or contribution instructions; see `USAGE.md` and `CONTRIBUTING.md`.
+
+## Full Changelog
+
+Compare: https://github.com/sushanglewis/Lincoln/compare/v1.3.0...v1.4.0
+
+Merged PRs since v1.3.0:
+
+- #96 feat(#90): strengthen HTML prototype kit with categorized shells and theme sync
+- #91 feat(#90): refactor issue-package to HTML-centric artifacts
+- #89 feat(#88): add lincoln-install terminal TUI installer and npx lincoln-update updater
+- #86 feat(#85): root-level PRD with version management and interaction-doc standards
+
+---
+
 # Lincoln v1.3.0 Release Notes
 
 **Release date:** 2026-07-22

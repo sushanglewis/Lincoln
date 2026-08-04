@@ -10,8 +10,8 @@ README_EN = ROOT / "README.en.md"
 COMMAND_PATTERN = re.compile(r"python3?\s+scripts/|bash\s+scripts/|scripts/[\w.-]+\.(?:sh|py)")
 
 USER_FACING_SECTIONS = {
-    README_ZH: ["快速开始", "工作状态与交接", "多 harness 支持"],
-    README_EN: ["Quick Start", "Workflow Status & Handoff", "Multi-harness support"],
+    README_ZH: ["快速开始", "Lincoln 能做什么", "自然语言交互", "两种使用方式", "多 harness 支持"],
+    README_EN: ["Quick Start", "What Lincoln Can Do", "Natural-Language Interaction", "Two Usage Modes", "Multi-harness Support"],
 }
 
 
