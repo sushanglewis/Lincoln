@@ -1,10 +1,32 @@
 # build-product-prototype
 
-You are executing the Lincoln workflow step `product-prototype`: turn approved product design documents into UI/field specifications and a prototype.
+You are executing the Lincoln workflow step `product-prototype`: turn approved product design documents into UI/field specifications and an interactive HTML prototype.
 
 ## Goal
 
-Create field and UI specifications as HTML doc pages, and produce a Pencil prototype (and optional interactive HTML prototype) that the PM can inspect and developers can use later.
+Create field and UI specifications as HTML doc pages, and produce a high-fidelity interactive HTML prototype that the PM can inspect directly in the issue-package portal (`{process_slug}/index.html`). A Pencil prototype is optional; the HTML prototype is the primary review artifact.
+
+## Reference templates
+
+Use the following read-only templates as the style/layout reference. Copy/adapt them into the issue package; do not modify the templates themselves.
+
+- `.claude/templates/issue-package/page-prototype.html.tpl` — minimal starter page with theme sync support.
+- `.claude/templates/issue-package/prototypes/app/main/page.html.tpl` — main app window with sidebar + WebView placeholder.
+- `.claude/templates/issue-package/prototypes/app/onboarding/page.html.tpl` — login/onboarding card.
+- `.claude/templates/issue-package/prototypes/app/settings/page.html.tpl` — two-column settings page.
+- `.claude/templates/issue-package/prototypes/app/overlays/page.html.tpl` — avatar menu / about / toast overlays.
+- `.claude/templates/issue-package/prototypes/app/tray/page.html.tpl` — system-tray simulation.
+- `.claude/templates/issue-package/prototypes/app/org/page.html.tpl` — organization list.
+- `.claude/templates/issue-package/prototypes/web/dashboard/page.html.tpl` — web dashboard shell.
+- `.claude/templates/issue-package/prototypes/web/list/page.html.tpl` — web list view shell.
+- `.claude/templates/issue-package/prototypes/web/form/page.html.tpl` — web form shell.
+- `.claude/templates/issue-package/prototypes/web/detail/page.html.tpl` — web detail shell.
+- `.claude/templates/issue-package/prototypes/mobile/home/page.html.tpl` — mobile home feed shell.
+- `.claude/templates/issue-package/prototypes/mobile/chat/page.html.tpl` — mobile chat shell.
+- `.claude/templates/issue-package/prototypes/mobile/settings/page.html.tpl` — mobile settings list shell.
+- `.claude/templates/issue-package/prototypes/mobile/profile/page.html.tpl` — mobile profile shell.
+- `.claude/templates/issue-package/assets/prototype.css` — shared styles (tokens, dark mode, window shell, sidebar, forms, overlays, web/mobile shells).
+- `.claude/templates/issue-package/assets/prototype.js` — shared UI builders and mock data (`window.LincolnPrototype`), including `frameApp`, `frameWeb`, `frameMobile`.
 
 ## Input
 
@@ -20,26 +42,32 @@ Create field and UI specifications as HTML doc pages, and produce a Pencil proto
    - 用户场景与流程: who, when, goal, trigger, completion criteria.
    - 界面流转图: screen-to-screen flow mapped to the business flow in `flows.html`.
    - 页面交互说明: per-screen layout elements, interaction rules (events, responses, navigation), and field validation/error handling.
-   - 交互 Demo/原型: link to `prototype.pen` and summarize key interactions.
-5. Optionally create interactive HTML prototypes under `{process_slug}/pages/prototype/{web,mobile,overlays}/` using `.claude/templates/issue-package/page-prototype.html.tpl`. Every interactive element must carry a stable `data-uid`.
-6. Use Pencil tools to create or update `{process_slug}/designs/<design_id>/prototype.pen` as a clickable prototype that realizes the screen flow and key interactions.
-7. Before using Pencil tools, call `get_editor_state(include_schema: true)` if the current `.pen` schema is not already known.
-8. After generating the prototype, use `snapshot_layout` to check for clipped or overlapping elements. Fix layout issues before asking for review.
-9. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with the `ui-spec.html`, `fields.html`, and `prototype.pen` links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
-10. Ask the PM to open and edit `{process_slug}/designs/<design_id>/prototype.pen` in Pencil. Treat the saved `.pen` as the final development reference.
-11. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.html`.
-12. Run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
+   - 交互 Demo/原型: links to the HTML prototype pages under `pages/prototype/` and a summary of key interactions.
+5. Create interactive HTML prototypes under `{process_slug}/pages/prototype/{app,web,mobile}/` by adapting the reference templates above. Pick the right shell (`frameApp`, `frameWeb`, or `frameMobile`) from `LincolnPrototype.ui` for the product form-factor. Every page must:
+   - Link to `../../../assets/prototype.css` and `../../../assets/prototype.js` (depth 3) or `../../../../assets/...` (depth 4) depending on its path.
+   - Include the theme sync IIFE shown in the starter template.
+   - Include `<meta name="prototype-base" content="../../../">` (or `../../../../` for depth 4).
+   - Include `<meta name="page-uid" content="...">` and `<meta name="nav-group" content="...">`.
+   - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
+   - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
+6. Optionally create or update `{process_slug}/designs/<design_id>/prototype.pen` with Pencil tools if the PM explicitly asks for a Pencil prototype. If you use Pencil tools, call `get_editor_state(include_schema: true)` first and use `snapshot_layout` to check for clipping/overlap.
+7. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with the `ui-spec.html`, `fields.html`, and HTML prototype links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
+8. Ask the PM to open `{process_slug}/index.html` in a browser and review the prototype pages inside the portal.
+9. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.html`.
+10. Run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
 
 ## Output Artifacts
 
 - `{process_slug}/pages/docs/fields.html`
 - `{process_slug}/pages/docs/ui-spec.html`
-- `{process_slug}/designs/<design_id>/prototype.pen`
-- `{process_slug}/pages/prototype/**/*.html` (optional interactive prototypes)
+- `{process_slug}/pages/prototype/**/*.html` (required interactive HTML prototypes)
+- `{process_slug}/designs/<design_id>/prototype.pen` (optional Pencil prototype)
 
 ## Rules
 
-- Never read or modify `.pen` files with normal file tools; use Pencil tools or the Pencil application only.
-- Do not rely on screenshots or static HTML as the main approval artifact. They are optional review aids only.
+- The HTML prototype is the primary review artifact; Pencil is optional.
+- Always reuse the shared `prototype.css` and `prototype.js` assets. Do not inline all styles or rebuild the component library from scratch.
 - Keep controls and states complete enough for implementation: default, hover/focus where relevant, disabled, empty, loading, error, and success.
+- Every interactive element must carry a stable `data-uid`. Do not generate random UIDs that change on every render.
+- Prototype links use relative paths so they work both inside the portal iframe and when opened standalone.
 - After approval, tell the user to run: `claude plan-tdd-development <session_id> <design_id>`.

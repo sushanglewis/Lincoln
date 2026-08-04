@@ -2,12 +2,9 @@
  * Lincoln issue-package portal runtime.
  * Reads window.LINC_PACKAGE from assets/js/package-data.js and renders the
  * left navigation, iframe canvas, and right annotation panel.
- * Also manages light/dark theme synchronization between portal and child pages.
  */
 (function () {
     'use strict';
-
-    var THEME_KEY = 'lincoln-theme';
 
     function generateUUID(prefix) {
         var hex = '';
@@ -23,68 +20,6 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
-    }
-
-    function getStoredTheme() {
-        try {
-            return localStorage.getItem(THEME_KEY);
-        } catch (err) {
-            return null;
-        }
-    }
-
-    function setStoredTheme(theme) {
-        try {
-            localStorage.setItem(THEME_KEY, theme);
-        } catch (err) {
-            // ignore
-        }
-    }
-
-    function getPreferredTheme() {
-        var stored = getStoredTheme();
-        if (stored === 'light' || stored === 'dark') return stored;
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
-        return 'light';
-    }
-
-    function applyTheme(theme) {
-        document.documentElement.setAttribute('data-theme', theme);
-        var btn = document.getElementById('themeToggle');
-        if (btn) btn.textContent = theme === 'dark' ? '☾' : '☀';
-    }
-
-    function notifyFrame(theme) {
-        var frame = document.getElementById('frame');
-        if (frame && frame.contentWindow) {
-            frame.contentWindow.postMessage({ type: 'lincoln-theme', theme: theme }, '*');
-        }
-    }
-
-    function setTheme(theme) {
-        if (theme !== 'light' && theme !== 'dark') return;
-        setStoredTheme(theme);
-        applyTheme(theme);
-        notifyFrame(theme);
-    }
-
-    function toggleTheme() {
-        var current = document.documentElement.getAttribute('data-theme') || 'light';
-        setTheme(current === 'dark' ? 'light' : 'dark');
-    }
-
-    function initTheme() {
-        var theme = getPreferredTheme();
-        applyTheme(theme);
-        var btn = document.getElementById('themeToggle');
-        if (btn) btn.addEventListener('click', toggleTheme);
-
-        window.addEventListener('message', function (e) {
-            var data = e.data || {};
-            if (data.type === 'lincoln-theme-ready') {
-                notifyFrame(getPreferredTheme());
-            }
-        });
     }
 
     function findPage(path, pages) {
@@ -109,28 +44,6 @@
         if (packageData.current_stage) {
             html += '<div class="pnav-status">阶段: <span class="stage">' + escapeHtml(packageData.current_stage) + '</span></div>';
         }
-
-        html += '<div class="pnav-checklist" id="artifactChecklist">';
-        html += '<h4>必要产物清单</h4>';
-        html += '<ul>';
-        var checklist = packageData.checklist || [
-            { key: 'prd', label: 'PRD' },
-            { key: 'ui-spec', label: 'UI 规范' },
-            { key: 'fields', label: '字段说明' },
-            { key: 'decisions', label: '决策记录' },
-            { key: 'research', label: '调研笔记' },
-            { key: 'prototype-web', label: '原型 · Web 端' },
-            { key: 'prototype-mobile', label: '原型 · 手机端' },
-            { key: 'prototype-app', label: '原型 · 应用端' },
-            { key: 'handoff', label: 'Handoff 交接' },
-            { key: 'openspec', label: 'OpenSpec 提案' }
-        ];
-        var done = packageData.checklist_done || {};
-        checklist.forEach(function (item) {
-            var cls = done[item.key] ? ' class="done"' : '';
-            html += '<li' + cls + ' data-key="' + escapeHtml(item.key) + '">' + escapeHtml(item.label) + '</li>';
-        });
-        html += '</ul></div>';
 
         (packageData.nav || []).forEach(function (group) {
             html += '<div class="pnav-group">' + escapeHtml(group.group) + '</div>';
@@ -206,7 +119,6 @@
             } catch (err) {
                 // cross-origin iframe; ignore
             }
-            notifyFrame(getPreferredTheme());
         });
     }
 
@@ -242,9 +154,6 @@
             if (data.type === 'lincoln-navigate' && data.path) {
                 selectByPath(data.path, nav, frame, panel, pages);
             }
-            if (data.type === 'lincoln-theme-ready') {
-                notifyFrame(getPreferredTheme());
-            }
         });
     }
 
@@ -257,7 +166,6 @@
         if (frame && panel) bindPortal(nav, frame, panel, packageData);
         if (nav && frame) bindPrototypeLinks(nav, frame, panel, packageData.nav || []);
         initPanelToggle();
-        initTheme();
     }
 
     if (document.readyState === 'loading') {
@@ -266,5 +174,5 @@
         init();
     }
 
-    window.LincolnPortal = { generateUUID: generateUUID, escapeHtml: escapeHtml, setTheme: setTheme };
+    window.LincolnPortal = { generateUUID: generateUUID, escapeHtml: escapeHtml };
 })();

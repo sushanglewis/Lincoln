@@ -6,21 +6,92 @@
 <meta name="doc-title" content="{TITLE}">
 <meta name="nav-group" content="{NAV_GROUP}">
 <meta name="page-uid" content="{UID}">
+<meta name="prototype-base" content="../../../">
 <title>{TITLE}</title>
-<!-- Asset paths assume this page lives at pages/prototype/{web,mobile,overlays}/*.html (depth 3). Adjust if placed elsewhere. -->
-<link rel="stylesheet" href="../../../assets/style.css">
+<!-- Asset paths assume this page lives at pages/prototype/{group}/*.html (depth 3). -->
+<link rel="stylesheet" href="../../../assets/prototype.css">
 </head>
 <body class="proto-page" data-page-uid="{UID}">
 
-<div class="proto-frame">
-    <div class="proto-placeholder">
-        <h2 data-uid="{UID}-title">{TITLE}</h2>
-        <p data-uid="{UID}-desc">在此放置原型内容。所有交互元素必须携带 data-uid 属性。</p>
-        <button class="btn primary" data-uid="{UID}-btn-primary">主要操作</button>
-        <button class="btn default" data-uid="{UID}-btn-default">次要操作</button>
-    </div>
-</div>
+<!--
+  Agent instructions:
+  1. Keep this page self-contained: link prototype.css + prototype.js from the
+     issue-package assets directory (paths above are correct for pages/prototype/*).
+  2. Every interactive element must carry a stable data-uid attribute.
+  3. Replace {TITLE}, {NAV_GROUP}, {UID} when copying this template.
+  4. Choose the right shell from LincolnPrototype.ui (frameApp / frameWeb / frameMobile)
+     based on the product form-factor.
+  5. See .claude/templates/issue-package/prototypes/ for categorized examples:
+     app/{main,onboarding,settings,overlays,tray,org}, web/{dashboard,list,form,detail},
+     mobile/{home,chat,settings,profile}.
+-->
 
-<script src="../../../assets/app.js"></script>
+<div class="window full" id="win"></div>
+
+<script src="../../../assets/prototype.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var THEME_KEY = 'lincoln-theme';
+
+    function getQueryTheme() {
+        var m = window.location.search.match(/[?&]theme=(light|dark)(?:&|$)/);
+        return m ? m[1] : null;
+    }
+
+    function getStoredTheme() {
+        try {
+            return localStorage.getItem(THEME_KEY);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    function setStoredTheme(theme) {
+        try {
+            localStorage.setItem(THEME_KEY, theme);
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    function applyTheme(theme) {
+        if (theme !== 'light' && theme !== 'dark') return;
+        document.documentElement.setAttribute('data-theme', theme);
+        setStoredTheme(theme);
+    }
+
+    function initTheme() {
+        var theme = getQueryTheme() || getStoredTheme() || 'light';
+        applyTheme(theme);
+
+        window.addEventListener('message', function (e) {
+            var data = e.data || {};
+            if (data.type === 'lincoln-theme' && (data.theme === 'light' || data.theme === 'dark')) {
+                applyTheme(data.theme);
+            }
+        });
+
+        window.addEventListener('load', function () {
+            if (window.parent) {
+                window.parent.postMessage({ type: 'lincoln-theme-ready' }, '*');
+            }
+        });
+    }
+
+    initTheme();
+
+    var ui = LincolnPrototype.ui;
+    var hero = '<div style="display:flex;justify-content:center">' + ui.appLogo('lg') + '</div>';
+    var body = '<p data-uid="{UID}-desc">在此放置原型内容。所有交互元素必须携带 <code>data-uid</code> 属性。</p>'
+        + '<div style="display:flex;gap:10px;justify-content:center;margin-top:20px">'
+        + '<button class="btn primary" data-uid="{UID}-btn-primary">主要操作</button>'
+        + '<button class="btn default" data-uid="{UID}-btn-default">次要操作</button>'
+        + '</div>';
+    var content = ui.onboardingCard('{TITLE}', body, { hero: hero });
+    LincolnPrototype.proto.mount(content);
+})();
+</script>
 </body>
 </html>
