@@ -61,6 +61,15 @@ artifact_guidance: |
   Approval convention:
   - Add `<!-- status: approved -->` inside the docSource block or mark
     `human_confirmed: true` via `approve-gate` to indicate PM review.
+
+  Portal annotation contract:
+  - Every HTML page should set `<meta name="nav-label">` for the left nav and the
+    annotation tags `doc-purpose`, `doc-layout`, `doc-fields`, `doc-stories`,
+    `doc-rules`, `doc-boundaries`, `doc-exceptions`, `doc-refs` so the right panel
+    can render functionality, layout, fields, boundary cases, and exception flows.
+  - The right panel is always visible; do not add collapse toggles.
+  - Prototype pages must use the shared `prototype.css` tokens so light/dark
+    theme switching is visible end-to-end.
 nodes: []
 recovery:
   last_validated_checkpoint: ""

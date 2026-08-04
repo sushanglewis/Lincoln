@@ -159,3 +159,52 @@ def test_schema_allows_issue_number_in_current_run():
     assert "issue_number" in current_run_props
     variables_props = current_run_props["variables"]["properties"]
     assert "issue_number" in variables_props
+
+
+def test_portal_template_has_no_collapse_toggle():
+    index = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
+    style = (TEMPLATE_ROOT / "assets" / "style.css").read_text(encoding="utf-8")
+    app = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert "pannToggle" not in index
+    assert "pann-toggle" not in style
+    assert ".pann.collapsed" not in style
+    assert "initPanelToggle" not in app
+
+
+def test_app_js_renders_annotation_sections():
+    text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert "boundaries" in text
+    assert "exceptions" in text
+    assert "布局" in text
+    assert "边界" in text
+    assert "异常流" in text
+
+
+def test_app_js_supports_portal_tray_state():
+    text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert "lincoln-tray-state" in text
+    assert "macTrayMenu" in text
+    assert "initTray" in text
+
+
+def test_portal_template_has_tray_menu_container():
+    text = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
+    assert 'id="macTrayMenu"' in text
+    assert 'id="macTray"' in text
+
+
+def test_page_templates_document_annotation_meta():
+    for tpl in ["page-doc.html.tpl", "page-prototype.html.tpl"]:
+        text = (TEMPLATE_ROOT / tpl).read_text(encoding="utf-8")
+        assert 'name="nav-label"' in text, f"{tpl} should set nav-label"
+        assert 'name="doc-purpose"' in text, f"{tpl} should reference doc-purpose"
+
+
+def test_tray_template_is_portal_controller():
+    text = (TEMPLATE_ROOT / "prototypes" / "app" / "tray" / "page.html.tpl").read_text(encoding="utf-8")
+    assert 'lincoln-tray-state' in text
+    assert "window.parent.postMessage" in text
+    assert 'class="menubar"' not in text
+    assert 'class="tray-icon"' not in text
+    assert "bindTray(" not in text
+    assert "trayMenu(" not in text

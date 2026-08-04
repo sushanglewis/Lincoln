@@ -514,6 +514,71 @@ def validate_prototype_artifact_complete(design_id: str):
     if not prototype_files:
         fail(f"Prototype artifact missing: no files under {prototype_dir}")
 
+    html_files = [p for p in prototype_files if p.suffix.lower() == ".html"]
+    missing_nav_label = [
+        str(p.relative_to(process_root()))
+        for p in html_files
+        if '<meta name="nav-label"' not in p.read_text(encoding="utf-8")
+    ]
+    if missing_nav_label:
+        fail(f"Prototype pages missing nav-label meta: {', '.join(missing_nav_label)}")
+
+    required_annotation_metas = [
+        ("doc-purpose", 'doc-purpose'),
+        ("doc-layout", 'doc-layout'),
+        ("doc-fields", 'doc-fields'),
+        ("doc-boundaries", 'doc-boundaries'),
+        ("doc-exceptions", 'doc-exceptions'),
+    ]
+    annotation_gaps: dict[str, list[str]] = {}
+    for p in html_files:
+        text = p.read_text(encoding="utf-8")
+        missing = [name for label, name in required_annotation_metas if f'<meta name="{name}"' not in text]
+        if missing:
+            annotation_gaps[str(p.relative_to(process_root()))] = missing
+    if annotation_gaps:
+        messages = [f"{path}: missing {', '.join(metas)}" for path, metas in annotation_gaps.items()]
+        fail(f"Prototype pages missing required annotation meta tags:\n" + "\n".join(messages))
+
+    # Anti-pattern: in-app tray redraw. The system tray is portal-level chrome.
+    in_app_tray_markers = [
+        'class="menubar"',
+        'class="tray-icon"',
+        'class="tray-panel"',
+        "bindTray(",
+        "trayMenu(",
+    ]
+    in_app_tray_offenders = []
+    for p in html_files:
+        text = p.read_text(encoding="utf-8")
+        if any(marker in text for marker in in_app_tray_markers):
+            in_app_tray_offenders.append(str(p.relative_to(process_root())))
+    if in_app_tray_offenders:
+        fail(
+            "Prototype pages redraw the system tray inside the app (anti-pattern). "
+            "Tray scenarios must be thin controllers that postMessage 'lincoln-tray-state' to the portal. "
+            "Offending pages: " + ", ".join(in_app_tray_offenders)
+        )
+
+    app_dir = prototype_dir / "app"
+    app_html_files = (
+        [p for p in app_dir.rglob("*.html") if p.is_file()]
+        if app_dir.exists()
+        else []
+    )
+    if app_html_files:
+        tray_dir = app_dir / "tray"
+        tray_pages = [p for p in tray_dir.rglob("*.html") if p.is_file()] if tray_dir.exists() else []
+        if not tray_pages:
+            fail("App-shell prototype detected but no tray scenario page found under pages/prototype/app/tray/")
+        for tp in tray_pages:
+            text = tp.read_text(encoding="utf-8")
+            if 'lincoln-tray-state' not in text:
+                fail(
+                    f"Tray scenario page must postMessage 'lincoln-tray-state' to the portal: "
+                    f"{tp.relative_to(process_root())}"
+                )
+
     required_fields = {
         "字段": ["字段", "Field"],
         "校验": ["校验", "Validation"],

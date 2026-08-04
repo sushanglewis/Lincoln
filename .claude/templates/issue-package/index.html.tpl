@@ -53,6 +53,8 @@
             </div>
         </div>
 
+        <div class="mac-tray-menu" id="macTrayMenu"></div>
+
         <div class="mac-window" id="macWindow">
             <div class="mac-titlebar">
                 <div class="mac-traffic">
@@ -67,9 +69,8 @@
     </main>
 
     <aside class="pann" id="pann">
-        <button class="pann-toggle" id="pannToggle">&#10094;</button>
         <div class="pann-inner" id="pannInner">
-            <p>点击左侧页面索引加载文档或原型。</p>
+            <p>点击左侧页面索引加载文档或原型。每个页面应通过 meta 标签提供功能、布局、字段、边界与异常流注解。</p>
         </div>
     </aside>
 </div>

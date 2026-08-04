@@ -16,6 +16,11 @@ from scripts import lincoln_harness_adapter
 ROOT = Path(__file__).resolve().parents[1]
 HARNESSES = ("codex", "opencode")
 
+
+def _repo_version() -> str:
+    return json.loads((ROOT / ".version-bump.json").read_text(encoding="utf-8"))["version"]
+
+
 # Strings that would indicate a hook/capability registration leaking into
 # generated artifacts (prose mentions of .claude/hooks are fine).
 FORBIDDEN_CONTENT = ("SessionStart", "hooks.json")
@@ -110,4 +115,4 @@ def test_codex_plugin_manifest_drops_claude_only_capabilities(tmp_path):
     assert "agents" not in manifest, "agents block must be absent from codex plugin manifest"
     # Neutral metadata should be preserved.
     assert manifest.get("name") == "lincoln"
-    assert manifest.get("version") == "1.3.0"
+    assert manifest.get("version") == _repo_version()

@@ -190,6 +190,45 @@ body {
     display: flex; align-items: center; justify-content: center;
     cursor: pointer;
 }
+.mac-tray .mt-badge {
+    position: absolute;
+    top: -5px; right: -5px;
+    min-width: 14px; height: 14px;
+    padding: 0 3px;
+    background: #FF3B30; color: #fff;
+    border-radius: 7px;
+    font-size: 9px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+}
+.mac-tray-menu {
+    display: none;
+    position: absolute;
+    top: 28px; right: 14px;
+    min-width: 220px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    padding: 6px 0;
+    z-index: 100;
+}
+.mac-tray-menu.visible { display: block; }
+.mac-tray-menu .mi {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 14px;
+    font-size: 13px; color: var(--text);
+    cursor: pointer;
+}
+.mac-tray-menu .mi:hover { background: var(--surface-2); }
+.mac-tray-menu .mi.empty { color: var(--text-3); cursor: default; }
+.mac-tray-menu .mi.danger { color: #FF3B30; }
+.mac-tray-menu .mi-sep { height: 1px; background: var(--border); margin: 4px 10px; }
+.mac-tray-menu .mi-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--surface-3);
+    flex-shrink: 0;
+}
+.mac-tray-menu a.mi { text-decoration: none; }
 .mac-date { font-size: 12px; color: var(--text-2); }
 
 .mac-window {
@@ -241,14 +280,6 @@ body {
     width: var(--pann-width); flex-shrink: 0;
     background: var(--surface); border-left: 1px solid var(--border);
     display: flex; flex-direction: column; position: relative;
-}
-.pann.collapsed { width: 0; overflow: hidden; }
-.pann-toggle {
-    position: absolute; left: -26px; top: 12px;
-    width: 26px; height: 32px;
-    background: var(--surface); border: 1px solid var(--border);
-    border-right: 0; border-radius: 6px 0 0 6px;
-    cursor: pointer; color: var(--text-3);
 }
 .pann-inner { padding: 20px; overflow: auto; flex: 1; }
 .pann .ann-kicker { font-size: 11px; font-weight: 700; color: var(--brand); text-transform: uppercase; margin-bottom: 6px; }

@@ -21,7 +21,7 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
 
 1. Validate that `{process_slug}/pages/docs/requirements.html` is approved (contains `<!-- status: approved -->`).
 2. Read `{process_slug}/pages/docs/requirements.html`, `user-stories.html`, and the root-level `{process_slug}/pages/docs/prd.html`.
-3. Produce the design package under `{process_slug}/pages/docs/` using `.claude/templates/issue-package/page-doc.html.tpl`. Each page embeds Markdown in `<script type="text/markdown" id="docSource">` with a `<!-- version: v1.0 -->` marker and meta tags (`doc-title`, `nav-group`, `doc-version`, `doc-uid`):
+3. Produce the design package under `{process_slug}/pages/docs/` using `.claude/templates/issue-package/page-doc.html.tpl`. Each page embeds Markdown in `<script type="text/markdown" id="docSource">` with a `<!-- version: v1.0 -->` marker and meta tags (`doc-title`, `nav-label`, `nav-group`, `doc-version`, `doc-uid`). Also include the annotation tags `doc-purpose`, `doc-layout`, `doc-fields`, `doc-boundaries`, `doc-exceptions` (and `doc-stories`, `doc-rules`, `doc-refs` when useful) so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows:
    - `design-review.html`: PM-facing entry point with decision summary, scope, links to all design docs, open questions, and approval checklist.
    - `scenarios.html`: target users, primary scenarios, boundary scenarios, and non-goals.
    - `feature-catalog.html`: concise feature list, priority, acceptance mapping, and source requirement links.

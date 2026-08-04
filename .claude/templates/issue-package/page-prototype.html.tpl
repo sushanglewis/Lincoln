@@ -4,9 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="doc-title" content="{TITLE}">
+<meta name="nav-label" content="{NAV_LABEL}">
 <meta name="nav-group" content="{NAV_GROUP}">
 <meta name="page-uid" content="{UID}">
 <meta name="prototype-base" content="../../../">
+<!--
+  Optional portal annotations (right panel):
+  <meta name="doc-purpose" content="一句话功能说明">
+  <meta name="doc-layout" content="顶部导航 | 左侧边栏 | 主内容区">
+  <meta name="doc-fields" content="字段A — 类型 — 必填 — 说明 | 字段B — 说明">
+  <meta name="doc-stories" content="作为...我想要...以便... | ...">
+  <meta name="doc-rules" content="点击提交后校验输入 | 未登录跳转登录页">
+  <meta name="doc-boundaries" content="空列表展示占位图 | 搜索无结果">
+  <meta name="doc-exceptions" content="网络断开显示重试 | 无权限提示">
+  <meta name="doc-refs" content="PRD #3 | flows.html">
+-->
 <title>{TITLE}</title>
 <!-- Asset paths assume this page lives at pages/prototype/{group}/*.html (depth 3). -->
 <link rel="stylesheet" href="../../../assets/prototype.css">
@@ -21,7 +33,10 @@
   3. Replace {TITLE}, {NAV_GROUP}, {UID} when copying this template.
   4. Choose the right shell from LincolnPrototype.ui (frameApp / frameWeb / frameMobile)
      based on the product form-factor.
-  5. See .claude/templates/issue-package/prototypes/ for categorized examples:
+  5. Set doc-purpose / doc-layout / doc-fields / doc-boundaries / doc-exceptions
+     (and doc-stories / doc-rules / doc-refs when useful) so the portal right panel
+     explains functionality, layout, fields, boundary cases, and exception flows.
+  6. See .claude/templates/issue-package/prototypes/ for categorized examples:
      app/{main,onboarding,settings,overlays,tray,org}, web/{dashboard,list,form,detail},
      mobile/{home,chat,settings,profile}.
 -->

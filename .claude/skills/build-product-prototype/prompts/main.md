@@ -15,7 +15,7 @@ Use the following read-only templates as the style/layout reference. Copy/adapt 
 - `.claude/templates/issue-package/prototypes/app/onboarding/page.html.tpl` — login/onboarding card.
 - `.claude/templates/issue-package/prototypes/app/settings/page.html.tpl` — two-column settings page.
 - `.claude/templates/issue-package/prototypes/app/overlays/page.html.tpl` — avatar menu / about / toast overlays.
-- `.claude/templates/issue-package/prototypes/app/tray/page.html.tpl` — system-tray simulation.
+- `.claude/templates/issue-package/prototypes/app/tray/page.html.tpl` — system-tray scenario controller. When the product has a macOS menubar presence, create thin scenario pages under `pages/prototype/app/tray/` showing at minimum: default state, unread-badge state, and menu-open state. These pages must **not** redraw the tray inside the app prototype; instead they send `postMessage({type:'lincoln-tray-state', unread:<int>, open:<bool>}, '*')` to the portal so the portal-level macOS tray updates. See the tray template for the exact snippet.
 - `.claude/templates/issue-package/prototypes/app/org/page.html.tpl` — organization list.
 - `.claude/templates/issue-package/prototypes/web/dashboard/page.html.tpl` — web dashboard shell.
 - `.claude/templates/issue-package/prototypes/web/list/page.html.tpl` — web list view shell.
@@ -43,18 +43,21 @@ Use the following read-only templates as the style/layout reference. Copy/adapt 
    - 界面流转图: screen-to-screen flow mapped to the business flow in `flows.html`.
    - 页面交互说明: per-screen layout elements, interaction rules (events, responses, navigation), and field validation/error handling.
    - 交互 Demo/原型: links to the HTML prototype pages under `pages/prototype/` and a summary of key interactions.
-5. Create interactive HTML prototypes under `{process_slug}/pages/prototype/{app,web,mobile}/` by adapting the reference templates above. Pick the right shell (`frameApp`, `frameWeb`, or `frameMobile`) from `LincolnPrototype.ui` for the product form-factor. Every page must:
+5. **Plan prototype generation granularity.** Before writing prototype pages, list every screen from `flows.html` and `page-map.html`. Group them into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page in the cluster has complete annotation meta tags before starting the next cluster. This prevents agent context exhaustion and keeps each page's documentation and interactions complete.
+6. Create interactive HTML prototypes under `{process_slug}/pages/prototype/{app,web,mobile}/` by adapting the reference templates above. Pick the right shell (`frameApp`, `frameWeb`, or `frameMobile`) from `LincolnPrototype.ui` for the product form-factor. Every page must:
    - Link to `../../../assets/prototype.css` and `../../../assets/prototype.js` (depth 3) or `../../../../assets/...` (depth 4) depending on its path.
    - Include the theme sync IIFE shown in the starter template.
    - Include `<meta name="prototype-base" content="../../../">` (or `../../../../` for depth 4).
-   - Include `<meta name="page-uid" content="...">` and `<meta name="nav-group" content="...">`.
+   - Include `<meta name="page-uid" content="...">`, `<meta name="nav-group" content="...">`, and `<meta name="nav-label" content="...">` with a short Chinese label for the left nav.
+   - Include the annotation meta tags `doc-purpose`, `doc-layout`, `doc-fields`, `doc-boundaries`, `doc-exceptions`. Also include `doc-stories`, `doc-rules`, `doc-refs` when they add clarity, so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows.
+   - Use `LincolnPrototype.ui` builders and `prototype.css` tokens for every visual element so both light and dark themes render correctly; verify both themes by toggling the portal theme switch.
    - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
-6. Optionally create or update `{process_slug}/designs/<design_id>/prototype.pen` with Pencil tools if the PM explicitly asks for a Pencil prototype. If you use Pencil tools, call `get_editor_state(include_schema: true)` first and use `snapshot_layout` to check for clipping/overlap.
-7. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with the `ui-spec.html`, `fields.html`, and HTML prototype links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
-8. Ask the PM to open `{process_slug}/index.html` in a browser and review the prototype pages inside the portal.
-9. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.html`.
-10. Run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
+7. Optionally create or update `{process_slug}/designs/<design_id>/prototype.pen` with Pencil tools if the PM explicitly asks for a Pencil prototype. If you use Pencil tools, call `get_editor_state(include_schema: true)` first and use `snapshot_layout` to check for clipping/overlap.
+8. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with the `ui-spec.html`, `fields.html`, and HTML prototype links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
+9. Ask the PM to open `{process_slug}/index.html` in a browser, toggle the theme switch in the macOS menubar, and review both light and dark renderings of each prototype page inside the portal.
+10. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.html`.
+11. Run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
 
 ## Output Artifacts
 
@@ -70,4 +73,6 @@ Use the following read-only templates as the style/layout reference. Copy/adapt 
 - Keep controls and states complete enough for implementation: default, hover/focus where relevant, disabled, empty, loading, error, and success.
 - Every interactive element must carry a stable `data-uid`. Do not generate random UIDs that change on every render.
 - Prototype links use relative paths so they work both inside the portal iframe and when opened standalone.
+- Do not add collapse toggles or custom panel chrome to the portal; the right annotation panel is always visible.
+- The system tray is portal-level chrome. Never redraw the tray inside an app prototype page with `.menubar`, `.tray-icon`, `.tray-panel`, `bindTray`, or `trayMenu`. Tray scenario pages must be thin controllers that post `lincoln-tray-state` messages to the portal.
 - After approval, tell the user to run: `claude plan-tdd-development <session_id> <design_id>`.

@@ -61,6 +61,89 @@
         }
     }
 
+    var DEFAULT_UNREAD = 0;
+
+    function trayMenuHtml(hasUnread) {
+        var items = '';
+        if (hasUnread) {
+            items += '<div class="mi"><span class="mi-avatar"></span><span class="mi-text"><strong>Alice</strong><br>未读消息 2</span></div>';
+            items += '<div class="mi"><span class="mi-avatar"></span><span class="mi-text"><strong>Bob</strong><br>未读消息 1</span></div>';
+        } else {
+            items += '<div class="mi empty">暂无未读消息</div>';
+        }
+        return items +
+            '<div class="mi-sep"></div>' +
+            '<a class="mi" href="pages/prototype/app/main/page.html">打开 Lincoln</a>' +
+            '<div class="mi-sep"></div>' +
+            '<div class="mi danger">退出 Lincoln</div>';
+    }
+
+    function initTray() {
+        var macTray = document.getElementById('macTray');
+        var macTrayMenu = document.getElementById('macTrayMenu');
+        if (!macTray || !macTrayMenu) return;
+
+        function renderTrayIcon() {
+            var unread = window.LincolnPortalData ? (window.LincolnPortalData.unreadTotal || 0) : 0;
+            macTray.innerHTML = '<span class="mt-icon">L</span>' +
+                (unread ? '<span class="mt-badge">' + unread + '</span>' : '');
+        }
+        function renderTrayMenu() {
+            var unread = window.LincolnPortalData ? (window.LincolnPortalData.unreadTotal || 0) : 0;
+            macTrayMenu.innerHTML = trayMenuHtml(unread > 0);
+        }
+        function toggleTrayMenu() {
+            var showing = macTrayMenu.classList.toggle('visible');
+            if (showing) renderTrayMenu();
+        }
+        function hideTrayMenu() { macTrayMenu.classList.remove('visible'); }
+
+        renderTrayIcon();
+        macTray.addEventListener('click', function (e) {
+            e.stopPropagation();
+            toggleTrayMenu();
+        });
+        macTrayMenu.addEventListener('click', function (e) {
+            var a = e.target.closest('a');
+            if (a) {
+                e.preventDefault();
+                var href = a.getAttribute('href');
+                if (href) {
+                    var frame = document.getElementById('frame');
+                    if (frame) frame.src = href;
+                }
+                hideTrayMenu();
+            } else if (e.target.closest('.mi.danger')) {
+                hideTrayMenu();
+            }
+        });
+        document.querySelector('.pstage').addEventListener('click', function (e) {
+            if (!macTray.contains(e.target) && !macTrayMenu.contains(e.target)) hideTrayMenu();
+        });
+
+        window.addEventListener('message', function (e) {
+            var d = e.data || {};
+            if (d.type !== 'lincoln-tray-state') return;
+            if (!window.LincolnPortalData) window.LincolnPortalData = {};
+            if (typeof d.unread === 'number') window.LincolnPortalData.unreadTotal = d.unread;
+            renderTrayIcon();
+            if (d.open === true) {
+                renderTrayMenu();
+                macTrayMenu.classList.add('visible');
+            } else if (d.open === false) {
+                hideTrayMenu();
+            }
+        });
+
+        window.LincolnPortal = window.LincolnPortal || {};
+        window.LincolnPortal.resetTray = function () {
+            if (!window.LincolnPortalData) window.LincolnPortalData = {};
+            window.LincolnPortalData.unreadTotal = DEFAULT_UNREAD;
+            renderTrayIcon();
+            hideTrayMenu();
+        };
+    }
+
     function setTheme(theme) {
         if (theme !== 'light' && theme !== 'dark') return;
         setStoredTheme(theme);
@@ -165,9 +248,12 @@
         if (page.purpose) {
             html += '<h3>用途</h3><p>' + escapeHtml(page.purpose) + '</p>';
         }
-        ['stories', 'fields', 'rules', 'refs'].forEach(function (key) {
+        if (page.layout) {
+            html += '<h3>布局</h3><p>' + escapeHtml(page.layout) + '</p>';
+        }
+        ['stories', 'fields', 'rules', 'boundaries', 'exceptions', 'refs'].forEach(function (key) {
             if (page[key] && page[key].length) {
-                html += '<h3>' + ({ stories: '用户故事', fields: '字段', rules: '规则', refs: '引用' }[key]) + '</h3>';
+                html += '<h3>' + ({ stories: '用户故事', fields: '字段', rules: '规则', boundaries: '边界', exceptions: '异常流', refs: '引用' }[key]) + '</h3>';
                 html += '<ul>' + page[key].map(function (v) { return '<li>' + escapeHtml(v) + '</li>'; }).join('') + '</ul>';
             }
         });
@@ -191,6 +277,9 @@
                 var winTitle = document.getElementById('winTitle');
                 if (winTitle) winTitle.textContent = page.title;
             }
+            if (window.LincolnPortal && window.LincolnPortal.resetTray) {
+                window.LincolnPortal.resetTray();
+            }
         });
 
         frame.addEventListener('load', function () {
@@ -208,17 +297,6 @@
             }
             notifyFrame(getPreferredTheme());
         });
-    }
-
-    function initPanelToggle() {
-        var btn = document.getElementById('pannToggle');
-        var pann = document.getElementById('pann');
-        if (btn && pann) {
-            btn.addEventListener('click', function () {
-                pann.classList.toggle('collapsed');
-                btn.innerHTML = pann.classList.contains('collapsed') ? '&#10095;' : '&#10094;';
-            });
-        }
     }
 
     function selectByPath(path, nav, frame, panel, pages) {
@@ -256,8 +334,8 @@
         if (nav) renderNav(nav, packageData);
         if (frame && panel) bindPortal(nav, frame, panel, packageData);
         if (nav && frame) bindPrototypeLinks(nav, frame, panel, packageData.nav || []);
-        initPanelToggle();
         initTheme();
+        initTray();
     }
 
     if (document.readyState === 'loading') {
