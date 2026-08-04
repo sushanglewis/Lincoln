@@ -45,7 +45,17 @@ def _make_minimal_repo(tmp_path: Path) -> Path:
     (root / "tools").mkdir()
     (root / "tools" / "stub.py").write_text("# stub\n", encoding="utf-8")
 
-    for name in ("README.md", "CLAUDE.md", "LICENSE", "RELEASE.md", "requirements.txt", "SKILL.md"):
+    for name in (
+        "README.md",
+        "README.en.md",
+        "USAGE.md",
+        "CONTRIBUTING.md",
+        "CLAUDE.md",
+        "LICENSE",
+        "RELEASE.md",
+        "requirements.txt",
+        "SKILL.md",
+    ):
         (root / name).write_text(f"# {name}\n", encoding="utf-8")
 
     (root / ".version-bump.json").write_text(
