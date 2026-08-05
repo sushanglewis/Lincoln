@@ -1,5 +1,7 @@
 import { parseArgs } from './cli.js'
 import { install } from './commands/install.js'
+import { update } from './commands/update.js'
+import { use } from './commands/use.js'
 
 const USAGE = `Lincoln — Global agent harness plugin CLI
 
@@ -20,6 +22,7 @@ Options:
   --yes, -y        Skip confirmation prompts
   --dry-run        Show what would be done without making changes
   --force          Force re-install even if up to date
+  --check          Check for available updates without installing (update)
   --json           Output machine-readable JSON (where supported)
   --help, -h       Show this help message
 `
@@ -39,6 +42,26 @@ export async function main(argv: string[]): Promise<number> {
       force: Boolean(parsed.flags.force),
       harnesses: parsed.args,
       noVenv: Boolean(parsed.flags['no-venv'])
+    })
+  }
+
+  if (parsed.command === 'update') {
+    return update({
+      check: Boolean(parsed.flags.check),
+      dryRun: Boolean(parsed.flags['dry-run']),
+      yes: Boolean(parsed.flags.yes || parsed.flags.y)
+    })
+  }
+
+  if (parsed.command === 'use') {
+    const version = parsed.args[0]
+    if (!version) {
+      console.error('Usage: lincoln use <version> [--yes] [--dry-run]')
+      return 1
+    }
+    return use(version, {
+      dryRun: Boolean(parsed.flags['dry-run']),
+      yes: Boolean(parsed.flags.yes || parsed.flags.y)
     })
   }
 
