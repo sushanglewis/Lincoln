@@ -23,7 +23,8 @@
     "typecheck": "tsc --noEmit",
     "typecheck:tests": "tsc -p tsconfig.tests.json",
     "lint": "echo 'lint not configured'",
-    "prepack": "npm run build && node ../../scripts/sync-framework-package.mjs"
+    "prepack": "npm run build && node ../../scripts/sync-framework-package.mjs",
+    "postinstall": "node dist/postinstall.js"
   },
   "dependencies": {
     "js-yaml": "^4.1.0"
