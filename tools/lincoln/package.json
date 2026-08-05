@@ -1,5 +1,5 @@
 {
-  "name": "lincoln",
+  "name": "@sushanglewis/lincoln",
   "version": "1.5.0",
   "description": "Cross-tool terminal UI for recording Lincoln interviews",
   "type": "module",
