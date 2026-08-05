@@ -218,7 +218,7 @@ UX Agent 接手时应先读 `pm-to-ux.handoff.yaml`，再读 master-handoff，�
 
 Lincoln 提供以下配套工具：
 
-- `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端（`lincoln` CLI）
+- `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端（`lincoln-record` CLI）
 - `tools/lincoln-record/` — Rust 本地录音转写 CLI（whisper-rs + Metal 加速、说话人分离），推荐用于访谈录音的本地转写
 - `tools/lincoln-installer/` — 终端 TUI 安装器与更新器
 

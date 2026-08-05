@@ -15,11 +15,11 @@ export function App({ args, config }: AppProps) {
   if (args.help) {
     return (
       <Box flexDirection="column" padding={1}>
-        <Text bold>lincoln</Text>
+        <Text bold>lincoln-record</Text>
         <Text>Cross-tool TUI for Lincoln interview recording.</Text>
         <Text />
         <Text bold>Usage:</Text>
-        <Text>  lincoln [options]</Text>
+        <Text>  lincoln-record [options]</Text>
         <Text />
         <Text bold>Options:</Text>
         <Text>  --topic       Interview topic</Text>

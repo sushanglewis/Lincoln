@@ -22,7 +22,7 @@ npm link
 安装后，全局可用：
 
 ```bash
-lincoln --help
+lincoln-record --help
 ```
 
 ## 使用
@@ -30,7 +30,7 @@ lincoln --help
 ### 基本用法
 
 ```bash
-lincoln 2026-06-28-checkout-interview \
+lincoln-record 2026-06-28-checkout-interview \
   --topic "结算流程 redesign 需求访谈" \
   --design-id checkout-redesign \
   --branch lincoln/2026-06-28-recording-checkout-redesign
@@ -48,7 +48,7 @@ audio-meter-style: wave
 EOF
 
 # 直接运行
-lincoln 2026-06-28-checkout-interview
+lincoln-record 2026-06-28-checkout-interview
 ```
 
 ### 用户级配置
@@ -111,7 +111,7 @@ claude process-interview 2026-06-28-checkout-interview
 ## CLI 选项
 
 ```
-lincoln [session-id] [options]
+lincoln-record [session-id] [options]
 
 Options:
   --topic       访谈主题
