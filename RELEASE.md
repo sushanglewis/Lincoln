@@ -1,3 +1,45 @@
+# Lincoln v1.5.0 Release Notes
+
+**Release date:** 2026-08-05
+
+## Highlights
+
+Lincoln v1.5.0 strengthens the HTML prototype framework with an annotation contract and a portal tray, making issue work packages more interactive and easier to navigate.
+
+## New Features
+
+- **HTML prototype framework enhancements** (#97)
+  - Adds an annotation contract for structured notes and comments on HTML prototypes.
+  - Introduces a portal tray for quick navigation and contextual actions within the issue portal.
+  - Extends the HTML-centric issue work package experience introduced in v1.4.0.
+
+## Tooling
+
+- `tools/lincoln` — Ink/React TUI for interview recording (version aligned to `1.5.0`).
+- `tools/lincoln-record` — Rust local recording & transcription CLI (version aligned to `1.5.0`).
+- `tools/lincoln-installer` — terminal TUI installer and updater for Lincoln (version aligned to `1.5.0`).
+
+## Dependencies
+
+- `superpowers` v1.2.0
+- `gsd` v2.0.1
+- `openspec` v0.5.0
+
+## Migration Notes
+
+- Users upgrading from v1.4.0 should run `python3 scripts/bump_version.py --check` to verify all manifests are lockstep-aligned.
+- Issue work packages created before v1.5.0 continue to work; new packages can leverage the annotation contract and portal tray.
+
+## Full Changelog
+
+Compare: https://github.com/sushanglewis/Lincoln/compare/v1.4.0...v1.5.0
+
+Merged PRs since v1.4.0:
+
+- #98 feat(#97): strengthen HTML prototype framework with annotation contract and portal tray
+
+---
+
 # Lincoln v1.4.0 Release Notes
 
 **Release date:** 2026-08-04

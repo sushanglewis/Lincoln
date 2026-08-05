@@ -10,9 +10,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.4.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.5.0-blue)](RELEASE.md)
 
-**v1.4.0** 已发布：HTML 门户化 issue 工作包、`npx lincoln-install` / `npx lincoln-update` 终端安装与更新器、root-level PRD 标准，以及全新的 README / USAGE.md / CONTRIBUTING.md 文档结构。
+**v1.5.0** 已发布：强化 HTML 原型框架，新增 annotation contract 与 portal tray 支持，进一步完善 issue 工作包的门户化体验。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 

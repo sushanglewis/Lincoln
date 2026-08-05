@@ -10,9 +10,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.4.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.5.0-blue)](RELEASE.md)
 
-**v1.4.0** is released: HTML-centric issue work packages, `npx lincoln-install` / `npx lincoln-update` terminal installer and updater, root-level PRD standards, plus the refreshed README / USAGE.md / CONTRIBUTING.md documentation structure.
+**v1.5.0** is released: strengthened HTML prototype framework with annotation contract and portal tray support, further enhancing the portal experience for issue work packages.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
