@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { install } from '../../src/commands/install.js'
+import { install, resolvePythonForVenv } from '../../src/commands/install.js'
 import { resolveLincolnPaths } from '../../src/lib/paths.js'
 
 describe('install', () => {
@@ -47,5 +47,30 @@ describe('install', () => {
       deps
     )
     expect(code).toBe(0)
+  })
+})
+
+describe('resolvePythonForVenv', () => {
+  it('returns env override when it is sufficient', async () => {
+    const python = await resolvePythonForVenv('/custom/python3.11', [], async (cmd) =>
+      cmd === '/custom/python3.11' ? 'Python 3.11.0' : undefined
+    )
+    expect(python).toBe('/custom/python3.11')
+  })
+
+  it('returns the first candidate whose version is sufficient', async () => {
+    const python = await resolvePythonForVenv(undefined, ['python3.9', 'python3.10', 'python3.11'], async (cmd) => {
+      if (cmd === 'python3.9') return 'Python 3.9.0'
+      if (cmd === 'python3.10') return 'Python 3.10.0'
+      if (cmd === 'python3.11') return 'Python 3.11.0'
+      return undefined
+    })
+    expect(python).toBe('python3.10')
+  })
+
+  it('returns undefined when no candidate is sufficient', async () => {
+    const python = await resolvePythonForVenv(undefined, ['python3.8', 'python3.9'], async (cmd) => cmd.includes('3.8') ? 'Python 3.8.0' : 'Python 3.9.0'
+    )
+    expect(python).toBeUndefined()
   })
 })

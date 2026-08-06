@@ -1,6 +1,6 @@
 {
   "name": "lincoln",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "AI-Native product R&D collaboration system for Conductor + Claude Code + OpenSpec + GitHub + Obsidian",
   "author": {
     "name": "Lincoln contributors"

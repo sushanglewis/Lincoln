@@ -88,7 +88,14 @@ export async function install(
   })
 
   if (!options.dryRun && !options.noVenv) {
-    await setupVenv(deps.paths, payloadRoot)
+    const python = await resolvePythonForVenv()
+    if (!python) {
+      console.error(
+        'Python 3.10+ is required but was not found. Set LINCOLN_PYTHON to a compatible Python executable.'
+      )
+      return 1
+    }
+    await setupVenv(deps.paths, payloadRoot, python)
   }
 
   if (!options.dryRun) {
@@ -119,11 +126,60 @@ function runCommand(command: string, args: string[]): Promise<number> {
   })
 }
 
-function pythonCommand(): string {
-  return process.env.LINCOLN_PYTHON || 'python3'
+const MIN_PYTHON_MAJOR = 3
+const MIN_PYTHON_MINOR = 10
+const DEFAULT_PYTHON_CANDIDATES = ['python3.12', 'python3.11', 'python3.10', 'python3']
+
+function parsePythonVersion(version: string): { major: number; minor: number } | undefined {
+  const match = /(\d+)\.(\d+)/.exec(version)
+  if (!match) {
+    return undefined
+  }
+  return { major: Number(match[1]), minor: Number(match[2]) }
 }
 
-async function setupVenv(paths: LincolnPaths, payloadRoot: string): Promise<void> {
+async function queryPythonVersion(command: string): Promise<string | undefined> {
+  return new Promise((resolvePromise) => {
+    const child = spawn(command, ['--version'], {
+      stdio: ['ignore', 'pipe', 'ignore'],
+      shell: process.platform === 'win32'
+    })
+    let stdout = ''
+    child.stdout?.on('data', (chunk: Buffer | string) => {
+      stdout += chunk.toString()
+    })
+    child.on('close', (code) => {
+      const text = stdout.trim()
+      resolvePromise(code === 0 && text.length > 0 ? text : undefined)
+    })
+    child.on('error', () => resolvePromise(undefined))
+  })
+}
+
+export async function resolvePythonForVenv(
+  envOverride: string | undefined = process.env.LINCOLN_PYTHON,
+  candidates: string[] = DEFAULT_PYTHON_CANDIDATES,
+  queryVersion: (cmd: string) => Promise<string | undefined> = queryPythonVersion
+): Promise<string | undefined> {
+  const list = envOverride ? [envOverride] : candidates
+  for (const cmd of list) {
+    const version = await queryVersion(cmd)
+    if (!version) {
+      continue
+    }
+    const parsed = parsePythonVersion(version)
+    if (
+      parsed &&
+      parsed.major >= MIN_PYTHON_MAJOR &&
+      (parsed.major > MIN_PYTHON_MAJOR || parsed.minor >= MIN_PYTHON_MINOR)
+    ) {
+      return cmd
+    }
+  }
+  return undefined
+}
+
+async function setupVenv(paths: LincolnPaths, payloadRoot: string, pythonCommand: string): Promise<void> {
   const pythonExe = path.join(
     paths.venvDir,
     process.platform === 'win32' ? 'Scripts' : 'bin',
@@ -132,7 +188,7 @@ async function setupVenv(paths: LincolnPaths, payloadRoot: string): Promise<void
 
   if (!fs.existsSync(pythonExe)) {
     console.log('Creating Lincoln virtual environment...')
-    await runCommand(pythonCommand(), ['-m', 'venv', paths.venvDir])
+    await runCommand(pythonCommand, ['-m', 'venv', paths.venvDir])
   }
 
   const requirementsPath = path.join(payloadRoot, 'requirements.txt')
