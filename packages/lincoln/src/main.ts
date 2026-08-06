@@ -1,4 +1,5 @@
 import { parseArgs } from './cli.js'
+import { doctor } from './commands/doctor.js'
 import { install } from './commands/install.js'
 import { update } from './commands/update.js'
 import { use } from './commands/use.js'
@@ -63,6 +64,11 @@ export async function main(argv: string[]): Promise<number> {
       dryRun: Boolean(parsed.flags['dry-run']),
       yes: Boolean(parsed.flags.yes || parsed.flags.y)
     })
+  }
+
+  if (parsed.command === 'doctor') {
+    const result = await doctor({ json: Boolean(parsed.flags.json) })
+    return result.code
   }
 
   console.log(USAGE)
