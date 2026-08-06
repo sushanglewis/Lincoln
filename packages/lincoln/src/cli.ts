@@ -4,6 +4,23 @@ export interface ParsedArgs {
   flags: Record<string, unknown>
 }
 
+/**
+ * Flags that never take a value. Boolean flags must not consume the next
+ * token, otherwise `lincoln use --yes 1.6.0` would swallow the positional
+ * version argument into `flags.yes`.
+ */
+const BOOLEAN_FLAGS = new Set([
+  'yes',
+  'y',
+  'dry-run',
+  'force',
+  'check',
+  'json',
+  'help',
+  'h',
+  'no-venv'
+])
+
 export function parseArgs(argv: string[]): ParsedArgs {
   const args = argv.slice(2)
   const flags: Record<string, unknown> = {}
@@ -14,7 +31,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     if (arg.startsWith('--')) {
       const key = arg.replace(/^--/, '')
       const next = args[i + 1]
-      if (next && !next.startsWith('-')) {
+      if (!BOOLEAN_FLAGS.has(key) && next && !next.startsWith('-')) {
         flags[key] = next
         i++
       } else {
@@ -23,7 +40,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     } else if (arg.startsWith('-')) {
       const key = arg.replace(/^-/, '')
       const next = args[i + 1]
-      if (next && !next.startsWith('-')) {
+      if (!BOOLEAN_FLAGS.has(key) && next && !next.startsWith('-')) {
         flags[key] = next
         i++
       } else {

@@ -28,4 +28,30 @@ describe('parseArgs', () => {
     expect(result.command).toBe('use')
     expect(result.args).toEqual(['1.6.0'])
   })
+
+  it('does not consume the version positional after a boolean --yes flag', () => {
+    const result = parseArgs(['node', 'lincoln', 'use', '--yes', '1.6.0'])
+    expect(result.command).toBe('use')
+    expect(result.args).toEqual(['1.6.0'])
+    expect(result.flags.yes).toBe(true)
+  })
+
+  it('does not consume the version positional after a boolean -y flag', () => {
+    const result = parseArgs(['node', 'lincoln', 'use', '-y', '1.6.0'])
+    expect(result.command).toBe('use')
+    expect(result.args).toEqual(['1.6.0'])
+    expect(result.flags.y).toBe(true)
+  })
+
+  it('keeps boolean flags boolean when followed by another flag', () => {
+    const result = parseArgs(['node', 'lincoln', 'update', '--check', '--dry-run'])
+    expect(result.command).toBe('update')
+    expect(result.flags).toEqual({ check: true, 'dry-run': true })
+  })
+
+  it('still captures values for flags not in the boolean allowlist', () => {
+    const result = parseArgs(['node', 'lincoln', 'install', '--config', 'lincoln.yaml'])
+    expect(result.command).toBe('install')
+    expect(result.flags.config).toBe('lincoln.yaml')
+  })
 })

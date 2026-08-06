@@ -1,10 +1,10 @@
-import fs from 'node:fs'
-import path from 'node:path'
 import { spawn } from 'node:child_process'
 import type { LincolnPaths } from '../lib/paths.js'
 import { resolveLincolnPaths } from '../lib/paths.js'
 import { readVersionMarker } from '../lib/versionMarker.js'
 import { createRegistryClient } from '../lib/npmRegistry.js'
+import { compareVersions } from '../lib/semver.js'
+import { readLocalPackageVersion } from '../lib/packageInfo.js'
 import { install } from './install.js'
 import type { InstallOptions } from './install.js'
 
@@ -53,9 +53,18 @@ export async function update(
 
   const current = resolved.currentVersion()
 
-  if (current !== undefined && current === latest) {
-    console.log(`Lincoln ${current} is already up to date.`)
-    return 0
+  if (current !== undefined) {
+    const comparison = compareVersions(current, latest)
+    if (comparison !== undefined ? comparison > 0 : false) {
+      console.log(
+        `Lincoln ${current} is ahead of the latest release (${latest}); nothing to do.`
+      )
+      return 0
+    }
+    if (comparison !== undefined ? comparison === 0 : current === latest) {
+      console.log(`Lincoln ${current} is already up to date.`)
+      return 0
+    }
   }
 
   const summary = `${current ?? 'unknown'} -> ${latest}`
@@ -81,6 +90,11 @@ export async function update(
     return 1
   }
 
+  // NOTE: this runs the *current* process's install(), not the just-installed
+  // new version's. Re-executing the freshly installed `lincoln` binary would
+  // rely on PATH/npx resolution picking up the new shim, which is fragile
+  // mid-upgrade. The tradeoff is that sync logic changes shipped in the new
+  // version only take effect on the next command run.
   const syncCode = await resolved.runInstall(defaultInstallOptions())
   if (syncCode !== 0) {
     console.error(`lincoln install failed with exit code ${syncCode}`)
@@ -93,21 +107,6 @@ export async function update(
 
 function defaultInstallOptions(): InstallOptions {
   return { yes: true, dryRun: false, force: false, harnesses: [], noVenv: true }
-}
-
-function readLocalPackageVersion(): string | undefined {
-  try {
-    const pkgPath = path.resolve(
-      path.dirname(new URL(import.meta.url).pathname),
-      '..',
-      '..',
-      'package.json'
-    )
-    const parsed = JSON.parse(fs.readFileSync(pkgPath, 'utf8')) as { version?: string }
-    return typeof parsed.version === 'string' ? parsed.version : undefined
-  } catch {
-    return undefined
-  }
 }
 
 function runNpmInstallGlobal(packageName: string, version: string): Promise<number> {

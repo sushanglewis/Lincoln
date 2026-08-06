@@ -22,7 +22,7 @@ export interface NpmPackument {
 export interface RegistryClient {
   latestVersion(packageName: string): Promise<string>
   versions(packageName: string): Promise<string[]>
-  resolveVersion(packageName: string, range: string): Promise<string>
+  resolveVersion(packageName: string, spec: string): Promise<string>
 }
 
 export function createRegistryClient(
@@ -60,16 +60,16 @@ export function createRegistryClient(
       return Object.keys(packument.versions ?? {})
     },
 
-    async resolveVersion(packageName: string, range: string): Promise<string> {
+    async resolveVersion(packageName: string, spec: string): Promise<string> {
       const packument = await fetchPackument(packageName)
-      const tagTarget = packument['dist-tags']?.[range]
+      const tagTarget = packument['dist-tags']?.[spec]
       if (tagTarget) {
         return tagTarget
       }
-      if (packument.versions && range in packument.versions) {
-        return range
+      if (packument.versions && spec in packument.versions) {
+        return spec
       }
-      throw new Error(`Version not found for ${packageName}: ${range}`)
+      throw new Error(`Version not found for ${packageName}: ${spec}`)
     }
   }
 }

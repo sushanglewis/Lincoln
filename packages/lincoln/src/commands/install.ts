@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { LincolnPaths } from '../lib/paths.js'
 import { resolveLincolnPaths } from '../lib/paths.js'
 import { writeVersionMarker } from '../lib/versionMarker.js'
+import { readLocalPackageVersion } from '../lib/packageInfo.js'
 import type { SyncReport } from '../lib/syncClaude.js'
 import { syncClaudeCode } from '../lib/syncClaude.js'
 import { installedHarnessIds } from '../lib/harnessDetect.js'
@@ -41,8 +42,7 @@ export async function install(
     return 1
   }
 
-  const packageJson = loadPackageJson()
-  const version = packageJson.version
+  const version = readLocalPackageVersion()
   if (!version) {
     console.error('Could not determine Lincoln version')
     return 1
@@ -101,18 +101,4 @@ export async function install(
   }
 
   return 0
-}
-
-function loadPackageJson(): { version?: string } {
-  try {
-    const pkgPath = path.resolve(
-      path.dirname(new URL(import.meta.url).pathname),
-      '..',
-      '..',
-      'package.json'
-    )
-    return JSON.parse(fs.readFileSync(pkgPath, 'utf8'))
-  } catch {
-    return {}
-  }
 }

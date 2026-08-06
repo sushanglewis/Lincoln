@@ -159,4 +159,27 @@ describe('update', () => {
     )
     expect(code).toBe(1)
   })
+
+  it('does not downgrade when the installed version is ahead of latest', async () => {
+    let installCalled = false
+    let syncCalled = false
+    const code = await update(
+      { check: false, dryRun: false, yes: true },
+      makeDeps({
+        currentVersion: () => '2.0.0-beta.1',
+        latestVersion: async () => '1.6.0',
+        npmInstallGlobal: async () => {
+          installCalled = true
+          return 0
+        },
+        runInstall: async () => {
+          syncCalled = true
+          return 0
+        }
+      })
+    )
+    expect(code).toBe(0)
+    expect(installCalled).toBe(false)
+    expect(syncCalled).toBe(false)
+  })
 })
