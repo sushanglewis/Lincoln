@@ -11,6 +11,8 @@ jobs:
     permissions:
       contents: read
       id-token: write
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -23,15 +25,19 @@ jobs:
 
       - name: Extract version from tag
         id: meta
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          TAG="${GITHUB_REF_NAME#lincoln-v}"
+          TAG="${REF_NAME#lincoln-v}"
           echo "version=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Verify package version matches tag
+        env:
+          EXPECTED_VERSION: ${{ steps.meta.outputs.version }}
         run: |
           PKG_VERSION=$(node -p "require('./packages/lincoln/package.json').version")
-          if [[ "$PKG_VERSION" != "${{ steps.meta.outputs.version }}" ]]; then
-            echo "Tag version ${{ steps.meta.outputs.version }} does not match package version $PKG_VERSION" >&2
+          if [[ "$PKG_VERSION" != "$EXPECTED_VERSION" ]]; then
+            echo "Tag version $EXPECTED_VERSION does not match package version $PKG_VERSION" >&2
             exit 1
           fi
 
@@ -51,3 +57,39 @@ jobs:
         run: npm publish -w @sushanglewis/lincoln --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Extract release notes
+        env:
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          if ! python3 scripts/extract_release_notes.py "$VERSION" > release-notes.md; then
+            echo "No curated release notes found for $VERSION; using fallback" >&2
+            echo "lincoln-v${VERSION}" > release-notes.md
+          fi
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.publish.outputs.version }}
+        run: |
+          TAG="lincoln-v${VERSION}"
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "Release $TAG already exists; updating title and notes"
+            gh release edit "$TAG" --title "Lincoln v${VERSION}" --notes-file release-notes.md
+          else
+            gh release create "$TAG" --title "Lincoln v${VERSION}" --notes-file release-notes.md
+          fi

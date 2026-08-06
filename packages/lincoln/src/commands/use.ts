@@ -179,14 +179,15 @@ function switchCurrentLink(paths: LincolnPaths, versionDir: string): void {
 }
 
 function defaultInstallOptions(): InstallOptions {
-  return { yes: true, dryRun: false, force: false, harnesses: [], noVenv: true }
+  return { yes: true, dryRun: false, force: false, harnesses: [], noVenv: true, noInteractive: true }
 }
 
 function runNpmInstallGlobal(packageName: string, version: string): Promise<number> {
   return new Promise((resolvePromise) => {
     const child = spawn('npm', ['install', '-g', `${packageName}@${version}`], {
       stdio: 'inherit',
-      shell: process.platform === 'win32'
+      shell: process.platform === 'win32',
+      env: { ...process.env, LINCOLN_SKIP_POSTINSTALL: '1' }
     })
     child.on('close', (code) => resolvePromise(code ?? 1))
     child.on('error', () => resolvePromise(1))

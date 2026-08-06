@@ -1,0 +1,98 @@
+name: Release on Merge to Main
+
+# IMPORTANT (branch protection): this workflow pushes a version-bump commit and a
+# `lincoln-v*` tag directly to `main`. If `main` is branch-protected and rejects
+# pushes from GitHub Actions, the push steps will fail. Grant the GitHub Actions
+# app bypass permission in the branch ruleset, or provide a PAT (e.g.
+# secrets.RELEASE_TOKEN) for the checkout/push steps.
+# IMPORTANT (downstream triggers): tag pushes made with the default GITHUB_TOKEN
+# do NOT trigger other workflows (GitHub recursion guard). If publish-lincoln.yml
+# must fire on the pushed tag, push the tag with a PAT instead.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: lincoln-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main at merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.merge_commit_sha }}
+          fetch-depth: 0
+          # Use a PAT so the pushed tag triggers publish-lincoln.yml. If no
+          # RELEASE_TOKEN secret is configured, this falls back to the default
+          # GITHUB_TOKEN; in that case the tag push will NOT trigger downstream
+          # workflows (see the IMPORTANT note at the top of this file).
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify manifests are in lockstep
+        run: python3 scripts/bump_version.py --check
+
+      - name: Read current version
+        id: version
+        run: |
+          CURRENT=$(jq -r '.version' .version-bump.json)
+          if [[ ! "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Invalid version in .version-bump.json: $CURRENT" >&2
+            exit 1
+          fi
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "next=$NEW_VERSION" >> "$GITHUB_OUTPUT"
+          echo "Will bump $CURRENT -> $NEW_VERSION"
+
+      - name: Bump version across manifests
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+        run: python3 scripts/bump_version.py bump "$NEXT_VERSION"
+
+      - name: Update README version references
+        run: python3 scripts/update_readme_version.py
+
+      - name: Commit version bump
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add -A
+          git diff --cached --quiet || git commit -m "chore(release): bump version to v${NEXT_VERSION} [skip ci]"
+
+      - name: Push version bump to main
+        run: |
+          # Rebase onto latest main in case another PR merged while this
+          # workflow was running; a conflict fails the run loudly.
+          git fetch origin main
+          git rebase origin/main
+          git push origin HEAD:main
+
+      - name: Create and push release tag
+        env:
+          NEXT_VERSION: ${{ steps.version.outputs.next }}
+        run: |
+          TAG="lincoln-v${NEXT_VERSION}"
+          git tag "$TAG"
+          git push origin "$TAG"

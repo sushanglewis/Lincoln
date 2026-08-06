@@ -19,6 +19,7 @@ const BOOLEAN_FLAGS = new Set([
   'help',
   'h',
   'no-venv',
+  'no-interactive',
   'version',
   'v'
 ])

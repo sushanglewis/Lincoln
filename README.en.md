@@ -37,7 +37,20 @@ Open the repo and tell the Agent what you want in plain language. Lincoln will r
 
 ```bash
 npm install -g @sushanglewis/lincoln
+```
+
+`npm install -g` installs the CLI and bundled framework payload. After installation, an interactive bootstrap starts and lets you choose which agent harnesses to install Lincoln into (`Claude Code`, `Codex`, `OpenCode`).
+
+For a non-interactive install, run:
+
+```bash
 lincoln install --yes
+```
+
+You can also target specific harnesses:
+
+```bash
+lincoln install --yes --harnesses claude-code,opencode
 ```
 
 > **Note**: `npm install -g` only installs the CLI and bundled framework payload; **you must run `lincoln install`** to sync hooks, agents, skills, scripts, and the full runtime framework to `~/.claude/`, `~/.codex/`, and `~/.opencode/`.

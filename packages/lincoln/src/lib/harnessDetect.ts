@@ -53,3 +53,9 @@ export function installedHarnessIds(homeDir?: string): HarnessId[] {
     .filter((h) => h.installed)
     .map((h) => h.id)
 }
+
+export const HARNESS_IDS: HarnessId[] = HARNESS_SPECS.map((spec) => spec.id)
+
+export function isValidHarnessId(value: string): value is HarnessId {
+  return HARNESS_SPECS.some((spec) => spec.id === value)
+}

@@ -1,6 +1,6 @@
 {
   "name": "@sushanglewis/lincoln",
-  "version": "1.5.4",
+  "version": "1.6.0",
   "description": "Global Lincoln agent harness plugin CLI",
   "type": "module",
   "main": "./dist/index.js",
@@ -24,7 +24,7 @@
     "typecheck:tests": "tsc -p tsconfig.tests.json",
     "lint": "echo 'lint not configured'",
     "prepack": "npm run build && node ../../scripts/sync-framework-package.mjs",
-    "postinstall": "node dist/postinstall.js"
+    "postinstall": "node -e \"const fs=require('fs'); if(fs.existsSync('dist/postinstall.js')){import('./dist/postinstall.js').then(m=>m.runPostinstall()).then(c=>process.exit(c)).catch(()=>process.exit(0))}\""
   },
   "dependencies": {
     "js-yaml": "^4.1.0"

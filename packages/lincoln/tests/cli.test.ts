@@ -23,6 +23,18 @@ describe('parseArgs', () => {
     expect(result.flags).toEqual({ yes: true })
   })
 
+  it('parses --harnesses as a value flag', () => {
+    const result = parseArgs(['node', 'lincoln', 'install', '--harnesses', 'claude-code,codex'])
+    expect(result.command).toBe('install')
+    expect(result.flags.harnesses).toBe('claude-code,codex')
+  })
+
+  it('parses --no-interactive as a boolean flag', () => {
+    const result = parseArgs(['node', 'lincoln', 'install', '--no-interactive'])
+    expect(result.command).toBe('install')
+    expect(result.flags['no-interactive']).toBe(true)
+  })
+
   it('parses use command with version argument', () => {
     const result = parseArgs(['node', 'lincoln', 'use', '1.6.0'])
     expect(result.command).toBe('use')
