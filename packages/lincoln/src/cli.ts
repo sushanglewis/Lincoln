@@ -18,7 +18,9 @@ const BOOLEAN_FLAGS = new Set([
   'json',
   'help',
   'h',
-  'no-venv'
+  'no-venv',
+  'version',
+  'v'
 ])
 
 export function parseArgs(argv: string[]): ParsedArgs {

@@ -54,4 +54,14 @@ describe('parseArgs', () => {
     expect(result.command).toBe('install')
     expect(result.flags.config).toBe('lincoln.yaml')
   })
+
+  it('parses --version as a boolean flag', () => {
+    const result = parseArgs(['node', 'lincoln', '--version'])
+    expect(result.flags.version).toBe(true)
+  })
+
+  it('parses -v as a boolean flag', () => {
+    const result = parseArgs(['node', 'lincoln', '-v'])
+    expect(result.flags.v).toBe(true)
+  })
 })

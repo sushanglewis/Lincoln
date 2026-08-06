@@ -9,6 +9,7 @@ import { update } from './commands/update.js'
 import { use } from './commands/use.js'
 import { migrateProject } from './commands/migrateProject.js'
 import { record } from './commands/record.js'
+import { readLocalPackageVersion } from './lib/packageInfo.js'
 
 const USAGE = `Lincoln — Global agent harness plugin CLI
 
@@ -32,10 +33,17 @@ Options:
   --check          Check for available updates without installing (update)
   --json           Output machine-readable JSON (where supported)
   --help, -h       Show this help message
+  --version, -v    Show the installed Lincoln version
 `
 
 export async function main(argv: string[]): Promise<number> {
   const parsed = parseArgs(argv)
+
+  if (parsed.flags.version || parsed.flags.v) {
+    const version = readLocalPackageVersion()
+    console.log(version ? `Lincoln ${version}` : 'Lincoln (unknown version)')
+    return 0
+  }
 
   if (parsed.command === 'help') {
     console.log(USAGE)
