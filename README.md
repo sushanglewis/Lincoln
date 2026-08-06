@@ -27,14 +27,70 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 安装
 
-Lincoln 现在以全局 npm 插件的形式分发：
+### 前置条件
+
+- Node.js ≥ 20
+- Python 3.10+（`lincoln install` 会自动探测 `python3.12 / 3.11 / 3.10` 并创建虚拟环境）
+- 已安装至少一个 agent harness：`Claude Code`、`Codex` 或 `OpenCode`
+
+### 安装 Lincoln
 
 ```bash
 npm install -g @sushanglewis/lincoln
-lincoln install
+lincoln install --yes
 ```
 
-`lincoln install` 会把运行时框架同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。项目侧只需一个 `.lincoln.yaml` 标记即可选择性激活（空目录不会触发 Lincoln）。
+> **注意**：`npm install -g` 只是把 CLI 和框架 payload 安装到 npm 全局目录；**必须执行 `lincoln install`**，才会把 hooks、agents、skills、scripts 等完整运行时体系同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。
+
+如果之前安装过旧版 `lincoln-install`，需要先卸载（旧包与新版 bin 名冲突）：
+
+```bash
+npm uninstall -g lincoln-install
+npm install -g @sushanglewis/lincoln
+lincoln install --yes
+```
+
+若要强制重装，可加上 `--force`：
+
+```bash
+npm install -g @sushanglewis/lincoln --force
+lincoln install --yes
+```
+
+### 验证安装
+
+```bash
+lincoln --version
+lincoln doctor --json
+```
+
+`lincoln doctor --json` 会输出 Node、Python、PyYAML、npm、全局 marker、payload hooks、venv、项目 marker 等检查项。
+
+### 在项目中启用
+
+Lincoln hooks 默认**不会**在空目录激活。进入项目后执行：
+
+```bash
+cd your-project
+lincoln init-project
+```
+
+这会在项目根目录创建 `.lincoln.yaml` 标记文件，之后在该目录打开 Claude Code 即可使用 `/lc-*` 命令。
+
+### 更新 Lincoln
+
+```bash
+lincoln update
+```
+
+### 从旧版 vendored 模式迁移
+
+如果你的项目之前是把 Lincoln 框架源码直接提交到仓库里的，可以用：
+
+```bash
+lincoln migrate-project --dry-run   # 先看看会删哪些文件
+lincoln migrate-project --yes       # 确认迁移
+```
 
 旧版 `npx lincoln-install` / `npx lincoln-update` 仍保留但已弃用，建议迁移到全局 CLI。
 

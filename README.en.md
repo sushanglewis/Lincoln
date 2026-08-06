@@ -27,14 +27,70 @@ Open the repo and tell the Agent what you want in plain language. Lincoln will r
 
 ## Installation
 
-Lincoln is now distributed as a global npm plugin:
+### Prerequisites
+
+- Node.js ≥ 20
+- Python 3.10+ (`lincoln install` will auto-detect `python3.12 / 3.11 / 3.10` and create a virtual environment)
+- At least one agent harness installed: `Claude Code`, `Codex`, or `OpenCode`
+
+### Install Lincoln
 
 ```bash
 npm install -g @sushanglewis/lincoln
-lincoln install
+lincoln install --yes
 ```
 
-`lincoln install` syncs the runtime framework to `~/.claude/`, `~/.codex/`, and `~/.opencode/`. Projects only need a `.lincoln.yaml` marker to opt in (empty directories won't activate Lincoln).
+> **Note**: `npm install -g` only installs the CLI and bundled framework payload; **you must run `lincoln install`** to sync hooks, agents, skills, scripts, and the full runtime framework to `~/.claude/`, `~/.codex/`, and `~/.opencode/`.
+
+If you previously installed the legacy `lincoln-install` package, uninstall it first (its bin names conflict with the new package):
+
+```bash
+npm uninstall -g lincoln-install
+npm install -g @sushanglewis/lincoln
+lincoln install --yes
+```
+
+To force a reinstall:
+
+```bash
+npm install -g @sushanglewis/lincoln --force
+lincoln install --yes
+```
+
+### Verify the installation
+
+```bash
+lincoln --version
+lincoln doctor --json
+```
+
+`lincoln doctor --json` checks Node, Python, PyYAML, npm, the global marker, payload hooks, venv, and project marker.
+
+### Enable Lincoln in a project
+
+Lincoln hooks are **off by default** in directories without a marker. In your project root run:
+
+```bash
+cd your-project
+lincoln init-project
+```
+
+This creates a `.lincoln.yaml` marker file. After that, opening Claude Code in this directory will load the `/lc-*` commands.
+
+### Update Lincoln
+
+```bash
+lincoln update
+```
+
+### Migrate from the old vendored model
+
+If your project previously committed the Lincoln framework source directly into the repo:
+
+```bash
+lincoln migrate-project --dry-run   # preview files to remove
+lincoln migrate-project --yes       # confirm migration
+```
 
 The legacy `npx lincoln-install` / `npx lincoln-update` wrappers are still present but deprecated; migrate to the global CLI.
 
