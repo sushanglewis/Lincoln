@@ -1,0 +1,3 @@
+enabled: true
+workflow_template: design-spike
+min_lincoln_version: "1.6.0"
