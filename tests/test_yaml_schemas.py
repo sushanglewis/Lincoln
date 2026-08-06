@@ -5,11 +5,19 @@ workflow template must actually pass its schema in CI. Schemas are draft-07;
 local `#/definitions/...` refs resolve inside each schema document.
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 
-import jsonschema
 import pytest
 import yaml
+
+try:
+    import jsonschema
+except ModuleNotFoundError:  # pragma: no cover - optional in some envs
+    jsonschema = None
+
+pytestmark = pytest.mark.skipif(jsonschema is None, reason="jsonschema not installed")
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMAS = ROOT / ".claude" / "schemas"

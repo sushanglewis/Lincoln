@@ -18,6 +18,7 @@ agent:
   handoff_to: lc-engineer
 skills:
   required:
+  - lincoln:build-product-prototype
   - superpowers:brainstorming
   optional:
   - gsd:ui-phase
@@ -27,18 +28,18 @@ artifacts:
   required:
   - '{process_slug}/pages/docs/ui-spec.html'
   - '{process_slug}/pages/docs/fields.html'
+  - '{process_slug}/pages/prototype/**/*.html'
   optional:
   - '{process_slug}/designs/{design_id}/prototype.pen'
-  - '{process_slug}/pages/prototype/**/*.html'
 context:
-  goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格 HTML 文档；`prototype.pen` 由 UI 在 UX 节点之后产出，因此在本阶段 PM→UX 交接中视为 optional。所有产物通过 {process_slug}/index.html 门户访问。
+  goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格 HTML 文档与高保真 HTML 交互原型。`prototype.pen` 由 UI 在 UX 节点之后产出，因此在本阶段 PM→UX 交接中视为 optional。所有产物通过 {process_slug}/index.html 门户访问。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
 
     - 禁止修改 {process_slug}/recordings/ 中的原始文件。
 
     - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
 
-    - `prototype.pen` 为 UI 阶段产物，在 PM→UX 交接中不作为 required artifact。
+    - `{process_slug}/pages/prototype/**/*.html` 为 required 高保真 HTML 交互原型；`prototype.pen` 为 optional UI 阶段产物。
 
     - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 

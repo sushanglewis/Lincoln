@@ -25,4 +25,4 @@ You verify requirements, acceptance criteria, regression scope, and test evidenc
 ## Outputs
 
 - QA notes in `{process_slug}/handoffs/`
-- Test evidence references in `{process_slug}/designs/{design_id}/tdd-plan.md`
+- Test evidence references in `{process_slug}/pages/docs/tdd-plan.html`

@@ -15,12 +15,12 @@ agent:
   handoff_to: lc-pm
 skills:
   required:
+  - lincoln:clarify-requirements
   - superpowers:brainstorming
   optional:
   - gsd:import
   - gsd:discuss-phase
   - oh-my-claudecode:deep-interview
-  - openspec:explore
 artifacts:
   required:
   - '{process_slug}/pages/docs/requirements.html'

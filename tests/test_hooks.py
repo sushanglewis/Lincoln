@@ -181,7 +181,7 @@ def test_pre_tool_use_blocks_write_when_entry_not_passed(entry_not_passed_state)
         "pre-tool-use.sh",
         entry_not_passed_state,
         "Write",
-        '{"file_path": "requirements/test/requirements.md"}',
+        '{"file_path": "pages/docs/requirements.html"}',
     )
     assert result.returncode == 1
     assert "BLOCKED" in result.stderr
@@ -192,7 +192,7 @@ def test_pre_tool_use_allows_read_when_paused(paused_state):
         "pre-tool-use.sh",
         paused_state,
         "Read",
-        '{"file_path": "requirements/test/requirements.md"}',
+        '{"file_path": "pages/docs/requirements.html"}',
     )
     assert result.returncode == 0
 
@@ -202,7 +202,7 @@ def test_pre_tool_use_blocks_write_when_paused(paused_state):
         "pre-tool-use.sh",
         paused_state,
         "Write",
-        '{"file_path": "requirements/test/requirements.md"}',
+        '{"file_path": "pages/docs/requirements.html"}',
     )
     assert result.returncode == 1
     assert "BLOCKED" in result.stderr
@@ -213,7 +213,7 @@ def test_pre_tool_use_blocks_root_process_artifact_write(dialogue_in_progress_st
         "pre-tool-use.sh",
         dialogue_in_progress_state,
         "Write",
-        '{"file_path": "requirements/test/requirements.md"}',
+        '{"file_path": "pages/docs/requirements.html"}',
     )
     assert result.returncode == 1
     assert "process artifacts must be written under" in result.stderr
@@ -235,7 +235,7 @@ def test_pre_tool_use_allows_process_package_artifact(process_package_state):
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lc-test/requirements/test/requirements.md"}',
+        '{"file_path": "lc-test/pages/docs/requirements.html"}',
     )
     assert result.returncode == 0
 
@@ -245,7 +245,7 @@ def test_pre_tool_use_blocks_wrong_process_package_artifact(process_package_stat
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "other-slug/requirements/test/requirements.md"}',
+        '{"file_path": "other-slug/pages/docs/requirements.html"}',
     )
     assert result.returncode == 1
     assert "process artifacts must be written under" in result.stderr
@@ -274,7 +274,7 @@ def test_pre_tool_use_derives_status_from_current_stage_node(process_package_sta
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lc-test/requirements/test/requirements.md"}',
+        '{"file_path": "lc-test/pages/docs/requirements.html"}',
     )
     assert result.returncode == 1
     assert "Entry checks" in result.stderr
@@ -510,7 +510,7 @@ def test_post_tool_use_writes_trace_for_write(process_package_state):
         "post-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lc-test/requirements/test/requirements.md", "content": "x"}',
+        '{"file_path": "lc-test/pages/docs/requirements.html", "content": "x"}',
         "0",
     )
     assert result.returncode == 0
@@ -518,7 +518,7 @@ def test_post_tool_use_writes_trace_for_write(process_package_state):
     assert entry is not None
     assert entry["tool"] == "Write"
     assert entry["category"] == "write"
-    assert entry["target"].endswith("requirements.md")
+    assert entry["target"].endswith("requirements.html")
     assert entry["stage"] == "clarify"
     assert entry["run_id"] == "test"
 
@@ -543,7 +543,7 @@ def test_post_tool_use_skips_read_trace(process_package_state):
         "post-tool-use.sh",
         process_package_state,
         "Read",
-        '{"file_path": "lc-test/requirements/test/requirements.md"}',
+        '{"file_path": "lc-test/pages/docs/requirements.html"}',
         "0",
     )
     assert result.returncode == 0
@@ -556,7 +556,7 @@ def test_post_tool_use_skips_trace_when_lincoln_skip_trace_set(process_package_s
         "post-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lc-test/requirements/test/requirements.md", "content": "x"}',
+        '{"file_path": "lc-test/pages/docs/requirements.html", "content": "x"}',
         "0",
     )
     assert result.returncode == 0
@@ -610,7 +610,7 @@ def test_pre_tool_use_blocks_prd_snapshot_write(process_package_state):
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lc-test/prd-v1.0.md"}',
+        '{"file_path": "lc-test/pages/docs/snapshots/prd-v1.0.html"}',
     )
     assert result.returncode == 1
     assert "immutability" in result.stderr or "lincoln_prd.py freeze" in result.stderr
@@ -621,6 +621,6 @@ def test_pre_tool_use_allows_prd_draft_write(process_package_state):
         "pre-tool-use.sh",
         process_package_state,
         "Write",
-        '{"file_path": "lc-test/prd.md"}',
+        '{"file_path": "lc-test/pages/docs/prd.html"}',
     )
     assert result.returncode == 0, result.stderr

@@ -45,6 +45,11 @@ skills:
     license: MIT
     required_skills:
       - gsd-import
+      - gsd-discuss-phase
+      - gsd-spec-phase
+      - gsd-ui-phase
+      - gsd-plan-phase
+      - gsd-mvp-phase
       - gsd-docs-update
       - gsd-forensics
       - gsd-ns-review
@@ -134,6 +139,7 @@ skills:
       - oh-my-claudecode:ralph
       - oh-my-claudecode:ultrawork
       - oh-my-claudecode:deep-interview
+      - oh-my-claudecode:designer
       - oh-my-claudecode:ai-slop-cleaner
       - oh-my-claudecode:wiki
       - oh-my-claudecode:writer-memory

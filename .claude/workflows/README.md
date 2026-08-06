@@ -73,13 +73,35 @@
 - **Skill（技能）**：阶段可调用的方法论子技能或 Lincoln 原生技能，由阶段 yaml 的 `skills` 字段声明。
 - **Role（角色）**：阶段默认 Agent 角色（pm、designer、engineer、qa、researcher、knowledge-curator、release-coordinator）。
 
+## 单一权威来源（SSOT）与产物路径一致性
+
+Lincoln 有四层配置可能引用同一产物路径，修改时必须同步，否则 Agent 会拿到脱钩的指引：
+
+| 事实 | 权威来源 | 副本（必须与权威一致） |
+|---|---|---|
+| 产物路径 / 必交性 | `.claude/stages/<stage>.yaml` 的 `artifacts` | workflow `.yaml` 的 `artifacts`/`optional_artifacts`、对应 skill 的 `SKILL.md` `outputs`、agent `.md` 的产物规范 |
+| 阶段顺序 | workflow `.yaml` 的 `steps` | stage `.yaml` 的 `prerequisite_stage` / `next_stage` |
+| 主执行 skill | workflow step 的 `action` | stage `.yaml` `skills.required` 首位、agent `.md` 可调用技能 |
+| 外部 skill 依赖 | `.claude/skills/dependencies.yaml` | stage `.yaml` `skills.required/optional` 中的 namespaced skill |
+
+仓库提供 `scripts/check-prompt-drift.py` 自动校验以上四层一致性。本地修改后、提交前必须运行：
+
+```bash
+./scripts/check-prompt-drift.py --strict --focus pm   # PM 三阶段必须绿
+./scripts/check-prompt-drift.py --strict               # 全量校验（逐步推进）
+```
+
+PM 三阶段（`clarify` / `product-design-docs` / `product-prototype`）的 drift 为阻塞项，其余阶段可在严格模式外先报告后治理。
+
 ## 如何新增工作流
 
 1. 在本目录创建 `<workflow-name>.yaml`，声明 `execution_mode: solo|team`。
 2. 遵循 [`workflow-template.schema.json`](../schemas/workflow-template.schema.json) 的字段约定（`execution_mode` 为必填）。
-3. 运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln_command_map.py" --refresh` 自动在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 等命令，并同步 `.claude-plugin/plugin.json`，然后运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln-setup.py" generate-harness --harness codex --harness opencode` 重新生成适配产物。
-4. 在 `.claude/skills/lc-wf/SKILL.md` 的命令映射表中补充触发词。
-5. 更新本 README 的**快速路由表**和**工作流详解**。
+3. 若工作流使用已有 stage，必须保持该 stage 的 `artifacts` 与 workflow step 的 `artifacts`/`optional_artifacts` 一致；新增 stage 时同步更新 `.claude/skills/dependencies.yaml` 中引用的 skill。
+4. 运行 `./scripts/check-prompt-drift.py --strict --focus pm` 确认无漂移。
+5. 运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln_command_map.py" --refresh` 自动在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 等命令，并同步 `.claude-plugin/plugin.json`，然后运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln-setup.py" generate-harness --harness codex --harness opencode` 重新生成适配产物。
+6. 在 `.claude/skills/lc-wf/SKILL.md` 的命令映射表中补充触发词。
+7. 更新本 README 的**快速路由表**和**工作流详解**。
 
 ## 相关文件
 

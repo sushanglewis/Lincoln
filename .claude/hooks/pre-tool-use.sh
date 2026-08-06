@@ -175,7 +175,7 @@ if [[ -n "$TARGET_PATH" ]]; then
         exit 1
     fi
 
-    if [[ "$NORMALIZED_TARGET" == "$PROCESS_SLUG/prd-v"*.md ]] && is_side_effect "$TOOL_NAME"; then
+    if [[ "$NORMALIZED_TARGET" == "$PROCESS_SLUG/prd-v"*.md || "$NORMALIZED_TARGET" == "$PROCESS_SLUG/pages/docs/snapshots/prd-v"*.html ]] && is_side_effect "$TOOL_NAME"; then
         echo "BLOCKED: PRD snapshots are immutable. Create them with 'python scripts/lincoln_prd.py freeze'." >&2
         exit 1
     fi
@@ -193,7 +193,7 @@ if [[ -n "$TARGET_PATH" ]]; then
     if is_side_effect "$TOOL_NAME"; then
         if [[ -n "$PROCESS_SLUG" ]]; then
             case "$NORMALIZED_TARGET" in
-                recordings/*|*/recordings/*|interviews/*|*/interviews/*|requirements/*|*/requirements/*|designs/*|*/designs/*|openspec/changes/*|*/openspec/changes/*|docs/research/*|*/docs/research/*)
+                recordings/*|*/recordings/*|interviews/*|*/interviews/*|requirements/*|*/requirements/*|designs/*|*/designs/*|openspec/changes/*|*/openspec/changes/*|docs/research/*|*/docs/research/*|pages/docs/*|*/pages/docs/*|pages/prototype/*|*/pages/prototype/*|handoffs/*|*/handoffs/*)
                     if [[ "$NORMALIZED_TARGET" != "$PROCESS_SLUG/"* ]]; then
                         echo "BLOCKED: process artifacts must be written under '$PROCESS_SLUG/'." >&2
                         exit 1
@@ -202,7 +202,7 @@ if [[ -n "$TARGET_PATH" ]]; then
             esac
         else
             case "$NORMALIZED_TARGET" in
-                recordings/*|*/recordings/*|interviews/*|*/interviews/*|requirements/*|*/requirements/*|designs/*|*/designs/*|openspec/changes/*|*/openspec/changes/*|docs/research/*|*/docs/research/*)
+                recordings/*|*/recordings/*|interviews/*|*/interviews/*|requirements/*|*/requirements/*|designs/*|*/designs/*|openspec/changes/*|*/openspec/changes/*|docs/research/*|*/docs/research/*|pages/docs/*|*/pages/docs/*|pages/prototype/*|*/pages/prototype/*|handoffs/*|*/handoffs/*)
                     echo "BLOCKED: process artifacts must be written under an initialized <process_slug>/." >&2
                     exit 1
                     ;;

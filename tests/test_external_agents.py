@@ -95,12 +95,14 @@ def test_external_agent_names_are_globally_unique():
 def test_lincoln_role_extends_resolve():
     """Lincoln role agents must only extend files that exist."""
     claude_dir = ROOT / ".claude"
+    errors = []
     for role_path in AGENTS_DIR.glob("*.md"):
         front = parse_frontmatter(role_path.read_text(encoding="utf-8"))
         for extends_ref in front.get("extends", []):
             resolved = claude_dir / extends_ref
             if not resolved.exists():
-                pytest.skip(
+                errors.append(
                     f"{role_path.name}: extends '{extends_ref}' does not resolve; "
                     f"run scripts/sync-external-agents.sh"
                 )
+    assert not errors, "\n".join(errors)

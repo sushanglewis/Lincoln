@@ -21,7 +21,9 @@ outputs:
   - "{process_slug}/pages/docs/page-map.html"
   - "{process_slug}/pages/docs/version-log.html"
   - "{process_slug}/pages/docs/api-list.html"
+  - "{process_slug}/pages/docs/handoff-pm-to-ux-v*.html"
   - "{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml"
+  - "{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md"
 required_tools:
   - Read
   - Bash
