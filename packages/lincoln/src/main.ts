@@ -1,5 +1,6 @@
 import { parseArgs } from './cli.js'
 import { doctor } from './commands/doctor.js'
+import { initProject } from './commands/initProject.js'
 import { install } from './commands/install.js'
 import { update } from './commands/update.js'
 import { use } from './commands/use.js'
@@ -69,6 +70,13 @@ export async function main(argv: string[]): Promise<number> {
   if (parsed.command === 'doctor') {
     const result = await doctor({ json: Boolean(parsed.flags.json) })
     return result.code
+  }
+
+  if (parsed.command === 'init-project') {
+    return initProject(process.cwd(), {
+      force: Boolean(parsed.flags.force),
+      dryRun: Boolean(parsed.flags['dry-run'])
+    })
   }
 
   console.log(USAGE)
