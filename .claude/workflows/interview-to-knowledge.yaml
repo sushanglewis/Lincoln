@@ -78,6 +78,7 @@ workflow:
         - "{process_slug}/pages/docs/api-list.html"
         - "{process_slug}/pages/docs/handoff-pm-to-ux-v*.html"
         - "{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml"
+        - "{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md"
       exit_checks:
         - check: design_docs_complete
           args: ["{design_id}"]
@@ -86,7 +87,7 @@ workflow:
 
     - id: product-prototype
       name: 产品原型
-      description: 基于已确认设计文档生成字段、界面规格；prototype.pen 由 UI 在 UX 节点之后产出，本阶段 optional
+      description: 基于已确认设计文档生成字段、界面规格与高保真 HTML 交互原型；Pencil 原型 optional
       entry_checks:
         - check: product_design_approved
           args: ["{design_id}"]
@@ -95,8 +96,8 @@ workflow:
       artifacts:
         - "{process_slug}/pages/docs/ui-spec.html"
         - "{process_slug}/pages/docs/fields.html"
-      optional_artifacts:
         - "{process_slug}/pages/prototype/**/*.html"
+      optional_artifacts:
         - "{process_slug}/designs/{design_id}/prototype.pen"
       exit_checks:
         - check: prototype_artifact_complete

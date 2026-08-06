@@ -32,11 +32,12 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
    - `version-log.html`: design decision version history and rationale.
    - `api-list.html`: internal and external APIs/data contracts the feature depends on.
 4. Create the PM→UX handoff contract at `{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml` referencing the approved design docs and PRD versions.
-5. Keep all documents traceable to the approved requirement and transcript timestamps where available.
-6. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with links to the new design documents. If the PRD already has an approved snapshot (`pages/docs/snapshots/prd-v*.html`), warn the PM that any content change requires bumping the version marker and re-freezing via `python scripts/lincoln_prd.py freeze`.
-7. Ask the PM to review `design-review.html` and linked docs (they can open `{process_slug}/index.html` in a browser).
-8. When the PM confirms, add `<!-- status: approved -->` to `design-review.html`.
-9. Run `python scripts/stage_loader.py --stage product-design-docs --action record-artifacts`.
+5. Create the human-readable PM→UX handoff portal page at `{process_slug}/pages/docs/handoff-pm-to-ux-v1.0.html` and the narrative master handoff document at `{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md`. These summarize core decisions, scope, open questions, and the context pack for the receiving UX Agent.
+6. Keep all documents traceable to the approved requirement and transcript timestamps where available.
+7. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with links to the new design documents and handoff artifacts. If the PRD already has an approved snapshot (`pages/docs/snapshots/prd-v*.html`), warn the PM that any content change requires bumping the version marker and re-freezing via `python scripts/lincoln_prd.py freeze`.
+8. Ask the PM to review `design-review.html` and linked docs (they can open `{process_slug}/index.html` in a browser).
+9. When the PM confirms, add `<!-- status: approved -->` to `design-review.html`.
+10. Run `python scripts/stage_loader.py --stage product-design-docs --action record-artifacts`.
 
 ## Rules
 

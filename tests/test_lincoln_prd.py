@@ -1,4 +1,6 @@
 """Tests for scripts/lincoln_prd.py PRD freeze/migrate helper."""
+from __future__ import annotations
+
 import importlib.util
 import os
 import subprocess

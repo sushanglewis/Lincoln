@@ -17,12 +17,12 @@ agent:
   handoff_to: lc-designer
 skills:
   required:
+  - lincoln:draft-product-design
   - superpowers:brainstorming
   - superpowers:writing-plans
   optional:
   - gsd:spec-phase
   - oh-my-claudecode:plan
-  - openspec:propose
 artifacts:
   required:
   - '{process_slug}/pages/docs/design-review.html'
@@ -34,7 +34,9 @@ artifacts:
   - '{process_slug}/pages/docs/page-map.html'
   - '{process_slug}/pages/docs/version-log.html'
   - '{process_slug}/pages/docs/api-list.html'
+  - '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html'
   - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'
+  - '{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md'
 context:
   goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包，并完成 PM→UX 交接产物（agent-agent 契约），使人类 UX 能基于统一认知驱动 UX Agent。所有产物通过 {process_slug}/index.html 门户访问。
   constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
@@ -45,7 +47,7 @@ context:
 
     - 本阶段 exit gate 要求 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 存在。
 
-    - handoff_to 为 lc-designer / lc-frontend-engineer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再按 `context_pack` 顺序读取 Tier-2 文档。
+    - handoff_to 为 lc-designer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再按 `context_pack` 顺序读取 Tier-2 文档。
 
     - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
 

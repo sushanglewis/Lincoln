@@ -9,6 +9,8 @@ Usage:
 Exit code 0 means pass, 1 means fail.
 """
 
+from __future__ import annotations
+
 import argparse
 import json
 import re

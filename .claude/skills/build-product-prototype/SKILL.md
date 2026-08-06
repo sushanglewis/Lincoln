@@ -14,8 +14,8 @@ inputs:
 outputs:
   - "{process_slug}/pages/docs/fields.html"
   - "{process_slug}/pages/docs/ui-spec.html"
-  - "{process_slug}/designs/{design_id}/prototype.pen"
   - "{process_slug}/pages/prototype/**/*.html"
+  - "{process_slug}/designs/{design_id}/prototype.pen"
 required_tools:
   - Read
   - Bash

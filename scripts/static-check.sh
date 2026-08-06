@@ -163,6 +163,42 @@ if errors:
 print("All agent frontmatters valid.")
 PY
 
+echo "==> Validate imported external agents are in sync with manifests"
+"$PYTHON" - "$ROOT" <<'PY'
+import sys, yaml
+from pathlib import Path
+
+root = Path(sys.argv[1])
+external_dir = root / ".claude" / "agents" / "external"
+errors = []
+
+for manifest_path in sorted(external_dir.glob("*.manifest.yaml")):
+    docs = list(yaml.safe_load_all(manifest_path.read_text(encoding="utf-8")))
+    data = docs[0] if docs else {}
+    if not isinstance(data, dict):
+        continue
+    framework = manifest_path.stem.replace(".manifest", "")
+    prefix = data.get("prefix", framework)
+    imported = data.get("imported_agents", []) or []
+    target_dir = external_dir / framework / "agents"
+    expected_names = {f"{prefix}-{Path(agent.replace('.md', '')).name}.md" for agent in imported}
+    actual_names = {p.name for p in target_dir.glob("*.md")} if target_dir.exists() else set()
+
+    missing = expected_names - actual_names
+    extra = actual_names - expected_names
+    if missing:
+        errors.append(f"{manifest_path.name}: missing imported agents: {sorted(missing)}")
+    if extra:
+        errors.append(f"{manifest_path.name}: unexpected agents on disk: {sorted(extra)}")
+
+if errors:
+    print("External agent sync issues:")
+    for e in errors:
+        print(f"  - {e}")
+    sys.exit(1)
+print("All imported external agents are present.")
+PY
+
 echo "==> Validate Python syntax"
 "$PYTHON" -m py_compile scripts/validate_stage.py
 
@@ -340,6 +376,9 @@ echo "==> Check version lockstep"
 echo "==> Check plugin package manifest"
 find .claude scripts tools -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
 "$PYTHON" scripts/package-lincoln-plugin.py check
+
+echo "==> Check prompt drift (PM stages only; non-PM drift reported separately)"
+"$PYTHON" scripts/check-prompt-drift.py --strict --focus pm
 
 echo "==> Run pytest"
 "$PYTHON" -m pytest tests/ -v

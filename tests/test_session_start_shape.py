@@ -1,5 +1,7 @@
 """Tests for the machine-readable output shape of on-session-start.sh (#67)."""
 
+from __future__ import annotations
+
 import json
 import os
 import shutil

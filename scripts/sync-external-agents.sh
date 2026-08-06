@@ -19,6 +19,8 @@ AGENTS_DIR="$ROOT/.claude/agents/external"
 mkdir -p "$AGENTS_DIR"
 
 "$ROOT/.venv/bin/python3" - "$AGENTS_DIR" "$DRY_RUN" <<'PY'
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 import re
