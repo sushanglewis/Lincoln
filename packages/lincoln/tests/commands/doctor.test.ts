@@ -75,6 +75,15 @@ describe('doctor', () => {
     expect(nodeCheck?.status).toBe('error')
   })
 
+  it('parses prefixed Python version strings', async () => {
+    const result = await doctor(
+      { json: true },
+      makeDeps({ pythonVersion: async () => 'Python 3.11.0' })
+    )
+    const pythonCheck = result.checks.find((c) => c.name === 'python')
+    expect(pythonCheck?.status).toBe('ok')
+  })
+
   it('reports an error when python is unavailable', async () => {
     const result = await doctor(
       { json: true },

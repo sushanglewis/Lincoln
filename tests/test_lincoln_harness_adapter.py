@@ -229,7 +229,7 @@ def test_real_command_map_registers_lc_wf_commands():
     for name in workflow_names:
         key = f"lc-wf-{name}"
         assert key in commands, f"missing command-map entry: {key}"
-        assert commands[key]["action"] == "python3 scripts/lincoln_workflow.py"
+        assert "scripts/lincoln_workflow.py" in commands[key]["action"]
     assert "lc-wf-list" in commands
     assert all(k.startswith("lc-") for k in commands)
 

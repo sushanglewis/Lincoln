@@ -1,3 +1,6 @@
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parseArgs } from './cli.js'
 import { doctor } from './commands/doctor.js'
 import { initProject } from './commands/initProject.js'
@@ -97,6 +100,10 @@ export async function main(argv: string[]): Promise<number> {
   return 0
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (
+  process.argv[1] &&
+  path.resolve(fs.realpathSync(fileURLToPath(import.meta.url))) ===
+    path.resolve(fs.realpathSync(process.argv[1]))
+) {
   main(process.argv).then((code) => process.exit(code))
 }

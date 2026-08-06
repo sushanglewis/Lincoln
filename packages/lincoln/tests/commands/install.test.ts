@@ -19,6 +19,7 @@ describe('install', () => {
   it('refuses to install without --yes in non-dry-run', async () => {
     const deps = {
       paths: resolveLincolnPaths(tmpDir),
+      payloadRoot: path.join(tmpDir, '.lincoln', 'current'),
       syncClaude: () => ({ written: [], skipped: [], preserved: [], warnings: [], settingsTouched: [] })
     }
     const code = await install(
@@ -38,6 +39,7 @@ describe('install', () => {
 
     const deps = {
       paths: resolveLincolnPaths(tmpDir),
+      payloadRoot: path.join(tmpDir, '.lincoln', 'current'),
       syncClaude: () => ({ written: [], skipped: [], preserved: [], warnings: [], settingsTouched: [] })
     }
     const code = await install(

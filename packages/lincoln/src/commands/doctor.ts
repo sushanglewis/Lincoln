@@ -34,11 +34,13 @@ const MIN_PYTHON_MAJOR = 3
 const MIN_PYTHON_MINOR = 10
 
 export function createDefaultDeps(): DoctorDeps {
+  const paths = resolveLincolnPaths()
+  const pythonCommand = resolvePythonCommand(paths)
   return {
-    paths: resolveLincolnPaths(),
+    paths,
     nodeVersion: () => process.version,
-    pythonVersion: () => queryCommandVersion('python3', ['--version']),
-    pyyamlVersion: () => queryPyyamlVersion(),
+    pythonVersion: () => queryCommandVersion(pythonCommand, ['--version']),
+    pyyamlVersion: () => queryPyyamlVersion(pythonCommand),
     npmVersion: () => queryCommandVersion('npm', ['--version']),
     projectRoot: process.cwd()
   }
@@ -89,7 +91,7 @@ function checkNode(version: string): DoctorCheck {
 }
 
 async function checkPython(query: () => Promise<string | undefined>): Promise<DoctorCheck> {
-  const version = await query()
+  const version = (await query())?.trim()
   if (!version) {
     return { name: 'python', status: 'error', message: 'Python 3 is not available' }
   }
@@ -104,7 +106,8 @@ async function checkPython(query: () => Promise<string | undefined>): Promise<Do
       message: `Python ${version} is below the minimum required ${MIN_PYTHON_MAJOR}.${MIN_PYTHON_MINOR}`
     }
   }
-  return { name: 'python', status: 'ok', message: `Python ${version}` }
+  const display = version.replace(/^Python\s+/, '')
+  return { name: 'python', status: 'ok', message: `Python ${display}` }
 }
 
 async function checkPyyaml(query: () => Promise<string | undefined>): Promise<DoctorCheck> {
@@ -163,6 +166,18 @@ function checkProjectMarker(projectRoot: string): DoctorCheck {
   return { name: 'project-marker', status: 'ok', message: `Project marker found at ${markerPath}` }
 }
 
+function resolvePythonCommand(paths: LincolnPaths): string {
+  const venvPython = path.join(
+    paths.venvDir,
+    process.platform === 'win32' ? 'Scripts' : 'bin',
+    process.platform === 'win32' ? 'python.exe' : 'python'
+  )
+  if (fs.existsSync(venvPython)) {
+    return venvPython
+  }
+  return 'python3'
+}
+
 function parseNodeMajor(version: string): number | undefined {
   const match = /^v?(\d+)/.exec(version)
   if (!match) {
@@ -172,7 +187,7 @@ function parseNodeMajor(version: string): number | undefined {
 }
 
 function parsePythonVersion(version: string): { major: number; minor: number } | undefined {
-  const match = /^(\d+)\.(\d+)/.exec(version)
+  const match = /(\d+)\.(\d+)/.exec(version)
   if (!match) {
     return undefined
   }
@@ -197,10 +212,10 @@ async function queryCommandVersion(command: string, args: string[]): Promise<str
   })
 }
 
-async function queryPyyamlVersion(): Promise<string | undefined> {
+async function queryPyyamlVersion(pythonCommand: string): Promise<string | undefined> {
   return new Promise((resolvePromise) => {
     const child = spawn(
-      'python3',
+      pythonCommand,
       ['-c', 'import yaml; print(yaml.__version__)'],
       { stdio: ['ignore', 'pipe', 'ignore'], shell: process.platform === 'win32' }
     )
