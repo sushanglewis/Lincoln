@@ -1,3 +1,58 @@
+# Lincoln v1.6.0 Release Notes
+
+**Release date:** 2026-08-06
+
+## Highlights
+
+Lincoln v1.6.0 moves the framework from a vendored-per-project model to a global npm plugin. Users now install `@sushanglewis/lincoln` once and run `lincoln install` to sync the framework to `~/.claude/`, `~/.codex/`, and `~/.opencode/`. Projects opt in with a single `.lincoln.yaml` marker; unmarked projects keep Lincoln inactive by default.
+
+## New Features
+
+- **Global npm plugin distribution** (#100)
+  - New `@sushanglewis/lincoln` package provides the `lincoln` CLI.
+  - `lincoln install` performs one-time global setup and syncs framework files.
+  - `lincoln update` pulls the latest release and re-syncs globally.
+  - `lincoln use <version>` switches the active global version.
+  - `lincoln doctor` diagnoses harness integration.
+  - `lincoln init-project` creates `.lincoln.yaml` in a project.
+  - `lincoln migrate-project` removes unmodified vendored framework files and generates `.lincoln.yaml`.
+  - `lincoln record` launches the interview recorder TUI.
+
+- **Hooks globalize and default-off** (#100)
+  - `.claude/hooks/*.sh` now resolve `CLAUDE_PLUGIN_ROOT` / `LINCOLN_HOME` / `~/.lincoln/current` before falling back to the local repo.
+  - When running in global mode, hooks exit quietly unless `.lincoln.yaml`, legacy `.claude/workflow-state.yaml`, or `LINCOLN_ALWAYS_ON` is present.
+
+- **Marketplace plugin hooks manifest** (#100)
+  - Adds `.claude-plugin/hooks.json` and references it from `.claude-plugin/plugin.json`.
+
+## Tooling
+
+- `packages/lincoln` — global CLI package `@sushanglewis/lincoln` (version aligned to `1.6.0`).
+- `tools/lincoln` — Ink/React TUI for interview recording, now packaged as `@sushanglewis/lincoln-recorder` (`lincoln-record` CLI).
+- `tools/lincoln-installer` — legacy terminal TUI installer and updater (deprecated, kept for backward compatibility).
+
+## Dependencies
+
+- `superpowers` v1.2.0
+- `gsd` v2.0.1
+- `openspec` v0.5.0
+
+## Migration Notes
+
+- Install the new global CLI with `npm install -g @sushanglewis/lincoln` and run `lincoln install`.
+- Existing projects with vendored framework files can use `lincoln migrate-project --dry-run` / `--yes` to switch to the global model.
+- Legacy `npx lincoln-install` / `npx lincoln-update` still work but print a deprecation notice; migrate to the global CLI.
+
+## Full Changelog
+
+Compare: https://github.com/sushanglewis/Lincoln/compare/v1.5.0...v1.6.0
+
+Merged PRs since v1.5.0:
+
+- #100 feat(#100): implement global Lincoln plugin distribution
+
+---
+
 # Lincoln v1.5.0 Release Notes
 
 **Release date:** 2026-08-05

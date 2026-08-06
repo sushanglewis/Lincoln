@@ -1,5 +1,5 @@
 {
-  "name": "@sushanglewis/lincoln",
+  "name": "@sushanglewis/lincoln-recorder",
   "version": "1.5.0",
   "description": "Cross-tool terminal UI for recording Lincoln interviews",
   "type": "module",
@@ -7,7 +7,7 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "lincoln": "./dist/main.js"
+    "lincoln-record": "./dist/main.js"
   },
   "files": [
     "dist"

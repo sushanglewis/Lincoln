@@ -14,7 +14,7 @@
 | `solo` | 单人用户在自己 conductor session 内独立完成全部节点 | `.context/workflow/<name>.yaml`（session 级、gitignored，跟随 workspace/session 生命周期） |
 | `team` | 多个人类用户负责不同节点，经 branch + issue-package 交接 | `{process_slug}/workflow-stage.yaml`（随 feature 分支共享） |
 
-启动命令统一为 `lc-wf-*`（claude-code 经 `lc-wf` skill，codex/opencode 经生成的命令文件），底层为 `python3 scripts/lincoln_workflow.py`：
+启动命令统一为 `lc-wf-*`（claude-code 经 `lc-wf` skill，codex/opencode 经生成的命令文件），底层为 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln_workflow.py`："
 
 - `lc-wf-list` — 列出所有工作流及其执行模式。
 - `lc-wf-<name>` — 启动对应工作流。solo 直接生成 session 实例；team 需 `--issue-number <N>`，转发 `scripts/init-lincoln-branch.sh` 创建分支与 issue 工作包。
@@ -77,7 +77,7 @@
 
 1. 在本目录创建 `<workflow-name>.yaml`，声明 `execution_mode: solo|team`。
 2. 遵循 [`workflow-template.schema.json`](../schemas/workflow-template.schema.json) 的字段约定（`execution_mode` 为必填）。
-3. 运行 `python3 scripts/lincoln_command_map.py --refresh` 自动在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 等命令，并同步 `.claude-plugin/plugin.json`，然后运行 `python3 scripts/lincoln-setup.py generate-harness --harness codex --harness opencode` 重新生成适配产物。
+3. 运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln_command_map.py" --refresh` 自动在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 等命令，并同步 `.claude-plugin/plugin.json`，然后运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln-setup.py" generate-harness --harness codex --harness opencode` 重新生成适配产物。
 4. 在 `.claude/skills/lc-wf/SKILL.md` 的命令映射表中补充触发词。
 5. 更新本 README 的**快速路由表**和**工作流详解**。
 

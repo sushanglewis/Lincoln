@@ -94,11 +94,14 @@ Lincoln 的目标是为 AI-Native 研发工作流提供一套**可复用、可�
 python3 scripts/init-project.sh
 ```
 
-或使用安装器：
+或使用新的全局 CLI：
 
 ```bash
-npx lincoln-install
+npm install -g @sushanglewis/lincoln
+lincoln install
 ```
+
+旧版 `npx lincoln-install` 仍可用但已弃用。
 
 ### 运行测试
 
@@ -189,9 +192,22 @@ pytest tests/test_readme_natural_language.py
 4. 运行 `python3 scripts/package-lincoln-plugin.py check --check-dirty`。
 5. 运行 `python3 scripts/package-lincoln-plugin.py package` 生成 `dist/lincoln-X.Y.Z.tar.gz`。
 6. 创建 PR 合并 release 改动。
-7. 在 `main` 上打 tag `vX.Y.Z` 并推送。
+7. 在 `main` 上打 tag `vX.Y.Z` 并推送（release tarball 标签）。
 8. 创建 GitHub Release 并上传 tarball。
-9. 发布/更新 npm 包 `lincoln-install` / `lincoln-update`（需要 `NPM_TOKEN`）。
+9. 发布/更新 npm 包：
+   - 打 `lincoln-vX.Y.Z` 标签触发 `.github/workflows/publish-lincoln.yml`，发布 `@sushanglewis/lincoln`。
+   - 旧 `lincoln-install` / `lincoln-update` npm 包保持已弃用状态，不再主动发布。
+
+### 从 vendored 模型迁移到全局插件模型
+
+v1.6.0 起 Lincoln 切换为 `npm install -g @sushanglewis/lincoln` 全局分发。迁移既有项目：
+
+1. 全局安装：`npm install -g @sushanglewis/lincoln && lincoln install --yes`
+2. 进入项目根目录，运行 `lincoln migrate-project --dry-run` 预览将被删除的框架文件。
+3. 确认后运行 `lincoln migrate-project --yes`：未修改的 vendored 框架文件会被删除，已修改/自定义文件保留，同时生成 `.lincoln.yaml`。
+4. 提交变更。之后项目的 `.claude/`、`scripts/` 等框架文件由全局 payload 提供，项目侧只保留 `.lincoln.yaml`、`.context/`、`issue-*/` 等本地状态。
+
+框架开发者若需要同时修改全局 payload，应在 Lincoln 仓库本身工作（该仓库通过自身的 `.lincoln.yaml` 保持自举）。
 
 ## 获得帮助
 

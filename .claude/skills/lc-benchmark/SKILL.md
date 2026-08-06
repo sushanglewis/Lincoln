@@ -55,7 +55,7 @@ when a release/hygiene gate requires them.
 Prefer using the `lc-benchmark` command or Skill tool. Equivalent CLI:
 
 ```bash
-python3 scripts/lc-benchmark-cli.py
-python3 scripts/lc-benchmark-cli.py --trigger handoff
-python3 scripts/lc-benchmark-cli.py --state-file issue-<N>/workflow-stage.yaml --trigger manual
+python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lc-benchmark-cli.py"
+python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lc-benchmark-cli.py" --trigger handoff
+python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lc-benchmark-cli.py" --state-file issue-<N>/workflow-stage.yaml --trigger manual
 ```

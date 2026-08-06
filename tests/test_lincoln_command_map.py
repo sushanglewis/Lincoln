@@ -128,7 +128,7 @@ def test_build_commands_preserves_static_command(fake_repo):
 def test_build_commands_generates_workflow_commands(fake_repo):
     commands = build_commands()
     assert "lc-wf-alpha" in commands
-    assert commands["lc-wf-alpha"]["action"] == "python3 scripts/lincoln_workflow.py"
+    assert commands["lc-wf-alpha"]["action"] == 'python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"'
     assert "start --workflow alpha" in commands["lc-wf-alpha"].get("args_hint", "")
     assert "lc-wf-beta" in commands
     assert "--issue-number" in commands["lc-wf-beta"].get("args_hint", "")
@@ -137,7 +137,7 @@ def test_build_commands_generates_workflow_commands(fake_repo):
 def test_build_commands_generates_agent_commands(fake_repo):
     commands = build_commands()
     assert "lc-agent-pm" in commands
-    assert commands["lc-agent-pm"]["action"] == "python3 scripts/lincoln_role.py --role pm"
+    assert commands["lc-agent-pm"]["action"] == 'python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm'
     assert "lc-agent-engineer" in commands
 
 
@@ -146,7 +146,7 @@ def test_build_commands_generates_skill_commands(fake_repo):
     assert "lc-skill-clarify-requirements" in commands
     assert (
         commands["lc-skill-clarify-requirements"]["action"]
-        == "python3 scripts/lincoln_skill_prompt.py --skill clarify-requirements"
+        == 'python3 "$LINCOLN_ROOT/scripts/lincoln_skill_prompt.py" --skill clarify-requirements'
     )
     # Leading lc- prefix on skill folder should be stripped from command name
     assert "lc-skill-first-principles" in commands
@@ -158,7 +158,7 @@ def test_build_commands_generates_scenario_commands(fake_repo):
     assert "lc-scenario-make-prd" in commands
     assert (
         commands["lc-scenario-make-prd"]["action"]
-        == "python3 scripts/lincoln_scenario.py --scenario make-prd"
+        == 'python3 "$LINCOLN_ROOT/scripts/lincoln_scenario.py" --scenario make-prd'
     )
 
 

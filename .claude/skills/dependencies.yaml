@@ -10,7 +10,7 @@ description: |
 # fixed-version problem by making every upgrade explicit and reviewable.)
 # Upgrade flow: 1) pick the new upstream ref; 2) update `ref` (and `pinned_at`);
 # 3) run the benchmark to confirm no behavior regression; 4) merge.
-# Check upstream drift vs pins: `python3 scripts/check-dependency-drift.py`.
+# Check upstream drift vs pins: `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/check-dependency-drift.py`."
 
 skills:
   superpowers:

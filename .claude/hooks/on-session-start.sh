@@ -6,18 +6,52 @@ set -euo pipefail
 # reads previous node handoff, and injects current node driving context.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LOCAL_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(pwd)"
 
-if [ -x "$ROOT/.venv/bin/python3" ]; then
-    PYTHON="$ROOT/.venv/bin/python3"
-elif [ -x "$ROOT/venv/bin/python3" ]; then
-    PYTHON="$ROOT/venv/bin/python3"
+FRAMEWORK_ROOT="${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-}}"
+if [[ -z "$FRAMEWORK_ROOT" ]]; then
+  # If this hook file lives inside a vendored project framework, prefer that.
+  if [[ "$SCRIPT_DIR" == "$LOCAL_ROOT/.claude/hooks"* && -d "$LOCAL_ROOT/.claude/stages" ]]; then
+    FRAMEWORK_ROOT="$LOCAL_ROOT"
+  elif [[ -d "$HOME/.lincoln/current" ]]; then
+    FRAMEWORK_ROOT="$HOME/.lincoln/current"
+  else
+    FRAMEWORK_ROOT="$LOCAL_ROOT"
+  fi
+fi
+
+if [[ "$FRAMEWORK_ROOT" != "$LOCAL_ROOT" ]]; then
+  # Global plugin mode: only activate if the project has opted in.
+  MARKER_FOUND="false"
+  SEARCH_DIR="$PROJECT_ROOT"
+  while [[ "$SEARCH_DIR" != "/" ]]; do
+    if [[ -f "$SEARCH_DIR/.lincoln.yaml" || -f "$SEARCH_DIR/.claude/workflow-state.yaml" ]]; then
+      MARKER_FOUND="true"
+      break
+    fi
+    SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+  done
+  if [[ "$MARKER_FOUND" != "true" && -z "${LINCOLN_ALWAYS_ON:-}" ]]; then
+    echo "Lincoln inactive: no .lincoln.yaml in $PROJECT_ROOT"
+    exit 0
+  fi
+fi
+
+ROOT="$PROJECT_ROOT"
+
+if [ -x "$FRAMEWORK_ROOT/.venv/bin/python3" ]; then
+    PYTHON="$FRAMEWORK_ROOT/.venv/bin/python3"
+elif [ -x "$FRAMEWORK_ROOT/venv/bin/python3" ]; then
+    PYTHON="$FRAMEWORK_ROOT/venv/bin/python3"
+elif [ -x "$HOME/.lincoln/venv/bin/python3" ]; then
+    PYTHON="$HOME/.lincoln/venv/bin/python3"
 else
     PYTHON="python3"
 fi
 
 STATE_FILE="${LINCOLN_STATE_FILE:-}"
-LEGACY_STATE_FILE="$ROOT/.claude/workflow-state.yaml"
+LEGACY_STATE_FILE="$FRAMEWORK_ROOT/.claude/workflow-state.yaml"
 
 # Runtime state captured for optional machine-readable JSON output
 # (LINCOLN_SESSION_START_JSON=1). Updated at key decision points.
@@ -68,12 +102,12 @@ echo "=== Lincoln Session Start ==="
 echo ""
 
 # 1. Dependency check + first-run prompt (LINCOLN_SKIP_DEP_CHECK=1 seals this off for tests)
-if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$ROOT/.claude/skills/dependencies.yaml" ]]; then
+if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$FRAMEWORK_ROOT/.claude/skills/dependencies.yaml" ]]; then
     echo "[Lincoln] Checking dependencies..."
-    if ! "$PYTHON" "$ROOT/scripts/lincoln-setup.py" check --root "$ROOT" > /dev/null 2>&1; then
+    if ! "$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln-setup.py" check --root "$ROOT" > /dev/null 2>&1; then
         SETUP_COMPLETE="false"
         if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
-            if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
+            if "$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
                 SETUP_COMPLETE="true"
                 _LINCOLN_SETUP_COMPLETE="true"
             fi
@@ -92,7 +126,7 @@ if [[ "${LINCOLN_SKIP_DEP_CHECK:-}" != "1" && -f "$ROOT/.claude/skills/dependenc
 else
     # Even when dependency check is skipped, surface setup completeness in the JSON shape.
     if [[ -f "$ROOT/.context/lc-setup-state.yaml" ]]; then
-        if "$PYTHON" "$ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
+        if "$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln-setup.py" is-setup-complete --root "$ROOT" > /dev/null 2>&1; then
             _LINCOLN_SETUP_COMPLETE="true"
         fi
     fi
@@ -112,15 +146,16 @@ print_opening_guidance() {
 }
 
 # 2. Determine state file (process package preferred, legacy fallback)
-STATE_FILE=$("$PYTHON" - "$ROOT" "$STATE_FILE" <<'PY'
+STATE_FILE=$("$PYTHON" - "$FRAMEWORK_ROOT" "$ROOT" "$STATE_FILE" <<'PY'
 import sys
 from pathlib import Path
-root = Path(sys.argv[1])
-provided = sys.argv[2]
-sys.path.insert(0, str(root))
+framework_root = Path(sys.argv[1])
+project_root = Path(sys.argv[2])
+provided = sys.argv[3]
+sys.path.insert(0, str(framework_root))
 from scripts.lincoln_paths import resolve_state_path
 path = Path(provided) if provided else None
-print(resolve_state_path(path, root))
+print(resolve_state_path(path, project_root))
 PY
 )
 
@@ -134,7 +169,7 @@ if [[ ! -f "$STATE_FILE" ]]; then
         ISSUE_NUMBER="${ISSUE_NUMBER%%-*}"
         if [[ "$ISSUE_NUMBER" =~ ^[0-9]+$ ]]; then
             echo "Auto-initializing issue work package for branch $CURRENT_BRANCH..."
-            "$ROOT/scripts/init-lincoln-branch.sh" --issue-number "$ISSUE_NUMBER" --no-commit --auto || {
+            "$FRAMEWORK_ROOT/scripts/init-lincoln-branch.sh" --issue-number "$ISSUE_NUMBER" --no-commit --auto || {
                 echo "Failed to auto-initialize issue work package. Run manually:"
                 echo "  scripts/init-lincoln-branch.sh --issue-number $ISSUE_NUMBER"
                 echo "=== End Lincoln Session Start ==="
@@ -143,13 +178,14 @@ if [[ ! -f "$STATE_FILE" ]]; then
                 exit 0
             }
             # Re-resolve state file after initialization
-            STATE_FILE=$("$PYTHON" - "$ROOT" "" <<'PY'
+            STATE_FILE=$("$PYTHON" - "$FRAMEWORK_ROOT" "$ROOT" "" <<'PY'
 import sys
 from pathlib import Path
-root = Path(sys.argv[1])
-sys.path.insert(0, str(root))
+framework_root = Path(sys.argv[1])
+project_root = Path(sys.argv[2])
+sys.path.insert(0, str(framework_root))
 from scripts.lincoln_paths import resolve_state_path
-print(resolve_state_path(None, root))
+print(resolve_state_path(None, project_root))
 PY
 )
         else
@@ -229,11 +265,11 @@ echo ""
 
 # 4. Load stage context, agent role, and workflow template (summaries only)
 if [[ "$CURRENT_STAGE" != "not_started" ]]; then
-    STAGE_YAML="$ROOT/.claude/stages/$CURRENT_STAGE.yaml"
+    STAGE_YAML="$FRAMEWORK_ROOT/.claude/stages/$CURRENT_STAGE.yaml"
     if [[ -f "$STAGE_YAML" ]]; then
         echo "=== Lincoln Stage Context ==="
         echo ""
-        echo "Stage YAML: ${STAGE_YAML#$ROOT/}"
+        echo "Stage YAML: ${STAGE_YAML#$FRAMEWORK_ROOT/}"
         "$PYTHON" - "$STAGE_YAML" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
@@ -270,7 +306,7 @@ PY
     )
     # Stage YAML uses role IDs like lc-pm; agent files omit the lc- prefix.
     AGENT_FILE="${PRIMARY_AGENT#lc-}.md"
-    if [[ -n "$PRIMARY_AGENT" && -f "$ROOT/.claude/agents/$AGENT_FILE" ]]; then
+    if [[ -n "$PRIMARY_AGENT" && -f "$FRAMEWORK_ROOT/.claude/agents/$AGENT_FILE" ]]; then
         echo "=== Agent Context ($PRIMARY_AGENT) ==="
         echo "Agent file: .claude/agents/$AGENT_FILE"
         echo "Default contract: .claude/agents/default.md"
@@ -282,10 +318,10 @@ PY
     fi
 
     # Load workflow template summary
-    WORKFLOW_FILE="$ROOT/.claude/workflows/${WORKFLOW_TEMPLATE}.yaml"
+    WORKFLOW_FILE="$FRAMEWORK_ROOT/.claude/workflows/${WORKFLOW_TEMPLATE}.yaml"
     if [[ -f "$WORKFLOW_FILE" ]]; then
         echo "=== Workflow Template ($WORKFLOW_TEMPLATE) ==="
-        echo "File: ${WORKFLOW_FILE#$ROOT/}"
+        echo "File: ${WORKFLOW_FILE#$FRAMEWORK_ROOT/}"
         "$PYTHON" - "$WORKFLOW_FILE" <<'PY'
 import sys, yaml
 data = yaml.safe_load(open(sys.argv[1], encoding="utf-8"))
@@ -353,7 +389,7 @@ if [[ -n "$PROCESS_SLUG" && -d "$ROOT/$PROCESS_SLUG/handoffs" ]]; then
 fi
 
 # 7. Run status summary
-STATUS_OUTPUT=$("$PYTHON" "$ROOT/scripts/lincoln-status.py" --format markdown --state-file "$STATE_FILE" 2>/dev/null) || STATUS_OUTPUT=""
+STATUS_OUTPUT=$("$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln-status.py" --format markdown --state-file "$STATE_FILE" 2>/dev/null) || STATUS_OUTPUT=""
 if [[ -n "$STATUS_OUTPUT" ]]; then
     echo "=== Lincoln Status Summary ==="
     echo "$STATUS_OUTPUT"
@@ -381,7 +417,7 @@ emit_session_start_json
 if [[ -n "$PROCESS_SLUG" && -f "$HOOK_OUTPUT_CAPTURE" ]]; then
     METRICS_DIR="$ROOT/$PROCESS_SLUG/.trace"
     mkdir -p "$METRICS_DIR"
-    "$PYTHON" "$ROOT/scripts/lincoln_session_start_metrics.py" \
+    "$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln_session_start_metrics.py" \
         --input "$HOOK_OUTPUT_CAPTURE" \
         --output "$METRICS_DIR/session-start-metrics.json" \
         --stage "$CURRENT_STAGE" \

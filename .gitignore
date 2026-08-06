@@ -55,3 +55,7 @@ __pycache__/
 .codex-plugin/
 .opencode/
 AGENTS.md
+
+# Generated framework payload for npm package (regenerate via:
+#   node scripts/sync-framework-package.mjs)
+packages/lincoln/framework/

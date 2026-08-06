@@ -31,9 +31,9 @@ Using [lc-stage] to 用自然语言驱动当前阶段的生命周期：查看状
 
 | 用户说 | 动作 | 底层命令（Agent 执行，用户无需关心） |
 |--------|------|-----------------------------------|
-| "现在什么状态" | status | `python3 scripts/lincoln-status.py --format markdown`（或 `/lc-status`） |
-| "可以开始吗 / 校验准入" | validate-entry | `python3 scripts/stage_loader.py --stage <current_stage> --action validate-entry`（或 `/lc-validate`） |
-| "提交产物 / 记录产物" | record-artifacts | `python3 scripts/stage_loader.py --stage <current_stage> --action record-artifacts`（或 `/lc-submit`） |
+| "现在什么状态" | status | `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln-status.py" --format markdown`（或 `/lc-status`） |
+| "可以开始吗 / 校验准入" | validate-entry | `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/stage_loader.py" --stage <current_stage> --action validate-entry`（或 `/lc-validate`） |
+| "提交产物 / 记录产物" | record-artifacts | `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/stage_loader.py" --stage <current_stage> --action record-artifacts`（或 `/lc-submit`） |
 | "确认通过 / 审批通过" | approve-gate | 仅当人类 PM 明确确认后：`... --action approve-gate`（或 `/lc-approve`） |
 | "生成交接 / 切换窗口" | handoff-report | 见 `/lc-handoff` |
 | "进入下一阶段" | transition-next | 仅在当前阶段 gate 通过后执行 |
