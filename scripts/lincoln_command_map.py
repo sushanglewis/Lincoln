@@ -52,7 +52,7 @@ STATIC_COMMANDS = {
 HEADER = """# lc-* 命令单一事实源(Single source of truth)
 # 三个 harness manifest(claude-code.yaml / codex.yaml / opencode.yaml)通过
 # command_map_source: command-map.yaml 引用本文件。
-# 新增/修改命令请运行: python3 scripts/lincoln_command_map.py --refresh
+# 新增/修改命令请运行: python3 "$LINCOLN_ROOT/scripts/lincoln_command_map.py" --refresh
 """
 
 FRONTMATTER_RE = re.compile(r"\A---\n(.*?)\n---\n", re.DOTALL)
@@ -177,7 +177,7 @@ def build_commands() -> dict[str, dict[str, Any]]:
             args_hint = f"start --workflow {stem}"
         commands[key] = {
             "description": wf["description"] or f"启动 {stem} 工作流",
-            "action": "python3 scripts/lincoln_workflow.py",
+            "action": 'python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"',
             "args_hint": args_hint,
         }
 
@@ -188,7 +188,7 @@ def build_commands() -> dict[str, dict[str, Any]]:
             continue
         commands[key] = {
             "description": agent["description"] or f"调用 {stem} 角色",
-            "action": f"python3 scripts/lincoln_role.py --role {stem}",
+            "action": f'python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role {stem}',
             "args_hint": "$ARGUMENTS",
         }
 
@@ -199,7 +199,7 @@ def build_commands() -> dict[str, dict[str, Any]]:
             continue
         commands[key] = {
             "description": skill["description"] or f"调用 {folder} 技能",
-            "action": f"python3 scripts/lincoln_skill_prompt.py --skill {folder}",
+            "action": f'python3 "$LINCOLN_ROOT/scripts/lincoln_skill_prompt.py" --skill {folder}',
             "args_hint": "$ARGUMENTS",
         }
 
@@ -211,7 +211,7 @@ def build_commands() -> dict[str, dict[str, Any]]:
             continue
         commands[key] = {
             "description": scenario.get("description", f"场景: {sid}"),
-            "action": f"python3 scripts/lincoln_scenario.py --scenario {sid}",
+            "action": f'python3 "$LINCOLN_ROOT/scripts/lincoln_scenario.py" --scenario {sid}',
             "args_hint": "$ARGUMENTS",
         }
 
