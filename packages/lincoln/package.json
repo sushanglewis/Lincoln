@@ -1,6 +1,6 @@
 {
   "name": "@sushanglewis/lincoln",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "description": "Global Lincoln agent harness plugin CLI",
   "type": "module",
   "main": "./dist/index.js",
