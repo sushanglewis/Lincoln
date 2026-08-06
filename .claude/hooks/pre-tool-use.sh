@@ -13,27 +13,61 @@ set -euo pipefail
 #   $2: JSON-encoded tool arguments
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LOCAL_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(pwd)"
 
-if [ -x "$ROOT/.venv/bin/python3" ]; then
-    PYTHON="$ROOT/.venv/bin/python3"
-elif [ -x "$ROOT/venv/bin/python3" ]; then
-    PYTHON="$ROOT/venv/bin/python3"
+FRAMEWORK_ROOT="${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-}}"
+if [[ -z "$FRAMEWORK_ROOT" ]]; then
+  # If this hook file lives inside a vendored project framework, prefer that.
+  if [[ "$SCRIPT_DIR" == "$LOCAL_ROOT/.claude/hooks"* && -d "$LOCAL_ROOT/.claude/stages" ]]; then
+    FRAMEWORK_ROOT="$LOCAL_ROOT"
+  elif [[ -d "$HOME/.lincoln/current" ]]; then
+    FRAMEWORK_ROOT="$HOME/.lincoln/current"
+  else
+    FRAMEWORK_ROOT="$LOCAL_ROOT"
+  fi
+fi
+
+if [[ "$FRAMEWORK_ROOT" != "$LOCAL_ROOT" ]]; then
+  MARKER_FOUND="false"
+  SEARCH_DIR="$PROJECT_ROOT"
+  while [[ "$SEARCH_DIR" != "/" ]]; do
+    if [[ -f "$SEARCH_DIR/.lincoln.yaml" || -f "$SEARCH_DIR/.claude/workflow-state.yaml" ]]; then
+      MARKER_FOUND="true"
+      break
+    fi
+    SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+  done
+  if [[ "$MARKER_FOUND" != "true" && -z "${LINCOLN_ALWAYS_ON:-}" ]]; then
+    echo "Lincoln inactive: no .lincoln.yaml in $PROJECT_ROOT"
+    exit 0
+  fi
+fi
+
+ROOT="$PROJECT_ROOT"
+
+if [ -x "$FRAMEWORK_ROOT/.venv/bin/python3" ]; then
+    PYTHON="$FRAMEWORK_ROOT/.venv/bin/python3"
+elif [ -x "$FRAMEWORK_ROOT/venv/bin/python3" ]; then
+    PYTHON="$FRAMEWORK_ROOT/venv/bin/python3"
+elif [ -x "$HOME/.lincoln/venv/bin/python3" ]; then
+    PYTHON="$HOME/.lincoln/venv/bin/python3"
 else
     PYTHON="python3"
 fi
 
 TOOL_NAME="${1:-}"
 TOOL_ARGS="${2:-}"
-STATE_FILE=$("$PYTHON" - "$ROOT" "${LINCOLN_STATE_FILE:-}" <<'PY'
+STATE_FILE=$("$PYTHON" - "$FRAMEWORK_ROOT" "$ROOT" "${LINCOLN_STATE_FILE:-}" <<'PY'
 import sys
 from pathlib import Path
-root = Path(sys.argv[1])
-provided = sys.argv[2]
-sys.path.insert(0, str(root))
+framework_root = Path(sys.argv[1])
+project_root = Path(sys.argv[2])
+provided = sys.argv[3]
+sys.path.insert(0, str(framework_root))
 from scripts.lincoln_paths import resolve_state_path
 path = Path(provided) if provided else None
-print(resolve_state_path(path, root))
+print(resolve_state_path(path, project_root))
 PY
 )
 
@@ -68,12 +102,13 @@ PY
 STATE_OUTPUT=$(read_state)
 CURRENT_STAGE=$(echo "$STATE_OUTPUT" | sed -n '1p')
 STAGE_STATUS=$(echo "$STATE_OUTPUT" | sed -n '2p')
-PROCESS_SLUG=$("$PYTHON" - "$ROOT" "$STATE_FILE" <<'PY'
+PROCESS_SLUG=$("$PYTHON" - "$FRAMEWORK_ROOT" "$ROOT" "$STATE_FILE" <<'PY'
 import sys, yaml
 from pathlib import Path
-root = Path(sys.argv[1])
-state_file = Path(sys.argv[2])
-sys.path.insert(0, str(root))
+framework_root = Path(sys.argv[1])
+project_root = Path(sys.argv[2])
+state_file = Path(sys.argv[3])
+sys.path.insert(0, str(framework_root))
 from scripts.lincoln_paths import get_process_slug
 state = yaml.safe_load(open(state_file, encoding="utf-8"))
 print(get_process_slug(state, state_file))
@@ -94,7 +129,7 @@ PY
 # placeholders for user messages in dialogue stages, and cap consecutive
 # task-tool calls everywhere else.  This is invoked for every tool so it can
 # reset the burst counter on non-task actions.
-"$PYTHON" "$ROOT/scripts/task_tool_guard.py" \
+"$PYTHON" "$FRAMEWORK_ROOT/scripts/task_tool_guard.py" \
     --state-file "$STATE_FILE" \
     --tool-name "$TOOL_NAME" \
     --tool-args "$TOOL_ARGS"
@@ -197,7 +232,7 @@ fi
 # Exit gate check: block side-effect tools that would advance to the next stage
 # if the current stage's exit gate has not been approved.
 if is_side_effect "$TOOL_NAME"; then
-    GATE_STATUS=$("$PYTHON" "$ROOT/scripts/stage_loader.py" \
+    GATE_STATUS=$("$PYTHON" "$FRAMEWORK_ROOT/scripts/stage_loader.py" \
         --stage "$CURRENT_STAGE" \
         --action validate-exit \
         2>/dev/null | grep -c "^PASS:" || echo "0")

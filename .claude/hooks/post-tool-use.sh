@@ -13,14 +13,47 @@ set -euo pipefail
 #   $3: tool exit code
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LOCAL_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(pwd)"
+
+FRAMEWORK_ROOT="${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-}}"
+if [[ -z "$FRAMEWORK_ROOT" ]]; then
+  # If this hook file lives inside a vendored project framework, prefer that.
+  if [[ "$SCRIPT_DIR" == "$LOCAL_ROOT/.claude/hooks"* && -d "$LOCAL_ROOT/.claude/stages" ]]; then
+    FRAMEWORK_ROOT="$LOCAL_ROOT"
+  elif [[ -d "$HOME/.lincoln/current" ]]; then
+    FRAMEWORK_ROOT="$HOME/.lincoln/current"
+  else
+    FRAMEWORK_ROOT="$LOCAL_ROOT"
+  fi
+fi
+
+if [[ "$FRAMEWORK_ROOT" != "$LOCAL_ROOT" ]]; then
+  MARKER_FOUND="false"
+  SEARCH_DIR="$PROJECT_ROOT"
+  while [[ "$SEARCH_DIR" != "/" ]]; do
+    if [[ -f "$SEARCH_DIR/.lincoln.yaml" || -f "$SEARCH_DIR/.claude/workflow-state.yaml" ]]; then
+      MARKER_FOUND="true"
+      break
+    fi
+    SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+  done
+  if [[ "$MARKER_FOUND" != "true" && -z "${LINCOLN_ALWAYS_ON:-}" ]]; then
+    echo "Lincoln inactive: no .lincoln.yaml in $PROJECT_ROOT"
+    exit 0
+  fi
+fi
+
+ROOT="$PROJECT_ROOT"
 
 mkdir -p "$ROOT/.context"
 
-if [ -x "$ROOT/.venv/bin/python3" ]; then
-    PYTHON="$ROOT/.venv/bin/python3"
-elif [ -x "$ROOT/venv/bin/python3" ]; then
-    PYTHON="$ROOT/venv/bin/python3"
+if [ -x "$FRAMEWORK_ROOT/.venv/bin/python3" ]; then
+    PYTHON="$FRAMEWORK_ROOT/.venv/bin/python3"
+elif [ -x "$FRAMEWORK_ROOT/venv/bin/python3" ]; then
+    PYTHON="$FRAMEWORK_ROOT/venv/bin/python3"
+elif [ -x "$HOME/.lincoln/venv/bin/python3" ]; then
+    PYTHON="$HOME/.lincoln/venv/bin/python3"
 else
     PYTHON="python3"
 fi
@@ -28,15 +61,16 @@ fi
 TOOL_NAME="${1:-}"
 TOOL_ARGS="${2:-}"
 EXIT_CODE="${3:-0}"
-STATE_FILE=$("$PYTHON" - "$ROOT" "${LINCOLN_STATE_FILE:-}" <<'PY'
+STATE_FILE=$("$PYTHON" - "$FRAMEWORK_ROOT" "$ROOT" "${LINCOLN_STATE_FILE:-}" <<'PY'
 import sys
 from pathlib import Path
-root = Path(sys.argv[1])
-provided = sys.argv[2]
-sys.path.insert(0, str(root))
+framework_root = Path(sys.argv[1])
+project_root = Path(sys.argv[2])
+provided = sys.argv[3]
+sys.path.insert(0, str(framework_root))
 from scripts.lincoln_paths import resolve_state_path
 path = Path(provided) if provided else None
-print(resolve_state_path(path, root))
+print(resolve_state_path(path, project_root))
 PY
 )
 
@@ -49,7 +83,7 @@ fi
 # Skip no-op/recursive tools and any call already flagged with LINCOLN_SKIP_TRACE=1.
 if [[ "${LINCOLN_SKIP_TRACE:-}" != "1" ]]; then
     if [[ "$TOOL_NAME" != "Read" && "$TOOL_NAME" != "Grep" && "$TOOL_NAME" != "Glob" ]]; then
-        LINCOLN_SKIP_TRACE=1 "$PYTHON" "$ROOT/scripts/lincoln_trace.py" \
+        LINCOLN_SKIP_TRACE=1 "$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln_trace.py" \
             --state-file "$STATE_FILE" \
             --tool "$TOOL_NAME" \
             --args-json "$TOOL_ARGS" \
@@ -85,7 +119,7 @@ is_side_effect() {
 }
 
 if is_side_effect "$TOOL_NAME"; then
-    "$PYTHON" "$ROOT/scripts/track-artifacts.py" \
+    "$PYTHON" "$FRAMEWORK_ROOT/scripts/track-artifacts.py" \
         --state-file "$STATE_FILE" \
         --tool "$TOOL_NAME" \
         --args "$TOOL_ARGS" \
@@ -116,7 +150,7 @@ fi
 
 if [[ -n "$BENCHMARK_TRIGGER" ]]; then
     EVENT_NODE="${CURRENT_STAGE:-implement}"
-    "$PYTHON" "$ROOT/scripts/stage_loader.py" \
+    "$PYTHON" "$FRAMEWORK_ROOT/scripts/stage_loader.py" \
         --state-file "$STATE_FILE" \
         --action append-node \
         --node-id "$EVENT_NODE" \
