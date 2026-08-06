@@ -52,5 +52,6 @@
   ],
   "agents": [
     "./.claude/agents/"
-  ]
+  ],
+  "hooks": ".claude-plugin/hooks.json"
 }
