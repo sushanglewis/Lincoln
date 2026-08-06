@@ -4,6 +4,7 @@ import { initProject } from './commands/initProject.js'
 import { install } from './commands/install.js'
 import { update } from './commands/update.js'
 import { use } from './commands/use.js'
+import { migrateProject } from './commands/migrateProject.js'
 
 const USAGE = `Lincoln — Global agent harness plugin CLI
 
@@ -76,6 +77,14 @@ export async function main(argv: string[]): Promise<number> {
     return initProject(process.cwd(), {
       force: Boolean(parsed.flags.force),
       dryRun: Boolean(parsed.flags['dry-run'])
+    })
+  }
+
+  if (parsed.command === 'migrate-project') {
+    return migrateProject(process.cwd(), {
+      dryRun: Boolean(parsed.flags['dry-run']),
+      yes: Boolean(parsed.flags.yes || parsed.flags.y),
+      force: Boolean(parsed.flags.force)
     })
   }
 
