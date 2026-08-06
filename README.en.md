@@ -10,9 +10,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.5.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.6.0-blue)](RELEASE.md)
 
-**v1.5.0** is released: strengthened HTML prototype framework with annotation contract and portal tray support, further enhancing the portal experience for issue work packages.
+**v1.6.0** is released: Lincoln switches to a global npm plugin model. Install with `npm install -g @sushanglewis/lincoln`; projects opt in via `.lincoln.yaml`.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
@@ -24,6 +24,19 @@ Open the repo and tell the Agent what you want in plain language. Lincoln will r
 - **Use existing-project-iteration to understand this codebase** → scans source code, builds the `knowledge/` function library, and plans the next iteration
 - **Use design-spike to explore this idea** → clarifies requirements and produces a design review plus an interactive prototype
 - **What's the current status?** → reports current stage, blocker, recommended skills, and next action
+
+## Installation
+
+Lincoln is now distributed as a global npm plugin:
+
+```bash
+npm install -g @sushanglewis/lincoln
+lincoln install
+```
+
+`lincoln install` syncs the runtime framework to `~/.claude/`, `~/.codex/`, and `~/.opencode/`. Projects only need a `.lincoln.yaml` marker to opt in (empty directories won't activate Lincoln).
+
+The legacy `npx lincoln-install` / `npx lincoln-update` wrappers are still present but deprecated; migrate to the global CLI.
 
 First time? Read [USAGE.md](USAGE.md) for the full installation and usage guide.
 
@@ -89,10 +102,10 @@ Detailed walkthroughs are in [USAGE.md](USAGE.md).
 
 ## Tools
 
-- `tools/lincoln/` — Ink/React TUI for recording interviews
+- `@sushanglewis/lincoln` — global CLI: `lincoln install`, `lincoln update`, `lincoln use`, `lincoln doctor`, `lincoln init-project`, `lincoln migrate-project`, `lincoln record`
+- `tools/lincoln/` — Ink/React TUI for recording interviews (`lincoln-record` CLI)
 - `tools/lincoln-record/` — Rust local recording & transcription CLI (whisper-rs + Metal, speaker diarization)
-- `npx lincoln-install` — terminal TUI installer
-- `npx lincoln-update` — terminal full updater
+- `tools/lincoln-installer/` — legacy terminal TUI installer and updater (deprecated, kept for backward compatibility)
 
 ## Multi-harness Support
 

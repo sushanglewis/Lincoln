@@ -19,15 +19,24 @@
 
 ## 安装 Lincoln
 
-### 方式一：终端 TUI 安装器（推荐）
-
-在项目仓库根目录运行：
+### 方式一：全局 npm 插件（推荐）
 
 ```bash
-npx lincoln-install
+npm install -g @sushanglewis/lincoln
+lincoln install
 ```
 
-它会引导你选择目标 agent harness（Claude Code、Cursor、Codex、OpenCode 等）、可选依赖和安装范围，最后调用当前仓库中的 `scripts/lincoln-setup.py` 完成配置。脚本化场景可使用 `--no-tui --format json`，CI 场景可使用 `--yes --dry-run`。
+`lincoln install` 会把 Lincoln 运行时框架同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。项目侧只需保留 `.lincoln.yaml` 标记即可激活；没有标记的项目中 Lincoln hooks 会静默退出，不会污染空目录。
+
+常用命令：
+
+- `lincoln install` — 首次全局安装
+- `lincoln update` — 拉取最新版本并重新同步
+- `lincoln use <version>` — 切换已安装的全局版本
+- `lincoln doctor` — 诊断安装状态
+- `lincoln init-project` — 在当前项目创建 `.lincoln.yaml`
+- `lincoln migrate-project` — 从旧 vendored 框架模型迁移到全局插件模型
+- `lincoln record` — 启动访谈录音 TUI
 
 ### 方式二：作为 Claude Code 插件安装
 
@@ -64,13 +73,24 @@ Agent 会按以下步骤执行：
 
 ### 更新 Lincoln
 
-当 Lincoln 发布新版本后，在项目根目录运行：
+当 Lincoln 发布新版本后，运行：
 
 ```bash
-npx lincoln-update
+lincoln update
 ```
 
-它会读取当前仓库的 `.version-bump.json`，从 GitHub Releases 获取最新版本，下载 release 压缩包，并按 allowlist 合并 `.claude/`、`.claude-plugin/`、`scripts/`、`tools/`、`README.md`、`CLAUDE.md` 等框架文件，同时保留 `.context/`、`.github/openspec-config.yml`、`recordings/`、`issue-*` 等用户数据。使用 `--dry-run` 可只查看变更，`--no-tui --format json` 适合脚本调用。
+它会查询 npm registry 最新版本，全局安装后重新执行 `lincoln install --yes`。使用 `--check` 可只查看是否有更新，`--dry-run` 可预览变更。
+
+### 从旧 vendored 模型迁移
+
+如果你的项目已经内嵌了 `.claude/`、`scripts/` 等框架文件，先确保全局 CLI 已安装，然后运行：
+
+```bash
+lincoln migrate-project --dry-run
+lincoln migrate-project --yes
+```
+
+`migrate-project` 会比较项目中的框架文件与全局 payload 的 sha256：未修改的文件会被删除，已修改或用户自定义的文件会被保留并列出，同时在项目根目录生成 `.lincoln.yaml`。`.context/`、`issue-*/`、`.github/openspec-config.yml` 等用户数据始终保留。
 
 ## 第一次打开
 
@@ -218,11 +238,12 @@ UX Agent 接手时应先读 `pm-to-ux.handoff.yaml`，再读 master-handoff，�
 
 Lincoln 提供以下配套工具：
 
+- `@sushanglewis/lincoln` — 全局 CLI（`lincoln install`、`lincoln update`、`lincoln use`、`lincoln doctor`、`lincoln init-project`、`lincoln migrate-project`、`lincoln record`）
 - `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端（`lincoln-record` CLI）
 - `tools/lincoln-record/` — Rust 本地录音转写 CLI（whisper-rs + Metal 加速、说话人分离），推荐用于访谈录音的本地转写
-- `tools/lincoln-installer/` — 终端 TUI 安装器与更新器
+- `tools/lincoln-installer/` — 旧版终端 TUI 安装器与更新器（已弃用，保留向后兼容）
 
-安装与使用说明见各自目录下的 README 或 `--help`。
+安装与使用说明见各自目录下的 README 或 `--help`。全局 CLI 可通过 `lincoln --help` 查看所有命令。
 
 ## 多 harness 支持
 
@@ -274,7 +295,7 @@ Codex 在 `.codex-plugin/plugin.json` **省略** `hooks` 字段时，会回退�
 ## 依赖
 
 - `python3`（≥3.10 推荐）
-- `node` ≥ 20（用于 `tools/lincoln/` 与 `npx lincoln-install`）
+- `node` ≥ 20（用于 `tools/lincoln/` 与全局 `@sushanglewis/lincoln` CLI）
 - `gh` CLI（已登录）
 - `openspec` CLI：`npm install -g @fission-ai/openspec`
 - `ffmpeg`（可选，仅录音转写需要）

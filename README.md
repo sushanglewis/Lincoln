@@ -10,9 +10,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.5.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.6.0-blue)](RELEASE.md)
 
-**v1.5.0** 已发布：强化 HTML 原型框架，新增 annotation contract 与 portal tray 支持，进一步完善 issue 工作包的门户化体验。
+**v1.6.0** 已发布：Lincoln 切换为全局 npm 插件模型，通过 `npm install -g @sushanglewis/lincoln` 安装，项目侧使用 `.lincoln.yaml` 选择性激活。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
@@ -24,6 +24,19 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 - **使用 existing-project-iteration 理解这个代码库** → 扫描源码并生成 `knowledge/` 功能知识库，再规划下一个迭代
 - **用 design-spike 探索这个想法** → 澄清需求并产出设计评审与可交互原型
 - **现在什么状态** → 汇报当前阶段、等待对象、推荐技能与下一步动作
+
+## 安装
+
+Lincoln 现在以全局 npm 插件的形式分发：
+
+```bash
+npm install -g @sushanglewis/lincoln
+lincoln install
+```
+
+`lincoln install` 会把运行时框架同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。项目侧只需一个 `.lincoln.yaml` 标记即可选择性激活（空目录不会触发 Lincoln）。
+
+旧版 `npx lincoln-install` / `npx lincoln-update` 仍保留但已弃用，建议迁移到全局 CLI。
 
 第一次使用？阅读 [USAGE.md](USAGE.md) 获取完整安装与使用指南。
 
@@ -89,10 +102,10 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 
 ## 工具
 
-- `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端
+- `@sushanglewis/lincoln` — 全局 CLI：`lincoln install`、`lincoln update`、`lincoln use`、`lincoln doctor`、`lincoln init-project`、`lincoln migrate-project`、`lincoln record`
+- `tools/lincoln/` — 基于 Ink/React 的 TUI 录音前端（`lincoln-record` CLI）
 - `tools/lincoln-record/` — Rust 本地录音转写 CLI（whisper-rs + Metal 加速、说话人分离）
-- `npx lincoln-install` — 终端 TUI 安装器
-- `npx lincoln-update` — 终端全量更新器
+- `tools/lincoln-installer/` — 旧版终端 TUI 安装器与更新器（已弃用，保留向后兼容）
 
 ## 多 harness 支持（codex / opencode）
 
