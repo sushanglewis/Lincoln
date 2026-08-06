@@ -35,7 +35,6 @@ const DENYLIST_NAMES = new Set([
   '.context',
   '.venv',
   'venv',
-  'dist',
   'oss',
   '.pytest_cache',
   '__pycache__',

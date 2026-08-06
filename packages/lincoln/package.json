@@ -29,6 +29,9 @@
   "dependencies": {
     "js-yaml": "^4.1.0"
   },
+  "optionalDependencies": {
+    "@sushanglewis/lincoln-recorder": "^1.5.0"
+  },
   "devDependencies": {
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^22.15.0",

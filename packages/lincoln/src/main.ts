@@ -5,6 +5,7 @@ import { install } from './commands/install.js'
 import { update } from './commands/update.js'
 import { use } from './commands/use.js'
 import { migrateProject } from './commands/migrateProject.js'
+import { record } from './commands/record.js'
 
 const USAGE = `Lincoln — Global agent harness plugin CLI
 
@@ -86,6 +87,10 @@ export async function main(argv: string[]): Promise<number> {
       yes: Boolean(parsed.flags.yes || parsed.flags.y),
       force: Boolean(parsed.flags.force)
     })
+  }
+
+  if (parsed.command === 'record') {
+    return record(parsed.args)
   }
 
   console.log(USAGE)
