@@ -37,10 +37,23 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ```bash
 npm install -g @sushanglewis/lincoln
+```
+
+`npm install -g` 会把 CLI 和框架 payload 安装到 npm 全局目录；安装完成后会自动进入引导程序，让你选择要安装到的 agent harness（`Claude Code`、`Codex`、`OpenCode`）。
+
+如果你希望非交互式安装，可以直接运行：
+
+```bash
 lincoln install --yes
 ```
 
-> **注意**：`npm install -g` 只是把 CLI 和框架 payload 安装到 npm 全局目录；**必须执行 `lincoln install`**，才会把 hooks、agents、skills、scripts 等完整运行时体系同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。
+也可以只安装到指定的 harness：
+
+```bash
+lincoln install --yes --harnesses claude-code,opencode
+```
+
+> **注意**：**必须执行 `lincoln install`**，才会把 hooks、agents、skills、scripts 等完整运行时体系同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。
 
 如果之前安装过旧版 `lincoln-install`，需要先卸载（旧包与新版 bin 名冲突）：
 

@@ -2,6 +2,17 @@
 
 **Release date:** 2026-08-06
 
+## Release Automation Contract
+
+Starting from this release, every PR merged into `main` automatically triggers a patch release:
+
+1. `.github/workflows/release-on-merge.yml` bumps the patch version in `.version-bump.json` and all linked manifests.
+2. The workflow updates the version badge and callout in `README.md` and `README.en.md`.
+3. The workflow commits the version bump, pushes it to `main`, and pushes a `lincoln-vX.Y.Z` tag.
+4. `.github/workflows/publish-lincoln.yml` publishes the npm package and creates a GitHub Release using the matching section from this file.
+
+To include curated release notes for a version, add a new section to this file before merging the release-triggering PR.
+
 ## Highlights
 
 Lincoln v1.6.0 moves the framework from a vendored-per-project model to a global npm plugin. Users now install `@sushanglewis/lincoln` once and run `lincoln install` to sync the framework to `~/.claude/`, `~/.codex/`, and `~/.opencode/`. Projects opt in with a single `.lincoln.yaml` marker; unmarked projects keep Lincoln inactive by default.

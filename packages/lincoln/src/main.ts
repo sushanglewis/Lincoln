@@ -30,6 +30,8 @@ Options:
   --yes, -y        Skip confirmation prompts
   --dry-run        Show what would be done without making changes
   --force          Force re-install even if up to date
+  --harnesses      Comma-separated harness ids (claude-code, codex, opencode)
+  --no-interactive Never prompt; fail if --yes is also missing
   --check          Check for available updates without installing (update)
   --json           Output machine-readable JSON (where supported)
   --help, -h       Show this help message
@@ -51,12 +53,17 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (parsed.command === 'install') {
+    const harnessesFlag = typeof parsed.flags.harnesses === 'string'
+      ? String(parsed.flags.harnesses).split(',').map((id) => id.trim()).filter((id) => id.length > 0)
+      : []
+    const harnesses = harnessesFlag.length > 0 ? harnessesFlag : parsed.args
     return install({
       yes: Boolean(parsed.flags.yes || parsed.flags.y),
       dryRun: Boolean(parsed.flags['dry-run']),
       force: Boolean(parsed.flags.force),
-      harnesses: parsed.args,
-      noVenv: Boolean(parsed.flags['no-venv'])
+      harnesses,
+      noVenv: Boolean(parsed.flags['no-venv']),
+      noInteractive: Boolean(parsed.flags['no-interactive'])
     })
   }
 
@@ -113,5 +120,10 @@ if (
   path.resolve(fs.realpathSync(fileURLToPath(import.meta.url))) ===
     path.resolve(fs.realpathSync(process.argv[1]))
 ) {
-  main(process.argv).then((code) => process.exit(code))
+  main(process.argv)
+    .then((code) => process.exit(code))
+    .catch((err) => {
+      console.error(err instanceof Error ? err.message : String(err))
+      process.exit(1)
+    })
 }
