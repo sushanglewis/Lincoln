@@ -10,9 +10,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.6.1-blue)](RELEASE.md)
 
-**v1.6.0** is released: Lincoln switches to a global npm plugin model. Install with `npm install -g @sushanglewis/lincoln`; projects opt in via `.lincoln.yaml`.
+**v1.6.1** is released: Lincoln switches to a global npm plugin model. Install with `npm install -g @sushanglewis/lincoln`; projects opt in via `.lincoln.yaml`.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 

@@ -1,6 +1,6 @@
 {
   "name": "@sushanglewis/lincoln-recorder",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Cross-tool terminal UI for recording Lincoln interviews",
   "type": "module",
   "main": "./dist/index.js",

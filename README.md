@@ -10,9 +10,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.6.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.6.1-blue)](RELEASE.md)
 
-**v1.6.0** 已发布：Lincoln 切换为全局 npm 插件模型，通过 `npm install -g @sushanglewis/lincoln` 安装，项目侧使用 `.lincoln.yaml` 选择性激活。
+**v1.6.1** 已发布：Lincoln 切换为全局 npm 插件模型，通过 `npm install -g @sushanglewis/lincoln` 安装，项目侧使用 `.lincoln.yaml` 选择性激活。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
