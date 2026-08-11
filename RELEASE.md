@@ -1,3 +1,24 @@
+# Lincoln v1.6.1 Release Notes
+
+**Release date:** 2026-08-11
+
+## Highlights
+
+- **lc-one-id skill** — Agent 现在可通过工具描述学习 one-id 查询，按 `feature/*`、`page/*`、`field/*`、`doc/*` 稳定 ID 追溯上游产物，避免 downstream 阶段凭路径猜测。
+- **Agent one-id 约束** — `.claude/agents/default.md` 明确要求：需要按 ID 追溯产物时调用 `lc-one-id` skill。
+- **Portal 注解对齐** — 修复 `lincoln_render.py` 把 HTML 注释内的占位 `<meta>` 误当作已存在标签的 bug，结构化数据里的 `annotations` 现在会正确注入为独立 `<meta>` 标签，被 portal 索引扫描到。
+- **command-map 刷新** — 自动注册 `lc-skill-one-id` 命令入口。
+
+## Tooling
+
+- `scripts/lincoln_id.py` 增加可执行权限，配合 skill prompt 直接调用。
+
+## Migration Notes
+
+- 无需迁移；已有 issue package 的 `index.html` portal 会在下次 `record-artifacts` 或 `lincoln_index.py` 刷新后自动获得完整注解。
+
+---
+
 # Lincoln v1.6.0 Release Notes
 
 **Release date:** 2026-08-06
