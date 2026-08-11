@@ -1,12 +1,17 @@
-schema_version: 2.0.0
+schema_version: 3.0.0
 id: lc-research-scope
 name: 界定研究范围
-description: '与 PM 澄清研究目标、问题、范围与验收标准，输出已确认的研究 brief。'
-templates:
+description: 与 PM 澄清研究目标、问题、范围与验收标准，输出已确认的研究 brief。
+workflows:
 - pm-research
 prerequisite_stage: workflow-router
 next_stage: lc-first-principles
 human_gate: true
+execution_mode: solo
+primary_action: lc-research-scope
+variables:
+- process_slug
+- session_id
 agent:
   primary: lc-pm
   reviewers:
@@ -19,15 +24,13 @@ skills:
 artifacts:
   required:
   - '{process_slug}/research/{session_id}/scope.md'
+references:
+  skill_prompt: .claude/skills/lc-research-scope/SKILL.md
+  agent_guide: .claude/agents/pm.md
 context:
   goal: 与 PM 澄清研究目标、问题、范围与验收标准，输出已确认的研究 brief。
-  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
-
-    - 本阶段产物写入 {process_slug}/research/{session_id}/。
-
-    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
-
-    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+  execution: "调用 lc-research-scope skill 与 PM 多轮澄清研究目标、问题、范围与验收标准，输出已确认的 scope.md，作为后续各研究阶段的单一事实来源。"
+  constraints: "- 本阶段产物写入 {process_slug}/research/{session_id}/。"
 gates:
   entry:
   - check: previous_stage_completed

@@ -154,6 +154,7 @@ workflow:
     - id: implement
       name: 研发实现
       description: 人类研发团队基于 Issues 开发并提交 PR
+      action: implement
       entry_checks:
         - check: issues_ready
           args: ["{session_id}"]

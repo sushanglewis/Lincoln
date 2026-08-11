@@ -105,7 +105,7 @@ def list_workflows() -> dict[str, dict[str, Any]]:
 
 def list_agents() -> dict[str, dict[str, Any]]:
     agents: dict[str, dict[str, Any]] = {}
-    excluded = {"default.md", "_contract.md"}
+    excluded = {"default.md"}
     for path in sorted(AGENTS_DIR.glob("*.md")):
         if path.name in excluded:
             continue

@@ -9,7 +9,7 @@
     "id",
     "name",
     "description",
-    "templates",
+    "workflows",
     "prerequisite_stage",
     "next_stage",
     "human_gate",
@@ -40,7 +40,7 @@
       "minLength": 1,
       "description": "What this stage does and when it is triggered"
     },
-    "templates": {
+    "workflows": {
       "oneOf": [
         {
           "type": "string",
@@ -154,6 +154,47 @@
       },
       "additionalProperties": false
     },
+    "artifact_templates": {
+      "type": "object",
+      "description": "Maps artifact path templates to HTML/template files used to render them",
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "variables": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "description": "Variable names used in this stage's path templates and commands"
+    },
+    "execution_mode": {
+      "type": "string",
+      "enum": ["team", "solo", "both"],
+      "default": "both",
+      "description": "Execution mode this stage supports"
+    },
+    "primary_action": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Primary action name that corresponds to the workflow step action"
+    },
+    "references": {
+      "type": "object",
+      "properties": {
+        "skill_prompt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "agent_guide": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
     "context": {
       "type": "object",
       "required": ["goal"],
@@ -177,7 +218,7 @@
         },
         "constraints": {
           "type": "string",
-          "description": "Additional constraints and guardrails"
+          "description": "Stage-specific constraints and guardrails (generic constraints live in default.md)"
         }
       },
       "additionalProperties": false
@@ -213,12 +254,16 @@
             "artifacts_present",
             "audio_format_supported",
             "previous_stage_completed",
+            "any_of_previous_completed",
             "human_approved",
             "gate_review_passed",
             "handoff_contract_valid",
             "handoff_versions_match",
             "prd_has_required_sections",
-            "prd_snapshot_present"
+            "prd_snapshot_present",
+            "artifact_meta_complete",
+            "ids_valid",
+            "portal_index_fresh"
           ]
         },
         "args": {

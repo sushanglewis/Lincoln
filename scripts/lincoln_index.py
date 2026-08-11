@@ -175,8 +175,13 @@ def build_package_data(
 
     # Build nav groups preserving scan order.
     groups: dict[str, list[dict[str, Any]]] = {}
+    meta_warnings: list[str] = []
     for rel in sorted(page_data):
         entry = page_data[rel]
+        if not entry.get("nav_label"):
+            meta_warnings.append(f"{rel}: missing <meta name=\"nav-label\">")
+        if not entry.get("uid"):
+            meta_warnings.append(f"{rel}: missing <meta name=\"doc-uid\"> or <meta name=\"page-uid\">")
         group_name = entry.get("group") or entry.get("nav_group") or "Docs"
         groups.setdefault(group_name, []).append(
             {
@@ -199,6 +204,11 @@ def build_package_data(
                 "uid": entry.get("uid", ""),
             }
         )
+
+    if meta_warnings:
+        print("WARN: pages with incomplete portal meta tags:", file=sys.stderr)
+        for warning in meta_warnings:
+            print(f"  - {warning}", file=sys.stderr)
 
     nav = [{"group": g, "items": items} for g, items in groups.items()]
 

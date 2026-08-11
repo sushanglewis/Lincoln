@@ -37,6 +37,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import yaml
 
 from scripts import lincoln_trace
+from scripts import lincoln_render
 from scripts.lincoln_documents import write_documents_index
 from scripts.lincoln_index import write_package_index
 from scripts.lincoln_paths import (
@@ -192,6 +193,21 @@ def interpolate(value: str, variables: dict[str, Any]) -> str:
     return re.sub(r"\{(\w+)\}", replacer, value)
 
 
+def interpolate_value(value: Any, variables: dict[str, Any]) -> Any:
+    """Recursively interpolate {var} placeholders in nested str/dict/list values.
+
+    Non-string scalars are returned unchanged so new optional structured
+    stage fields (e.g. context.execution, references) pass through gracefully.
+    """
+    if isinstance(value, str):
+        return interpolate(value, variables)
+    if isinstance(value, dict):
+        return {key: interpolate_value(val, variables) for key, val in value.items()}
+    if isinstance(value, list):
+        return [interpolate_value(item, variables) for item in value]
+    return value
+
+
 def interpolate_artifact(value: str, state: dict[str, Any], state_file: Path | None = None) -> str:
     value = interpolate(value, get_variables(state))
     return interpolate_process_path(value, state, resolve_state_path(state_file))
@@ -328,9 +344,8 @@ def resolve_stage_context(
 
     context = stage.get("context", {})
     interpolated_context = {
-        key: interpolate(value, variables)
+        key: interpolate_value(value, variables)
         for key, value in context.items()
-        if isinstance(value, str)
     }
 
     artifacts = stage.get("artifacts", {})
@@ -342,6 +357,20 @@ def resolve_stage_context(
         interpolate_artifact(str(art), state, state_file)
         for art in artifacts.get("optional", [])
     ]
+
+    # Schema 3.0.0 optional structured fields; emitted with defaults when absent.
+    raw_artifact_templates = stage.get("artifact_templates", {}) or {}
+    artifact_templates = {
+        interpolate_artifact(str(art_path), state, state_file): interpolate(str(tpl), variables)
+        for art_path, tpl in raw_artifact_templates.items()
+    }
+    stage_variables = list(stage.get("variables", []) or [])
+    execution_mode = stage.get("execution_mode", "both")
+    primary_action = stage.get("primary_action")
+    references = {
+        str(key): interpolate(str(val), variables)
+        for key, val in (stage.get("references", {}) or {}).items()
+    }
 
     agent = stage.get("agent", {})
     skills = stage.get("skills", {})
@@ -359,6 +388,11 @@ def resolve_stage_context(
         "optional_skills": skills.get("optional", []),
         "required_artifacts": required_artifacts,
         "optional_artifacts": optional_artifacts,
+        "artifact_templates": artifact_templates,
+        "variables": stage_variables,
+        "execution_mode": execution_mode,
+        "primary_action": primary_action,
+        "references": references,
         "context": interpolated_context,
         "context_path": str((STAGES_DIR / f"{stage_id}.yaml").relative_to(PROJECT_ROOT)),
         "workflow_template": template_name,
@@ -389,6 +423,11 @@ def action_load(stage_id: str, state: dict[str, Any], state_file: Path | None = 
         "context_paths": [context["context_path"]],
         "required_skills": context["required_skills"],
         "optional_skills": context["optional_skills"],
+        "artifact_templates": context["artifact_templates"],
+        "variables": context["variables"],
+        "execution_mode": context["execution_mode"],
+        "primary_action": context["primary_action"],
+        "references": context["references"],
     }
 
 
@@ -935,6 +974,72 @@ def action_update_last_updated(state_file: Path) -> None:
     save_state(state, state_file)
 
 
+def action_render_page(
+    stage_id: str,
+    target: str,
+    state: dict[str, Any],
+    state_file: Path,
+    *,
+    title: str = "",
+    nav_label: str = "",
+    nav_group: str = "Docs",
+    version: str = "",
+    uid: str = "",
+    stage_mark: str = "",
+    markdown_path: str = "",
+    extra_variables: dict[str, str] | None = None,
+) -> Path:
+    """Render a single HTML page using lincoln_render and record it as an artifact."""
+    markdown_source = ""
+    if markdown_path:
+        md_path = PROJECT_ROOT / markdown_path
+        if not md_path.exists():
+            raise FileNotFoundError(f"Markdown source not found: {md_path}")
+        markdown_source = md_path.read_text(encoding="utf-8")
+
+    html = lincoln_render.render_page(
+        stage_id=stage_id,
+        target=target,
+        title=title,
+        nav_label=nav_label,
+        nav_group=nav_group,
+        version=version,
+        uid=uid,
+        stage_mark=stage_mark or stage_id,
+        markdown_source=markdown_source,
+        extra_variables=extra_variables,
+        state_file=state_file,
+    )
+
+    target_path = PROJECT_ROOT / target
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+    lincoln_render.atomic_write_text(target_path, html)
+
+    # Record the rendered artifact under the current stage node.
+    latest_node = get_latest_node_for_stage(state, stage_id)
+    if latest_node is None:
+        latest_node = {
+            "stage_id": stage_id,
+            "node_id": f"{stage_id}-{now_iso()}",
+            "status": "in_progress",
+            "started_at": now_iso(),
+            "completed_at": None,
+            "gate_passed": False,
+            "approved_by": None,
+            "artifacts": [],
+            "handoff_file": None,
+        }
+        state.setdefault("nodes", []).append(latest_node)
+
+    existing = set(latest_node.get("artifacts", []))
+    existing.add(str(target_path.relative_to(PROJECT_ROOT)))
+    latest_node["artifacts"] = sorted(existing)
+
+    save_state(state, state_file)
+    print(f"Rendered {target_path.relative_to(PROJECT_ROOT)}")
+    return target_path
+
+
 def action_benchmark_report(state_file: Path, trigger: str) -> dict[str, str] | None:
     """Generate a benchmark report for the current process state."""
     from scripts import lincoln_benchmark
@@ -976,6 +1081,7 @@ def main() -> int:
             "recover",
             "status",
             "handoff-report",
+            "render-page",
             "benchmark-report",
             "update-last-updated",
         ],
@@ -988,6 +1094,16 @@ def main() -> int:
     parser.add_argument("--handoff-file", help="Handoff file path for append-node")
     parser.add_argument("--artifacts", help="Comma-separated artifact paths for append-node")
     parser.add_argument("--trigger", default="manual", help="Trigger type for benchmark-report")
+    # render-page arguments
+    parser.add_argument("--target", help="Repo-relative target artifact path for render-page")
+    parser.add_argument("--title", default="", help="Page title for render-page")
+    parser.add_argument("--nav-label", default="", help="Navigation label for render-page")
+    parser.add_argument("--nav-group", default="Docs", help="Navigation group for render-page")
+    parser.add_argument("--version", default="", help="Version marker for render-page")
+    parser.add_argument("--uid", default="", help="Stable page/doc UID for render-page")
+    parser.add_argument("--stage-mark", default="", help="Stage label for render-page")
+    parser.add_argument("--markdown", default="", help="Markdown source path for render-page")
+    parser.add_argument("--set", action="append", default=[], help="Extra variable key=value for render-page")
     args = parser.parse_args()
 
     state_file = resolve_state_path(args.state_file)
@@ -1054,6 +1170,37 @@ def main() -> int:
 
     if args.action == "update-last-updated":
         action_update_last_updated(state_file)
+        return 0
+
+    if args.action == "render-page":
+        if not args.stage:
+            parser.error("--stage is required for render-page")
+        if not args.target:
+            parser.error("--target is required for render-page")
+        extra: dict[str, str] = {}
+        for item in args.set:
+            if "=" not in item:
+                parser.error(f"--set value must be key=value: {item}")
+            key, value = item.split("=", 1)
+            extra[key] = value
+        try:
+            action_render_page(
+                stage_id=args.stage,
+                target=args.target,
+                state=state,
+                state_file=state_file,
+                title=args.title,
+                nav_label=args.nav_label,
+                nav_group=args.nav_group,
+                version=args.version,
+                uid=args.uid,
+                stage_mark=args.stage_mark,
+                markdown_path=args.markdown,
+                extra_variables=extra,
+            )
+        except Exception as exc:
+            print(f"ERROR: {exc}", file=sys.stderr)
+            return 1
         return 0
 
     if args.action == "benchmark-report":

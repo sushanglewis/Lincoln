@@ -1,4 +1,4 @@
-schema_version: 2.0.0
+schema_version: 3.0.0
 id: sync-knowledge
 name: Sync Knowledge
 description: 'After PR merge, updates Obsidian vault and archives milestone
@@ -6,16 +6,30 @@ description: 'After PR merge, updates Obsidian vault and archives milestone
   artifacts, generating feature docs, decision docs, and interview
 
   summaries.'
-templates: all
+workflows:
+- bug-fix
+- design-spike
+- existing-project-iteration
+- interview-to-knowledge
+- oss-first-design
 prerequisite_stage: implement
 next_stage: null
 human_gate: false
+execution_mode: both
+primary_action: sync-to-knowledge
+variables:
+- pr_number
+- session_id
+- requirement_id
+- feature_slug
+- decision_id
 agent:
   primary: lc-knowledge-curator
   reviewers:
   - lc-release-coordinator
 skills:
   required:
+  - lincoln:sync-to-knowledge
   - gsd:docs-update
   optional:
   - gsd:forensics
@@ -31,15 +45,12 @@ artifacts:
   - knowledge/02-requirements/{requirement_id}.md
   - knowledge/03-features/{feature_slug}.md
   - knowledge/04-decisions/{decision_id}.md
+references:
+  skill_prompt: .claude/skills/sync-to-knowledge/SKILL.md
+  agent_guide: .claude/agents/knowledge-curator.md
 context:
   goal: PR 合并后，将代码变更、Issue 讨论、设计决策沉淀到项目 Obsidian 知识库，确保业务知识和技术知识双轨保存，形成可追溯的知识资产。
-  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
-
-    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
-
-    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
-
-    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+  execution: "调用 sync-to-knowledge skill 在 PR 合并后将代码变更、Issue 讨论与设计决策写入 Obsidian vault（knowledge/01-interviews、02-requirements、03-features、04-decisions），并在 .github/lincoln-sync-queue/pr-{pr_number}.yaml 记录同步状态。"
 gates:
   entry:
   - check: previous_stage_completed

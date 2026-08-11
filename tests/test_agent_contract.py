@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import pytest
@@ -11,8 +10,6 @@ ROOT = Path(__file__).resolve().parents[1]
 AGENTS_DIR = ROOT / ".claude" / "agents"
 SKILLS_DIR = ROOT / ".claude" / "skills"
 
-
-CONTRACT_PATH = AGENTS_DIR / "_contract.md"
 DEFAULT_PATH = AGENTS_DIR / "default.md"
 
 
@@ -23,53 +20,52 @@ def _load_after_frontmatter(path: Path) -> str:
     end = text.find("---", 3)
     if end == -1:
         return text
-    return text[end + 3 :]
+    return text[end + 3:]
 
 
-def test_contract_contains_subagent_principles():
-    body = _load_after_frontmatter(CONTRACT_PATH)
-    assert "## Sub-Agent Dispatch Principles" in body, (
-        "_contract.md must contain a Sub-Agent Dispatch Principles section"
-    )
-    assert "Prefer linear, single-session work" in body
-    assert "Fan-out requires explicit permission" in body
-    assert "SMART briefs are mandatory" in body
-
-
-def test_contract_red_flags_cover_subagent_anti_patterns():
-    body = _load_after_frontmatter(CONTRACT_PATH)
-    assert "开多个子 agent 并行会更快，先跑再说" in body
-    assert "子 agent 返回什么我就直接采用" in body
-    assert "这个任务先丢给子 agent 探索一下" in body
-
-
-def test_default_contract_references_subagent_principles():
+def test_default_contract_contains_subagent_principles():
     body = _load_after_frontmatter(DEFAULT_PATH)
-    assert "Sub-Agent Dispatch Principles" in body
-    assert "fan-out of multiple subagents" in body.lower()
+    assert "## 核心规则" in body
+    assert "子代理调度原则" in body
+    assert "优先线性、单会话执行" in body
+    assert "fan-out 需要显式许可" in body
+    assert "SMART 简报是强制的" in body
+
+
+def test_default_contract_contains_red_flags():
+    body = _load_after_frontmatter(DEFAULT_PATH)
+    assert "## 红灯思维（Red Flags）" in body
+    assert "| 想法 | 现实 |" in body
+    assert "human_gate" in body and "显式确认" in body
+    assert "产物必须落回状态文件" in body
+
+
+def test_default_contract_contains_announce_skill_use():
+    body = _load_after_frontmatter(DEFAULT_PATH)
+    assert "Using [skill] to [purpose]" in body
+    assert "技能使用规则" in body
+
+
+def test_default_contract_contains_handoff_contract():
+    body = _load_after_frontmatter(DEFAULT_PATH)
+    assert "交接契约（Handoff Contract）" in body
+    assert "Tier 0" in body
 
 
 @pytest.mark.parametrize("agent_file", sorted(AGENTS_DIR.glob("*.md")), ids=lambda p: p.name)
-def test_agent_contains_contract_elements(agent_file: Path):
-    body = _load_after_frontmatter(agent_file)
-    has_subagent_stop = "<SUBAGENT-STOP>" in body
-    has_red_flags = "| Thought |" in body and "| Reality |" in body
-    has_announce = "Announce skill use" in body or "Using [" in body
-    has_contract_ref = "_contract.md" in body
-
-    assert has_subagent_stop or has_contract_ref, (
-        f"{agent_file.name}: missing <SUBAGENT-STOP> or reference to _contract.md"
+def test_agent_extends_default_contract(agent_file: Path):
+    text = agent_file.read_text(encoding="utf-8")
+    assert "agents/default.md" in text, (
+        f"{agent_file.name}: must extend agents/default.md"
     )
-    assert has_red_flags or has_contract_ref, (
-        f"{agent_file.name}: missing Red Flags table or reference to _contract.md"
-    )
-    assert has_announce or has_contract_ref, (
-        f"{agent_file.name}: missing announce skill use rule or reference to _contract.md"
+    assert "_contract.md" not in text, (
+        f"{agent_file.name}: must not reference deprecated _contract.md"
     )
 
 
 def _first_purpose_paragraph(body: str) -> str:
     """Return the first paragraph under a ## Purpose section, or empty string."""
+    import re
     match = re.search(r"## Purpose\s*\n\s*(.+?)(?:\n\n|\n## |\Z)", body, re.DOTALL)
     if not match:
         return ""

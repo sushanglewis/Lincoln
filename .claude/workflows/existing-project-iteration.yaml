@@ -91,6 +91,7 @@ workflow:
     - id: implement
       name: 研发实现
       description: 按 TDD 实施并完成验证
+      action: implement
       human_gate: true
 
     - id: sync-knowledge

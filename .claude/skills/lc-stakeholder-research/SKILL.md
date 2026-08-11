@@ -9,7 +9,7 @@ inputs:
     description: 研究主题或产品决策背景
     required: false
 outputs:
-  - "{process_slug}/research/{session_id}/stakeholder-research.md"
+  - "{process_slug}/research/{session_id}/stakeholders.md"
 required_tools:
   - Bash
   - Read

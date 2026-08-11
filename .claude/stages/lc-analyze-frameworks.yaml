@@ -1,12 +1,17 @@
-schema_version: 2.0.0
+schema_version: 3.0.0
 id: lc-analyze-frameworks
 name: 分析框架应用
-description: '选择并应用 SWOT、波特五力、商业模式画布、PEST 等分析框架，规划可视化方案。'
-templates:
+description: 选择并应用 SWOT、波特五力、商业模式画布、PEST 等分析框架，规划可视化方案。
+workflows:
 - pm-research
 prerequisite_stage: lc-competitive-analysis
 next_stage: lc-collect-intelligence
 human_gate: false
+execution_mode: solo
+primary_action: lc-analyze-frameworks
+variables:
+- process_slug
+- session_id
 agent:
   primary: lc-researcher
   reviewers:
@@ -19,15 +24,13 @@ skills:
 artifacts:
   required:
   - '{process_slug}/research/{session_id}/analysis-frameworks.md'
+references:
+  skill_prompt: .claude/skills/lc-analyze-frameworks/SKILL.md
+  agent_guide: .claude/agents/researcher.md
 context:
   goal: 选择并应用 SWOT、波特五力、商业模式画布、PEST 等分析框架，规划可视化方案。
-  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
-
-    - 本阶段产物写入 {process_slug}/research/{session_id}/。
-
-    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
-
-    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+  execution: "调用 lc-analyze-frameworks skill 基于已收集的研究材料选择并应用合适的分析框架（SWOT、波特五力、商业模式画布、PEST 等），输出 analysis-frameworks.md 并规划 ECharts/HTML 可视化方案。"
+  constraints: "- 本阶段产物写入 {process_slug}/research/{session_id}/。"
 gates:
   entry:
   - check: previous_stage_completed

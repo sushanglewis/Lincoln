@@ -21,7 +21,12 @@
     },
     "model": {
       "type": "string",
-      "enum": ["haiku", "sonnet", "opus"]
+      "enum": ["haiku", "sonnet", "opus", "fable"]
+    },
+    "language": {
+      "type": "string",
+      "enum": ["zh-CN", "en"],
+      "description": "Primary language of the agent prompt body"
     },
     "tools": {
       "type": "array",

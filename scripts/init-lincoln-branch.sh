@@ -253,9 +253,15 @@ for dir in \
     "$PROCESS_ROOT/openspec/changes" \
     "$PROCESS_ROOT/openspec/specs" \
     "$PROCESS_ROOT/recordings" \
+    "$PROCESS_ROOT/.lincoln/one-id" \
     ".github/lincoln-sync-queue"; do
     mkdir -p "$dir"
     touch "$dir/.gitkeep"
+done
+
+# Initialize empty one-id index files for the issue package.
+for idx in docs features stories models apis flows fields pages; do
+    echo "{}" > "$PROCESS_ROOT/.lincoln/one-id/${idx}.yaml"
 done
 
 # Copy the HTML portal scaffold from read-only templates.
