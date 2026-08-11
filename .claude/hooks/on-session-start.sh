@@ -310,7 +310,6 @@ PY
         echo "=== Agent Context ($PRIMARY_AGENT) ==="
         echo "Agent file: .claude/agents/$AGENT_FILE"
         echo "Default contract: .claude/agents/default.md"
-        echo "Behavioral contract: .claude/agents/_contract.md"
         echo "Use Read to inspect the agent role if needed."
         echo ""
         echo "=== End Agent Context ==="

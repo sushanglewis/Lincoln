@@ -4,10 +4,20 @@
 Rules:
   R1: agent extends targets must exist.
   R2: workflow step action must be in corresponding stage skills.required.
+      Steps whose action does not resolve to a local skill are treated as
+      human-driven action labels (e.g. 'implement') and skipped.
   R3: workflow step artifacts must match stage artifacts.
   R4: primary skill outputs must match stage artifacts.
   R5: agent artifact paths must be a subset of stage artifacts.
   R6: stage skill references must be declared in dependencies or local skills.
+  R7: every path referenced in stage artifact_templates must exist on disk.
+  R8: stage primary_action must match the action of its workflow step in every
+      workflow that includes the stage.
+  R9: stage workflows must be an explicit list of workflow IDs (never 'all'),
+      and every listed ID must correspond to an existing .claude/workflows/*.yaml.
+
+Note: the stage YAML field formerly named `templates` was renamed to
+`workflows` in stage schema 3.0.0; these rules reference the new field name.
 """
 
 from __future__ import annotations
@@ -202,13 +212,19 @@ def check_r1_extends_resolve(agents: dict[str, dict[str, Any]]) -> list[dict[str
 def check_r2_action_in_stage_skills(
     workflows: dict[str, dict[str, Any]],
     stages: dict[str, dict[str, Any]],
+    local_skills: set[str] | None = None,
 ) -> list[dict[str, Any]]:
+    local_skills = local_skills or set()
     findings = []
     for wf_name, wf_info in workflows.items():
         for step in wf_info["data"].get("steps", []) or []:
             stage_id = step.get("id")
             action = step.get("action")
             if not stage_id or not action:
+                continue
+            # Human-driven steps use a non-skill action label (e.g. 'implement').
+            # R2 only applies when the action resolves to a local skill.
+            if action not in local_skills:
                 continue
             stage = stages.get(stage_id)
             if not stage:
@@ -473,6 +489,117 @@ def check_r6_skill_dependencies_declared(
     return findings
 
 
+def check_r7_artifact_templates_exist(stages: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Every template file referenced in stage artifact_templates must exist on disk."""
+    findings = []
+    for stage_id, stage in stages.items():
+        artifact_templates = stage["data"].get("artifact_templates") or {}
+        if not isinstance(artifact_templates, dict):
+            findings.append({
+                "rule": "R7",
+                "severity": "error",
+                "stage_focus": stage_id in PM_STAGES,
+                "file": f".claude/stages/{stage_id}.yaml",
+                "message": "artifact_templates must be a mapping of artifact path to template file",
+            })
+            continue
+        for artifact_path, template_path in artifact_templates.items():
+            template_str = str(template_path)
+            # Paths with placeholders/globs are resolved at runtime; skip them here.
+            if "{" in template_str or "*" in template_str:
+                continue
+            if not (ROOT / template_str).exists():
+                findings.append({
+                    "rule": "R7",
+                    "severity": "error",
+                    "stage_focus": stage_id in PM_STAGES,
+                    "file": f".claude/stages/{stage_id}.yaml",
+                    "message": (
+                        f"artifact_templates entry '{artifact_path}' references template "
+                        f"'{template_str}' which does not exist on disk"
+                    ),
+                })
+    return findings
+
+
+def check_r8_primary_action_matches_workflow(
+    workflows: dict[str, dict[str, Any]],
+    stages: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Stage primary_action must match the step action in every workflow that includes it."""
+    findings = []
+    for stage_id, stage in stages.items():
+        primary_action = stage["data"].get("primary_action")
+        if not primary_action:
+            continue
+        for wf_name, wf_info in workflows.items():
+            for step in wf_info["data"].get("steps", []) or []:
+                if step.get("id") != stage_id:
+                    continue
+                action = step.get("action")
+                if action != primary_action:
+                    findings.append({
+                        "rule": "R8",
+                        "severity": "error",
+                        "stage_focus": stage_id in PM_STAGES,
+                        "file": f".claude/workflows/{wf_name}.yaml",
+                        "message": (
+                            f"step '{stage_id}' action '{action}' does not match stage "
+                            f"'{stage_id}' primary_action '{primary_action}'"
+                        ),
+                    })
+    return findings
+
+
+def check_r9_workflows_explicit(
+    stages: dict[str, dict[str, Any]],
+    workflow_ids: set[str],
+) -> list[dict[str, Any]]:
+    """Stage workflows must be an explicit list of existing workflow IDs, never 'all'."""
+    findings = []
+    for stage_id, stage in stages.items():
+        data = stage["data"]
+        if "workflows" not in data:
+            # Stage YAML not yet migrated to schema 3.0.0; required-field
+            # enforcement lives in the stage schema/static checks.
+            continue
+        workflows_field = data.get("workflows")
+        if isinstance(workflows_field, str) or workflows_field is None:
+            findings.append({
+                "rule": "R9",
+                "severity": "error",
+                "stage_focus": stage_id in PM_STAGES,
+                "file": f".claude/stages/{stage_id}.yaml",
+                "message": (
+                    f"workflows must be an explicit list of workflow IDs, got "
+                    f"'{workflows_field}' ('all' is not allowed)"
+                ),
+            })
+            continue
+        if not isinstance(workflows_field, list) or not workflows_field:
+            findings.append({
+                "rule": "R9",
+                "severity": "error",
+                "stage_focus": stage_id in PM_STAGES,
+                "file": f".claude/stages/{stage_id}.yaml",
+                "message": "workflows must be a non-empty list of workflow IDs",
+            })
+            continue
+        for workflow_id in workflows_field:
+            if workflow_id not in workflow_ids:
+                findings.append({
+                    "rule": "R9",
+                    "severity": "error",
+                    "stage_focus": stage_id in PM_STAGES,
+                    "file": f".claude/stages/{stage_id}.yaml",
+                    "message": (
+                        f"workflows entry '{workflow_id}' does not correspond to an "
+                        f"existing .claude/workflows/{workflow_id}.yaml"
+                    ),
+                })
+    return findings
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Check Lincoln prompt drift")
     parser.add_argument("--strict", action="store_true", help="Fail if any PM-stage drift is found")
@@ -485,14 +612,18 @@ def main() -> int:
     skills = collect_skills()
     declared = collect_dependencies()
     local_skills = collect_local_skill_names()
+    workflow_ids = {p.stem for p in WORKFLOWS_DIR.glob("*.yaml")}
 
     findings: list[dict[str, Any]] = []
     findings.extend(check_r1_extends_resolve(agents))
-    findings.extend(check_r2_action_in_stage_skills(workflows, stages))
+    findings.extend(check_r2_action_in_stage_skills(workflows, stages, local_skills))
     findings.extend(check_r3_workflow_artifacts_match_stage(workflows, stages))
     findings.extend(check_r4_skill_outputs_match_stage(workflows, stages, skills))
     findings.extend(check_r5_agent_paths_in_stage_artifacts(agents, stages))
     findings.extend(check_r6_skill_dependencies_declared(stages, declared, local_skills))
+    findings.extend(check_r7_artifact_templates_exist(stages))
+    findings.extend(check_r8_primary_action_matches_workflow(workflows, stages))
+    findings.extend(check_r9_workflows_explicit(stages, workflow_ids))
 
     # Deduplicate by (rule, file, message).
     seen = set()

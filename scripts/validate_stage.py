@@ -23,7 +23,11 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.lincoln_documents import extract_markdown_version
-from scripts.lincoln_index import VERSION_COMMENT_RE, extract_html_markdown
+from scripts.lincoln_index import (
+    VERSION_COMMENT_RE,
+    extract_html_markdown,
+    extract_html_meta,
+)
 from scripts.lincoln_paths import get_process_slug, load_yaml, resolve_state_path
 
 
@@ -247,6 +251,75 @@ def check_portal_index_exists() -> None:
 
 
 # ---------------------------------------------------------------------------
+# Schema 3.0.0 placeholder checks (registered but not yet implemented)
+# ---------------------------------------------------------------------------
+
+
+def check_artifact_meta_complete() -> None:
+    """Verify that declared HTML artifacts carry the meta tags the portal needs."""
+    state_file = resolve_state_path(None, PROJECT_ROOT)
+    if not state_file or not state_file.exists():
+        fail("No state file found")
+    state = load_yaml(state_file)
+    stage_id = state.get("current_run", {}).get("current_stage")
+    if not stage_id:
+        fail("No current stage in state")
+
+    stage_path = PROJECT_ROOT / ".claude" / "stages" / f"{stage_id}.yaml"
+    if not stage_path.exists():
+        fail(f"Stage YAML not found: {stage_path}")
+    stage = load_yaml(stage_path)
+
+    variables = state.get("current_run", {}).get("variables", {})
+    process_slug = str(variables.get("process_slug") or get_process_slug(state, state_file))
+
+    artifacts = stage.get("artifacts", {})
+    required = artifacts.get("required", [])
+    html_artifacts = [str(art) for art in required if str(art).endswith(".html")]
+    if not html_artifacts:
+        pass_check("no HTML artifacts to check")
+
+    missing: list[str] = []
+    for art in html_artifacts:
+        path = art.replace("{process_slug}", process_slug)
+        for key, value in variables.items():
+            path = path.replace(f"{{{key}}}", str(value))
+        target = PROJECT_ROOT / path
+        if "*" in path:
+            # Glob artifact: check all present matches.
+            for match in PROJECT_ROOT.glob(path):
+                meta = extract_html_meta(match)
+                rel = str(match.relative_to(PROJECT_ROOT))
+                if not meta.get("nav_label"):
+                    missing.append(f"{rel}: missing nav-label")
+                if not meta.get("uid"):
+                    missing.append(f"{rel}: missing doc-uid/page-uid")
+            continue
+        if not target.exists():
+            missing.append(f"{path}: file not found")
+            continue
+        meta = extract_html_meta(target)
+        if not meta.get("nav_label"):
+            missing.append(f"{path}: missing nav-label")
+        if not meta.get("uid"):
+            missing.append(f"{path}: missing doc-uid/page-uid")
+
+    if missing:
+        fail("Artifact meta incomplete:\n  - " + "\n  - ".join(missing))
+    pass_check("all HTML artifacts have required meta tags")
+
+
+def check_ids_valid() -> None:
+    """Placeholder: verify referenced IDs (session/design/change/etc.) are valid. Not yet implemented."""
+    pass_check("not implemented")
+
+
+def check_portal_index_fresh() -> None:
+    """Placeholder: verify portal index is up to date with artifacts. Not yet implemented."""
+    pass_check("not implemented")
+
+
+# ---------------------------------------------------------------------------
 # PRD checks
 # ---------------------------------------------------------------------------
 
@@ -310,6 +383,9 @@ ENTRY_CHECKS = {
     "artifact_exists": check_artifact_exists,
     "audio_format_supported": check_audio_format_supported,
     "previous_stage_completed": check_previous_stage_completed,
+    "artifact_meta_complete": check_artifact_meta_complete,
+    "ids_valid": check_ids_valid,
+    "portal_index_fresh": check_portal_index_fresh,
 }
 
 EXIT_CHECKS = {
@@ -322,6 +398,9 @@ EXIT_CHECKS = {
     "prd_has_required_sections": check_prd_has_required_sections,
     "prd_snapshot_present": check_prd_snapshot_present,
     "portal_index_exists": check_portal_index_exists,
+    "artifact_meta_complete": check_artifact_meta_complete,
+    "ids_valid": check_ids_valid,
+    "portal_index_fresh": check_portal_index_fresh,
 }
 
 

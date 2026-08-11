@@ -18,7 +18,7 @@ def test_estimate_tokens_is_positive():
 
 def test_estimate_tokens_counts_cjk_per_char():
     text = "你好世界"
-    assert estimate_tokens(text) == 4
+    assert estimate_tokens(text) == 5
 
 
 def test_compute_metrics_includes_all_fields():

@@ -2,6 +2,8 @@
 name: lc-explore-opensource
 description: Use during product design when the requirement can be solved or informed by existing open-source projects.
 version: 1.0.0
+outputs:
+  - "{process_slug}/docs/research/{change_name}-oss-options.md"
 ---
 
 # Lincoln Explore Open Source

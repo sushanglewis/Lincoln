@@ -1,12 +1,17 @@
-schema_version: 2.0.0
+schema_version: 3.0.0
 id: lc-first-principles
 name: 第一性原理探索
-description: '挑战现有假设，挖掘底层真相，为研究建立第一性原理基础。'
-templates:
+description: 挑战现有假设，挖掘底层真相，为研究建立第一性原理基础。
+workflows:
 - pm-research
 prerequisite_stage: lc-research-scope
 next_stage: lc-stakeholder-research
 human_gate: false
+execution_mode: solo
+primary_action: lc-first-principles
+variables:
+- process_slug
+- session_id
 agent:
   primary: lc-pm
   reviewers:
@@ -19,15 +24,13 @@ skills:
 artifacts:
   required:
   - '{process_slug}/research/{session_id}/first-principles.md'
+references:
+  skill_prompt: .claude/skills/lc-first-principles/SKILL.md
+  agent_guide: .claude/agents/pm.md
 context:
   goal: 挑战现有假设，挖掘底层真相，为研究建立第一性原理基础。
-  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml 或 .context/workflow/pm-research.yaml。
-
-    - 本阶段产物写入 {process_slug}/research/{session_id}/。
-
-    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
-
-    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+  execution: "调用 lc-first-principles skill 帮助 PM 回归底层真相、挑战假设、识别第一性原理，输出 first-principles.md 作为研究的基础。"
+  constraints: "- 本阶段产物写入 {process_slug}/research/{session_id}/。"
 gates:
   entry:
   - check: previous_stage_completed

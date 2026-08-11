@@ -20,7 +20,7 @@ commands:
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role frontend-engineer
     args_hint: $ARGUMENTS
   lc-agent-knowledge-curator:
-    description: Durable knowledge curator for accepted Lincoln feature work
+    description: 知识库管理员角色，将已验收的特性工作沉淀为持久业务与技术知识
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role knowledge-curator
     args_hint: $ARGUMENTS
   lc-agent-pm:
@@ -28,16 +28,15 @@ commands:
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm
     args_hint: $ARGUMENTS
   lc-agent-qa:
-    description: QA and acceptance specialist for Lincoln validation and release readiness
+    description: QA 与验收专家角色，用于可测试性评审、实现证据验证与发布就绪检查
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role qa
     args_hint: $ARGUMENTS
   lc-agent-release-coordinator:
-    description: Release and main-merge hygiene specialist for Lincoln feature branches
+    description: 发布协调员角色，负责 main 合并卫生与发布就绪评审
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role release-coordinator
     args_hint: $ARGUMENTS
   lc-agent-researcher:
-    description: Research specialist for Lincoln design, feasibility, and PM-led research
-      stages
+    description: 研究员角色，用于开源调研、可行性研究与 PM 主导的市场/产品/竞品/用户研究阶段
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role researcher
     args_hint: $ARGUMENTS
   lc-approve:
@@ -140,6 +139,14 @@ commands:
   lc-skill-market-research:
     description: 分析市场规模、趋势、细分与动态，为产品定位与机会判断提供事实基础。
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_skill_prompt.py" --skill lc-market-research
+    args_hint: $ARGUMENTS
+  lc-skill-one-id:
+    description: '查询并维护 Lincoln one-id 索引，按功能点、页面、字段等 ID 定位相关产物。
+
+      当你需要追溯某个 feature/page/field/doc 对应的设计文档、字段规格、原型页或实现产物时，调用本 skill。
+
+      '
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_skill_prompt.py" --skill lc-one-id
     args_hint: $ARGUMENTS
   lc-skill-plan-tdd-development:
     description: 基于已确认产品设计和原型生成 TDD 研发计划

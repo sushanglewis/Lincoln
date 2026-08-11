@@ -2,6 +2,8 @@
 name: lc-workflow-router
 description: Use at the start of a Lincoln session to run session intake (recon, situation judgment, Johari confirmation) and select the most appropriate workflow template.
 version: 1.1.0
+outputs:
+  - "{process_slug}/workflow-stage.yaml"
 ---
 
 # Lincoln Workflow Router

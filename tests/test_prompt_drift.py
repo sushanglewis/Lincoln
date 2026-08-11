@@ -48,11 +48,10 @@ def test_drift_script_strict_pm_stage_fails():
 
 
 def test_drift_script_all_mode_reports_active_rules():
-    """The full report should contain R2-R5 findings; R6 is implemented and currently clean."""
+    """The full report should contain R3 findings; R2, R4-R6 are implemented and currently clean."""
     rc, stdout, stderr = run_drift()
     combined = stdout + stderr
-    for rule in ("R2", "R3", "R4", "R5"):
-        assert rule in combined, f"Expected {rule} findings in drift report"
+    assert "R3" in combined, "Expected R3 findings in drift report"
 
 
 def test_drift_script_implements_r6_check():

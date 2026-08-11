@@ -281,7 +281,7 @@ for stage_yaml in sorted((root / ".claude" / "stages").glob("*.yaml")):
     if not isinstance(data, dict):
         errors.append(f"{stage_yaml.name}: root is not a mapping")
         continue
-    for key in ["schema_version", "id", "name", "description", "templates", "prerequisite_stage", "next_stage", "human_gate", "agent", "skills", "artifacts", "context", "gates"]:
+    for key in ["schema_version", "id", "name", "description", "workflows", "prerequisite_stage", "next_stage", "human_gate", "agent", "skills", "artifacts", "context", "gates"]:
         if key not in data:
             errors.append(f"{stage_yaml.name}: missing key '{key}'")
 

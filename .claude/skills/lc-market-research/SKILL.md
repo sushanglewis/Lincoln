@@ -9,7 +9,7 @@ inputs:
     description: 研究主题或产品决策背景
     required: false
 outputs:
-  - "{process_slug}/research/{session_id}/market-research.md"
+  - "{process_slug}/research/{session_id}/market.md"
 required_tools:
   - Bash
   - Read

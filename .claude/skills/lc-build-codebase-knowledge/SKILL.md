@@ -2,6 +2,8 @@
 name: lc-build-codebase-knowledge
 description: Use when starting Lincoln on an existing project with source code but no feature knowledge base yet.
 version: 1.0.0
+outputs:
+  - "knowledge/00-index.md"
 ---
 
 # Lincoln Build Codebase Knowledge

@@ -1,10 +1,10 @@
 # draft-product-design
 
-You are executing the Lincoln workflow step `product-design-docs`: turn approved requirements into a concise product design review package for the human PM.
+You are executing the Lincoln workflow step `product-design-docs`: turn approved requirements into a concise product design review package (a set of HTML documents) for the human PM.
 
 ## Goal
 
-Create `{process_slug}/pages/docs/` HTML design documents with enough product, data, flow, feasibility, and technical framing for PM review and later development planning, without creating unnecessary review burden.
+Create `{process_slug}/pages/docs/` HTML design documents with enough product, data, flow, feasibility, and technical framing for PM review and later development planning, without creating unnecessary review burden. This step does **not** produce UI specs, field specs, or prototypes — those belong to the next stage `product-prototype`.
 
 ## Input
 
@@ -21,16 +21,27 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
 
 1. Validate that `{process_slug}/pages/docs/requirements.html` is approved (contains `<!-- status: approved -->`).
 2. Read `{process_slug}/pages/docs/requirements.html`, `user-stories.html`, and the root-level `{process_slug}/pages/docs/prd.html`.
-3. Produce the design package under `{process_slug}/pages/docs/` using `.claude/templates/issue-package/page-doc.html.tpl`. Each page embeds Markdown in `<script type="text/markdown" id="docSource">` with a `<!-- version: v1.0 -->` marker and meta tags (`doc-title`, `nav-label`, `nav-group`, `doc-version`, `doc-uid`). Also include the annotation tags `doc-purpose`, `doc-layout`, `doc-fields`, `doc-boundaries`, `doc-exceptions` (and `doc-stories`, `doc-rules`, `doc-refs` when useful) so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows:
-   - `design-review.html`: PM-facing entry point with decision summary, scope, links to all design docs, open questions, and approval checklist.
-   - `scenarios.html`: target users, primary scenarios, boundary scenarios, and non-goals.
-   - `feature-catalog.html`: concise feature list, priority, acceptance mapping, and source requirement links.
-   - `data-model.html`: core entities, fields, constraints, validation rules, and state transitions.
-   - `flows.html`: Mermaid user flow, business flow, screen flow, sequence diagram, and architecture diagram.
-   - `page-map.html`: page inventory, page relationships, navigation, and routing/state notes.
-   - `feasibility.html`: business feasibility, technical feasibility, current official framework/library options, usable open-source projects, risks, and recommended stack.
-   - `version-log.html`: design decision version history and rationale.
-   - `api-list.html`: internal and external APIs/data contracts the feature depends on.
+3. Produce the design package under `{process_slug}/pages/docs/` using `python scripts/lincoln_render.py --stage product-design-docs --target <path> --data <yaml>`. Each page uses the structured doc template; provide a YAML data file with `intro`, `annotations`, and the domain-specific keys below. The renderer injects the annotation metas (`doc-purpose`, `doc-layout`, `doc-fields`, `doc-boundaries`, `doc-exceptions`, plus `doc-stories`, `doc-rules`, `doc-refs` when useful) so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows.
+
+   Common command pattern:
+   ```bash
+   python scripts/lincoln_render.py \
+     --stage product-design-docs \
+     --target issue-<N>/pages/docs/<page>.html \
+     --title "<标题>" --nav-label "<导航标签>" --version v1.0 --uid <uid> \
+     --data issue-<N>/pages/docs/<page>.yaml
+   ```
+
+   Page-specific data keys:
+   - `design-review.html`: `sections` (decision summary, scope, links, open questions, approval checklist).
+   - `scenarios.html`: `sections` plus optional `personas`, `primary`, `boundary`, `non_goals` arrays.
+   - `feature-catalog.html`: `features` array (`id`, `title`, `priority`, `acceptance`, `source`).
+   - `data-model.html`: `entities` array (`name`, `fields`, `constraints`, `states`).
+   - `flows.html`: `flows` array (`name`, `type`, `mermaid`, `steps`).
+   - `page-map.html`: `pages` array (`id`, `title`, `path`, `links`, `notes`).
+   - `feasibility.html`: `sections` plus `risks` and `options` arrays.
+   - `version-log.html`: `sections` plus `entries` array (`version`, `date`, `author`, `changes`, `rationale`).
+   - `api-list.html`: `apis` array (`name`, `method`, `endpoint`, `purpose`, `contract`).
 4. Create the PM→UX handoff contract at `{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml` referencing the approved design docs and PRD versions.
 5. Create the human-readable PM→UX handoff portal page at `{process_slug}/pages/docs/handoff-pm-to-ux-v1.0.html` and the narrative master handoff document at `{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md`. These summarize core decisions, scope, open questions, and the context pack for the receiving UX Agent.
 6. Keep all documents traceable to the approved requirement and transcript timestamps where available.
@@ -44,5 +55,6 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
 - Use Chinese for PM-facing content unless the requirements are in English.
 - Keep documents short and reviewable; prefer tables and Mermaid diagrams over long prose.
 - For technical frameworks and open-source projects, check current official docs or primary repositories before recommending.
+- Do not create UI specs, field specs, or prototypes in this step. Those are produced in the next stage `product-prototype`.
 - Do not create a Pencil prototype in this step.
 - After approval, tell the user to run: `claude build-product-prototype <session_id> <design_id>`.

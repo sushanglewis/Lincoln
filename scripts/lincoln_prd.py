@@ -136,23 +136,22 @@ def current_version(package_root: Path | None = None, *, args: argparse.Namespac
     return version
 
 
-def _render_prd_html(title: str, version: str, markdown: str) -> str:
+def _render_prd_html(title: str, version: str, markdown: str, package_root: Path) -> str:
     """Wrap legacy Markdown PRD content in the page-doc HTML template."""
-    template_path = PROJECT_ROOT / ".claude" / "templates" / "issue-package" / "page-doc.html.tpl"
-    if not template_path.exists():
-        return markdown
-    template = template_path.read_text(encoding="utf-8")
-    replacements = {
-        "{TITLE}": title,
-        "{NAV_GROUP}": "Docs",
-        "{VERSION}": version,
-        "{STAGE}": "clarify",
-        "{UID}": "",
-        "{MARKDOWN_SOURCE}": markdown,
-    }
-    for placeholder, value in replacements.items():
-        template = template.replace(placeholder, value)
-    return template
+    from scripts import lincoln_render
+
+    return lincoln_render.render_page(
+        stage_id="clarify",
+        target="{process_slug}/pages/docs/prd.html",
+        title=title,
+        nav_label=title,
+        nav_group="Docs",
+        version=version,
+        uid="prd",
+        stage_mark="clarify",
+        markdown_source=markdown,
+        extra_variables={"process_slug": package_root.name},
+    )
 
 
 def migrate(
@@ -187,7 +186,7 @@ def migrate(
         # Avoid duplicating the version marker once the template injects it.
         content = VERSION_COMMENT_RE.sub("", content, count=1).strip("\n")
 
-    html = _render_prd_html("PRD", version, content)
+    html = _render_prd_html("PRD", version, content, root)
 
     target_path.parent.mkdir(parents=True, exist_ok=True)
     atomic_write_text(target_path, html)

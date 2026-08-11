@@ -13,7 +13,7 @@ REQUIRED_KEYS = {
     "id",
     "name",
     "description",
-    "templates",
+    "workflows",
     "prerequisite_stage",
     "next_stage",
     "human_gate",
@@ -22,6 +22,15 @@ REQUIRED_KEYS = {
     "artifacts",
     "context",
     "gates",
+}
+
+
+OPTIONAL_STRUCTURED_KEYS = {
+    "artifact_templates",
+    "variables",
+    "execution_mode",
+    "primary_action",
+    "references",
 }
 
 
@@ -83,6 +92,20 @@ def test_artifacts_are_lists(stages):
         artifacts = data.get("artifacts", {})
         assert isinstance(artifacts.get("required", []), list), f"{path.name}: required artifacts not a list"
         assert isinstance(artifacts.get("optional", []), list), f"{path.name}: optional artifacts not a list"
+
+
+def test_optional_structured_keys_have_valid_types(stages):
+    for path, data in stages:
+        if "artifact_templates" in data:
+            assert isinstance(data["artifact_templates"], dict), f"{path.name}: artifact_templates must be a mapping"
+        if "variables" in data:
+            assert isinstance(data["variables"], list), f"{path.name}: variables must be a list"
+        if "execution_mode" in data:
+            assert data["execution_mode"] in {"team", "solo", "both"}, f"{path.name}: invalid execution_mode"
+        if "primary_action" in data:
+            assert isinstance(data["primary_action"], str), f"{path.name}: primary_action must be a string"
+        if "references" in data:
+            assert isinstance(data["references"], dict), f"{path.name}: references must be a mapping"
 
 
 # ---------------------------------------------------------------------------

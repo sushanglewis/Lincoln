@@ -1,13 +1,31 @@
-schema_version: 2.0.0
+schema_version: 3.0.0
 id: product-design-docs
 name: Product Design Docs
-description: 'Produces the design-review package based on confirmed
-
-  requirements. May include early OpenSpec drafts.'
-templates: all
+description: 基于已确认需求生成产品设计评审文档包（design-review、scenarios、feature-catalog、data-model、flows、feasibility、page-map、version-log、api-list 等 HTML），并完成 PM→UX 交接产物。
+workflows:
+- bug-fix
+- design-spike
+- existing-project-iteration
+- interview-to-knowledge
+- oss-first-design
 prerequisite_stage: clarify
 next_stage: product-prototype
 human_gate: true
+execution_mode: both
+primary_action: draft-product-design
+variables:
+- process_slug
+artifact_templates:
+  '{process_slug}/pages/docs/design-review.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/scenarios.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/feature-catalog.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/data-model.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/flows.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/feasibility.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/page-map.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/version-log.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/api-list.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html': .claude/templates/issue-package/page-doc-structured.html.tpl
 agent:
   primary: lc-pm
   reviewers:
@@ -37,21 +55,15 @@ artifacts:
   - '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html'
   - '{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml'
   - '{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md'
+references:
+  skill_prompt: .claude/skills/draft-product-design/SKILL.md
+  agent_guide: .claude/agents/pm.md
 context:
-  goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包，并完成 PM→UX 交接产物（agent-agent 契约），使人类 UX 能基于统一认知驱动 UX Agent。所有产物通过 {process_slug}/index.html 门户访问。
-  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+  goal: 将已确认的需求转化为面向人类 PM 评审的简洁产品设计文档包（design-review/scenarios/feature-catalog/data-model/flows/feasibility/page-map/version-log/api-list 等 HTML），并完成 PM→UX 交接产物（agent-agent 契约），使人类 UX 能基于统一认知驱动 UX Agent。所有产物通过 {process_slug}/index.html 门户访问。
+  execution: 调用 draft-product-design skill 基于已确认的需求生成设计文档包（HTML 页面），并产出 PM→UX handoff 契约（pm-to-ux.handoff.yaml + master-handoff-pm-to-ux-v*.md），作为 UX 阶段接收方的入口。UI 规范、字段规范与可交互原型由下一阶段的 product-prototype 负责，不在本阶段产出。
+  constraints: '- 本阶段 exit gate 要求 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 存在。
 
-    - 禁止修改 {process_slug}/recordings/ 中的原始文件。
-
-    - 本阶段设有 human_gate，必须获得人类 PM 显式确认后才能进入下一阶段。
-
-    - 本阶段 exit gate 要求 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 存在。
-
-    - handoff_to 为 lc-designer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再按 `context_pack` 顺序读取 Tier-2 文档。
-
-    - 门控评估优先使用 AI 能力：读取产物并推理其完整性，而非仅依赖脚本化检查。
-
-    - 详细执行步骤、模板与工具见对应 skill prompt 和 .claude/agents/<primary_agent>.md。'
+    - handoff_to 为 lc-designer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再按 `context_pack` 顺序读取 Tier-2 文档。'
 gates:
   entry:
   - check: previous_stage_completed
