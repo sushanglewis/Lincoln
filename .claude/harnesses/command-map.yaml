@@ -53,7 +53,7 @@ commands:
     args_hint: --stage <current_stage> --action handoff-report
   lc-init-branch:
     description: 初始化 issue 工作包(分支 + workflow-stage.yaml)
-    action: bash scripts/init-lincoln-branch.sh
+    action: bash "$LINCOLN_ROOT/scripts/init-lincoln-branch.sh"
     args_hint: --issue-number <N>
   lc-scenario-build-codebase-knowledge:
     description: 为已有源码构建功能知识库

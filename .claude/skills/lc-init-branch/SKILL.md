@@ -43,10 +43,10 @@ PM 在 Conductor 中基于 GitHub issue 初始化 workspace 后，调用此 skil
 3. 写入 `{process_slug}/workflow-stage.yaml`，设置 `issue_number`、`session_id`、`design_id`、`process_slug`，并自动生成 `{process_slug}/documents.yaml` 文档索引。
 4. Commit 初始过程包，可选 `--push` 到远程。
 
-示例：
+示例（全局插件模式下请使用 `$LINCOLN_ROOT` 指向的脚本，避免读到项目本地遗留的旧模板）：
 
 ```bash
-scripts/init-lincoln-branch.sh --issue-number 21 --session-id 2026-07-08-stakeholder --design-id checkout-redesign --push
+"$LINCOLN_ROOT/scripts/init-lincoln-branch.sh" --issue-number 21 --session-id 2026-07-08-stakeholder --design-id checkout-redesign --push
 ```
 
 过程包只存在于 feature branch，不合并到 `main`。

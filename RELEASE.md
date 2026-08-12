@@ -1,3 +1,19 @@
+# Lincoln v1.6.2 Release Notes
+
+**Release date:** 2026-08-12
+
+## Highlights
+
+- **全局插件模式下 `lc-init-branch` 使用全局模板** — 修复 `lc-init-branch` 命令映射指向项目本地 `scripts/init-lincoln-branch.sh` 的问题。现在它会调用 `"$LINCOLN_ROOT/scripts/init-lincoln-branch.sh"`，确保新建 issue 工作包读取 `~/.lincoln/current/` 下的最新模板，而不是项目里遗留的旧版本 `.claude/templates/issue-package/`。
+- **迁移提示更新** — `lc-init-branch` skill 文档的示例命令改为使用 `$LINCOLN_ROOT`，与全局插件模型保持一致。
+
+## Migration Notes
+
+- 已使用全局插件模式的项目，运行 `lincoln migrate-project --yes` 清理本地旧 `.claude/` 文件后，再通过 `lc-init-branch` 初始化工作包即可生效。
+- 如果已手动安装 Lincoln 1.6.1，可编辑 `~/.claude/harnesses/command-map.yaml` 中 `lc-init-branch` 的 action 为 `bash "$LINCOLN_ROOT/scripts/init-lincoln-branch.sh"`，或升级到 1.6.2 后重新 `lincoln install`。
+
+---
+
 # Lincoln v1.6.1 Release Notes
 
 **Release date:** 2026-08-11
