@@ -1,6 +1,6 @@
 {
   "name": "lincoln-install",
-  "version": "1.6.1",
+  "version": "1.6.2",
   "description": "Terminal TUI installer for the Lincoln AI-Native R&D workflow system",
   "type": "module",
   "main": "dist/main.js",
