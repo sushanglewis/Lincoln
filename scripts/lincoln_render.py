@@ -189,6 +189,91 @@ def _escape_markdown_for_script(markdown: str) -> str:
     return markdown.replace("</script>", "<\\/script>")
 
 
+def _derive_uid_from_target(target: str) -> str:
+    """Derive a stable UID from the target filename."""
+    name = Path(target).name
+    # Strip a single well-known extension.
+    for ext in (".html", ".htm"):
+        if name.lower().endswith(ext):
+            return name[: -len(ext)]
+    return name
+
+
+def _detect_version_from_markdown(source: str | Path) -> str | None:
+    """Extract a version marker from Markdown text or a Markdown file path."""
+    text = ""
+    if isinstance(source, Path):
+        if not source.exists():
+            return None
+        try:
+            text = source.read_text(encoding="utf-8")
+        except Exception:
+            return None
+    else:
+        text = source
+    for line in text.splitlines()[:20]:
+        m = VERSION_COMMENT_RE.search(line)
+        if m:
+            return m.group(1)
+    return None
+
+
+def _derive_defaults(
+    markdown_path: str | Path | None,
+    target: str,
+    title: str,
+    nav_label: str | None,
+    nav_group: str | None,
+    version: str | None,
+    uid: str | None,
+    stage_mark: str | None,
+    stage_id: str,
+) -> dict[str, str]:
+    """Return coarse defaults for page-level placeholders.
+
+    The CLI already provides defaults for some fields; this helper centralizes
+    the "derive from title/target/markdown" logic so both single-page and batch
+    rendering behave the same way.
+    """
+    md_path: Path | None = None
+    md_content: str | None = None
+    if markdown_path:
+        if isinstance(markdown_path, Path):
+            md_path = markdown_path
+        elif "\n" in markdown_path or len(markdown_path) > 260 or not (PROJECT_ROOT / markdown_path).exists():
+            # Treat as inline Markdown content rather than a file path.
+            md_content = markdown_path
+        else:
+            md_path = PROJECT_ROOT / markdown_path
+
+    derived_title = title
+    derived_nav_label = nav_label if nav_label is not None else title
+    derived_nav_group = nav_group if nav_group is not None else "Docs"
+    derived_version = version if version is not None else ""
+    derived_uid = uid if uid is not None else ""
+    derived_stage_mark = stage_mark if stage_mark is not None else stage_id
+
+    if not derived_version:
+        if md_path and md_path.exists():
+            derived_version = _detect_version_from_markdown(md_path) or ""
+        elif md_content:
+            derived_version = _detect_version_from_markdown(md_content) or ""
+    if not derived_version:
+        derived_version = "v1.0"
+
+    if not derived_uid:
+        derived_uid = _derive_uid_from_target(target)
+
+    return {
+        "title": derived_title,
+        "nav_label": derived_nav_label,
+        "nav_group": derived_nav_group,
+        "version": derived_version,
+        "uid": derived_uid,
+        "stage_mark": derived_stage_mark,
+    }
+
+
 def _html_attr(value: str) -> str:
     return html.escape(value, quote=True)
 
@@ -461,6 +546,86 @@ def _ensure_version_comment(html: str, version: str) -> str:
     return html + marker
 
 
+GLOB_CHARS = frozenset("*?[]")
+
+
+def _is_glob_pattern(pattern: str) -> bool:
+    return any(ch in GLOB_CHARS for ch in pattern)
+
+
+def _render_stage_batch(stage_id: str, state_file: str | Path | None) -> list[str]:
+    """Render all missing artifact pages declared by a stage definition.
+
+    Only exact (non-glob) patterns are rendered automatically. If a matching
+    .md file exists next to the target, it is used as the Markdown source.
+    Returns the list of rendered target paths.
+    """
+    stage_data = _load_stage(stage_id)
+    runtime = _load_runtime_variables(state_file)
+    variables: dict[str, str] = {k: "" for k in RUNTIME_VARIABLES}
+    variables.update(runtime)
+
+    raw_templates = stage_data.get("artifact_templates", {}) or {}
+    interpolated_templates = {
+        _replace_variables(str(pattern), variables): str(template_path)
+        for pattern, template_path in raw_templates.items()
+    }
+
+    rendered: list[str] = []
+    for pattern, template_path in interpolated_templates.items():
+        if _is_glob_pattern(pattern):
+            print(f"Skipping glob pattern in batch render: {pattern}")
+            continue
+
+        target_path = PROJECT_ROOT / pattern
+        if target_path.exists():
+            continue
+
+        # Look for a matching Markdown file (e.g. design-review.html -> design-review.md).
+        md_path = target_path.with_suffix(".md")
+        markdown_source = ""
+        if md_path.exists():
+            markdown_source = md_path.read_text(encoding="utf-8")
+
+        defaults = _derive_defaults(
+            markdown_path=md_path if markdown_source else None,
+            target=pattern,
+            title="",
+            nav_label=None,
+            nav_group=None,
+            version=None,
+            uid=None,
+            stage_mark=None,
+            stage_id=stage_id,
+        )
+
+        try:
+            html = render_page(
+                stage_id=stage_id,
+                target=pattern,
+                title=defaults["title"],
+                nav_label=defaults["nav_label"],
+                nav_group=defaults["nav_group"],
+                version=defaults["version"],
+                uid=defaults["uid"],
+                stage_mark=defaults["stage_mark"],
+                markdown_source=markdown_source,
+                page_data=None,
+                extra_variables=None,
+                state_file=state_file,
+            )
+        except Exception as exc:
+            print(f"Failed to render {pattern}: {exc}", file=sys.stderr)
+            continue
+
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_text(target_path, html)
+        print(f"Rendered {target_path}")
+        rendered.append(pattern)
+
+    return rendered
+
+
 PAGE_UID_META_RE = re.compile(r'<meta\s+name="page-uid"', re.IGNORECASE)
 
 
@@ -487,6 +652,24 @@ def render_page(
 ) -> str:
     """Render a single HTML page and return the rendered text."""
     stage_data = _load_stage(stage_id)
+
+    defaults = _derive_defaults(
+        markdown_path=markdown_source if markdown_source else None,
+        target=target,
+        title=title,
+        nav_label=nav_label,
+        nav_group=nav_group,
+        version=version,
+        uid=uid,
+        stage_mark=stage_mark,
+        stage_id=stage_id,
+    )
+    title = defaults["title"]
+    nav_label = defaults["nav_label"]
+    nav_group = defaults["nav_group"]
+    version = defaults["version"]
+    uid = defaults["uid"]
+    stage_mark = defaults["stage_mark"]
 
     runtime = _load_runtime_variables(state_file)
     variables: dict[str, str] = {k: "" for k in RUNTIME_VARIABLES}
@@ -548,15 +731,15 @@ def _build_argument_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--stage", required=True, help="Stage ID (e.g. clarify)")
     parser.add_argument(
-        "--target", required=True, help="Repo-relative target artifact path"
+        "--target", default="", help="Repo-relative target artifact path"
     )
     parser.add_argument("--title", default="", help="Page title")
-    parser.add_argument("--nav-label", default="", help="Navigation label")
-    parser.add_argument("--nav-group", default="Docs", help="Navigation group")
-    parser.add_argument("--version", default="", help="Version marker (e.g. v1.0)")
-    parser.add_argument("--uid", default="", help="Stable page/doc UID")
+    parser.add_argument("--nav-label", default=None, help="Navigation label (defaults to title)")
+    parser.add_argument("--nav-group", default=None, help="Navigation group (defaults to Docs)")
+    parser.add_argument("--version", default=None, help="Version marker (defaults to v1.0 or from Markdown)")
+    parser.add_argument("--uid", default=None, help="Stable page/doc UID (defaults to target filename)")
     parser.add_argument(
-        "--stage-mark", default="", help="Stage label to display (defaults to stage ID)"
+        "--stage-mark", default=None, help="Stage label to display (defaults to stage ID)"
     )
     parser.add_argument(
         "--markdown",
@@ -580,6 +763,11 @@ def _build_argument_parser() -> argparse.ArgumentParser:
         help="Path to workflow-stage.yaml (defaults to canonical discovery)",
     )
     parser.add_argument(
+        "--render-stage",
+        action="store_true",
+        help="Render all missing artifact pages declared by --stage (requires --state-file)",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print rendered HTML to stdout instead of writing",
@@ -600,6 +788,21 @@ def _parse_extra(variables: list[str]) -> dict[str, str]:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_argument_parser()
     args = parser.parse_args(argv)
+
+    if args.render_stage:
+        if not args.state_file:
+            print("--render-stage requires --state-file", file=sys.stderr)
+            return 1
+        try:
+            _render_stage_batch(args.stage, args.state_file)
+        except Exception as exc:
+            print(f"Batch render failed: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    if not args.target:
+        print("--target is required unless using --render-stage", file=sys.stderr)
+        return 1
 
     markdown_source = ""
     if args.markdown:

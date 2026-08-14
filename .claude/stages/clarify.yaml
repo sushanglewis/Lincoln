@@ -18,10 +18,10 @@ primary_action: clarify-requirements
 variables:
 - process_slug
 artifact_templates:
-  '{process_slug}/pages/docs/requirements.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/user-stories.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/prd.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/snapshots/prd-v*.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/requirements.html': .claude/templates/issue-package/page-doc.html.tpl
+  '{process_slug}/pages/docs/user-stories.html': .claude/templates/issue-package/page-doc.html.tpl
+  '{process_slug}/pages/docs/prd.html': .claude/templates/issue-package/page-doc.html.tpl
+  '{process_slug}/pages/docs/snapshots/prd-v*.html': .claude/templates/issue-package/page-doc.html.tpl
 agent:
   primary: lc-pm
   reviewers:

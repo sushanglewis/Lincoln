@@ -333,6 +333,27 @@ body {
 }
 .doc-content th { background: var(--surface-2); font-weight: 600; color: var(--text-1); }
 
+/* Mermaid diagrams */
+.lincoln-mermaid {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    overflow: auto;
+}
+.lincoln-mermaid svg {
+    max-width: 100%;
+    height: auto;
+}
+/* Ensure Mermaid SVG text inherits theme colors where not styled by Mermaid itself */
+.lincoln-mermaid .node rect,
+.lincoln-mermaid .node circle,
+.lincoln-mermaid .node ellipse,
+.lincoln-mermaid .node polygon,
+.lincoln-mermaid .node path {
+    stroke: var(--text-3);
+}
+
 .section-tools {
     display: flex; gap: 8px; margin-top: 8px;
 }
