@@ -16,16 +16,16 @@ primary_action: draft-product-design
 variables:
 - process_slug
 artifact_templates:
-  '{process_slug}/pages/docs/design-review.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/scenarios.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/design-review.html': .claude/templates/issue-package/page-doc.html.tpl
+  '{process_slug}/pages/docs/scenarios.html': .claude/templates/issue-package/page-doc.html.tpl
   '{process_slug}/pages/docs/feature-catalog.html': .claude/templates/issue-package/page-doc-structured.html.tpl
   '{process_slug}/pages/docs/data-model.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/flows.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/feasibility.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/flows.html': .claude/templates/issue-package/page-doc.html.tpl
+  '{process_slug}/pages/docs/feasibility.html': .claude/templates/issue-package/page-doc.html.tpl
   '{process_slug}/pages/docs/page-map.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/version-log.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/version-log.html': .claude/templates/issue-package/page-doc.html.tpl
   '{process_slug}/pages/docs/api-list.html': .claude/templates/issue-package/page-doc-structured.html.tpl
-  '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html': .claude/templates/issue-package/page-doc-structured.html.tpl
+  '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html': .claude/templates/issue-package/page-doc.html.tpl
 agent:
   primary: lc-pm
   reviewers:

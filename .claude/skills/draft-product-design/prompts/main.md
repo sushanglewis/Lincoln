@@ -21,27 +21,40 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
 
 1. Validate that `{process_slug}/pages/docs/requirements.html` is approved (contains `<!-- status: approved -->`).
 2. Read `{process_slug}/pages/docs/requirements.html`, `user-stories.html`, and the root-level `{process_slug}/pages/docs/prd.html`.
-3. Produce the design package under `{process_slug}/pages/docs/` using `python scripts/lincoln_render.py --stage product-design-docs --target <path> --data <yaml>`. Each page uses the structured doc template; provide a YAML data file with `intro`, `annotations`, and the domain-specific keys below. The renderer injects the annotation metas (`doc-purpose`, `doc-layout`, `doc-fields`, `doc-boundaries`, `doc-exceptions`, plus `doc-stories`, `doc-rules`, `doc-refs` when useful) so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows.
+3. Produce the design package under `{process_slug}/pages/docs/`. Use the Markdown-first template for narrative documents and the structured template only when a fixed table is clearer.
 
-   Common command pattern:
+   Default to Markdown for: `design-review`, `scenarios`, `feasibility`, `version-log`.
+   Use structured data (`--data`) only when a rigid table is genuinely better: `feature-catalog`, `data-model`, `page-map`, `api-list`.
+   For `flows`, prefer a Markdown file with ` ```mermaid ` diagrams.
+
+   Simplified single-page command:
    ```bash
    python scripts/lincoln_render.py \
      --stage product-design-docs \
      --target issue-<N>/pages/docs/<page>.html \
-     --title "<标题>" --nav-label "<导航标签>" --version v1.0 --uid <uid> \
-     --data issue-<N>/pages/docs/<page>.yaml
+     --title "<标题>" \
+     --markdown issue-<N>/pages/docs/<page>.md
    ```
 
-   Page-specific data keys:
-   - `design-review.html`: `sections` (decision summary, scope, links, open questions, approval checklist).
-   - `scenarios.html`: `sections` plus optional `personas`, `primary`, `boundary`, `non_goals` arrays.
-   - `feature-catalog.html`: `features` array (`id`, `title`, `priority`, `acceptance`, `source`).
-   - `data-model.html`: `entities` array (`name`, `fields`, `constraints`, `states`).
-   - `flows.html`: `flows` array (`name`, `type`, `mermaid`, `steps`).
-   - `page-map.html`: `pages` array (`id`, `title`, `path`, `links`, `notes`).
-   - `feasibility.html`: `sections` plus `risks` and `options` arrays.
-   - `version-log.html`: `sections` plus `entries` array (`version`, `date`, `author`, `changes`, `rationale`).
-   - `api-list.html`: `apis` array (`name`, `method`, `endpoint`, `purpose`, `contract`).
+   You can also render the whole missing package in one call:
+   ```bash
+   python scripts/lincoln_render.py \
+     --render-stage \
+     --stage product-design-docs \
+     --state-file issue-<N>/workflow-stage.yaml
+   ```
+   This creates only the pages that do not yet exist. If a matching `.md` file exists, it is used automatically; otherwise the page is created empty for you to fill afterwards.
+
+   Page-specific guidance:
+   - `design-review.md`: H2 chapters such as `## 决策摘要`, `## 范围`, `## 链接`, `## 开放问题`, `## 审批清单`.
+   - `scenarios.md`: `## 主要场景`, `## 边界场景`, `## 非目标`, plus persona descriptions and Mermaid flowcharts.
+   - `feature-catalog.md`: either a Markdown table or a YAML `features` array.
+   - `data-model.md`: either Markdown entity sections or a YAML `entities` array.
+   - `flows.md`: Markdown with ` ```mermaid ` flowcharts and numbered step lists.
+   - `page-map.md`: either a Markdown table or a YAML `pages` array.
+   - `feasibility.md`: H2 chapters such as `## 风险`, `## 方案对比`, `## 建议`.
+   - `version-log.md`: H2 chapters plus a Markdown table of version entries.
+   - `api-list.md`: either a Markdown table or a YAML `apis` array.
 4. Create the PM→UX handoff contract at `{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml` referencing the approved design docs and PRD versions.
 5. Create the human-readable PM→UX handoff portal page at `{process_slug}/pages/docs/handoff-pm-to-ux-v1.0.html` and the narrative master handoff document at `{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v1.0.md`. These summarize core decisions, scope, open questions, and the context pack for the receiving UX Agent.
 6. Keep all documents traceable to the approved requirement and transcript timestamps where available.

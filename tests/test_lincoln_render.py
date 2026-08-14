@@ -540,3 +540,140 @@ context:
         assert "需求来源" in html
     finally:
         stage_path.unlink(missing_ok=True)
+
+
+def test_render_markdown_first_with_defaults() -> None:
+    """Omitting nav-label/version/uid derives sensible defaults from title/target/markdown."""
+    state_path = write_state()
+    md_path = TEST_ROOT / "requirements.md"
+    md_path.write_text("<!-- version: v1.5 -->\n\n# 需求文档\n", encoding="utf-8")
+    target = TEST_ROOT / "pages" / "docs" / "requirements.html"
+    rc, stdout, stderr = run_render(
+        "--stage",
+        "clarify",
+        "--target",
+        repo_relative(target),
+        "--title",
+        "需求文档",
+        "--markdown",
+        repo_relative(md_path),
+        state_path=state_path,
+    )
+    assert rc == 0, stderr
+    html = target.read_text(encoding="utf-8")
+    assert '<meta name="doc-title" content="需求文档">' in html
+    assert '<meta name="nav-label" content="需求文档">' in html
+    assert '<meta name="nav-group" content="Docs">' in html
+    assert '<meta name="doc-version" content="v1.5">' in html
+    assert '<meta name="doc-uid" content="requirements">' in html
+    assert '<span class="doc-version">v1.5</span>' in html
+    assert 'data-page-uid="requirements"' in html
+
+
+def test_render_mermaid_block() -> None:
+    """Mermaid code fences are emitted as .lincoln-mermaid blocks and the Mermaid runtime is loaded."""
+    state_path = write_state()
+    md_path = TEST_ROOT / "requirements.md"
+    md_path.write_text(
+        "```mermaid\nflowchart TD\n    A --> B\n```\n",
+        encoding="utf-8",
+    )
+    target = TEST_ROOT / "pages" / "docs" / "requirements.html"
+    rc, stdout, stderr = run_render(
+        "--stage",
+        "clarify",
+        "--target",
+        repo_relative(target),
+        "--title",
+        "需求文档",
+        "--markdown",
+        repo_relative(md_path),
+        state_path=state_path,
+    )
+    assert rc == 0, stderr
+    html = target.read_text(encoding="utf-8")
+    assert '<script src="../../assets/mermaid.min.js"></script>' in html
+    assert '<pre class="lincoln-mermaid">' in html
+    assert "flowchart TD" in html
+    # Ensure the mermaid source is not wrapped in a normal code block.
+    assert '<code class="language-mermaid">' not in html
+
+
+def test_render_batch_stage_only_missing() -> None:
+    """--render-stage creates only missing artifact pages and skips existing ones."""
+    state_path = write_state()
+    stage_id = "_test-render-batch"
+    stage_path = ROOT / ".claude" / "stages" / f"{stage_id}.yaml"
+    stage_path.write_text(
+        f"""schema_version: 3.0.0
+id: {stage_id}
+name: Test Batch
+workflows: []
+artifact_templates:
+  '{PROCESS_SLUG}/pages/docs/a.html': '.claude/templates/issue-package/page-doc.html.tpl'
+  '{PROCESS_SLUG}/pages/docs/b.html': '.claude/templates/issue-package/page-doc.html.tpl'
+  '{PROCESS_SLUG}/pages/docs/c.html': '.claude/templates/issue-package/page-doc.html.tpl'
+context:
+  goal: test
+""",
+        encoding="utf-8",
+    )
+    try:
+        existing = TEST_ROOT / "pages" / "docs" / "b.html"
+        existing.parent.mkdir(parents=True, exist_ok=True)
+        existing.write_text("<html><body>existing</body></html>", encoding="utf-8")
+
+        rc, stdout, stderr = run_render(
+            "--render-stage",
+            "--stage",
+            stage_id,
+            "--state-file",
+            repo_relative(state_path),
+        )
+        assert rc == 0, stderr
+        assert (TEST_ROOT / "pages" / "docs" / "a.html").exists()
+        assert (TEST_ROOT / "pages" / "docs" / "c.html").exists()
+        # b.html should remain untouched.
+        assert existing.read_text(encoding="utf-8") == "<html><body>existing</body></html>"
+        assert "Skipping glob pattern" not in stderr
+    finally:
+        stage_path.unlink(missing_ok=True)
+
+
+def test_render_batch_stage_auto_markdown() -> None:
+    """--render-stage uses a matching .md file as the Markdown source when present."""
+    state_path = write_state()
+    stage_id = "_test-render-batch-md"
+    stage_path = ROOT / ".claude" / "stages" / f"{stage_id}.yaml"
+    stage_path.write_text(
+        f"""schema_version: 3.0.0
+id: {stage_id}
+name: Test Batch MD
+workflows: []
+artifact_templates:
+  '{PROCESS_SLUG}/pages/docs/auto.html': '.claude/templates/issue-package/page-doc.html.tpl'
+context:
+  goal: test
+""",
+        encoding="utf-8",
+    )
+    try:
+        md_path = TEST_ROOT / "pages" / "docs" / "auto.md"
+        md_path.parent.mkdir(parents=True, exist_ok=True)
+        md_path.write_text("# Auto Markdown\n\nHello from markdown.", encoding="utf-8")
+
+        rc, stdout, stderr = run_render(
+            "--render-stage",
+            "--stage",
+            stage_id,
+            "--state-file",
+            repo_relative(state_path),
+        )
+        assert rc == 0, stderr
+        target = TEST_ROOT / "pages" / "docs" / "auto.html"
+        assert target.exists()
+        html = target.read_text(encoding="utf-8")
+        assert "Auto Markdown" in html
+        assert "Hello from markdown." in html
+    finally:
+        stage_path.unlink(missing_ok=True)

@@ -44,6 +44,7 @@
 </script>
 
 <script src="../../assets/app.js"></script>
+<script src="../../assets/mermaid.min.js"></script>
 <script>
 (function () {
     'use strict';
@@ -95,6 +96,21 @@
         });
     }
 
+    function escapeHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+    }
+
+    function inlineRender(str) {
+        return escapeHtml(str)
+            .replace(/`([^`]+)`/g, '<code>$1</code>')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    }
+
     function renderMarkdown(src) {
         var lines = src.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
         var html = '';
@@ -106,15 +122,24 @@
 
         function flushCode() {
             if (!inCode) return;
-            html += '<pre><code class="language-' + (codeLang || 'text') + '">' + escapeHtml(codeBuffer.join('\n')) + '</code></pre>\n';
+            var body = escapeHtml(codeBuffer.join('\n'));
+            if (codeLang === 'mermaid') {
+                html += '<pre class="lincoln-mermaid">' + body + '</pre>\n';
+            } else {
+                html += '<pre><code class="language-' + (codeLang || 'text') + '">' + body + '</code></pre>\n';
+            }
             inCode = false;
             codeLang = '';
             codeBuffer = [];
         }
 
         function flushTable() {
-            if (!inTable || tableBuffer.length < 2) return;
-            html += '<table>\n<thead><tr>';
+            if (!inTable || tableBuffer.length < 2) {
+                inTable = false;
+                tableBuffer = [];
+                return;
+            }
+            html += '<table class="lincoln-data-table">\n<thead><tr>';
             var headers = tableBuffer[0].split('|').map(function (s) { return s.trim(); }).filter(Boolean);
             headers.forEach(function (h) { html += '<th>' + inlineRender(h) + '</th>'; });
             html += '</tr></thead>\n<tbody>\n';
@@ -129,21 +154,6 @@
             tableBuffer = [];
         }
 
-        function escapeHtml(str) {
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-        }
-
-        function inlineRender(str) {
-            return escapeHtml(str)
-                .replace(/`([^`]+)`/g, '<code>$1</code>')
-                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-                .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-        }
-
         function blockRender(line) {
             if (/^#{1,6}\s+/.test(line)) {
                 var level = line.match(/^(#{1,6})\s+/)[1].length;
@@ -153,13 +163,50 @@
             if (/^\s*>\s*(.*)/.test(line)) {
                 return '<blockquote><p>' + inlineRender(line.replace(/^\s*>\s*/, '')) + '</p></blockquote>';
             }
-            if (/^\s*[-*+]\s+/.test(line)) {
-                return '<li>' + inlineRender(line.replace(/^\s*[-*+]\s+/, '')) + '</li>';
-            }
-            if (/^\s*\d+\.\s+/.test(line)) {
-                return '<li>' + inlineRender(line.replace(/^\s*\d+\.\s+/, '')) + '</li>';
-            }
             return '<p>' + inlineRender(line) + '</p>';
+        }
+
+        function listMarker(line) {
+            var unordered = line.match(/^(\s*)[-*+]\s+(.*)$/);
+            if (unordered) {
+                return { indent: unordered[1].length, type: 'ul', content: unordered[2] };
+            }
+            var ordered = line.match(/^(\s*)\d+\.\s+(.*)$/);
+            if (ordered) {
+                return { indent: ordered[1].length, type: 'ol', content: ordered[2] };
+            }
+            return null;
+        }
+
+        var listStack = [];
+
+        function closeLists(targetDepth) {
+            targetDepth = targetDepth || 0;
+            while (listStack.length > targetDepth) {
+                var last = listStack.pop();
+                html += '</li></' + last.type + '>\n';
+            }
+        }
+
+        function openList(type, depth) {
+            closeLists(depth);
+            html += '<' + type + '>\n';
+            listStack.push({ type: type, depth: depth });
+        }
+
+        function renderListItem(marker) {
+            var depth = marker.indent;
+            var type = marker.type;
+            var i = listStack.length - 1;
+            while (i >= 0 && listStack[i].depth > depth) {
+                i--;
+            }
+            if (i < 0 || listStack[i].type !== type || listStack[i].depth !== depth) {
+                openList(type, depth);
+            } else {
+                closeLists(i + 1);
+            }
+            html += '<li>' + inlineRender(marker.content);
         }
 
         for (var i = 0; i < lines.length; i++) {
@@ -170,6 +217,7 @@
                     flushCode();
                 } else {
                     flushTable();
+                    closeLists();
                     inCode = true;
                     codeLang = line.replace(/^```\s*/, '').trim();
                 }
@@ -182,6 +230,7 @@
             }
 
             if (/^\|/.test(line)) {
+                closeLists();
                 inTable = true;
                 tableBuffer.push(line);
                 continue;
@@ -190,20 +239,50 @@
             }
 
             if (/^\s*$/.test(line)) {
+                closeLists();
                 continue;
             }
 
+            var marker = listMarker(line);
+            if (marker) {
+                renderListItem(marker);
+                continue;
+            }
+
+            closeLists();
             html += blockRender(line) + '\n';
         }
+
         flushCode();
         flushTable();
-
-        // Wrap consecutive list items
-        html = html.replace(/(<li>[^<]*<\/li>\n)+/g, function (match) {
-            return '<ul>\n' + match + '</ul>\n';
-        });
+        closeLists();
 
         return html;
+    }
+
+    function initMermaid() {
+        if (typeof window.mermaid === 'undefined') return;
+        var theme = document.documentElement.getAttribute('data-theme') || 'light';
+        try {
+            window.mermaid.initialize({
+                startOnLoad: false,
+                theme: theme === 'dark' ? 'dark' : 'default'
+            });
+        } catch (err) {
+            // ignore init errors
+        }
+        var nodes = document.querySelectorAll('.lincoln-mermaid');
+        if (!nodes.length) return;
+        try {
+            window.mermaid.run({ querySelector: '.lincoln-mermaid' });
+        } catch (err) {
+            // Fallback for older Mermaid versions
+            try {
+                window.mermaid.init(undefined, nodes);
+            } catch (e2) {
+                // ignore
+            }
+        }
     }
 
     initTheme();
@@ -213,6 +292,7 @@
     if (sourceEl && contentEl) {
         var src = sourceEl.textContent;
         contentEl.innerHTML = renderMarkdown(src);
+        initMermaid();
     }
 })();
 </script>
