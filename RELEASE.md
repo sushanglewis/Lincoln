@@ -1,3 +1,22 @@
+# Lincoln v1.6.3 Release Notes
+
+**Release date:** 2026-08-14
+
+## Highlights
+
+- **Markdown-first issue-package documents (#108)** — `page-doc.html.tpl` now renders full Markdown (nested lists, ordered lists, tables, code blocks) and real Mermaid diagrams via a local `mermaid.min.js` runtime. Agents can write big sections with ` ```mermaid ` flowcharts instead of forcing everything into rigid YAML tables.
+- **Coarser `lincoln_render.py` CLI (#108)** — `nav-label`, `nav-group`, `version`, `uid`, and `stage-mark` now derive sensible defaults from the title, target filename, and Markdown source. The most common single-page invocation shrinks from 8+ flags to `--stage --target --title --markdown`.
+- **Stage-level batch rendering (#108)** — New `--render-stage` mode renders all missing artifact pages declared by a stage definition in one command, using a matching `.md` file automatically when present. This removes repetitive boilerplate from skill prompts.
+- **Stage routing refresh (#108)** — `clarify` and `product-design-docs` stages route narrative docs (requirements, PRD, design-review, scenarios, flows, feasibility, version-log) to the Markdown-first template, while tabular docs (feature-catalog, data-model, page-map, api-list) keep the structured template.
+- **Skill prompt updates (#108)** — `clarify-requirements` and `draft-product-design` prompts now encourage agents to organize docs as big Markdown chapters and use Mermaid diagrams whenever that communicates the requirement more clearly.
+
+## Migration Notes
+
+- Existing issue packages continue to work: the structured template and all existing HTML pages are unchanged. New or re-rendered doc pages will use the Markdown-first behavior.
+- To get Mermaid support in an existing issue package, re-render the doc page or copy `mermaid.min.js` into `{process_slug}/assets/`.
+
+---
+
 # Lincoln v1.6.2 Release Notes
 
 **Release date:** 2026-08-12
