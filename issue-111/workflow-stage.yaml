@@ -1,0 +1,67 @@
+schema_version: 2.0.0
+workflow:
+  name: interview-to-knowledge
+  version: 1.0.0
+  template: interview-to-knowledge
+current_run:
+  run_id: 20260817114709-da953b89
+  branch: issue-111
+  current_stage: ingest
+  status: in_progress
+  started_at: '2026-08-17T11:47:10Z'
+  last_updated_at: '2026-08-17T11:47:10Z'
+  issue_number: '111'
+  variables:
+    process_slug: issue-111
+    session_id: 2026-08-17-issue-111
+    design_id: issue-111
+    issue_number: '111'
+    change_name: ''
+    pr_number: ''
+    feature_slug: ''
+  change_name: ''
+  pr_number: ''
+  feature_slug: ''
+  execution_mode: team
+artifact_guidance: "This issue work package holds all artifacts produced while resolving\
+  \ the issue.\n\nHow to use templates:\n- Document templates live read-only under\
+  \ `.claude/templates/issue-package/`.\n  Do NOT copy `.tpl` files into this package.\
+  \ When a stage needs a document,\n  read the matching `.tpl` file there as a format\
+  \ reference and author the\n  document directly in the appropriate package directory,\
+  \ replacing\n  placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).\n\
+  - The human-facing portal is `{process_slug}/index.html`. Open it in a browser\n\
+  \  to review stage status, navigate documents, and inspect prototypes.\n- Machine\
+  \ state stays in `{process_slug}/workflow-stage.yaml`; agents must\n  update it\
+  \ only through `scripts/stage_loader.py`.\n- Deliverable documents and prototypes\
+  \ live under `{process_slug}/pages/`:\n  - `pages/docs/*.html` — finalized docs\
+  \ (PRD, requirements, design review,\n    feature catalog, data model, flows, feasibility,\
+  \ page map, UI spec,\n    fields, TDD plan, version log, API list, PM→UX handoff).\n\
+  \  - `pages/prototype/{web,mobile,overlays}/*.html` — interactive HTML\n    prototypes.\
+  \ Every interactive element must carry a stable `data-uid`.\n- Doc pages must embed\
+  \ their Markdown source in a\n  `<script type=\"text/markdown\" id=\"docSource\"\
+  >` block so the portal can\n  render it and provide copy-to-Markdown. Include a\
+  \ version marker such as\n  `<!-- version: v1.0 -->` near the top of that block.\n\
+  - Use `pages/docs/snapshots/` for immutable PRD snapshots named\n  `prd-v{MAJOR}.{MINOR}.html`.\
+  \ Do not edit snapshots directly.\n- Raw inputs and machine contracts stay outside\
+  \ `pages/`:\n  - `interviews/` for recorded session outputs.\n  - `openspec/` for\
+  \ implementation proposals (managed by OpenSpec CLI).\n  - `handoffs/pm-to-ux/pm-to-ux.handoff.yaml`\
+  \ for agent-agent contracts.\n  - `recordings/` for raw input files only.\n- When\
+  \ a stage completes, run `scripts/stage_loader.py --stage <stage> --action record-artifacts`\n\
+  \  to persist produced artifact paths back into this workflow-stage.yaml; this also\n\
+  \  refreshes `assets/js/package-data.js`, the portal data index. Open\n  `{process_slug}/index.html`\
+  \ to review package contents and approval status.\n\nApproval convention:\n- Add\
+  \ `<!-- status: approved -->` inside the docSource block or mark\n  `human_confirmed:\
+  \ true` via `approve-gate` to indicate PM review.\n\nPortal annotation contract:\n\
+  - Every HTML page should set `<meta name=\"nav-label\">` for the left nav and the\n\
+  \  annotation tags `doc-purpose`, `doc-layout`, `doc-fields`, `doc-stories`,\n \
+  \ `doc-rules`, `doc-boundaries`, `doc-exceptions`, `doc-refs` so the right panel\n\
+  \  can render functionality, layout, fields, boundary cases, and exception flows.\n\
+  - The right panel is always visible; do not add collapse toggles.\n- Prototype pages\
+  \ must use the shared `prototype.css` tokens so light/dark\n  theme switching is\
+  \ visible end-to-end.\n"
+nodes: []
+recovery:
+  last_validated_checkpoint: ''
+  can_resume_from: ingest
+  abort_reason: null
+  abort_at: null
