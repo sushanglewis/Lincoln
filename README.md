@@ -113,7 +113,11 @@ lincoln migrate-project --yes       # 确认迁移
 
 ### 阶段驱动的工作流引擎
 
-每个阶段定义在 `.claude/stages/<stage-id>.yaml`，内含角色、可调用的技能、门控条件与产物要求。`workflow-stage.yaml` 作为运行时状态，由 Lincoln 的阶段加载器驱动阶段校验、产物记录与 gate 推进。
+每个阶段定义在 `.claude/stages/<stage-id>.yaml`，内含角色、可调用的技能、门控条件与产物要求。`workflow-stage.yaml` 作为运行时状态，由 Lincoln 的阶段加载器驱动阶段校验、产物记录与 gate 推进。`--render-stage` 批量渲染可一次生成某阶段声明的所有缺失文档页面。
+
+### 产物追溯
+
+Lincoln 为需求、页面、字段、文档等产物分配 `feature/*`、`page/*`、`field/*`、`doc/*` 稳定 ID。下游阶段按 ID 追溯上游产物，避免路径猜测带来的漂移。需要追溯时，直接对 Agent 说「查一下 doc/需求-001」即可。
 
 ### 预设 SOP 工作流模板
 
@@ -135,7 +139,7 @@ lincoln migrate-project --yes       # 确认迁移
 - `index.html` — 人读门户，聚合阶段状态、导航与产物
 - `workflow-stage.yaml` — 机器状态与 handoff 协议
 - `documents.yaml` — 产物索引与 human 确认状态
-- `pages/docs/` — 需求、PRD、设计、TDD 计划等 HTML 页面
+- `pages/docs/` — 需求、PRD、设计、TDD 计划等页面，叙事类文档采用 Markdown-first，可直接用 Markdown 章节和 `mermaid` 流程图编写，渲染时自动加载本地 `mermaid.min.js` 运行时
 - `pages/prototype/` — 可交互原型 HTML 页面
 - `handoffs/` — 阶段交接文档
 
@@ -154,6 +158,7 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 | 列出所有活跃分支 | 列出所有 issue 分支的阶段状态与等待对象 |
 | 运行 benchmark | 生成 Lincoln 会话基准评测报告 |
 | 启动 PM 研究工作流 | 进入 `pm-research` 研究链路 |
+| 查一下 doc/需求-001 | 调用 `lc-one-id` 按稳定 ID 追溯产物 |
 
 更多命令与用法见 [USAGE.md](USAGE.md)。
 
@@ -200,6 +205,17 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — 工作流模板总览
 - [OpenSpec 文档](https://github.com/Fission-AI/openspec)
 - [Obsidian WikiLinks](https://help.obsidian.md/Linking+notes+and+files/Internal+links)
+
+## 版本记录
+
+| 版本 | 日期 | 关键能力 |
+|---|---|---|
+| v1.6.3 | 2026-08-15 | Markdown-first issue-package 文档；`--render-stage` 批量渲染；Mermaid 图表本地渲染 |
+| v1.6.2 | 2026-08-12 | `lc-init-branch` 改读全局 Lincoln 模板 |
+| v1.6.1 | 2026-08-11 | `lc-one-id` 产物追溯 skill；portal 注解对齐 |
+| v1.6.0 | 2026-08-06 | 全局 npm 插件模型；`@sushanglewis/lincoln` CLI；release-on-merge 自动化 |
+
+完整发布说明见 [RELEASE.md](RELEASE.md)。
 
 ## License
 
