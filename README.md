@@ -2,6 +2,8 @@
 
 > 中文 | [English](README.en.md)
 
+**TL;DR** — Lincoln is an AI-Native R&D workflow system that brings stage-driven discipline, human gates, and repeatable SOPs to Claude Code, Codex, and OpenCode — from requirements to shipped knowledge.
+
 Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、技能、插件与自动化程序** 的 AI-Native 研发工作流体系。它以**阶段**为节奏、以**门控**为质量保障、以**可重复 SOP** 为骨架，把需求澄清、产品设计、原型、TDD 计划、OpenSpec 提案、任务拆分、研发实现和知识库沉淀串成一条可人机协作的流水线。
 
 - **全流程，而非单点工具**：每个阶段都有明确的角色、技能与产物约定——Agent 在恰当的节点介入，而不是替代人的判断。
@@ -132,7 +134,7 @@ Lincoln 为需求、页面、字段、文档等产物分配 `feature/*`、`page/
 
 完整模板说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
 
-### Issue 工作包（HTML 门户）
+### Markdown-first Issue 工作包
 
 每个需求对应一个 GitHub issue 和一个 Lincoln feature 分支。工作包目录 `issue-<N>/` 包含：
 

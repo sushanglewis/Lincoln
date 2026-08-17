@@ -1,5 +1,17 @@
 process_slug: issue-111
 issue_number: '111'
 current_stage: sync-knowledge
-last_updated: '2026-08-17T14:07:42Z'
-documents: []
+last_updated: '2026-08-17T14:28:51Z'
+documents:
+- path: issue-111/pages/docs/fact-sheet.md
+  title: v1.6.x 事实清单
+  stage: implement
+  human_confirmed: true
+- path: issue-111/pages/docs/knowledge-sync.md
+  title: 知识同步记录
+  stage: sync-knowledge
+  human_confirmed: true
+- path: issue-111/pages/docs/seo-optimization.md
+  title: GitHub SEO 优化方案
+  stage: sync-knowledge
+  human_confirmed: true

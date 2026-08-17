@@ -2,6 +2,8 @@
 
 > [中文](README.md) | English
 
+**TL;DR** — Lincoln is an AI-Native R&D workflow system that brings stage-driven discipline, human gates, and repeatable SOPs to Claude Code, Codex, and OpenCode — from requirements to shipped knowledge.
+
 Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, code hosting, knowledge management, skills, plugins, and automation**. It runs on **stages** for rhythm, **gates** for quality, and **repeatable SOPs** as its backbone, chaining requirements clarification, product design, prototyping, TDD planning, OpenSpec proposals, task splitting, implementation, and knowledge-base distillation into one human-AI collaborative pipeline.
 
 - **Whole lifecycle, not a point tool**: every stage has explicit role, skill, and artifact contracts — agents step in at the right moments instead of replacing human judgment.
@@ -132,7 +134,7 @@ Lincoln assigns stable IDs such as `feature/*`, `page/*`, `field/*`, and `doc/*`
 
 See [`.claude/workflows/README.md`](.claude/workflows/README.md) for the full template catalog.
 
-### Issue Work Packages (HTML Portal)
+### Markdown-First Issue Work Packages
 
 Every requirement maps to one GitHub issue and one Lincoln feature branch. The `issue-<N>/` work package contains:
 
