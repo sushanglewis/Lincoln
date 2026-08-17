@@ -7,9 +7,9 @@ current_run:
   run_id: 20260817114709-da953b89
   branch: issue-111
   current_stage: sync-knowledge
-  status: in_progress
+  status: validation_failed
   started_at: '2026-08-17T11:47:10Z'
-  last_updated_at: '2026-08-17T14:07:42Z'
+  last_updated_at: '2026-08-17T14:10:34Z'
   issue_number: '111'
   variables:
     process_slug: issue-111
@@ -17,10 +17,10 @@ current_run:
     design_id: issue-111
     issue_number: '111'
     change_name: ''
-    pr_number: ''
+    pr_number: '112'
     feature_slug: ''
   change_name: ''
-  pr_number: ''
+  pr_number: '112'
   feature_slug: ''
   execution_mode: solo
 artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
