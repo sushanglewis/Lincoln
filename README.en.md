@@ -2,6 +2,8 @@
 
 > [中文](README.md) | English
 
+**TL;DR** — Lincoln is an AI-Native R&D workflow system that brings stage-driven discipline, human gates, and repeatable SOPs to Claude Code, Codex, and OpenCode — from requirements to shipped knowledge.
+
 Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, code hosting, knowledge management, skills, plugins, and automation**. It runs on **stages** for rhythm, **gates** for quality, and **repeatable SOPs** as its backbone, chaining requirements clarification, product design, prototyping, TDD planning, OpenSpec proposals, task splitting, implementation, and knowledge-base distillation into one human-AI collaborative pipeline.
 
 - **Whole lifecycle, not a point tool**: every stage has explicit role, skill, and artifact contracts — agents step in at the right moments instead of replacing human judgment.
@@ -113,7 +115,11 @@ First time? Read [USAGE.md](USAGE.md) for the full installation and usage guide.
 
 ### Stage-Driven Workflow Engine
 
-Each stage is defined in `.claude/stages/<stage-id>.yaml` with its role, skills, gates, and artifacts. The `workflow-stage.yaml` runtime state drives agent context injection, while Lincoln's stage loader handles stage validation, artifact recording, and gate advancement.
+Each stage is defined in `.claude/stages/<stage-id>.yaml` with its role, skills, gates, and artifacts. The `workflow-stage.yaml` runtime state drives agent context injection, while Lincoln's stage loader handles stage validation, artifact recording, and gate advancement. `--render-stage` batch rendering generates all missing artifact pages declared by a stage in a single command.
+
+### Artifact Traceability
+
+Lincoln assigns stable IDs such as `feature/*`, `page/*`, `field/*`, and `doc/*` to requirements, pages, fields, documents, and other artifacts. Downstream stages trace upstream work by ID instead of guessing paths. To trace an artifact, just tell the Agent "Look up doc/requirement-001".
 
 ### Preset SOP Workflow Templates
 
@@ -128,14 +134,14 @@ Each stage is defined in `.claude/stages/<stage-id>.yaml` with its role, skills,
 
 See [`.claude/workflows/README.md`](.claude/workflows/README.md) for the full template catalog.
 
-### Issue Work Packages (HTML Portal)
+### Markdown-First Issue Work Packages
 
 Every requirement maps to one GitHub issue and one Lincoln feature branch. The `issue-<N>/` work package contains:
 
 - `index.html` — human-facing portal aggregating stage status, navigation, and artifacts
 - `workflow-stage.yaml` — machine-readable state and handoff protocol
 - `documents.yaml` — artifact index and human-approval status
-- `pages/docs/` — HTML pages for requirements, PRDs, designs, TDD plans
+- `pages/docs/` — pages for requirements, PRDs, designs, TDD plans; narrative docs are Markdown-first and can be authored as Markdown chapters with `mermaid` diagrams, rendered by the local `mermaid.min.js` runtime
 - `pages/prototype/` — interactive HTML prototypes
 - `handoffs/` — stage handoff documents
 
@@ -154,6 +160,7 @@ Lincoln is AI-Native — **you don't need to type terminal commands**. Describe 
 | List all active Lincoln branches | Lists stage status and blockers for every issue branch |
 | Run benchmark | Generates a Lincoln session benchmark report |
 | Start the PM research workflow | Enters the `pm-research` research chain |
+| Look up doc/requirement-001 | Traces the artifact by stable ID |
 
 More commands and usage details are in [USAGE.md](USAGE.md).
 
@@ -200,6 +207,17 @@ Before submitting a PR, please read:
 - [`.claude/workflows/README.md`](.claude/workflows/README.md) — workflow template catalog
 - [OpenSpec docs](https://github.com/Fission-AI/openspec)
 - [Obsidian WikiLinks](https://help.obsidian.md/Linking+notes+and+files/Internal+links)
+
+## Release History
+
+| Version | Date | Key capabilities |
+|---|---|---|
+| v1.6.3 | 2026-08-15 | Markdown-first issue-package documents; `--render-stage` batch rendering; local `mermaid.min.js` runtime |
+| v1.6.2 | 2026-08-12 | `lc-init-branch` reads global Lincoln templates |
+| v1.6.1 | 2026-08-11 | `lc-one-id` artifact traceability; portal annotation alignment |
+| v1.6.0 | 2026-08-06 | Global npm plugin model; `@sushanglewis/lincoln` CLI; release-on-merge automation |
+
+See [RELEASE.md](RELEASE.md) for full release notes.
 
 ## License
 
