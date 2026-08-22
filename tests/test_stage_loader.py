@@ -205,6 +205,9 @@ def test_validate_exit_clarify_artifacts_present_at_root_prd(minimal_state_file)
         req_file = docs_dir / "requirements.html"
         req_file.write_text("<!-- status: approved -->\n# Requirements", encoding="utf-8")
         created_paths.append(req_file)
+        st_file = docs_dir / "stakeholders.html"
+        st_file.write_text("# Stakeholders", encoding="utf-8")
+        created_paths.append(st_file)
         us_file = docs_dir / "user-stories.html"
         us_file.write_text("# User Stories", encoding="utf-8")
         created_paths.append(us_file)
@@ -239,6 +242,9 @@ def test_record_artifacts_captures_root_prd_and_snapshot(minimal_state_file):
         prd = docs_dir / "prd.html"
         prd.write_text("<!-- version: v1.0 -->\n# PRD", encoding="utf-8")
         created_paths.append(prd)
+        st_file = docs_dir / "stakeholders.html"
+        st_file.write_text("# Stakeholders", encoding="utf-8")
+        created_paths.append(st_file)
         snapshot_dir = docs_dir / "snapshots"
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         snapshot = snapshot_dir / "prd-v1.0.html"
@@ -247,6 +253,7 @@ def test_record_artifacts_captures_root_prd_and_snapshot(minimal_state_file):
 
         recorded = loader_mod.action_record_artifacts("clarify", state, minimal_state_file)
         assert any("prd.html" in a and "prd-v" not in a for a in recorded)
+        assert any("stakeholders.html" in a for a in recorded)
         assert any("prd-v1.0.html" in a for a in recorded)
     finally:
         for path in created_paths:

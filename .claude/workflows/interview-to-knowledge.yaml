@@ -46,6 +46,7 @@ workflow:
       human_gate: true
       artifacts:
         - "{process_slug}/pages/docs/requirements.html"
+        - "{process_slug}/pages/docs/stakeholders.html"
         - "{process_slug}/pages/docs/user-stories.html"
         - "{process_slug}/pages/docs/prd.html"
       optional_artifacts:
