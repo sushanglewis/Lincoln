@@ -10,6 +10,7 @@ inputs:
     required: true
 outputs:
   - "{process_slug}/pages/docs/requirements.html"
+  - "{process_slug}/pages/docs/stakeholders.html"
   - "{process_slug}/pages/docs/user-stories.html"
   - "{process_slug}/pages/docs/prd.html"
   - "{process_slug}/pages/docs/snapshots/prd-v*.html"
