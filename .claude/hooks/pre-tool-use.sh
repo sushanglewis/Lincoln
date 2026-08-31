@@ -220,6 +220,28 @@ if [[ "$STAGE_STATUS" == "not_started" || "$STAGE_STATUS" == "entry_validating" 
     fi
 fi
 
+# SecurityAnalyzer: evaluate side-effect tools against risk policy.
+# File deletion requires explicit human confirmation; git push / API calls are logged.
+if is_side_effect "$TOOL_NAME"; then
+    SECURITY_LOG_DIR="$FRAMEWORK_ROOT/$PROCESS_SLUG/logs"
+    SECURITY_RESULT=$("$PYTHON" "$FRAMEWORK_ROOT/scripts/security_analyzer.py" \
+        --root "$FRAMEWORK_ROOT" \
+        --tool "$TOOL_NAME" \
+        --args "$TOOL_ARGS" \
+        --process-slug "$PROCESS_SLUG" \
+        --log-dir "$SECURITY_LOG_DIR" \
+        2>/dev/null || echo '{"level":"unknown","confirm_required":true,"message":"Security analyzer failed."}')
+
+    CONFIRM_REQUIRED=$(echo "$SECURITY_RESULT" | "$PYTHON" -c 'import sys,json; print(json.load(sys.stdin).get("confirm_required", False))')
+    SECURITY_MESSAGE=$(echo "$SECURITY_RESULT" | "$PYTHON" -c 'import sys,json; print(json.load(sys.stdin).get("message", ""))')
+
+    if [[ "$CONFIRM_REQUIRED" == "True" ]]; then
+        echo "BLOCKED: $SECURITY_MESSAGE" >&2
+        echo "Run: python3 scripts/stage_loader.py --stage $CURRENT_STAGE --action approve-gate --approved-by human-pm" >&2
+        exit 1
+    fi
+fi
+
 # When paused/waiting_for_human/validation_failed, only allow read-only tools
 if [[ "$STAGE_STATUS" == "paused" || "$STAGE_STATUS" == "waiting_for_human" || "$STAGE_STATUS" == "validation_failed" ]]; then
     if [[ "$TOOL_NAME" != "Read" && "$TOOL_NAME" != "Grep" && "$TOOL_NAME" != "Glob" ]]; then

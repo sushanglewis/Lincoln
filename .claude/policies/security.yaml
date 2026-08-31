@@ -1,0 +1,46 @@
+schema_version: 1.0.0
+policies:
+  - name: recursive-delete
+    tool: Bash
+    condition: 'command matches "rm -r" or "rm -rf"'
+    level: high
+    message: "递归删除风险极高，需人工确认。"
+    confirm: true
+
+  - name: file-deletion
+    tool: Bash
+    condition: 'command matches any of ["rm", "rmdir"]'
+    level: high
+    message: "文件/目录删除操作不可逆，需人工确认。"
+    confirm: true
+
+  - name: git-push
+    tool: Bash
+    condition: 'command matches "git push"'
+    level: medium
+    message: "git push 将改变远程仓库状态。"
+    confirm: false
+    log: true
+
+  - name: external-api-call
+    tool: Bash
+    condition: 'command matches any external HTTP client (curl, wget, httpie)'
+    level: medium
+    message: "正在调用外部 API。"
+    confirm: false
+    log: true
+
+  - name: file-write-outside-process
+    tool: Write|Edit
+    condition: "target outside current process_slug"
+    level: high
+    message: "不允许写入当前 issue 工作包之外的产物目录。"
+    confirm: true
+
+  - name: file-write-inside-process
+    tool: Write|Edit
+    condition: "target inside current process_slug"
+    level: medium
+    message: "写入当前 issue 工作包内的文件。"
+    confirm: false
+    log: true
