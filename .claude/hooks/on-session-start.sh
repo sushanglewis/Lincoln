@@ -263,7 +263,22 @@ echo "Design ID: ${DESIGN_ID:-(unset)}"
 echo "Waiting for: $WAITING_FOR"
 echo ""
 
-# 4. Load stage context, agent role, and workflow template (summaries only)
+# 4. Recall relevant knowledge before injecting full context.
+RECALL_JSON=$("$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln_recall.py" \
+    --query "$CURRENT_STAGE" \
+    --top-k 5 \
+    --format json \
+    2>/dev/null || echo '{"docs":[]}')
+_RECALL_COUNT=$(echo "$RECALL_JSON" | "$PYTHON" -c "import sys,json; print(len(json.load(sys.stdin).get('docs',[])))" 2>/dev/null || echo 0)
+if [[ "$_RECALL_COUNT" -gt 0 ]]; then
+    echo "=== Lincoln 相关知识 ==="
+    echo "$RECALL_JSON" | "$PYTHON" -c "import sys,json; docs=json.load(sys.stdin).get('docs',[]); [print(f'- [{d[\"title\"]}]({d[\"path\"]}) — score {d[\"score\"]}') for d in docs]"
+    echo ""
+    echo "=== End Lincoln 相关知识 ==="
+    echo ""
+fi
+
+# 5. Load stage context, agent role, and workflow template (summaries only)
 if [[ "$CURRENT_STAGE" != "not_started" ]]; then
     STAGE_YAML="$FRAMEWORK_ROOT/.claude/stages/$CURRENT_STAGE.yaml"
     if [[ -f "$STAGE_YAML" ]]; then
@@ -339,7 +354,7 @@ else
     NEEDS_OPENING_GUIDANCE="true"
 fi
 
-# 5. Load Conductor / OMC context
+# 6. Load Conductor / OMC context
 if [[ -d "$ROOT/.context" || -d "$ROOT/.omc" ]]; then
     echo "=== Conductor / OMC Context ==="
     for dir in "$ROOT/.context" "$ROOT/.omc"; do
@@ -362,7 +377,7 @@ if [[ -d "$ROOT/.context" || -d "$ROOT/.omc" ]]; then
     echo ""
 fi
 
-# 6. Read last node handoff
+# 7. Read last node handoff
 HANDOFF_FILE=""
 if [[ "$LAST_NODE" != "{}" ]]; then
     HANDOFF_FILE=$(echo "$LAST_NODE" | "$PYTHON" -c "import sys,json; print(json.load(sys.stdin).get('handoff_file',''))" 2>/dev/null || echo "")
@@ -387,7 +402,7 @@ if [[ -n "$PROCESS_SLUG" && -d "$ROOT/$PROCESS_SLUG/handoffs" ]]; then
     fi
 fi
 
-# 7. Run status summary
+# 8. Run status summary
 STATUS_OUTPUT=$("$PYTHON" "$FRAMEWORK_ROOT/scripts/lincoln-status.py" --format markdown --state-file "$STATE_FILE" 2>/dev/null) || STATUS_OUTPUT=""
 if [[ -n "$STATUS_OUTPUT" ]]; then
     echo "=== Lincoln Status Summary ==="
@@ -396,7 +411,7 @@ if [[ -n "$STATUS_OUTPUT" ]]; then
     echo ""
 fi
 
-# 8. Opening guidance for a work package that has not started yet
+# 9. Opening guidance for a work package that has not started yet
 if [[ "${NEEDS_OPENING_GUIDANCE:-}" == "true" ]]; then
     _LINCOLN_GUIDANCE_INJECTED="true"
     echo "=== Lincoln 开场引导 ==="
