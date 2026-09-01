@@ -1,0 +1,168 @@
+schema_version: 2.0.0
+workflow:
+  name: framework-self-improvement
+  version: 1.0.0
+  template: framework-self-improvement
+current_run:
+  run_id: 20260831143844-2c00af48
+  branch: issue-115
+  current_stage: sync-knowledge
+  status: not_started
+  started_at: '2026-08-31T14:38:44Z'
+  last_updated_at: '2026-09-01T05:30:08Z'
+  issue_number: '115'
+  variables:
+    process_slug: issue-115
+    session_id: 2026-08-31-issue-115
+    design_id: issue-115
+    issue_number: '115'
+    change_name: openhands-teamai-research
+    pr_number: '18'
+    feature_slug: ''
+  change_name: openhands-teamai-research
+  pr_number: '18'
+  feature_slug: ''
+  execution_mode: team
+  previous_stage: phase-2-p1-implement
+artifact_guidance: "This issue work package holds all artifacts produced while resolving the issue.\n\nHow to use templates:\n\
+  - Document templates live read-only under `.claude/templates/issue-package/`.\n  Do NOT copy `.tpl` files into this package.\
+  \ When a stage needs a document,\n  read the matching `.tpl` file there as a format reference and author the\n  document\
+  \ directly in the appropriate package directory, replacing\n  placeholders ({issue_number}, {session_id}, {design_id}, {change_name}).\n\
+  - The human-facing portal is `{process_slug}/index.html`. Open it in a browser\n  to review stage status, navigate documents,\
+  \ and inspect prototypes.\n- Machine state stays in `{process_slug}/workflow-stage.yaml`; agents must\n  update it only\
+  \ through `scripts/stage_loader.py`.\n- Deliverable documents and prototypes live under `{process_slug}/pages/`:\n  - `pages/docs/*.html`\
+  \ — finalized docs (PRD, requirements, design review,\n    feature catalog, data model, flows, feasibility, page map, UI\
+  \ spec,\n    fields, TDD plan, version log, API list, PM→UX handoff).\n  - `pages/prototype/{web,mobile,overlays}/*.html`\
+  \ — interactive HTML\n    prototypes. Every interactive element must carry a stable `data-uid`.\n- Doc pages must embed\
+  \ their Markdown source in a\n  `<script type=\"text/markdown\" id=\"docSource\">` block so the portal can\n  render it\
+  \ and provide copy-to-Markdown. Include a version marker such as\n  `<!-- version: v1.0 -->` near the top of that block.\n\
+  - Use `pages/docs/snapshots/` for immutable PRD snapshots named\n  `prd-v{MAJOR}.{MINOR}.html`. Do not edit snapshots directly.\n\
+  - Raw inputs and machine contracts stay outside `pages/`:\n  - `interviews/` for recorded session outputs.\n  - `openspec/`\
+  \ for implementation proposals (managed by OpenSpec CLI).\n  - `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` for agent-agent\
+  \ contracts.\n  - `recordings/` for raw input files only.\n- When a stage completes, run `scripts/stage_loader.py --stage\
+  \ <stage> --action record-artifacts`\n  to persist produced artifact paths back into this workflow-stage.yaml; this also\n\
+  \  refreshes `assets/js/package-data.js`, the portal data index. Open\n  `{process_slug}/index.html` to review package contents\
+  \ and approval status.\n\nApproval convention:\n- Add `<!-- status: approved -->` inside the docSource block or mark\n \
+  \ `human_confirmed: true` via `approve-gate` to indicate PM review.\n\nPortal annotation contract:\n- Every HTML page should\
+  \ set `<meta name=\"nav-label\">` for the left nav and the\n  annotation tags `doc-purpose`, `doc-layout`, `doc-fields`,\
+  \ `doc-stories`,\n  `doc-rules`, `doc-boundaries`, `doc-exceptions`, `doc-refs` so the right panel\n  can render functionality,\
+  \ layout, fields, boundary cases, and exception flows.\n- The right panel is always visible; do not add collapse toggles.\n\
+  - Prototype pages must use the shared `prototype.css` tokens so light/dark\n  theme switching is visible end-to-end.\n"
+nodes:
+- stage_id: workflow-router
+  node_id: workflow-router-2026-08-31T14:38:44Z
+  status: completed
+  started_at: '2026-08-31T14:38:44Z'
+  completed_at: '2026-08-31T14:38:44Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - issue-115/workflow-stage.yaml
+  handoff_file: null
+- stage_id: clarify
+  node_id: clarify-2026-08-28T15:38:33Z
+  status: completed
+  started_at: '2026-08-28T15:38:33Z'
+  completed_at: '2026-08-28T15:38:33Z'
+  gate_passed: true
+  approved_by: human-pm
+  artifacts:
+  - issue-115/requirements/2026-08-28-issue-70/requirements.md
+  - issue-115/requirements/2026-08-28-issue-70/user-stories.md
+  - issue-115/requirements/2026-08-28-issue-70/prd.md
+  handoff_file: null
+- stage_id: explore-opensource
+  node_id: explore-opensource-2026-08-28T15:51:32Z
+  status: completed
+  started_at: '2026-08-28T15:51:32Z'
+  completed_at: '2026-08-29T00:00:00Z'
+  gate_passed: true
+  approved_by: human-pm
+  artifacts:
+  - issue-115/docs/research/openhands-teamai-research-oss-options.md
+  - issue-115/docs/decision-001-lew70-research-scope.md
+  handoff_file: null
+- stage_id: phase-1-p0-design
+  node_id: phase-1-p0-design-2026-08-29T00:00:00Z
+  status: completed
+  started_at: '2026-08-29T00:00:00Z'
+  completed_at: '2026-08-29T00:00:00Z'
+  gate_passed: true
+  approved_by: human-pm
+  artifacts:
+  - issue-115/designs/phase-1-p0-harness-security-design.md
+  handoff_file: null
+- stage_id: phase-1-p0-implement
+  node_id: phase-1-p0-implement-2026-08-29T01:44:50Z
+  status: completed
+  started_at: '2026-08-29T01:44:50Z'
+  completed_at: '2026-08-29T01:44:50Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .claude/harnesses/codex.yaml
+  - .claude/harnesses/opencode.yaml
+  - .claude/hooks/hooks.yaml
+  - .claude/hooks/pre-tool-use.sh
+  - .claude/mcp/mcp.yaml
+  - .claude/policies/security.yaml
+  - scripts/check-harness-drift.sh
+  - scripts/lincoln-setup.py
+  - scripts/lincoln_harness_adapter.py
+  - scripts/security_analyzer.py
+  - tests/test_harness_adapter_extended.py
+  - tests/test_harness_default_off.py
+  - tests/test_hooks.py
+  - tests/test_security_analyzer.py
+  handoff_file: null
+- stage_id: phase-2-p1-design
+  node_id: phase-2-p1-design-2026-08-29T02:40:55Z
+  status: completed
+  started_at: '2026-08-29T02:40:55Z'
+  completed_at: '2026-08-29T02:40:55Z'
+  gate_passed: true
+  approved_by: human-pm
+  artifacts:
+  - issue-115/designs/phase-2-p1-learning-eventlog-subagents-design.md
+  handoff_file: null
+- stage_id: phase-2-p1-implement
+  node_id: phase-2-p1-implement-2026-08-29T03:25:10Z
+  status: in_progress
+  started_at: '2026-08-29T03:25:10Z'
+  completed_at: null
+  gate_passed: false
+  approved_by: null
+  artifacts:
+  - .claude/policies/friction.yaml
+  - .claude/policies/security.yaml
+  - .claude/schemas/design-review-feedback.json
+  - scripts/lincoln_condenser.py
+  - scripts/lincoln_friction.py
+  - scripts/lincoln_mr_mine.py
+  - scripts/lincoln_recall.py
+  - scripts/lincoln_trace.py
+  - scripts/security_analyzer.py
+  - scripts/stage_loader.py
+  handoff_file: null
+- stage_id: phase-2-p1-implement
+  node_id: phase-2-p1-implement-completed
+  status: completed
+  started_at: '2026-09-01T05:30:08Z'
+  completed_at: '2026-09-01T05:30:08Z'
+  gate_passed: true
+  approved_by: system
+  artifacts:
+  - .claude/policies/friction.yaml
+  - .claude/schemas/design-review-feedback.json
+  - scripts/lincoln_friction.py
+  - scripts/lincoln_recall.py
+  - scripts/lincoln_condenser.py
+  - scripts/lincoln_mr_mine.py
+  - scripts/lincoln_trace.py
+  - scripts/stage_loader.py
+  handoff_file: null
+recovery:
+  last_validated_checkpoint: ''
+  can_resume_from: workflow-router
+  abort_reason: null
+  abort_at: null

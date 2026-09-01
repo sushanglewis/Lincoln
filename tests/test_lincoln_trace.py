@@ -111,9 +111,10 @@ def test_append_trace_entry_writes_jsonl(minimal_state):
     lines = trace_file.read_text(encoding="utf-8").strip().splitlines()
     assert len(lines) == 1
     entry = json.loads(lines[0])
-    assert entry["schema_version"] == "1.0.0"
+    assert entry["schema_version"] == "2.0.0"
     assert entry["run_id"] == "run-123"
     assert entry["stage"] == "clarify"
+    assert entry["node_id"] is None
     assert entry["tool"] == "Bash"
     assert entry["category"] == "bash"
     assert entry["target"] == "pytest"
@@ -183,3 +184,65 @@ def test_main_cli(minimal_state):
     )
     assert entry["exit_code"] == 1
     assert entry["target"] == "make test"
+
+
+def test_append_event_entry_writes_lifecycle_event(minimal_state):
+    trace_file = lincoln_trace.append_event_entry(
+        minimal_state,
+        "stage_lifecycle",
+        {"event_type": "stage_started", "stage_id": "explore-opensource"},
+    )
+    assert trace_file is not None
+    entry = json.loads(trace_file.read_text(encoding="utf-8").strip().splitlines()[0])
+    assert entry["schema_version"] == "2.0.0"
+    assert entry["category"] == "stage_lifecycle"
+    assert entry["target"] == "stage_started"
+    assert entry["args_summary"]["event_type"] == "stage_started"
+    assert entry["args_summary"]["stage_id"] == "explore-opensource"
+    assert entry["tool"] == ""
+
+
+def test_append_event_entry_writes_gate_event(minimal_state):
+    trace_file = lincoln_trace.append_event_entry(
+        minimal_state,
+        "gate",
+        {"event_type": "gate_approved", "stage_id": "clarify", "approved_by": "human-pm"},
+    )
+    entry = json.loads(trace_file.read_text(encoding="utf-8").strip().splitlines()[0])
+    assert entry["category"] == "gate"
+    assert entry["args_summary"]["event_type"] == "gate_approved"
+    assert entry["args_summary"]["approved_by"] == "human-pm"
+
+
+def test_append_event_entry_rejects_invalid_category(minimal_state):
+    with pytest.raises(ValueError, match="Invalid trace category"):
+        lincoln_trace.append_event_entry(minimal_state, "not_a_category", {})
+
+
+def test_append_trace_entry_includes_node_id(minimal_state):
+    state_path = _write_state(
+        minimal_state.parent,
+        {
+            "schema_version": "2.0.0",
+            "current_run": {
+                "run_id": "run-123",
+                "current_stage": "clarify",
+                "variables": {"process_slug": "lc-test"},
+            },
+            "nodes": [
+                {
+                    "stage_id": "clarify",
+                    "node_id": "clarify-2026-01-01",
+                    "status": "in_progress",
+                }
+            ],
+        },
+    )
+    trace_file = lincoln_trace.append_trace_entry(
+        state_path,
+        "Bash",
+        {"command": "pytest"},
+        0,
+    )
+    entry = json.loads(trace_file.read_text(encoding="utf-8").strip().splitlines()[0])
+    assert entry["node_id"] == "clarify-2026-01-01"

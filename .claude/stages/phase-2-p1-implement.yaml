@@ -1,0 +1,45 @@
+schema_version: 3.0.0
+id: phase-2-p1-implement
+name: Phase 2 P1 Implement
+description: 'Implement Phase 2 / P1 recommendations from the approved design document.
+
+  '
+prerequisite_stage: phase-2-p1-design
+next_stage: product-design-docs
+human_gate: false
+agent:
+  primary: lc-engineer
+  reviewers:
+  - lc-qa
+  handoff_to: lc-pm
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - .claude/policies/friction.yaml
+  - .claude/schemas/design-review-feedback.json
+  - scripts/lincoln_friction.py
+  - scripts/lincoln_recall.py
+  - scripts/lincoln_condenser.py
+  - scripts/lincoln_mr_mine.py
+  - scripts/lincoln_trace.py
+  - scripts/stage_loader.py
+context:
+  goal: 'Implement the approved P1 design and verify with tests and static checks.
+
+    '
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 所有变更必须通过测试与 static-check.sh。
+
+    '
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - phase-2-p1-design
+  exit:
+  - check: artifacts_present
+workflows:
+- framework-self-improvement

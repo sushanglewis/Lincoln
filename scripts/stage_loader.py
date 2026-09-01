@@ -36,7 +36,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 import yaml
 
-from scripts import lincoln_trace
+from scripts import lincoln_condenser, lincoln_trace
 from scripts import lincoln_render
 from scripts.lincoln_documents import write_documents_index
 from scripts.lincoln_index import write_package_index
@@ -82,6 +82,29 @@ LEGACY_REQUIRED_STATE_KEYS = {
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _record_stage_event(
+    state_file: Path | None,
+    category: str,
+    event_type: str,
+    payload: dict[str, Any] | None = None,
+) -> None:
+    """Write a lifecycle or gate event to the session trace.
+
+    Failures are logged but never block the stage action.
+    """
+    try:
+        merged_payload = {"event_type": event_type}
+        if payload:
+            merged_payload.update(payload)
+        lincoln_trace.append_event_entry(
+            state_path=state_file,
+            category=category,
+            payload=merged_payload,
+        )
+    except Exception as exc:
+        print(f"Warning: could not record {category}/{event_type} trace event: {exc}")
 
 
 def load_yaml(path: Path) -> Any:
@@ -483,6 +506,53 @@ def _check_previous_stage_completed(stage_id: str, prev_stage_id: str, state: di
     return False
 
 
+
+
+def _check_agent_delegation(stage_id: str) -> bool:
+    """Validate parallel specialist agent configuration in stage YAML."""
+    stage = load_stage_yaml(stage_id)
+    agent = stage.get("agent", {})
+    specialists = agent.get("parallel_specialists", [])
+    if not specialists:
+        return True
+
+    all_valid = True
+    for specialist in specialists:
+        agent_file = f"{specialist.lstrip('lc-')}.md"
+        agent_path = PROJECT_ROOT / ".claude" / "agents" / agent_file
+        if not agent_path.exists():
+            print(
+                f"FAIL: specialist agent '{specialist}' not found at .claude/agents/{agent_file}",
+                file=sys.stderr,
+            )
+            all_valid = False
+        else:
+            print(f"PASS: specialist agent '{specialist}' found")
+
+    output_schema = agent.get("output_schema")
+    if output_schema:
+        schema_path = PROJECT_ROOT / output_schema
+        if not schema_path.exists():
+            print(f"FAIL: output_schema not found: {output_schema}", file=sys.stderr)
+            all_valid = False
+        else:
+            try:
+                json.loads(schema_path.read_text(encoding="utf-8"))
+                print(f"PASS: output_schema is valid JSON: {output_schema}")
+            except json.JSONDecodeError as exc:
+                print(f"FAIL: output_schema is invalid JSON: {exc}", file=sys.stderr)
+                all_valid = False
+
+    merge_strategy = agent.get("merge_strategy", "priority")
+    if merge_strategy not in {"priority", "vote", "consensus"}:
+        print(f"FAIL: unsupported merge_strategy '{merge_strategy}'", file=sys.stderr)
+        all_valid = False
+    else:
+        print(f"PASS: merge_strategy '{merge_strategy}' supported")
+
+    return all_valid
+
+
 def _run_gate_check(
     phase: str,
     check: dict[str, Any],
@@ -564,6 +634,10 @@ def action_validate(
         if not passed:
             all_passed = False
 
+    if phase == "entry":
+        if not _check_agent_delegation(stage_id):
+            all_passed = False
+
     if not all_passed:
         if _is_legacy_state(state):
             stage_state["status"] = "validation_failed"
@@ -638,6 +712,13 @@ def action_record_artifacts(
     print(f"Recorded {len(recorded)} artifacts for stage '{stage_id}'")
     for art in recorded:
         print(f"  - {art}")
+
+    _record_stage_event(
+        state_file,
+        "stage_lifecycle",
+        "artifacts_recorded",
+        {"stage_id": stage_id, "artifact_count": len(recorded), "artifacts": recorded},
+    )
     return recorded
 
 
@@ -677,6 +758,13 @@ def action_approve_gate(
 
     save_state(state, state_file)
     print(f"PASS: gate approved for stage '{stage_id}' by '{approved_by}'")
+
+    _record_stage_event(
+        state_file,
+        "gate",
+        "gate_approved",
+        {"stage_id": stage_id, "approved_by": approved_by},
+    )
     return 0
 
 
@@ -799,6 +887,27 @@ def action_transition_next(stage_id: str, state: dict[str, Any], state_file: Pat
 
     save_state(state, state_file)
     print(f"Transitioned from '{stage_id}' to '{next_stage_id}'")
+
+    _record_stage_event(
+        state_file,
+        "stage_lifecycle",
+        "stage_completed",
+        {"stage_id": stage_id, "next_stage_id": next_stage_id},
+    )
+    if next_stage_id:
+        _record_stage_event(
+            state_file,
+            "stage_lifecycle",
+            "stage_started",
+            {"stage_id": next_stage_id, "previous_stage_id": stage_id},
+        )
+    else:
+        _record_stage_event(
+            state_file,
+            "session",
+            "workflow_completed",
+            {"final_stage_id": stage_id},
+        )
     return next_stage_id
 
 
@@ -900,6 +1009,20 @@ def action_handoff_report(stage_id: str, state: dict[str, Any], state_file: Path
     else:
         lines.append(f"- **Status:** {stage_state.get('status', state.get('current_run', {}).get('status', 'unknown'))}")
     lines.append("")
+
+    # Condense large traces as a handoff sub-step (OpenHands-style context pressure management).
+    try:
+        trace_file = lincoln_trace.get_trace_file(state, state_file)
+        condensation = lincoln_condenser.condense(trace_file)
+        if condensation:
+            lines.append("## Trace Condensation")
+            lines.append(f"- **Events summarized:** {condensation['event_count']}")
+            lines.append(f"- **Threshold:** {condensation.get('threshold', 200)}")
+            lines.append(f"- **Top categories:** {', '.join(condensation.get('categories', {}).keys())}")
+            lines.append("")
+    except Exception:
+        # Condensation is advisory; never break handoff report generation.
+        pass
     lines.append("## Waiting For")
     lines.append(f"- **Waiting for:** {'human' if stage_def.get('human_gate') and not stage_state.get('gate_passed') else 'agent'}")
     lines.append("")

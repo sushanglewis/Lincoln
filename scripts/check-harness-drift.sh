@@ -20,7 +20,7 @@ TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 mkdir -p "$TMP/project" "$TMP/home"
 
-for HARNESS in codex opencode; do
+for HARNESS in claude-code codex opencode; do
     echo "==> Harness smoke generation: $HARNESS"
     if ! "$PYTHON" scripts/lincoln_harness_adapter.py \
         --harness "$HARNESS" --root "$ROOT" \
@@ -31,7 +31,17 @@ for HARNESS in codex opencode; do
     fi
 
     # Drift comparison only when artifacts were generated into the project.
+    # Claude Code uses .claude/ directly; its --check validates source files.
     case "$HARNESS" in
+        claude-code)
+            echo "==> Source consistency check: $HARNESS"
+            if ! "$PYTHON" scripts/lincoln_harness_adapter.py \
+                --harness "$HARNESS" --root "$ROOT" \
+                --project-dir "$ROOT" --home-dir "$HOME" --check; then
+                FAIL=1
+            fi
+            continue
+            ;;
         opencode) MARKER="$ROOT/.opencode" ;;
         codex)
             if [ -e "$ROOT/.codex-plugin" ]; then

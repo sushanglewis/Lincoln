@@ -1,0 +1,18 @@
+schema_version: 1.0.0
+thresholds:
+  prompt_user: 5
+  auto_suggest: 3
+weights:
+  tool_failed: 2
+  tool_rejected: 3
+  retry_spike: 3
+  human_override: 5
+  long_session: 1
+long_session_minutes: 30
+retry_count_threshold: 3
+signals:
+  - tool_failed
+  - tool_rejected
+  - retry_spike
+  - human_override
+  - long_session

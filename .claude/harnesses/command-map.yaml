@@ -244,6 +244,10 @@ commands:
     description: 已有源码项目的 Lincoln 迭代工作流
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"
     args_hint: start --workflow existing-project-iteration
+  lc-wf-framework-self-improvement:
+    description: Lincoln 框架自身持续改进工作流（安全门控、harness 分发、摩擦学习、事件追踪、子代理委托）
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"
+    args_hint: start --workflow framework-self-improvement --issue-number <N>
   lc-wf-interview-to-knowledge:
     description: 从访谈录音到 GitHub Issues 再到 Obsidian 知识库沉淀的标准工作流
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"

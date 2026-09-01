@@ -624,3 +624,44 @@ def test_pre_tool_use_allows_prd_draft_write(process_package_state):
         '{"file_path": "lc-test/pages/docs/prd.html"}',
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_pre_tool_use_blocks_rm_rf_via_security_analyzer(process_package_state):
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "rm -rf /tmp/lc-test-target"}',
+    )
+    assert result.returncode == 1
+    assert "BLOCKED" in result.stderr
+    assert "递归删除" in result.stderr or "删除" in result.stderr
+
+
+def test_pre_tool_use_allows_git_push_via_security_analyzer(process_package_state):
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "git push origin main"}',
+    )
+    assert result.returncode == 0
+
+
+def test_pre_tool_use_logs_security_event_for_rm(process_package_state):
+    repo_root = Path(__file__).resolve().parents[1]
+    log_file = repo_root / "lc-test" / "logs" / "security.log"
+    if log_file.exists():
+        log_file.unlink()
+    result = run_hook(
+        "pre-tool-use.sh",
+        process_package_state,
+        "Bash",
+        '{"command": "rm -rf /tmp/lc-test-target"}',
+    )
+    assert result.returncode == 1
+    assert log_file.exists()
+    entry = json.loads(log_file.read_text(encoding="utf-8").strip().splitlines()[-1])
+    assert entry["tool"] == "Bash"
+    assert entry["policy"] == "recursive-delete"
+    assert entry["action"] == "blocked"

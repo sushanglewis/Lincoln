@@ -1,7 +1,11 @@
 # codex harness manifest
 # 生成:AGENTS.md(项目根,角色契约 + lc-* 命令清单 + 轻量门控)
 #       ~/.codex/prompts/lc-*.md(用户级斜杠命令)
+#       ~/.codex/skills/<skill>/SKILL.md(用户级技能)
 #       .codex-plugin/plugin.json(显式声明 hooks:{} 以关闭默认 hook 回退)
+#       .codex/rules/**/*.md(项目级规则)
+#       .codex/hooks/*.sh(项目级 hook)
+#       .codex/mcp.json(项目级 MCP 配置)
 # spike 备注:codex 官方 docs 对 prompts frontmatter 描述不完整(网络受限),
 # 采用稳妥约定:prompt 文件为纯 markdown 正文;若真实 CLI 验证不符,
 # 移除 prompts target,命令说明已在 AGENTS.md 内联(回退方案零成本)。
@@ -13,8 +17,8 @@ capabilities:
   # (superpowers codex hooks 陷阱 obra/superpowers@7d8d3d4——hooks 字段缺失时
   # codex 回退到默认 hooks/hooks.json)。新增能力必须显式写出;空能力显式置 false,
   # 不得省略字段。验收测试:tests/test_harness_default_off.py
-  hooks: false
-  skills: false
+  hooks: true
+  skills: true
   agents: true        # 经 AGENTS.md 拼接承载
   commands: true
 
@@ -32,6 +36,31 @@ targets:
     output: "{home}/.codex/prompts/{name}.md"
     scope: home
     transform: command-template
+
+  - kind: skill
+    source: .claude/skills/*/SKILL.md
+    output: "{home}/.codex/skills/{parent}/{name}.md"
+    scope: home
+    transform: copy
+
+  - kind: rule
+    source: .claude/rules/**/*.md
+    output: "{project}/.codex/rules/{relative_path}.md"
+    scope: project
+    transform: copy
+    optional: true
+
+  - kind: hook
+    source: .claude/hooks/*.sh
+    output: "{project}/.codex/hooks/{name}.sh"
+    scope: project
+    transform: copy
+
+  - kind: mcp
+    source: .claude/mcp/mcp.yaml
+    output: "{project}/.codex/mcp.json"
+    scope: project
+    transform: mcp-config
 
   - kind: plugin
     source: .claude-plugin/plugin.json

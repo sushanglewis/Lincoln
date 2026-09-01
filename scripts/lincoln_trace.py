@@ -31,7 +31,7 @@ from scripts.lincoln_paths import (  # noqa: E402
     process_package_root,
 )
 
-TRACE_SCHEMA_VERSION = "1.0.0"
+TRACE_SCHEMA_VERSION = "2.0.0"
 
 # Tools whose invocations are not traced to avoid recursion or noise.
 NO_TRACE_TOOLS = {"Read", "Grep", "Glob"}
@@ -44,6 +44,26 @@ TASK_TOOLS = frozenset({
     "TaskList",
     "TaskOutput",
     "TaskStop",
+})
+
+# All valid trace categories. Tool categories are auto-derived; lifecycle categories
+# are written explicitly by stage_loader and hooks.
+VALID_CATEGORIES = frozenset({
+    "tool",
+    "skill",
+    "agent",
+    "read",
+    "write",
+    "edit",
+    "bash",
+    "task",
+    "mcp",
+    "handoff",
+    "other",
+    "stage_lifecycle",
+    "gate",
+    "session",
+    "condensation",
 })
 
 # Maximum length stored for a Bash command summary in the trace entry.
@@ -202,6 +222,11 @@ def _resolve_trace_file(state: dict[str, Any] | None, state_path: Path | None) -
     return trace_dir / "lc-trace.jsonl"
 
 
+def get_trace_file(state: dict[str, Any] | None = None, state_path: Path | None = None) -> Path:
+    """Public accessor for the resolved trace file path."""
+    return _resolve_trace_file(state, state_path)
+
+
 def _get_run_id(state: dict[str, Any] | None, run_id: str | None) -> str:
     if run_id:
         return run_id
@@ -250,12 +275,26 @@ def _build_trace_target(tool: str, args_summary: dict[str, Any]) -> str:
     return str(args_summary.get("path", args_summary.get("name", "")))
 
 
+def _get_node_id(state: dict[str, Any] | None, node_id: str | None) -> str | None:
+    if node_id:
+        return node_id
+    if state:
+        current_run = state.get("current_run", {})
+        # Find the in_progress node for the current stage.
+        current_stage = current_run.get("current_stage", "")
+        for node in state.get("nodes", []):
+            if node.get("stage_id") == current_stage and node.get("status") == "in_progress":
+                return str(node.get("node_id", "")) or None
+    return None
+
+
 def _build_trace_entry(
     tool: str,
     args_summary: dict[str, Any],
     exit_code: int,
     run_id: str,
     stage: str,
+    node_id: str | None = None,
 ) -> dict[str, Any]:
     return {
         "schema_version": TRACE_SCHEMA_VERSION,
@@ -263,6 +302,7 @@ def _build_trace_entry(
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "run_id": run_id,
         "stage": stage,
+        "node_id": node_id,
         "tool": tool,
         "category": categorize_tool(tool),
         "target": _build_trace_target(tool, args_summary),
@@ -290,8 +330,9 @@ def append_trace_entry(
     exit_code: int,
     stage: str | None = None,
     run_id: str | None = None,
+    node_id: str | None = None,
 ) -> Path | None:
-    """Append a single trace entry to the appropriate JSONL file.
+    """Append a single trace entry for a tool invocation.
 
     The write is atomic with respect to other processes on the same host: the
     file is locked while appending, so concurrent parent and child agents do
@@ -303,9 +344,84 @@ def append_trace_entry(
     state = _load_state(state_path)
     resolved_run_id = _get_run_id(state, run_id)
     resolved_stage = _get_stage(state, stage)
+    resolved_node_id = _get_node_id(state, node_id)
     trace_file = _resolve_trace_file(state, state_path)
     args_summary = redact_args(tool, _safe_json_loads(args))
-    entry = _build_trace_entry(tool, args_summary, exit_code, resolved_run_id, resolved_stage)
+    entry = _build_trace_entry(
+        tool, args_summary, exit_code, resolved_run_id, resolved_stage, resolved_node_id
+    )
+    _append_trace_line(trace_file, entry)
+    return trace_file
+
+
+def append_event_entry(
+    state_path: Path | None,
+    category: str,
+    payload: dict[str, Any],
+    stage: str | None = None,
+    run_id: str | None = None,
+    node_id: str | None = None,
+) -> Path | None:
+    """Append a non-tool lifecycle event to the trace.
+
+    Categories must be one of VALID_CATEGORIES. The payload is stored under
+    ``args_summary`` for backward compatibility with existing readers.
+    """
+    if category not in VALID_CATEGORIES:
+        raise ValueError(f"Invalid trace category: {category!r}")
+
+    state = _load_state(state_path)
+    resolved_run_id = _get_run_id(state, run_id)
+    resolved_stage = _get_stage(state, stage)
+    resolved_node_id = _get_node_id(state, node_id)
+    trace_file = _resolve_trace_file(state, state_path)
+
+    entry: dict[str, Any] = {
+        "schema_version": TRACE_SCHEMA_VERSION,
+        "sequence_id": generate_sequence_id(),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "run_id": resolved_run_id,
+        "stage": resolved_stage,
+        "node_id": resolved_node_id,
+        "tool": "",
+        "category": category,
+        "target": str(payload.get("event_type", payload.get("type", "")))[:200],
+        "exit_code": int(payload.get("exit_code", 0)),
+        "args_summary": payload,
+    }
+    _append_trace_line(trace_file, entry)
+    return trace_file
+
+
+def append_event_to_file(
+    trace_file: Path,
+    category: str,
+    payload: dict[str, Any],
+    stage: str | None = None,
+    run_id: str | None = None,
+    node_id: str | None = None,
+) -> Path:
+    """Append a non-tool lifecycle event to an explicit trace file path.
+
+    This variant is useful when the caller has already resolved the trace file
+    (e.g. the condenser) and wants to avoid re-resolving it from state.
+    """
+    if category not in VALID_CATEGORIES:
+        raise ValueError(f"Invalid trace category: {category!r}")
+
+    entry: dict[str, Any] = {
+        "schema_version": TRACE_SCHEMA_VERSION,
+        "sequence_id": generate_sequence_id(),
+        "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "run_id": run_id or "unknown",
+        "stage": stage or "unknown",
+        "node_id": node_id or "unknown",
+        "tool": "",
+        "category": category,
+        "target": str(payload.get("event_type", payload.get("type", "")))[:200],
+        "exit_code": int(payload.get("exit_code", 0)),
+        "args_summary": payload,
+    }
     _append_trace_line(trace_file, entry)
     return trace_file
 
