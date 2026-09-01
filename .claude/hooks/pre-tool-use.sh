@@ -237,7 +237,7 @@ if is_side_effect "$TOOL_NAME"; then
 
     if [[ "$CONFIRM_REQUIRED" == "True" ]]; then
         echo "BLOCKED: $SECURITY_MESSAGE" >&2
-        echo "Run: python3 scripts/stage_loader.py --stage $CURRENT_STAGE --action approve-gate --approved-by human-pm" >&2
+        echo "Run: $PYTHON $FRAMEWORK_ROOT/scripts/stage_loader.py --stage $CURRENT_STAGE --action approve-gate --approved-by human-pm" >&2
         exit 1
     fi
 fi
