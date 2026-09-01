@@ -100,6 +100,28 @@
             { "type": "null" }
           ],
           "description": "Agent role to hand off to at stage end"
+        },
+        "parallel_specialists": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "default": [],
+          "description": "Specialist agents that may be invoked in parallel during this stage"
+        },
+        "merge_strategy": {
+          "type": "string",
+          "enum": ["priority", "vote", "consensus"],
+          "default": "priority",
+          "description": "How to combine outputs from parallel specialists"
+        },
+        "output_schema": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "null" }
+          ],
+          "description": "JSON Schema path for structured specialist outputs"
         }
       },
       "additionalProperties": false
