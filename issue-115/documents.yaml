@@ -1,7 +1,7 @@
 process_slug: issue-115
 issue_number: '115'
-current_stage: phase-2-p1-implement
-last_updated: '2026-09-01T05:16:35Z'
+current_stage: sync-knowledge
+last_updated: '2026-09-01T05:30:08Z'
 documents:
 - path: .claude/harnesses/codex.yaml
   stage: phase-1-p0-implement
@@ -40,10 +40,10 @@ documents:
   version: null
 - path: .claude/policies/friction.yaml
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: .claude/policies/security.yaml
   stage: phase-2-p1-implement
@@ -54,10 +54,10 @@ documents:
   version: null
 - path: .claude/schemas/design-review-feedback.json
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: designs/phase-1-p0-harness-security-design.md
   stage: phase-1-p0-design
@@ -124,17 +124,17 @@ documents:
   version: null
 - path: scripts/lincoln_condenser.py
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: scripts/lincoln_friction.py
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: scripts/lincoln_harness_adapter.py
   stage: phase-1-p0-implement
@@ -145,24 +145,24 @@ documents:
   version: null
 - path: scripts/lincoln_mr_mine.py
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: scripts/lincoln_recall.py
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: scripts/lincoln_trace.py
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: scripts/security_analyzer.py
   stage: phase-2-p1-implement
@@ -173,10 +173,10 @@ documents:
   version: null
 - path: scripts/stage_loader.py
   stage: phase-2-p1-implement
-  status: in_progress
-  gate_passed: false
+  status: completed
+  gate_passed: true
   human_confirmed: false
-  approved_by: null
+  approved_by: system
   version: null
 - path: tests/test_harness_adapter_extended.py
   stage: phase-1-p0-implement
