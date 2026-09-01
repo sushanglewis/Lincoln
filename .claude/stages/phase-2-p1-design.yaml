@@ -1,0 +1,53 @@
+schema_version: 3.0.0
+id: phase-2-p1-design
+name: Phase 2 P1 Design
+description: 'Design Phase 2 / P1 recommendations from the LEW-70 research baseline:
+
+  friction-based learning + recall precheck, EventLog + Condenser,
+
+  skill marketplace + git caching, sub-agent delegation, and MR knowledge mining.
+
+  '
+prerequisite_stage: phase-1-p0-implement
+next_stage: phase-2-p1-implement
+human_gate: true
+agent:
+  primary: lc-architect
+  reviewers:
+  - lc-engineer
+  - lc-researcher
+  handoff_to: lc-pm
+  parallel_specialists:
+  - lc-architect
+  - lc-security-reviewer
+  merge_strategy: priority
+  output_schema: .claude/schemas/design-review-feedback.json
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/designs/phase-2-p1-learning-eventlog-subagents-design.md'
+context:
+  goal: 'Produce an approved design document for P1 borrowable patterns before
+
+    any implementation PR is opened.
+
+    '
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - human_gate 必须获得人类 PM 显式确认。
+
+    - Lincoln 不自研底层执行器；所有设计必须适配 Claude Code / Codex / OpenCode。
+
+    '
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - phase-1-p0-implement
+  exit:
+  - check: artifacts_present
+  - check: human_approved
+workflows:
+- framework-self-improvement

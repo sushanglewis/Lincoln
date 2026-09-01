@@ -38,6 +38,10 @@ docs/knowledge/.obsidian/graph.json
 # Session trace files (instance-level, not committed)
 */.trace/
 
+# Generated harness artifacts (local-only)
+.codex/
+AGENTS.md
+
 # Python virtual environments
 .venv/
 venv/

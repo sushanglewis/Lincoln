@@ -1,0 +1,100 @@
+workflow:
+  name: framework-self-improvement
+  version: 1.0.0
+  description: 持续改进 Lincoln 框架本身的工作流（安全门控、harness 分发、摩擦学习、事件追踪、子代理委托）
+  execution_mode: team
+  engine: everything-claude-code
+
+  steps:
+    - id: workflow-router
+      name: 工作流路由
+      description: 会话开场引导后，选择最适合当前场景的工作流模板
+      action: lc-workflow-router
+
+    - id: clarify
+      name: 需求澄清
+      description: 与人类 PM 多轮澄清，形成统一需求文档
+      human_gate: true
+      action: clarify-requirements
+      artifacts:
+        - "{process_slug}/pages/docs/requirements.html"
+      exit_checks:
+        - check: requirements_has_background_problem_solution_acceptance
+        - check: human_approved
+
+    - id: explore-opensource
+      name: 开源方案探索
+      description: 调研可复用的开源方案并记录决策
+      action: lc-explore-opensource
+      artifacts:
+        - "{process_slug}/docs/research/{change_name}-oss-options.md"
+      exit_checks:
+        - check: oss_research_complete
+
+    - id: phase-1-p0-design
+      name: Phase 1 P0 设计
+      description: 设计 P0 安全门控与 harness 分发方案
+      human_gate: true
+      action: draft-product-design
+      artifacts:
+        - "{process_slug}/designs/phase-1-p0-harness-security-design.md"
+      exit_checks:
+        - check: design_docs_complete
+        - check: design_docs_human_approved
+
+    - id: phase-1-p0-implement
+      name: Phase 1 P0 实现
+      description: 实现 P0 安全门控与 harness 分发
+      action: implement
+      artifacts:
+        - ".claude/policies/security.yaml"
+        - ".claude/hooks/pre-tool-use.sh"
+        - ".claude/hooks/hooks.yaml"
+        - ".claude/mcp/mcp.yaml"
+        - ".claude/harnesses/codex.yaml"
+        - ".claude/harnesses/opencode.yaml"
+        - "scripts/security_analyzer.py"
+        - "scripts/lincoln_harness_adapter.py"
+        - "scripts/lincoln-setup.py"
+        - "scripts/check-harness-drift.sh"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: phase-2-p1-design
+      name: Phase 2 P1 设计
+      description: 设计 P1 摩擦学习、事件追踪扩展、子代理委托与 MR 知识挖掘方案
+      human_gate: true
+      action: draft-product-design
+      artifacts:
+        - "{process_slug}/designs/phase-2-p1-learning-eventlog-subagents-design.md"
+      exit_checks:
+        - check: design_docs_complete
+        - check: design_docs_human_approved
+
+    - id: phase-2-p1-implement
+      name: Phase 2 P1 实现
+      description: 实现 P1 摩擦学习、事件追踪扩展、子代理委托与 MR 知识挖掘
+      action: implement
+      artifacts:
+        - ".claude/policies/friction.yaml"
+        - ".claude/schemas/design-review-feedback.json"
+        - "scripts/lincoln_friction.py"
+        - "scripts/lincoln_recall.py"
+        - "scripts/lincoln_condenser.py"
+        - "scripts/lincoln_mr_mine.py"
+        - "scripts/lincoln_trace.py"
+        - "scripts/stage_loader.py"
+      exit_checks:
+        - check: artifacts_present
+
+    - id: sync-knowledge
+      name: 同步到知识库
+      description: 将业务与技术知识沉淀到 Obsidian vault
+      trigger: on_pr_merge
+      action: sync-to-knowledge
+      artifacts:
+        - "knowledge/03-features/{feature_slug}.md"
+      exit_checks:
+        - check: feature_doc_has_business_and_technical_sections
+        - check: feature_doc_has_links
+        - check: no_conflict_with_existing_knowledge

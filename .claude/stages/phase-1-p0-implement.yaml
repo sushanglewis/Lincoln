@@ -1,0 +1,47 @@
+schema_version: 3.0.0
+id: phase-1-p0-implement
+name: Phase 1 P0 Implement
+description: 'Implement Phase 1 / P0 recommendations from the approved design document.
+
+  '
+prerequisite_stage: phase-1-p0-design
+next_stage: phase-2-p1-design
+human_gate: false
+agent:
+  primary: lc-engineer
+  reviewers:
+  - lc-qa
+  handoff_to: lc-pm
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - .claude/policies/security.yaml
+  - .claude/hooks/pre-tool-use.sh
+  - .claude/hooks/hooks.yaml
+  - .claude/mcp/mcp.yaml
+  - .claude/harnesses/codex.yaml
+  - .claude/harnesses/opencode.yaml
+  - scripts/security_analyzer.py
+  - scripts/lincoln_harness_adapter.py
+  - scripts/lincoln-setup.py
+  - scripts/check-harness-drift.sh
+context:
+  goal: 'Implement the approved P0 design and verify with tests and static checks.
+
+    '
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - 所有变更必须通过测试与 static-check.sh。
+
+    '
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - phase-1-p0-design
+  exit:
+  - check: artifacts_present
+workflows:
+- framework-self-improvement

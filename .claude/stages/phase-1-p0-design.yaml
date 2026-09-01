@@ -1,0 +1,44 @@
+schema_version: 3.0.0
+id: phase-1-p0-design
+name: Phase 1 P0 Design
+description: 'Design Phase 1 / P0 recommendations from the LEW-70 research baseline:
+
+  SecurityAnalyzer + ConfirmationPolicy, harness distribution for
+
+  Claude Code/Codex/OpenCode, and declarative hook/MCP configuration.
+
+  '
+prerequisite_stage: explore-opensource
+next_stage: phase-1-p0-implement
+human_gate: true
+agent:
+  primary: lc-architect
+  reviewers:
+  - lc-engineer
+  handoff_to: lc-pm
+skills:
+  required: []
+  optional: []
+artifacts:
+  required:
+  - '{process_slug}/designs/phase-1-p0-harness-security-design.md'
+context:
+  goal: 'Produce an approved design document for the highest-priority borrowable
+
+    patterns before any implementation PR is opened.
+
+    '
+  constraints: '- 仅通过 scripts/stage_loader.py 更新 {process_slug}/workflow-stage.yaml。
+
+    - human_gate 必须获得人类 PM 显式确认。
+
+    '
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - explore-opensource
+  exit:
+  - check: artifacts_present
+workflows:
+- framework-self-improvement
