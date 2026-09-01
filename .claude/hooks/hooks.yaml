@@ -1,0 +1,37 @@
+---
+schema_version: 1.0.0
+description: |
+  Declarative hook registry for Lincoln.
+  Each entry declares the shell hook file, the events it handles, the harnesses
+  it applies to, and its execution order. Lower order values run first.
+
+hooks:
+  - name: pre-tool-use
+    file: pre-tool-use.sh
+    events: [pre_tool_use]
+    harnesses: [claude-code, codex, opencode]
+    order: 10
+
+  - name: on-session-start
+    file: on-session-start.sh
+    events: [session_start]
+    harnesses: [claude-code]
+    order: 10
+
+  - name: on-stop
+    file: on-stop.sh
+    events: [session_stop]
+    harnesses: [claude-code]
+    order: 10
+
+  - name: post-tool-use
+    file: post-tool-use.sh
+    events: [post_tool_use]
+    harnesses: [claude-code]
+    order: 10
+
+  - name: on-pr-event
+    file: on-pr-event.sh
+    events: [pull_request]
+    harnesses: [claude-code]
+    order: 10

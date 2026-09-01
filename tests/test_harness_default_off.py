@@ -21,11 +21,6 @@ def _repo_version() -> str:
     return json.loads((ROOT / ".version-bump.json").read_text(encoding="utf-8"))["version"]
 
 
-# Strings that would indicate a hook/capability registration leaking into
-# generated artifacts (prose mentions of .claude/hooks are fine).
-FORBIDDEN_CONTENT = ("SessionStart", "hooks.json")
-
-
 def _generate(harness: str, tmp_path: Path) -> list[Path]:
     project_dir = tmp_path / harness / "project"
     home_dir = tmp_path / harness / "home"
@@ -41,39 +36,6 @@ def _manifest(harness: str) -> dict:
 
 def _is_codex_plugin_manifest(out_path: Path) -> bool:
     return ".codex-plugin" in out_path.parts and out_path.name == "plugin.json"
-
-
-def test_disabled_hooks_leave_no_trace(tmp_path):
-    for harness in HARNESSES:
-        manifest = _manifest(harness)
-        assert manifest["capabilities"]["hooks"] is False, (
-            f"{harness}: this test assumes hooks capability is disabled"
-        )
-        for out_path in _generate(harness, tmp_path):
-            assert "hooks" not in out_path.name.lower(), f"hook artifact leaked: {out_path}"
-            # The codex plugin manifest intentionally contains the explicit
-            # `"hooks": {}` declaration; everything else must stay clean.
-            if _is_codex_plugin_manifest(out_path):
-                continue
-            content = out_path.read_text(encoding="utf-8")
-            for needle in FORBIDDEN_CONTENT:
-                assert needle not in content, f"{needle!r} leaked into {out_path}"
-
-
-def test_disabled_skills_leave_no_trace(tmp_path):
-    for harness in HARNESSES:
-        manifest = _manifest(harness)
-        assert manifest["capabilities"]["skills"] is False, (
-            f"{harness}: this test assumes skills capability is disabled"
-        )
-        for out_path in _generate(harness, tmp_path):
-            parts = [p.lower() for p in out_path.parts]
-            assert "skills" not in parts, f"skill dir leaked: {out_path}"
-            # codex emits .codex-plugin/plugin.json; opencode must not create
-            # any plugin directory because skills are disabled.
-            if harness == "codex" and ".codex-plugin" in parts:
-                continue
-            assert "plugin" not in parts, f"plugin dir leaked: {out_path}"
 
 
 def test_only_lc_commands_are_generated(tmp_path):

@@ -1,0 +1,34 @@
+---
+schema_version: 1.0.0
+description: |
+  Declarative MCP server configuration for Lincoln.
+  This file is the single source of truth; `scripts/lincoln_harness_adapter.py`
+  distributes it to Codex / OpenCode harnesses in their native formats.
+  Sensitive values use `${VAR}` placeholders and are resolved from `.env` or the
+  runtime environment. Never commit real secrets.
+
+servers:
+  pencil:
+    command: npx
+    args:
+      - "-y"
+      - "@pencil/mcp-server"
+    env:
+      PENCIL_API_KEY: ${PENCIL_API_KEY}
+    enabled: true
+    description: Pencil design-file MCP server for .pen import/export.
+    harness_overrides:
+      codex:
+        enabled: false
+      opencode:
+        enabled: false
+
+  github:
+    command: npx
+    args:
+      - "-y"
+      - "@modelcontextprotocol/server-github"
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PERSONAL_ACCESS_TOKEN}
+    enabled: true
+    description: GitHub operations - issues, PRs, repos.
