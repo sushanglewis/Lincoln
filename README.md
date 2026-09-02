@@ -56,6 +56,61 @@ lincoln install --yes --harnesses claude-code,opencode
 ```
 
 > **注意**：**必须执行 `lincoln install`**，才会把 hooks、agents、skills、scripts 等完整运行时体系同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。
+>
+> `lincoln install` 会自动把 Lincoln 的 lifecycle hooks 注册到 `~/.claude/settings.json`，使用 Claude Code 官方要求的 array-of-objects 格式。如果之前手动添加过 string 格式的 hooks 或注册丢失，可以运行 `lincoln hooks install --yes` 修复。
+>
+> 注册后的 hooks 示例（`~/.claude/settings.json`）：
+>
+> ```json
+> {
+>   "hooks": {
+>     "SessionStart": [
+>       {
+>         "hooks": [
+>           {
+>             "type": "command",
+>             "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-session-start.sh",
+>             "timeout": 60
+>           }
+>         ]
+>       }
+>     ],
+>     "PreToolUse": [
+>       {
+>         "hooks": [
+>           {
+>             "type": "command",
+>             "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/pre-tool-use.sh",
+>             "timeout": 5
+>           }
+>         ]
+>       }
+>     ],
+>     "PostToolUse": [
+>       {
+>         "hooks": [
+>           {
+>             "type": "command",
+>             "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/post-tool-use.sh",
+>             "timeout": 10
+>           }
+>         ]
+>       }
+>     ],
+>     "Stop": [
+>       {
+>         "hooks": [
+>           {
+>             "type": "command",
+>             "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-stop.sh",
+>             "timeout": 10
+>           }
+>         ]
+>       }
+>     ]
+>   }
+> }
+> ```
 
 如果之前安装过旧版 `lincoln-install`，需要先卸载（旧包与新版 bin 名冲突）：
 

@@ -1,6 +1,46 @@
 {
-  "onSessionStart": ".claude/hooks/on-session-start.sh",
-  "onStop": ".claude/hooks/on-stop.sh",
-  "preToolUse": ".claude/hooks/pre-tool-use.sh",
-  "postToolUse": ".claude/hooks/post-tool-use.sh"
+  "SessionStart": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-session-start.sh",
+          "timeout": 60
+        }
+      ]
+    }
+  ],
+  "PreToolUse": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/pre-tool-use.sh",
+          "timeout": 5
+        }
+      ]
+    }
+  ],
+  "PostToolUse": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/post-tool-use.sh",
+          "timeout": 10
+        }
+      ]
+    }
+  ],
+  "Stop": [
+    {
+      "hooks": [
+        {
+          "type": "command",
+          "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-stop.sh",
+          "timeout": 10
+        }
+      ]
+    }
+  ]
 }

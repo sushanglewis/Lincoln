@@ -26,7 +26,60 @@ npm install -g @sushanglewis/lincoln
 lincoln install
 ```
 
-`lincoln install` 会把 Lincoln 运行时框架同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。项目侧只需保留 `.lincoln.yaml` 标记即可激活；没有标记的项目中 Lincoln hooks 会静默退出，不会污染空目录。
+`lincoln install` 会把 Lincoln 运行时框架同步到 `~/.claude/`、`~/.codex/`、`~/.opencode/`。对于 Claude Code，它还会把 Lincoln 的 lifecycle hooks 以 array-of-objects 格式写入 `~/.claude/settings.json`，例如：
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-session-start.sh",
+            "timeout": 60
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/pre-tool-use.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/post-tool-use.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-stop.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+如果 settings.json 中已存在其他 hooks，`lincoln install` 会保留它们并只更新 Lincoln 自己的条目。若 hooks 注册丢失或使用了旧的 string 格式，可运行 `lincoln hooks install --yes` 修复。项目侧只需保留 `.lincoln.yaml` 标记即可激活；没有标记的项目中 Lincoln hooks 会静默退出，不会污染空目录。
 
 常用命令：
 
@@ -34,6 +87,7 @@ lincoln install
 - `lincoln update` — 拉取最新版本并重新同步
 - `lincoln use <version>` — 切换已安装的全局版本
 - `lincoln doctor` — 诊断安装状态
+- `lincoln hooks install` — 修复或重新注册 Claude Code hooks 到 `~/.claude/settings.json`
 - `lincoln init-project` — 在当前项目创建 `.lincoln.yaml`
 - `lincoln migrate-project` — 从旧 vendored 框架模型迁移到全局插件模型
 - `lincoln record` — 启动访谈录音 TUI

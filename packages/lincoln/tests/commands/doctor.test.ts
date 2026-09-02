@@ -55,6 +55,62 @@ describe('doctor', () => {
       managedFiles: []
     })
     fs.writeFileSync(path.join(tmpDir, '.lincoln.yaml'), 'enabled: true\n')
+    fs.mkdirSync(paths.claudeDir, { recursive: true })
+    fs.writeFileSync(
+      path.join(paths.claudeDir, 'settings.json'),
+      JSON.stringify(
+        {
+          hooks: {
+            SessionStart: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: '${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-session-start.sh',
+                    timeout: 60
+                  }
+                ]
+              }
+            ],
+            PreToolUse: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: '${CLAUDE_PLUGIN_ROOT}/.claude/hooks/pre-tool-use.sh',
+                    timeout: 5
+                  }
+                ]
+              }
+            ],
+            PostToolUse: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: '${CLAUDE_PLUGIN_ROOT}/.claude/hooks/post-tool-use.sh',
+                    timeout: 10
+                  }
+                ]
+              }
+            ],
+            Stop: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: '${CLAUDE_PLUGIN_ROOT}/.claude/hooks/on-stop.sh',
+                    timeout: 10
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        null,
+        2
+      )
+    )
 
     const result = await doctor({ json: true }, makeDeps())
     expect(result.code).toBe(0)

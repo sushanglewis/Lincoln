@@ -63,6 +63,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     'init-project',
     'migrate-project',
     'record',
+    'hooks',
     'help',
     '--help',
     '-h'

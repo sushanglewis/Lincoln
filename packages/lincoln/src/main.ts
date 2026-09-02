@@ -3,6 +3,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from './cli.js'
 import { doctor } from './commands/doctor.js'
+import { hooksInstall } from './commands/hooks.js'
 import { initProject } from './commands/initProject.js'
 import { install } from './commands/install.js'
 import { update } from './commands/update.js'
@@ -24,6 +25,7 @@ Commands:
   init-project     Create .lincoln.yaml in current project
   migrate-project  Remove vendored framework files from an existing project
   record           Launch the Lincoln interview recorder TUI
+  hooks install    Repair or re-register Lincoln hooks in ~/.claude/settings.json
   help             Show this help message
 
 Options:
@@ -109,6 +111,19 @@ export async function main(argv: string[]): Promise<number> {
 
   if (parsed.command === 'record') {
     return record(parsed.args)
+  }
+
+  if (parsed.command === 'hooks') {
+    const subcommand = parsed.args[0] || 'install'
+    if (subcommand !== 'install' && subcommand !== 'uninstall' && subcommand !== 'status') {
+      console.error(`Usage: lincoln hooks install [--yes] [--dry-run]`)
+      return 1
+    }
+    return hooksInstall({
+      subcommand: subcommand as 'install' | 'uninstall' | 'status',
+      dryRun: Boolean(parsed.flags['dry-run']),
+      yes: Boolean(parsed.flags.yes || parsed.flags.y)
+    })
   }
 
   console.log(USAGE)

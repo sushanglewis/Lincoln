@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process'
 import type { LincolnPaths } from '../lib/paths.js'
 import { resolveLincolnPaths } from '../lib/paths.js'
 import { readVersionMarker } from '../lib/versionMarker.js'
+import { isLincolnHookCommand } from '../lib/syncClaude.js'
 
 export interface DoctorCheck {
   name: string
@@ -58,6 +59,7 @@ export async function doctor(
   checks.push(await checkNpm(deps.npmVersion))
   checks.push(checkGlobalMarker(deps.paths))
   checks.push(checkPayloadHooks(deps.paths))
+  checks.push(checkSettingsHooks(deps.paths))
   checks.push(checkVenv(deps.paths))
   checks.push(checkProjectMarker(deps.projectRoot))
 
@@ -145,6 +147,75 @@ function checkPayloadHooks(paths: LincolnPaths): DoctorCheck {
     return { name: 'payload-hooks', status: 'warn', message: `Missing hooks: ${missing.join(', ')}` }
   }
   return { name: 'payload-hooks', status: 'ok', message: `Payload hooks present at ${hooksDir}` }
+}
+
+function checkSettingsHooks(paths: LincolnPaths): DoctorCheck {
+  const settingsPath = path.join(paths.claudeDir, 'settings.json')
+  if (!fs.existsSync(settingsPath)) {
+    return { name: 'settings-hooks', status: 'warn', message: `No ~/.claude/settings.json found` }
+  }
+  let settings: Record<string, unknown>
+  try {
+    settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')) as Record<string, unknown>
+  } catch (err) {
+    return {
+      name: 'settings-hooks',
+      status: 'error',
+      message: `Failed to parse ${settingsPath}: ${err instanceof Error ? err.message : String(err)}`
+    }
+  }
+  const hooks = settings.hooks
+  if (hooks === undefined || hooks === null) {
+    return { name: 'settings-hooks', status: 'warn', message: 'No hooks key in ~/.claude/settings.json' }
+  }
+  if (typeof hooks !== 'object') {
+    return { name: 'settings-hooks', status: 'error', message: 'hooks key is not an object' }
+  }
+  const requiredEvents = ['SessionStart', 'PreToolUse', 'PostToolUse', 'Stop']
+  const missingEvents: string[] = []
+  const malformedEvents: string[] = []
+  for (const eventName of requiredEvents) {
+    const eventHooks = (hooks as Record<string, unknown>)[eventName]
+    if (eventHooks === undefined) {
+      missingEvents.push(eventName)
+      continue
+    }
+    if (!Array.isArray(eventHooks)) {
+      malformedEvents.push(`${eventName} (not an array)`)
+      continue
+    }
+    let hasLincolnHook = false
+    for (const entry of eventHooks) {
+      if (typeof entry === 'object' && entry !== null) {
+        const innerHooks = (entry as Record<string, unknown>).hooks
+        if (Array.isArray(innerHooks)) {
+          for (const h of innerHooks) {
+            if (
+              typeof h === 'object' &&
+              h !== null &&
+              (h as Record<string, unknown>).type === 'command' &&
+              typeof (h as Record<string, unknown>).command === 'string' &&
+              isLincolnHookCommand((h as Record<string, unknown>).command as string)
+            ) {
+              hasLincolnHook = true
+              break
+            }
+          }
+        }
+      }
+      if (hasLincolnHook) break
+    }
+    if (!hasLincolnHook) {
+      malformedEvents.push(`${eventName} (no Lincoln hook)`)
+    }
+  }
+  if (missingEvents.length > 0 || malformedEvents.length > 0) {
+    const parts: string[] = []
+    if (missingEvents.length > 0) parts.push(`missing: ${missingEvents.join(', ')}`)
+    if (malformedEvents.length > 0) parts.push(`malformed: ${malformedEvents.join(', ')}`)
+    return { name: 'settings-hooks', status: 'error', message: parts.join('; ') }
+  }
+  return { name: 'settings-hooks', status: 'ok', message: 'Lincoln hooks registered in ~/.claude/settings.json' }
 }
 
 function checkVenv(paths: LincolnPaths): DoctorCheck {
