@@ -12,9 +12,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.6.3-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.7.0-blue)](RELEASE.md)
 
-**v1.6.3** 已发布：新增 SecurityAnalyzer 安全门控、Trace 2.0 事件日志与会话摩擦学习/知识召回能力，clarify 阶段支持多维度相关者分析。
+**v1.7.0** 已发布：新增 SecurityAnalyzer 安全门控、Trace 2.0 事件日志与会话摩擦学习/知识召回能力，clarify 阶段支持多维度相关者分析。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 

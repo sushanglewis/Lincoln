@@ -12,9 +12,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.6.3-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.7.0-blue)](RELEASE.md)
 
-**v1.6.3** is released: SecurityAnalyzer pre-tool-use gating, Trace 2.0 event log, session friction scoring and knowledge recall, plus multi-dimensional stakeholder analysis in the clarify stage.
+**v1.7.0** is released: SecurityAnalyzer pre-tool-use gating, Trace 2.0 event log, session friction scoring and knowledge recall, plus multi-dimensional stakeholder analysis in the clarify stage.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
