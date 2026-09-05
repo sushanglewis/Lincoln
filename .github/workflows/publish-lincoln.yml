@@ -4,6 +4,15 @@ name: Publish @sushanglewis/lincoln
   push:
     tags:
       - 'lincoln-v*'
+  # Manual retry for tags pushed by CI: GITHUB_TOKEN tag pushes do not
+  # trigger downstream workflows (GitHub recursion guard), so a tag created
+  # by release-on-merge.yml needs this dispatch to actually publish.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to publish, e.g. lincoln-v1.7.0'
+        required: true
+        type: string
 
 jobs:
   publish:
@@ -16,6 +25,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref_name }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -26,8 +37,12 @@ jobs:
       - name: Extract version from tag
         id: meta
         env:
-          REF_NAME: ${{ github.ref_name }}
+          REF_NAME: ${{ inputs.tag || github.ref_name }}
         run: |
+          if [[ "$REF_NAME" != lincoln-v* ]]; then
+            echo "Expected a lincoln-v* tag, got: $REF_NAME" >&2
+            exit 1
+          fi
           TAG="${REF_NAME#lincoln-v}"
           echo "version=$TAG" >> "$GITHUB_OUTPUT"
 
