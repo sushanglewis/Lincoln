@@ -14,7 +14,7 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 [![Release](https://img.shields.io/badge/release-v1.6.3-blue)](RELEASE.md)
 
-**v1.6.3** 已发布：Lincoln 切换为全局 npm 插件模型，通过 `npm install -g @sushanglewis/lincoln` 安装，项目侧使用 `.lincoln.yaml` 选择性激活。
+**v1.6.3** 已发布：新增 SecurityAnalyzer 安全门控、Trace 2.0 事件日志与会话摩擦学习/知识召回能力，clarify 阶段支持多维度相关者分析。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
@@ -212,6 +212,7 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 
 | 版本 | 日期 | 关键能力 |
 |---|---|---|
+| v1.7.0 | 2026-09-05 | SecurityAnalyzer 安全门控；Trace 2.0 事件日志；摩擦学习/知识召回/Trace 浓缩/MR 挖掘；并行专家子代理委托；相关者分析模型 |
 | v1.6.3 | 2026-08-15 | Markdown-first issue-package 文档；`--render-stage` 批量渲染；Mermaid 图表本地渲染 |
 | v1.6.2 | 2026-08-12 | `lc-init-branch` 改读全局 Lincoln 模板 |
 | v1.6.1 | 2026-08-11 | `lc-one-id` 产物追溯 skill；portal 注解对齐 |

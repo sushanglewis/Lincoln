@@ -14,7 +14,7 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 [![Release](https://img.shields.io/badge/release-v1.6.3-blue)](RELEASE.md)
 
-**v1.6.3** is released: Lincoln switches to a global npm plugin model. Install with `npm install -g @sushanglewis/lincoln`; projects opt in via `.lincoln.yaml`.
+**v1.6.3** is released: SecurityAnalyzer pre-tool-use gating, Trace 2.0 event log, session friction scoring and knowledge recall, plus multi-dimensional stakeholder analysis in the clarify stage.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
@@ -212,6 +212,7 @@ Before submitting a PR, please read:
 
 | Version | Date | Key capabilities |
 |---|---|---|
+| v1.7.0 | 2026-09-05 | SecurityAnalyzer gating; Trace 2.0 event log; friction scoring/knowledge recall/trace condensation/MR mining; parallel specialist delegation; stakeholder analysis model |
 | v1.6.3 | 2026-08-15 | Markdown-first issue-package documents; `--render-stage` batch rendering; local `mermaid.min.js` runtime |
 | v1.6.2 | 2026-08-12 | `lc-init-branch` reads global Lincoln templates |
 | v1.6.1 | 2026-08-11 | `lc-one-id` artifact traceability; portal annotation alignment |

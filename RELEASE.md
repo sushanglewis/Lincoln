@@ -1,3 +1,25 @@
+# Lincoln v1.7.0 Release Notes
+
+**Release date:** 2026-09-05
+
+## Highlights
+
+- **SecurityAnalyzer pre-tool-use 安全门控 (#115)** — 新增 `scripts/security_analyzer.py` 与 `.claude/policies/security.yaml`：对 Bash 副作用命令（`rm -rf`、强推、危险重定向等）做风险分类与策略匹配，命中时要求人类确认后才允许执行；包含路径规范化与命令分段解析的防绕过修复。
+- **Harness 分发能力翻转 (#115)** — hooks/skills 从默认关闭翻转为默认启用（opt-out）；新增 `.claude/harnesses/hooks.yaml` 与 `.claude/harnesses/mcp.yaml` 声明式配置，`lincoln_harness_adapter.py` 为 codex/opencode 生成对应产物，保持三 harness 无漂移。
+- **Trace 2.0 事件日志 (#115)** — Trace schema 升级到 2.0.0：阶段生命周期、gate 审批、产物记录、工作流完成等事件自动落盘到实例级 `.trace/`，支持 `node_id` 关联与后续审计分析。
+- **P1 学习能力四件套 (#115)** — 会话结束时 `lincoln_friction.py` 对会话摩擦打分（`friction.yaml` 策略）；会话开始时 `lincoln_recall.py` 按当前阶段召回相关知识；`lincoln_condenser.py` 对超长 trace 做浓缩摘要；`lincoln_mr_mine.py` 提供 GitHub PR/MR 模式挖掘 CLI。
+- **并行专家子代理委托 (#115)** — stage 定义新增 `agent.parallel_specialists`、`merge_strategy`（priority/vote/consensus）与 `output_schema`，`stage_loader` 在阶段准入时校验委托配置；新增 `lc-security-reviewer` 安全审查角色与设计评审反馈 JSON schema。
+- **framework-self-improvement 工作流 (#115)** — 注册 `phase-1-p0-design/implement`、`phase-2-p1-design/implement` 四个阶段，形成「调研 → 设计 → 实现 → 学习」的框架自我改进闭环，并接入 `lc-wf-framework-self-improvement` 命令。
+- **多维度相关者分析模型 (#114)** — `clarify` 阶段新增 `stakeholders.html` 必需产物，`clarify-requirements` prompt 增加相关者识别/影响力-态度分析步骤，PM 角色职责同步更新。
+
+## Migration Notes
+
+- 全局插件用户升级：`npm update -g @sushanglewis/lincoln` 后重跑 `lincoln install --yes`，把新 hooks、安全策略与技能同步到 `~/.claude/`（以及 codex/opencode 对应目录）。
+- 安全门控默认生效且为人类确认制（confirm_required），不是自动阻断；策略可在项目 `.claude/policies/security.yaml` 中按需调整。
+- 无破坏性变更：现有 issue 工作包、`.lincoln.yaml` 激活方式与阶段协议均保持兼容。
+
+---
+
 # Lincoln v1.6.3 Release Notes
 
 **Release date:** 2026-08-14
