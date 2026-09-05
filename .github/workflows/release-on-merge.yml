@@ -23,7 +23,9 @@ concurrency:
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true
+    # `release:skip` label opts a chore/workflow-only PR out of the version
+    # bump (e.g. CI fixes that must not mint a new version).
+    if: github.event.pull_request.merged == true && !contains(github.event.pull_request.labels.*.name, 'release:skip')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main at merge commit
