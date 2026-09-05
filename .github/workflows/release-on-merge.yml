@@ -42,6 +42,11 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install Python dependencies
+        # bump_version.py regenerates harness artifacts via
+        # scripts/lincoln_harness_adapter.py, which imports yaml.
+        run: pip install -r requirements.txt
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -52,6 +57,8 @@ jobs:
 
       - name: Read current version
         id: version
+        env:
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
         run: |
           CURRENT=$(jq -r '.version' .version-bump.json)
           if [[ ! "$CURRENT" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -59,10 +66,23 @@ jobs:
             exit 1
           fi
           IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
-          NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+          # PR labels control the bump size: `release:major` / `release:minor`
+          # (feature releases); default is patch.
+          BUMP_TYPE="patch"
+          if echo "$PR_LABELS" | grep -q '"release:major"'; then
+            BUMP_TYPE="major"
+          elif echo "$PR_LABELS" | grep -q '"release:minor"'; then
+            BUMP_TYPE="minor"
+          fi
+          case "$BUMP_TYPE" in
+            major) NEW_VERSION="$((MAJOR + 1)).0.0" ;;
+            minor) NEW_VERSION="${MAJOR}.$((MINOR + 1)).0" ;;
+            *)     NEW_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))" ;;
+          esac
           echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
           echo "next=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-          echo "Will bump $CURRENT -> $NEW_VERSION"
+          echo "bump_type=$BUMP_TYPE" >> "$GITHUB_OUTPUT"
+          echo "Will bump ($BUMP_TYPE) $CURRENT -> $NEW_VERSION"
 
       - name: Bump version across manifests
         env:
