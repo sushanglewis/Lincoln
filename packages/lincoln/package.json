@@ -50,5 +50,10 @@
     "opencode",
     "plugin"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sushanglewis/Lincoln",
+    "directory": "packages/lincoln"
+  },
   "license": "MIT"
 }

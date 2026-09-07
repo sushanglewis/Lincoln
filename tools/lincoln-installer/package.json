@@ -49,5 +49,10 @@
     "claude-code",
     "ai-workflow"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sushanglewis/Lincoln",
+    "directory": "tools/lincoln-installer"
+  },
   "license": "MIT"
 }
