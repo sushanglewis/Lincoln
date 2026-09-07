@@ -14,7 +14,7 @@
 
 ## Migration Notes
 
-- 全局插件用户升级：`npm update -g @sushanglewis/lincoln` 后重跑 `lincoln install --yes`，把新 hooks、安全策略与技能同步到 `~/.claude/`（以及 codex/opencode 对应目录）。
+- 全局插件用户升级：直接运行 `lincoln update`（一键拉取 npm 最新版并重新同步框架到各 harness）；或手动 `npm update -g @sushanglewis/lincoln` 后重跑 `lincoln install --yes`。若旧版 bin 名残留导致安装报 `EEXIST`，先 `npm uninstall -g lincoln lincoln-install` 并删除悬空软链（详见 README「更新 Lincoln」一节）。
 - 安全门控默认生效且为人类确认制（confirm_required），不是自动阻断；策略可在项目 `.claude/policies/security.yaml` 中按需调整。
 - 无破坏性变更：现有 issue 工作包、`.lincoln.yaml` 激活方式与阶段协议均保持兼容。
 

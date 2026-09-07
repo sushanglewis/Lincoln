@@ -94,9 +94,27 @@ lincoln init-project
 
 ### 更新 Lincoln
 
+已安装过 Lincoln 的用户，一条命令即可升级——`lincoln update` 会自动拉取 npm 最新版本，并重新把框架同步到各 harness：
+
 ```bash
-lincoln update
+lincoln update            # 升级到最新版本并重新同步框架
+lincoln update --check    # 只检查是否有新版本，不安装
 ```
+
+如果还是旧版安装（例如 bin 名是 `lincoln-install` 的时代），或更新时 npm 报 `EEXIST: file already exists`，说明有旧包残留的 bin 文件挡住了安装，先清理再重装：
+
+```bash
+npm uninstall -g lincoln lincoln-install              # 卸载旧包名（未安装会自动跳过）
+npm install -g @sushanglewis/lincoln@latest
+lincoln install --yes
+```
+
+> **EEXIST / command not found 残留软链**：如果安装报 `EEXIST: file already exists`（bin 位置已被占用），而运行 `lincoln` 却是 `command not found`，说明 bin 位置是旧包遗留的悬空软链。用 `ls -la "$(npm prefix -g)/bin/lincoln"` 确认它指向已卸载的旧包路径，删除后重试安装：
+>
+> ```bash
+> rm "$(npm prefix -g)/bin/lincoln"
+> npm install -g @sushanglewis/lincoln@latest && lincoln install --yes
+> ```
 
 ### 从旧版 vendored 模式迁移
 
