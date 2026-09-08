@@ -94,9 +94,27 @@ This creates a `.lincoln.yaml` marker file. After that, opening Claude Code in t
 
 ### Update Lincoln
 
+Already installed? One command upgrades Lincoln and re-syncs the framework into your harnesses — `lincoln update` pulls the latest release from npm and re-runs the sync:
+
 ```bash
-lincoln update
+lincoln update            # upgrade to the latest release and re-sync
+lincoln update --check    # check for a newer version without installing
 ```
+
+On an older install (e.g. from the `lincoln-install` era), or if npm reports `EEXIST: file already exists`, a leftover bin from an old package is blocking the install — clean up first, then reinstall:
+
+```bash
+npm uninstall -g lincoln lincoln-install   # remove legacy package names (skips if absent)
+npm install -g @sushanglewis/lincoln@latest
+lincoln install --yes
+```
+
+> **Dangling-bin symptom**: the install fails with `EEXIST: file already exists` while running `lincoln` reports `command not found` — a dead symlink from an old package occupies the bin path. Verify with `ls -la "$(npm prefix -g)/bin/lincoln"` that it points to a removed package, delete it, and retry:
+>
+> ```bash
+> rm "$(npm prefix -g)/bin/lincoln"
+> npm install -g @sushanglewis/lincoln@latest && lincoln install --yes
+> ```
 
 ### Migrate from the old vendored model
 
