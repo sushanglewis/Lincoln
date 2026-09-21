@@ -282,7 +282,7 @@ def test_compute_metrics_quality_with_artifacts(base_state):
 
     design_dir = project_root / slug / "pages" / "docs"
     design_dir.mkdir(parents=True, exist_ok=True)
-    for name in ["design-review.html", "scenarios.html", "feature-catalog.html", "data-model.html", "flows.html", "feasibility.html", "page-map.html", "version-log.html", "api-list.html", "handoff-pm-to-ux-v1.0.html"]:
+    for name in ["design-review.html", "decisions.html", "scenarios.html", "feature-catalog.html", "data-model.html", "flows.html", "feasibility.html", "page-map.html", "version-log.html", "api-list.html", "handoff-pm-to-ux-v1.0.html"]:
         design_dir.joinpath(name).write_text("ok", encoding="utf-8")
     design_dir.joinpath("tdd-plan.html").write_text(
         "# TDD Plan\n\n## Red\n## Green\n## Refactor\n", encoding="utf-8"

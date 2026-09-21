@@ -452,6 +452,7 @@ def check_no_conflict_with_existing_knowledge(feature_slug: str):
 def validate_design_docs_complete(design_id: str):
     docs = [
         "design-review.html",
+        "decisions.html",
         "scenarios.html",
         "feature-catalog.html",
         "data-model.html",

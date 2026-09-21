@@ -15,6 +15,7 @@ def write_design_package(root: Path, design_id: str, approved: bool = False):
         _doc_source(
             "# Design Review\n\n"
             "- [link](scenarios.html)\n"
+            "- [link](decisions.html)\n"
             "- [link](feature-catalog.html)\n"
             "- [link](data-model.html)\n"
             "- [link](flows.html)\n"
@@ -22,6 +23,9 @@ def write_design_package(root: Path, design_id: str, approved: bool = False):
             f"{'<!-- status: approved -->' if approved else ''}"
         ),
         encoding="utf-8",
+    )
+    (base / "decisions.html").write_text(
+        _doc_source("# 决策归档\n## 决策清单\n"), encoding="utf-8"
     )
     (base / "scenarios.html").write_text(_doc_source("# 场景\n"), encoding="utf-8")
     (base / "feature-catalog.html").write_text(

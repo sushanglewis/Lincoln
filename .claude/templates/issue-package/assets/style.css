@@ -112,6 +112,11 @@ body {
 .pnav-title { font-size: 14px; font-weight: 600; color: var(--text-1); }
 .pnav-subtitle { font-size: 11px; color: var(--text-3); }
 .pnav-group { font-size: 11px; font-weight: 700; color: var(--text-3); text-transform: uppercase; margin: 20px 16px 6px; }
+.pnav-archive { margin: 0; }
+.pnav-archive summary.pnav-group { cursor: pointer; list-style: none; }
+.pnav-archive summary.pnav-group::before { content: '▸ '; }
+.pnav-archive[open] summary.pnav-group::before { content: '▾ '; }
+.pnav-archive .pnav-link { padding-left: 28px; font-size: 12px; color: var(--text-3); }
 .pnav-link {
     display: block; padding: 8px 16px;
     font-size: 13px; color: var(--text-2); text-decoration: none;

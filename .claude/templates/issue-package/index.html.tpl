@@ -25,7 +25,6 @@
                 <li data-key="ui-spec">UI 规范</li>
                 <li data-key="fields">字段说明</li>
                 <li data-key="decisions">决策记录</li>
-                <li data-key="research">调研笔记</li>
                 <li data-key="prototype-web">原型 · Web 端</li>
                 <li data-key="prototype-mobile">原型 · 手机端</li>
                 <li data-key="prototype-app">原型 · 应用端</li>

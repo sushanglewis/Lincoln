@@ -13,6 +13,7 @@ inputs:
     required: true
 outputs:
   - "{process_slug}/pages/docs/design-review.html"
+  - "{process_slug}/pages/docs/decisions.html"
   - "{process_slug}/pages/docs/scenarios.html"
   - "{process_slug}/pages/docs/feature-catalog.html"
   - "{process_slug}/pages/docs/data-model.html"
