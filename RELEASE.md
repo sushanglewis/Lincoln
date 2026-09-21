@@ -1,3 +1,23 @@
+# Lincoln v1.8.0 Release Notes
+
+**Release date:** 2026-09-21
+
+## Highlights
+
+- **PM 阶段门户产物人类可读性改造 (#123 / LEW-72)** — issue-package `index.html` 在 PM 阶段的输出全面聚焦业务说明：主阅读路径只保留需求背景、用户角色、旅程、业务状态、业务流程、页面路由/元素/交互与可交互原型。
+- **门户归档层级** — `nav-group: 归档` 的页面在 `package-data.js` 中标记 `archived: true`，portal 左侧导航将归档组折叠置于末尾（点击展开）；`调研笔记` 从头条产物清单移除。
+- **决策归档页 decisions.html** — product-design-docs 阶段新增必备产物 `pages/docs/decisions.html`，以「日期/场景/选项/决定/理由/影响/状态」表格归档澄清与设计阶段的重要沟通记录与决策；`design_docs_complete` 校验器强制其存在及 design-review 的链接，`design-review` 不再承载决策摘要章节。
+- **技术调研归入归档** — `feasibility.html` 仍为必备产物，但必须以 `--nav-group "归档"` 渲染；三个 PM 阶段 prompt 新增硬规则：技术调研/方案对比只允许进入 feasibility（归档）或 handoff 契约，禁止进入 PRD、requirements、design-review、scenarios、feature-catalog 等主路径页面。
+- **每页意图与边界纪律** — clarify-requirements、draft-product-design、build-product-prototype 三个 prompt 统一要求：每个文档页以 `## 页面意图` 与 `## 边界` 开篇，遵循标准 Markdown 结构（单一 H1、H2 分章、优先表格与 Mermaid），跨页内容禁止复制、以链接引用单一事实来源。
+- **原型按角色×场景拆分** — build-product-prototype 要求先从 scenarios/page-map 产出「角色×场景矩阵」并写入 ui-spec.html 作为拆分契约；每个可达矩阵单元对应一个原型子页面，由 main shell 组织导航；每个原型页通过 annotations 标注适用角色、场景、页面状态（默认/空/加载/错误/成功）及该状态下可见可用的功能。
+
+## Migration Notes
+
+- 无破坏性变更：既有 issue-package 的页面与门户继续工作；新规则在下次渲染或重新生成 PM 阶段产物时生效。
+- 已有 package 如希望获得归档折叠导航，重新运行 `python scripts/lincoln_index.py --state-file <process_slug>/workflow-stage.yaml` 刷新 `package-data.js` 即可。
+
+---
+
 # Lincoln v1.7.0 Release Notes
 
 **Release date:** 2026-09-05
