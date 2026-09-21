@@ -45,14 +45,35 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
    ```
    This creates only the pages that do not yet exist. If a matching `.md` file exists, it is used automatically; otherwise the page is created empty for you to fill afterwards.
 
-   Page-specific guidance:
-   - `design-review.md`: H2 chapters such as `## 决策摘要`, `## 范围`, `## 链接`, `## 开放问题`, `## 审批清单`.
+   Page-specific guidance (every doc page starts with `## 页面意图` — target reader and the question this page answers — and `## 边界` — what it deliberately does not cover plus links to the single source of truth; do not duplicate content across pages, link instead):
+   - `design-review.md`: H2 chapters such as `## 页面意图`, `## 范围`, `## 链接`, `## 开放问题`, `## 审批清单`. Do **not** include a decision log here — decisions live only in `decisions.html`.
+   - `decisions.md`: the archive of important communication records and decisions from both the clarify and design stages. H2 chapters such as `## 页面意图`, `## 决策清单`; each entry is a Markdown table row with 日期 / 场景 / 选项 / 决定 / 理由 / 影响 / 状态. Render it with an explicit archive nav group:
+
+     ```bash
+     python scripts/lincoln_render.py \
+       --stage product-design-docs \
+       --target issue-<N>/pages/docs/decisions.html \
+       --title "决策归档" \
+       --nav-label "决策归档" \
+       --nav-group "归档" \
+       --markdown issue-<N>/pages/docs/decisions.md
+     ```
    - `scenarios.md`: `## 主要场景`, `## 边界场景`, `## 非目标`, plus persona descriptions and Mermaid flowcharts.
    - `feature-catalog.md`: either a Markdown table or a YAML `features` array.
    - `data-model.md`: either Markdown entity sections or a YAML `entities` array.
    - `flows.md`: Markdown with ` ```mermaid ` flowcharts and numbered step lists.
    - `page-map.md`: either a Markdown table or a YAML `pages` array.
-   - `feasibility.md`: H2 chapters such as `## 风险`, `## 方案对比`, `## 建议`.
+   - `feasibility.md`: H2 chapters such as `## 风险`, `## 方案对比`, `## 建议`. This page holds all technical research; render it with `--nav-group "归档"` so it stays out of the main reading path:
+
+     ```bash
+     python scripts/lincoln_render.py \
+       --stage product-design-docs \
+       --target issue-<N>/pages/docs/feasibility.html \
+       --title "可行性研究" \
+       --nav-label "可行性" \
+       --nav-group "归档" \
+       --markdown issue-<N>/pages/docs/feasibility.md
+     ```
    - `version-log.md`: H2 chapters plus a Markdown table of version entries.
    - `api-list.md`: either a Markdown table or a YAML `apis` array.
 4. Create the PM→UX handoff contract at `{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml` referencing the approved design docs and PRD versions.
@@ -67,6 +88,8 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
 
 - Use Chinese for PM-facing content unless the requirements are in English.
 - Keep documents short and reviewable; prefer tables and Mermaid diagrams over long prose.
+- Every document page must open with `## 页面意图` and `## 边界`; content must follow standard Markdown (a single H1, H2 chapters, tables/Mermaid over long prose). Never copy content across pages — link to the single source of truth instead.
+- Technical research and solution comparisons (frameworks, open-source options, trade-off analysis) belong **only** in `feasibility.html` (archived) or the PM→UX handoff contract. They must not appear in `prd.html`, `requirements.html`, `design-review.html`, `scenarios.html`, `feature-catalog.html`, or any other main-path page. PM-stage pages focus on business clarity: background, user roles, journeys, business states, flows, page routes/elements/interactions.
 - For technical frameworks and open-source projects, check current official docs or primary repositories before recommending.
 - Do not create UI specs, field specs, or prototypes in this step. Those are produced in the next stage `product-prototype`.
 - Do not create a Pencil prototype in this step.

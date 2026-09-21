@@ -26,6 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.lincoln_paths import STATE_FILENAME, is_process_state_path
 
 PACKAGE_DATA_FILENAME = "assets/js/package-data.js"
+ARCHIVE_NAV_GROUP = "归档"
 VERSION_COMMENT_RE = re.compile(r"<!--\s*version:\s*(v\d+\.\d+)\s*-->", re.IGNORECASE)
 STATUS_COMMENT_RE = re.compile(r"<!--\s*status:\s*(\w+)\s*-->", re.IGNORECASE)
 LIST_META_KEYS = ("doc-fields", "doc-stories", "doc-rules", "doc-boundaries", "doc-exceptions", "doc-refs")
@@ -183,11 +184,13 @@ def build_package_data(
         if not entry.get("uid"):
             meta_warnings.append(f"{rel}: missing <meta name=\"doc-uid\"> or <meta name=\"page-uid\">")
         group_name = entry.get("group") or entry.get("nav_group") or "Docs"
+        archived = group_name == ARCHIVE_NAV_GROUP
         groups.setdefault(group_name, []).append(
             {
                 "path": rel,
                 "label": entry.get("nav_label") or entry.get("label") or entry.get("title") or Path(rel).stem,
                 "title": entry.get("title") or Path(rel).stem,
+                "archived": archived,
                 "version": entry.get("version"),
                 "status": entry.get("status", ""),
                 "stage": entry.get("stage", ""),
@@ -210,7 +213,11 @@ def build_package_data(
         for warning in meta_warnings:
             print(f"  - {warning}", file=sys.stderr)
 
-    nav = [{"group": g, "items": items} for g, items in groups.items()]
+    # Archive groups render last and collapsed in the portal.
+    nav = (
+        [{"group": g, "items": items} for g, items in groups.items() if g != ARCHIVE_NAV_GROUP]
+        + [{"group": g, "items": items} for g, items in groups.items() if g == ARCHIVE_NAV_GROUP]
+    )
 
     return {
         "process_slug": process_slug,

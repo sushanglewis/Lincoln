@@ -118,6 +118,19 @@ def test_prototype_css_has_dark_mode_override():
     assert '[data-theme="dark"]' in text, "prototype.css should define dark theme override"
 
 
+def test_portal_checklist_drops_research_item():
+    text = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
+    assert 'data-key="research"' not in text, "index.html.tpl should not list 调研笔记 as a headline deliverable"
+    assert 'data-key="decisions"' in text
+
+
+def test_portal_app_renders_archive_group_collapsed():
+    text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    assert "pnav-archive" in text
+    assert "<details" in text
+    assert "'research'" not in text, "app.js default checklist should not include the research item"
+
+
 def test_app_js_has_theme_helpers():
     text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "lincoln-theme" in text

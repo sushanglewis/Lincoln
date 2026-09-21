@@ -29,6 +29,7 @@ workflow:
       action: draft-product-design
       artifacts:
         - "{process_slug}/pages/docs/design-review.html"
+        - "{process_slug}/pages/docs/decisions.html"
       exit_checks:
         - check: design_docs_complete
         - check: design_docs_human_approved

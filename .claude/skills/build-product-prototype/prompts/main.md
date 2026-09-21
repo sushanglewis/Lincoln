@@ -60,7 +60,9 @@ You may still read the categorized example templates under `.claude/templates/is
 
    Use the structured renderer with `--data` containing `sections`, `pages`, and `interactions` as appropriate.
 
-5. **Plan prototype generation granularity.** Before writing prototype pages, list every screen from `flows.html` and `page-map.html`. Group them into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page has complete annotation meta tags before starting the next cluster.
+5. **Plan prototype generation granularity.** Before writing prototype pages, derive a **角色×场景矩阵** from `scenarios.html` and `page-map.html`: rows are the user roles/personas, columns are the key scenarios (including boundary cases such as empty, loading, error, success). Every cell that a real user can reach must map to exactly one prototype sub-page; the matrix itself is written into `ui-spec.html` (章节 `## 角色×场景矩阵`) and serves as the splitting contract. Then group the sub-pages into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page has complete annotation meta tags before starting the next cluster.
+
+   Each cluster is organized by one main shell page (e.g. `pages/prototype/{app,web,mobile}/main/page.html`) whose `navItems` link to all sub-pages of that cluster, so the portal viewer can walk every role/scenario state from a single entry page.
 
 6. Create interactive HTML prototypes under `{process_slug}/pages/prototype/{app,web,mobile}/` using the structured prototype renderer:
 
@@ -112,6 +114,7 @@ You may still read the categorized example templates under `.claude/templates/is
    - Include `<meta name="prototype-base" content="../../../">` (or `../../../../` for depth 4).
    - Include `<meta name="page-uid" content="...">`, `<meta name="nav-group" content="...">`, and `<meta name="nav-label" content="...">` (injected by the renderer from CLI args; annotations come from the YAML `annotations` block).
    - Provide the full annotation meta tags so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows.
+   - State the applicable role(s), scenario, page state (default / empty / loading / error / success), and which functions are visible and usable in that state via the `doc-purpose`, `doc-rules`, and `doc-boundaries` annotations, so each sub-page precisely depicts what a given role sees and can do in that case.
    - Use `LincolnPrototype.ui` builders and `prototype.css` tokens for every visual element so both light and dark themes render correctly; verify both themes by toggling the portal theme switch.
    - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
@@ -131,6 +134,8 @@ You may still read the categorized example templates under `.claude/templates/is
 
 ## Rules
 
+- `fields.html` and `ui-spec.html` are doc pages: each opens with `## 页面意图` and `## 边界`, follows standard Markdown structure (single H1, H2 chapters, tables over prose), and links instead of duplicating content from `flows.html` / `page-map.html` / `scenarios.html`.
+- The prototype sub-pages are the interactive GUI evidence for the PM stage: each one must precisely depict the page state and available functions of a specific role in a specific scenario (see the 角色×场景矩阵 in `ui-spec.html`). Do not merge multiple roles/scenarios into one page when their visible states differ.
 - The HTML prototype is the primary review artifact; Pencil is optional.
 - Always reuse the shared `prototype.css` and `prototype.js` assets. Do not inline all styles or rebuild the component library from scratch.
 - Keep controls and states complete enough for implementation: default, hover/focus where relevant, disabled, empty, loading, error, and success.

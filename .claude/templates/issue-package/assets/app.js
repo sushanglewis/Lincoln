@@ -201,7 +201,6 @@
             { key: 'ui-spec', label: 'UI 规范' },
             { key: 'fields', label: '字段说明' },
             { key: 'decisions', label: '决策记录' },
-            { key: 'research', label: '调研笔记' },
             { key: 'prototype-web', label: '原型 · Web 端' },
             { key: 'prototype-mobile', label: '原型 · 手机端' },
             { key: 'prototype-app', label: '原型 · 应用端' },
@@ -216,10 +215,19 @@
         html += '</ul></div>';
 
         (packageData.nav || []).forEach(function (group) {
-            html += '<div class="pnav-group">' + escapeHtml(group.group) + '</div>';
-            (group.items || []).forEach(function (item) {
-                html += '<a class="pnav-link" data-path="' + escapeHtml(item.path) + '" href="#">' + escapeHtml(item.label) + '</a>';
-            });
+            var archived = group.group === '归档' || (group.items || []).every(function (item) { return item.archived; });
+            if (archived) {
+                html += '<details class="pnav-archive"><summary class="pnav-group">归档</summary>';
+                (group.items || []).forEach(function (item) {
+                    html += '<a class="pnav-link" data-path="' + escapeHtml(item.path) + '" href="#">' + escapeHtml(item.label) + '</a>';
+                });
+                html += '</details>';
+            } else {
+                html += '<div class="pnav-group">' + escapeHtml(group.group) + '</div>';
+                (group.items || []).forEach(function (item) {
+                    html += '<a class="pnav-link" data-path="' + escapeHtml(item.path) + '" href="#">' + escapeHtml(item.label) + '</a>';
+                });
+            }
         });
         container.innerHTML = html;
     }

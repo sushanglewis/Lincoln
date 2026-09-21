@@ -135,3 +135,39 @@ def test_build_package_data_label_falls_back_to_stem(tmp_path: Path):
     items = {item["path"]: item for group in data["nav"] for item in group["items"]}
     assert items["pages/docs/untitled.html"]["label"] == "untitled"
     assert items["pages/docs/untitled.html"]["title"] == "untitled"
+
+
+def test_build_package_data_archive_group_is_flagged_and_last(tmp_path: Path):
+    write_html(
+        tmp_path,
+        "issue-99/pages/docs/prd.html",
+        '<meta name="nav-group" content="Docs">'
+        '<meta name="nav-label" content="PRD">',
+    )
+    write_html(
+        tmp_path,
+        "issue-99/pages/docs/decisions.html",
+        '<meta name="nav-group" content="归档">'
+        '<meta name="nav-label" content="决策归档">',
+    )
+    write_html(
+        tmp_path,
+        "issue-99/pages/docs/feasibility.html",
+        '<meta name="nav-group" content="归档">'
+        '<meta name="nav-label" content="可行性">',
+    )
+    state = {
+        "schema_version": "2.0.0",
+        "current_run": {"issue_number": "99", "current_stage": "product-design-docs"},
+        "nodes": [],
+    }
+    data = build_package_data(state, "issue-99", project_root=tmp_path)
+
+    items = {item["path"]: item for group in data["nav"] for item in group["items"]}
+    assert items["pages/docs/decisions.html"]["archived"] is True
+    assert items["pages/docs/feasibility.html"]["archived"] is True
+    assert items["pages/docs/prd.html"]["archived"] is False
+
+    group_names = [group["group"] for group in data["nav"]]
+    assert group_names[-1] == "归档"
+    assert group_names.count("归档") == 1
