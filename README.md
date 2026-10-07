@@ -94,12 +94,14 @@ lincoln init-project
 
 ### 更新 Lincoln
 
-已安装过 Lincoln 的用户，一条命令即可升级——`lincoln update` 会自动拉取 npm 最新版本，并重新把框架同步到各 harness：
+已安装过 Lincoln 的用户，一条命令即可升级——`lincoln update` 会自动拉取 npm 最新版本，重新把框架同步到各 harness，并按新版本中 pin 的版本刷新外部技能库（superpowers、gsd、oh-my-claudecode 等 `~/.claude/skills/` 下的 git 仓库，以及 openspec 等 npm 管理的 CLI）：
 
 ```bash
-lincoln update            # 升级到最新版本并重新同步框架
+lincoln update            # 升级本体 + 同步框架 + 刷新外部技能库到最新 pin
 lincoln update --check    # 只检查是否有新版本，不安装
 ```
+
+技能库同步遵循 dependencies.yaml 的 pin 策略：本地有未提交修改的仓库会被跳过并警告（不会被强制覆盖），非 npm 管理的 CLI（如 gh）缺失时只提示安装命令。同步失败降级为警告，不会阻断升级。
 
 如果还是旧版安装（例如 bin 名是 `lincoln-install` 的时代），或更新时 npm 报 `EEXIST: file already exists`，说明有旧包残留的 bin 文件挡住了安装，先清理再重装：
 

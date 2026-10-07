@@ -1,3 +1,22 @@
+# Lincoln v1.8.1 Release Notes
+
+**Release date:** 2026-10-07
+
+## Highlights
+
+- **一条命令更新 Lincoln 与全部外部技能库 (#124 / LEW-73)** — `lincoln update`（以及 `lincoln install`）现在会读取新安装 payload 中的 `.claude/skills/dependencies.yaml`，把外部依赖刷新到当前 pin 的稳定版本，不再需要手动逐个仓库升级：
+  - git 类技能库（superpowers、oh-my-claudecode）：缺失时自动 clone + checkout 到 pin；本地 HEAD 落后时 `git fetch origin <pin>` 后 checkout FETCH_HEAD；pin 不在任何远端 ref 尖端时回退全量 fetch + checkout SHA。工作区有本地修改（dirty）的仓库一律跳过并警告，绝不强制覆盖。
+  - npm 管理的 CLI（openspec）：缺失或版本低于 pin 时自动 `npm install -g <pkg>@<pin>` 升级；非 npm 管理的 CLI（gh、ffmpeg、faster-whisper 等）缺失时只提示对应平台的手动安装命令，不会擅自执行 brew/apt/pip。
+  - 单个依赖的同步失败（网络故障、上游不可用等）降级为警告，不会阻断 Lincoln 本体升级；`--dry-run` 下只报告计划动作，不执行任何命令。
+- **外部依赖 pin 升级至 2026-10-07 上游版本 (#124 / LEW-73)** — superpowers → `8ca22db`（v6.4.2，快进 242 个上游提交），oh-my-claudecode → `454bae0`（v5.6.2，快进 1599 个上游提交），openspec → v1.14.1（npm 同版本发布，要求 Node.js >= 20.19.0）；gsd 与上游无漂移，保持 `bdcaab2` 不变。用户升级 Lincoln 到本版本后，一次 `lincoln update` 即把本地技能库同步到这些 pin。
+
+## Migration Notes
+
+- 无破坏性变更：框架文件、issue 工作包、阶段协议与 hooks 均保持兼容。
+- 升级后首次运行 `lincoln update` 会自动补齐或刷新技能库；若某个技能仓库有本地未提交修改，同步会跳过该仓库并给出警告，手动 commit/stash 后重跑即可。
+
+---
+
 # Lincoln v1.8.0 Release Notes
 
 **Release date:** 2026-09-21
