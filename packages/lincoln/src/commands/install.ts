@@ -7,6 +7,8 @@ import { writeVersionMarker } from '../lib/versionMarker.js'
 import { readLocalPackageVersion, resolvePayloadRoot } from '../lib/packageInfo.js'
 import type { HarnessSyncReport, SyncHarnessesOptions } from '../lib/syncHarness.js'
 import { syncHarnesses } from '../lib/syncHarness.js'
+import type { SkillSyncReport, SyncExternalSkillsOptions } from '../lib/syncSkills.js'
+import { syncExternalSkills } from '../lib/syncSkills.js'
 import { detectGlobalHarnesses, installedHarnessIds, isValidHarnessId, HARNESS_IDS } from '../lib/harnessDetect.js'
 import type { HarnessId } from '../lib/harnessDetect.js'
 import { buildHarnessOptions, resolveHarnessSelection } from '../lib/harnessSelect.js'
@@ -26,6 +28,7 @@ export interface InstallDeps {
   paths: LincolnPaths
   payloadRoot: string
   syncHarnesses: (opts: SyncHarnessesOptions) => Promise<HarnessSyncReport>
+  syncExternalSkills?: (opts: SyncExternalSkillsOptions) => Promise<SkillSyncReport>
   createPrompt: () => Prompt
   resolvePythonForVenv: (
     envOverride?: string,
@@ -40,6 +43,7 @@ export function createDefaultDeps(): InstallDeps {
     paths: resolveLincolnPaths(),
     payloadRoot: resolvePayloadRoot() || '',
     syncHarnesses,
+    syncExternalSkills,
     createPrompt,
     resolvePythonForVenv,
     isTTY: Boolean(process.stdin.isTTY && process.stdout.isTTY)
@@ -111,8 +115,35 @@ export async function install(
     })
   }
 
-  printSummary(options, version, harnesses, reports)
+  const skillReport = await syncSkillLibraries(options, deps, harnesses)
+
+  printSummary(options, version, harnesses, reports, skillReport)
   return 0
+}
+
+async function syncSkillLibraries(
+  options: InstallOptions,
+  deps: InstallDeps,
+  harnesses: HarnessId[]
+): Promise<SkillSyncReport | undefined> {
+  if (!harnesses.includes('claude-code') || !deps.syncExternalSkills) {
+    return undefined
+  }
+  const payloadRoot = deps.paths.currentDir
+  const manifestPath = path.join(payloadRoot, '.claude', 'skills', 'dependencies.yaml')
+  if (!fs.existsSync(manifestPath)) {
+    return undefined
+  }
+  try {
+    return await deps.syncExternalSkills({
+      payloadRoot,
+      skillsDir: path.join(deps.paths.claudeDir, 'skills'),
+      dryRun: options.dryRun
+    })
+  } catch (err) {
+    console.warn(`  warning: external skill sync failed: ${err instanceof Error ? err.message : String(err)}`)
+    return undefined
+  }
 }
 
 async function resolvePythonIfNeeded(
@@ -193,7 +224,8 @@ function printSummary(
   options: InstallOptions,
   version: string,
   harnesses: HarnessId[],
-  reports: HarnessSyncReport
+  reports: HarnessSyncReport,
+  skillReport?: SkillSyncReport
 ): void {
   const warnings = collectWarnings(reports)
   if (options.dryRun) {
@@ -204,6 +236,13 @@ function printSummary(
   for (const [harnessId, report] of Object.entries(reports)) {
     const count = report.written.length + report.skipped.length + report.preserved.length
     console.log(`  ${harnessId}: ${count} file(s)`)
+  }
+  if (skillReport) {
+    for (const entry of skillReport.entries) {
+      const detail = entry.detail ? ` (${entry.detail})` : ''
+      console.log(`  skill ${entry.name}: ${entry.status}${detail}`)
+    }
+    warnings.push(...skillReport.warnings)
   }
   for (const warning of warnings) {
     console.warn(`  warning: ${warning}`)

@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { install, resolvePythonForVenv } from '../../src/commands/install.js'
 import { resolveLincolnPaths } from '../../src/lib/paths.js'
 import type { HarnessSyncReport } from '../../src/lib/syncHarness.js'
+import type { SkillSyncReport, SyncExternalSkillsOptions } from '../../src/lib/syncSkills.js'
 
 function makePrompt(selection: string[]) {
   return {
@@ -142,6 +143,65 @@ describe('install', () => {
       deps
     )
     expect(code).toBe(1)
+  })
+
+  it('syncs external skill libraries when claude-code harness is selected', async () => {
+    fs.mkdirSync(path.join(tmpDir, '.lincoln', 'current', '.claude', 'skills'), { recursive: true })
+    fs.writeFileSync(
+      path.join(tmpDir, '.lincoln', 'current', '.claude', 'skills', 'dependencies.yaml'),
+      'skills: {}\n'
+    )
+
+    const calls: SyncExternalSkillsOptions[] = []
+    const deps = {
+      paths: resolveLincolnPaths(tmpDir),
+      payloadRoot: path.join(tmpDir, '.lincoln', 'current'),
+      syncHarnesses: async () => emptySyncReport(),
+      syncExternalSkills: async (opts: SyncExternalSkillsOptions): Promise<SkillSyncReport> => {
+        calls.push(opts)
+        return { entries: [], warnings: [] }
+      },
+      createPrompt: () => makePrompt([]),
+      resolvePythonForVenv: async () => undefined,
+      isTTY: false
+    }
+
+    const code = await install(
+      { yes: true, dryRun: false, force: false, harnesses: ['claude-code'], noVenv: true, noInteractive: true },
+      deps
+    )
+
+    expect(code).toBe(0)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].payloadRoot).toBe(path.join(tmpDir, '.lincoln', 'current'))
+    expect(calls[0].skillsDir).toBe(path.join(tmpDir, '.claude', 'skills'))
+    expect(calls[0].dryRun).toBe(false)
+  })
+
+  it('skips external skill sync when claude-code harness is not selected', async () => {
+    fs.mkdirSync(path.join(tmpDir, '.lincoln', 'current'), { recursive: true })
+
+    const calls: SyncExternalSkillsOptions[] = []
+    const deps = {
+      paths: resolveLincolnPaths(tmpDir),
+      payloadRoot: path.join(tmpDir, '.lincoln', 'current'),
+      syncHarnesses: async () => emptySyncReport(),
+      syncExternalSkills: async (opts: SyncExternalSkillsOptions): Promise<SkillSyncReport> => {
+        calls.push(opts)
+        return { entries: [], warnings: [] }
+      },
+      createPrompt: () => makePrompt([]),
+      resolvePythonForVenv: async () => undefined,
+      isTTY: false
+    }
+
+    const code = await install(
+      { yes: true, dryRun: true, force: false, harnesses: ['codex'], noVenv: true, noInteractive: true },
+      deps
+    )
+
+    expect(code).toBe(0)
+    expect(calls).toHaveLength(0)
   })
 })
 
