@@ -34,6 +34,7 @@ export interface SyncExternalSkillsOptions {
   skillsDir: string
   dryRun: boolean
   runCommand?: CommandRunner
+  platform?: string
 }
 
 interface ManifestEntry {
@@ -87,6 +88,8 @@ export async function syncExternalSkills(options: SyncExternalSkillsOptions): Pr
   }
 
   const runCommand = options.runCommand ?? defaultRunner
+  const platform =
+    options.platform ?? (process.platform === 'darwin' ? 'macos' : process.platform === 'linux' ? 'linux' : process.platform)
   for (const [name, cfg] of Object.entries(manifest.skills ?? {})) {
     if (!cfg.source || cfg.source === 'inline' || !GIT_SOURCE.test(cfg.source)) {
       continue
@@ -97,7 +100,7 @@ export async function syncExternalSkills(options: SyncExternalSkillsOptions): Pr
       continue
     }
     if (cfg.type === 'cli') {
-      await syncCli(name, cfg, options, runCommand, report)
+      await syncCli(name, cfg, options, platform, runCommand, report)
     } else {
       await syncGitSkill(name, cfg, options, runCommand, report)
     }
@@ -227,11 +230,11 @@ async function syncCli(
   name: string,
   cfg: ManifestEntry,
   options: SyncExternalSkillsOptions,
+  platform: string,
   runCommand: CommandRunner,
   report: SkillSyncReport
 ): Promise<void> {
   const binary = cfg.binary ?? name
-  const platform = process.platform === 'darwin' ? 'macos' : process.platform === 'linux' ? 'linux' : process.platform
   const installCommand = cfg.platforms?.[platform] ?? cfg.platforms?.linux
   const npmPackage = installCommand ? parseNpmGlobalInstall(installCommand) : undefined
   const pinned = cfg.ref ? pinnedSemver(cfg.ref) : undefined

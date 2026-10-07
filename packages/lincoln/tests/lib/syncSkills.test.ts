@@ -76,7 +76,7 @@ describe('syncExternalSkills', () => {
   })
 
   function makeOpts(runCommand: CommandRunner): SyncExternalSkillsOptions {
-    return { payloadRoot, skillsDir, dryRun: false, runCommand }
+    return { payloadRoot, skillsDir, dryRun: false, runCommand, platform: 'macos' }
   }
 
   it('warns and returns empty report when manifest is missing', async () => {
