@@ -15,9 +15,9 @@ description: |
 skills:
   superpowers:
     source: https://github.com/obra/superpowers.git
-    ref: 6fd4507659784c351abbd2bc264c7162cfd386dc
+    ref: 8ca22dba9a94f28898bbce59f2537ff4d87c747d
     pinned_from: main
-    pinned_at: 2026-07-15
+    pinned_at: 2026-10-07
     type: skill
     required: true
     license: MIT
@@ -60,14 +60,14 @@ skills:
 
   openspec:
     source: https://github.com/Fission-AI/openspec.git
-    ref: v0.5.0
+    ref: v1.14.1
     type: cli
     binary: openspec
     required: true
     platforms:
       macos: npm install -g @fission-ai/openspec
       linux: npm install -g @fission-ai/openspec
-    install_note: Requires Node.js >= 20.
+    install_note: Requires Node.js >= 20.19.0.
 
   gh:
     source: https://cli.github.com/
@@ -120,16 +120,16 @@ skills:
   # oh-my-claudecode — optional multi-agent orchestration layer, installed by default
   oh-my-claudecode:
     source: https://github.com/Yeachan-Heo/oh-my-claudecode.git
-    ref: 590fb988931d34a12604be0ca4215c818079018e
+    ref: 454bae017356ed1d056182cd929b6eb6cf6143ad
     pinned_from: main
-    pinned_at: 2026-07-15
+    pinned_at: 2026-10-07
     type: plugin
     required: false
     default_install: true
     license: MIT
     platforms:
-      macos: git clone https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode && git -C ~/.claude/skills/oh-my-claudecode checkout 590fb988931d34a12604be0ca4215c818079018e
-      linux: git clone https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode && git -C ~/.claude/skills/oh-my-claudecode checkout 590fb988931d34a12604be0ca4215c818079018e
+      macos: git clone https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode && git -C ~/.claude/skills/oh-my-claudecode checkout 454bae017356ed1d056182cd929b6eb6cf6143ad
+      linux: git clone https://github.com/Yeachan-Heo/oh-my-claudecode.git ~/.claude/skills/oh-my-claudecode && git -C ~/.claude/skills/oh-my-claudecode checkout 454bae017356ed1d056182cd929b6eb6cf6143ad
     install_note: Optional but recommended. Installed as a skill under ~/.claude/skills/.
     recommended_skills:
       - oh-my-claudecode:plan
