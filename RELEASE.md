@@ -1,9 +1,10 @@
-# Lincoln v1.8.1 Release Notes
+# Lincoln v1.8.2 Release Notes
 
 **Release date:** 2026-10-07
 
 ## Highlights
 
+- **修复非 npm CLI 安装提示的平台命令选择** — 技能库同步在非 npm CLI（gh、ffmpeg、faster-whisper 等）缺失时，按当前运行平台（可用 `platform` 参数覆盖，便于跨平台测试）从 `dependencies.yaml` 的 `platforms` 映射中选择对应的安装提示命令。
 - **一条命令更新 Lincoln 与全部外部技能库 (#124 / LEW-73)** — `lincoln update`（以及 `lincoln install`）现在会读取新安装 payload 中的 `.claude/skills/dependencies.yaml`，把外部依赖刷新到当前 pin 的稳定版本，不再需要手动逐个仓库升级：
   - git 类技能库（superpowers、oh-my-claudecode）：缺失时自动 clone + checkout 到 pin；本地 HEAD 落后时 `git fetch origin <pin>` 后 checkout FETCH_HEAD；pin 不在任何远端 ref 尖端时回退全量 fetch + checkout SHA。工作区有本地修改（dirty）的仓库一律跳过并警告，绝不强制覆盖。
   - npm 管理的 CLI（openspec）：缺失或版本低于 pin 时自动 `npm install -g <pkg>@<pin>` 升级；非 npm 管理的 CLI（gh、ffmpeg、faster-whisper 等）缺失时只提示对应平台的手动安装命令，不会擅自执行 brew/apt/pip。
