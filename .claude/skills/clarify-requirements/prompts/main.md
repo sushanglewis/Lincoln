@@ -80,7 +80,17 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
      --markdown {process_slug}/pages/docs/user-stories.md
    ```
 
-9. Generate the root-level PRD at `{process_slug}/pages/docs/prd.html` using the Markdown-first renderer:
+9. 需求清晰度六问自检（Six-Question Gate）。起草原稿前逐项回答，答案落入 PRD 对应章节；任何一项答不出，先按 Human Interaction Rules 问人类 PM，禁止带着未决问题落笔：
+
+   | 六问 | 落笔位置 | 答不出时的动作 |
+   |---|---|---|
+   | 用户有哪些？ | 用户故事 | 请 PM 补充分角色 |
+   | 场景是什么？何时触发、如何完成？ | 业务流程图 | 与 PM 走查主流程 |
+   | 边界在哪里？明确不做什么 | 需求背景（非目标）+ 业务规则 | 请 PM 划定非目标 |
+   | 如何管异常？覆盖每个失败的系统行为 | 业务规则（异常处理） | 逐场景请 PM 裁决 |
+   | 如何体验好？质量与体验判据 | 非功能需求（体验要求） | 请 PM 给出体验判据 |
+   | 最终谁决策？ | 版本说明（决策人） | 请 PM 指定决策人 |
+10. Generate the root-level PRD at `{process_slug}/pages/docs/prd.html` using the Markdown-first renderer:
 
    ```bash
    python scripts/lincoln_render.py \
@@ -90,25 +100,33 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
      --markdown {process_slug}/pages/docs/prd.md
    ```
 
-   Write `{process_slug}/pages/docs/prd.md` with at least these H2 chapters, but feel free to add, merge, or reorder them to best tell the story:
+   Write `{process_slug}/pages/docs/prd.md` following this progressive skeleton. Keep all thirteen chapters in this order as the default narrative; you may insert additional business chapters inside the skeleton when this requirement's shape calls for it. Section headings are matched by name — numbering is cosmetic, not part of the contract:
 
-   - `## 1. 需求背景`
-   - `## 2. 用户故事`
-   - `## 3. 功能拆解`
-   - `## 4. 业务流程图` (use ` ```mermaid ` diagrams)
-   - `## 5. 验收标准`
-   - `## 6. 业务规则`
-   - `## 7. 非功能需求`
-   - `## 8. 关联系统/接口`
-   - `## 9. 相关产物链接`
-   - `## 10. 风险与开放问题`
+   - `## 1. 版本说明` — 当前版本、文档状态、决策人（最终谁拍板）。
+   - `## 2. 修订记录` — 版本/日期/作者/变更摘要 表格。
+   - `## 3. 功能列表` — 功能/优先级/状态/对应用户故事 表格。
+   - `## 4. 需求背景`
+   - `## 5. 用户故事`
+   - `## 6. 功能拆解`
+   - `## 7. 业务流程图` (use ` ```mermaid ` diagrams)
+   - `## 8. 验收标准`
+   - `## 9. 业务规则`（边界与异常处理）
+   - `## 10. 非功能需求`（含体验要求）
+   - `## 11. 关联系统/接口`
+   - `## 12. 相关产物链接`
+   - `## 13. 风险与开放问题`
+
+   PRD 正文禁则（读者是研发团队，文档只讲业务场景）：
+   - 不写技术调研、技术方案、架构设计、接口设计、数据库设计等内容——这类内容只进 design 阶段维护的归档页 `feasibility.html`。
+   - 不写任何过程性提醒（"待确认""待人类 PM 确认""TODO"、agent 注等）——疑问在对话中解决，解决后才落文档。
+   - 同一信息只用一种方式描述：文字、表格、mermaid 图组合使用，但不重复表达同一内容。
 
    It must also carry:
    - `<!-- version: v1.0 -->` marker (added automatically by the renderer from the Markdown file or `--version`).
    - Meta tags: `doc-title`, `nav-group="Docs"`, `doc-version="v1.0"`, and a stable `doc-uid` (all injected by the renderer).
-10. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
-11. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
-12. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
+11. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
+12. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
+13. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
 
 ## Human Interaction Rules
 
@@ -122,6 +140,8 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
 - Every document page opens with `## 页面意图` (目标读者 + 本页回答什么问题) and `## 边界` (本页不覆盖什么 + 单一事实来源链接).
 - Content follows standard Markdown: a single H1, H2 chapters, and tables/Mermaid over long prose. Never duplicate content across pages — link to the single source of truth instead.
 - These pages are business-facing: 需求背景、用户角色、旅程、业务状态、业务流程、验收标准. Technical research or solution comparisons performed while clarifying are only background for the PM's decision — do not register them into any page; they may be summarized later into the archived `feasibility.html` by the design stage.
+- 过程性内容不进入任何页面：待确认事项、agent 提醒、对话记录只留在对话里，解决后才以结论形式落文档。
+- 同一信息只描述一次：文字、表格、mermaid 图可以组合使用，但不得用多种方式重复表达同一内容；需要引用时链接到单一事实来源。
 
 ## 认知象限确认（Johari）
 

@@ -14,7 +14,7 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 [![Release](https://img.shields.io/badge/release-v1.8.3-blue)](RELEASE.md)
 
-**v1.8.3** is released: SecurityAnalyzer pre-tool-use gating, Trace 2.0 event log, session friction scoring and knowledge recall, plus multi-dimensional stakeholder analysis in the clarify stage.
+**v1.8.3** is released: hook-injected less-is-more artifact discipline, plus a fix syncing the `policies` directory into vendored projects.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
@@ -99,6 +99,12 @@ Already installed? One command upgrades Lincoln and re-syncs the framework into 
 ```bash
 lincoln update            # upgrade to the latest release and re-sync
 lincoln update --check    # check for a newer version without installing
+```
+
+Or upgrade the package directly via npm and then re-sync:
+
+```bash
+npm install -g @sushanglewis/lincoln@latest && lincoln update
 ```
 
 On an older install (e.g. from the `lincoln-install` era), or if npm reports `EEXIST: file already exists`, a leftover bin from an old package is blocking the install — clean up first, then reinstall:
@@ -236,6 +242,7 @@ Before submitting a PR, please read:
 
 | Version | Date | Key capabilities |
 |---|---|---|
+| v1.8.4 | 2026-10-08 | PM-stage PRD quality gates: six-question clarity check, 13-section progressive PRD skeleton, content-hygiene and cross-validation checks, final-system-only prototype discipline (#129) |
 | v1.8.3 | 2026-10-08 | Less-is-more artifact discipline (hook-injected); platform-aware install hints for non-npm CLIs; `lincoln update` refreshes external skill libraries |
 | v1.7.0 | 2026-09-05 | SecurityAnalyzer gating; Trace 2.0 event log; friction scoring/knowledge recall/trace condensation/MR mining; parallel specialist delegation; stakeholder analysis model |
 | v1.6.3 | 2026-08-15 | Markdown-first issue-package documents; `--render-stage` batch rendering; local `mermaid.min.js` runtime |

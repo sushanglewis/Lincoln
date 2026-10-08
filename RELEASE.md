@@ -1,3 +1,24 @@
+# Lincoln v1.8.4 Release Notes
+
+**Release date:** 2026-10-08
+
+## Highlights
+
+- **PM 阶段 PRD 质量整治 (#129)** — 把「PM 产出的 PRD 必须经得起研发团队与测试挑战」从 prompt 建议升级为可执行的门控：
+  - **需求清晰度六问自检** — clarify-requirements 起草原稿前必须逐项回答：用户有哪些、场景是什么、边界在哪里、如何管异常、如何体验好、最终谁决策；答不出先问人类 PM，禁止带未决问题落笔。
+  - **13 章递进骨架** — PRD 固定为「版本说明 → 修订记录 → 功能列表 → 需求背景 → … → 风险与开放问题」的渐进结构，章节按名字匹配、编号只是装饰，PM 可按需求形态在骨架内增插业务章节。
+  - **双注册表内容卫生校验** — 两份校验器（stage gates 与 workflow exit_checks）同步新增 `prd_content_hygiene`：PRD 正文禁止过程性短语（待确认/待 PM/TODO 等）与技术性章节（技术调研/架构设计/数据库设计等），技术内容只进 design 阶段的归档页 feasibility.html。
+  - **SDD 测试反向驱动交叉验证** — plan-tdd-development 新增 Phase 2：从测试场景（正常/边界/异常）逐一回问 PRD 业务规则与验收标准，并建立业务流程步骤 ↔ 原型页面双向对齐矩阵；缺口必须由人类 PM 决策闭环（修复 = PRD 升版重冻结，或接受 = 记录理由与影响），全部闭环后交叉验证报告才能写入 pass 标记，`prd_cross_validated` 校验器强制 pass 标记版本与当前 PRD 版本严格相等并对 PRD 复检卫生，防止后续阶段编辑回潮。
+  - **原型只画最终样貌** — build-product-prototype 明确禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转，解释一律走 `doc-*` 注释由门户右侧面板呈现；每个原型页面标注所属用户故事与业务流程步骤，与 PRD 文字双向对齐。
+  - **PM 角色质量职责** — lc-pm 新增三条专属职责：输出 PRD 前完成六问自检、PRD 只承载业务内容、交叉验证缺口必须经人类 PM 决策才允许闭环。
+
+## Migration Notes
+
+- 无破坏性变更：新校验只在 `clarify` 与 `tdd-development-plan` 阶段出口执行，既有已审批产物不受影响；重跑这两个阶段时需满足新版骨架与卫生规则。
+- 升级后执行 `lincoln update` 即把新 prompt、校验器与门控接线同步进各 harness；进行中的 issue 工作包从下一阶段起自动适用新规则。
+
+---
+
 # Lincoln v1.8.3 Release Notes
 
 **Release date:** 2026-10-08

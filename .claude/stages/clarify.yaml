@@ -61,6 +61,9 @@ gates:
   - check: prd_has_required_sections
     args:
     - '{process_slug}/pages/docs/prd.html'
+  - check: prd_content_hygiene
+    args:
+    - '{process_slug}/pages/docs/prd.html'
   - check: human_approved
   - check: prd_snapshot_present
     args:

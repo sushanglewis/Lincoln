@@ -216,26 +216,45 @@ def _html_prd(content: str, version: str = "v1.0") -> str:
     )
 
 
+PRD_13_SECTIONS = (
+    "## 1. 版本说明\n-\n"
+    "## 2. 修订记录\n-\n"
+    "## 3. 功能列表\n-\n"
+    "## 4. 需求背景\n-\n"
+    "## 5. 用户故事\n-\n"
+    "## 6. 功能拆解\n-\n"
+    "## 7. 业务流程图\n-\n"
+    "## 8. 验收标准\n-\n"
+    "## 9. 业务规则\n-\n"
+    "## 10. 非功能需求\n-\n"
+    "## 11. 关联系统/接口\n-\n"
+    "## 12. 相关产物链接\n-\n"
+    "## 13. 风险与开放问题\n-\n"
+)
+
+
 def test_check_prd_has_required_sections_passes(validator_mod, tmp_path, monkeypatch):
     monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
     prd = tmp_path / "issue-52" / "pages" / "docs" / "prd.html"
     prd.parent.mkdir(parents=True)
     prd.write_text(
-        _html_prd(
-            "# PRD\n\n"
-            "## 1. 需求背景\n-\n"
-            "## 2. 用户故事\n-\n"
-            "## 3. 功能拆解\n-\n"
-            "## 4. 业务流程图\n-\n"
-            "## 5. 验收标准\n-\n"
-            "## 6. 业务规则\n-\n"
-            "## 7. 非功能需求\n-\n"
-            "## 8. 关联系统/接口\n-\n"
-            "## 9. 相关产物链接\n-\n"
-            "## 10. 风险与开放问题\n-\n"
-        ),
+        _html_prd("# PRD\n\n" + PRD_13_SECTIONS),
         encoding="utf-8",
     )
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_has_required_sections("issue-52/pages/docs/prd.html")
+    assert exc_info.value.code == 0
+
+
+def test_check_prd_has_required_sections_accepts_numberless_headings(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    prd = tmp_path / "issue-52" / "pages" / "docs" / "prd.html"
+    prd.parent.mkdir(parents=True)
+    numberless = "\n".join(
+        "## " + line.split(" ", 2)[2] if line.startswith("## ") else line
+        for line in PRD_13_SECTIONS.splitlines()
+    )
+    prd.write_text(_html_prd("# PRD\n\n" + numberless + "\n"), encoding="utf-8")
     with pytest.raises(SystemExit) as exc_info:
         validator_mod.check_prd_has_required_sections("issue-52/pages/docs/prd.html")
     assert exc_info.value.code == 0
@@ -289,6 +308,137 @@ def test_check_prd_has_required_sections_fails_when_prd_missing(validator_mod, t
     monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
     with pytest.raises(SystemExit) as exc_info:
         validator_mod.check_prd_has_required_sections("issue-52/pages/docs/prd.html")
+    assert exc_info.value.code == 1
+
+
+# ---------------------------------------------------------------------------
+# prd_content_hygiene
+# ---------------------------------------------------------------------------
+
+
+def test_check_prd_content_hygiene_passes_on_clean_prd(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    prd = tmp_path / "issue-52" / "pages" / "docs" / "prd.html"
+    prd.parent.mkdir(parents=True)
+    prd.write_text(_html_prd("# PRD\n\n" + PRD_13_SECTIONS), encoding="utf-8")
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_content_hygiene("issue-52/pages/docs/prd.html")
+    assert exc_info.value.code == 0
+
+
+def test_check_prd_content_hygiene_fails_on_process_phrase(validator_mod, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    prd = tmp_path / "issue-52" / "pages" / "docs" / "prd.html"
+    prd.parent.mkdir(parents=True)
+    prd.write_text(
+        _html_prd("# PRD\n\n" + PRD_13_SECTIONS + "\n> 本节待确认\n"),
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_content_hygiene("issue-52/pages/docs/prd.html")
+    assert exc_info.value.code == 1
+    assert "待确认" in capsys.readouterr().out
+
+
+def test_check_prd_content_hygiene_fails_on_tech_heading(validator_mod, tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    prd = tmp_path / "issue-52" / "pages" / "docs" / "prd.html"
+    prd.parent.mkdir(parents=True)
+    prd.write_text(
+        _html_prd("# PRD\n\n" + PRD_13_SECTIONS + "\n## 14. 技术方案\n使用 Redis 缓存。\n"),
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_content_hygiene("issue-52/pages/docs/prd.html")
+    assert exc_info.value.code == 1
+    assert "技术方案" in capsys.readouterr().out
+
+
+def test_check_prd_content_hygiene_fails_when_prd_missing(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_content_hygiene("issue-52/pages/docs/prd.html")
+    assert exc_info.value.code == 1
+
+
+# ---------------------------------------------------------------------------
+# prd_cross_validated
+# ---------------------------------------------------------------------------
+
+
+def _cross_validation_report(version: str) -> str:
+    return (
+        "# PRD 交叉验证报告\n\n"
+        "| 场景 | PRD 答案 | 闭环方式 |\n|---|---|---|\n"
+        "| 正常下单 | 业务规则 8.1 | PM 决策接受 |\n\n"
+        f"<!-- cross-validation: pass prd-version: {version} -->\n"
+    )
+
+
+def _write_cross_validation_fixture(tmp_path, prd_version: str, report_version: str | None):
+    docs = tmp_path / "issue-52" / "pages" / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "prd.html").write_text(
+        _html_prd("# PRD\n\n" + PRD_13_SECTIONS, version=prd_version),
+        encoding="utf-8",
+    )
+    if report_version is not None:
+        (docs / "prd-cross-validation.html").write_text(
+            _html_prd(_cross_validation_report(report_version), version=prd_version),
+            encoding="utf-8",
+        )
+
+
+def test_check_prd_cross_validated_passes(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    _write_cross_validation_fixture(tmp_path, prd_version="v1.2", report_version="v1.2")
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_cross_validated("issue-52/pages/docs/prd-cross-validation.html")
+    assert exc_info.value.code == 0
+
+
+def test_check_prd_cross_validated_fails_when_report_missing(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    _write_cross_validation_fixture(tmp_path, prd_version="v1.2", report_version=None)
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_cross_validated("issue-52/pages/docs/prd-cross-validation.html")
+    assert exc_info.value.code == 1
+
+
+def test_check_prd_cross_validated_fails_without_pass_marker(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    docs = tmp_path / "issue-52" / "pages" / "docs"
+    docs.mkdir(parents=True, exist_ok=True)
+    (docs / "prd.html").write_text(
+        _html_prd("# PRD\n\n" + PRD_13_SECTIONS, version="v1.2"), encoding="utf-8"
+    )
+    (docs / "prd-cross-validation.html").write_text(
+        _html_prd("# PRD 交叉验证报告\n\n| 场景 | 缺口 |\n|---|---|\n", version="v1.2"),
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_cross_validated("issue-52/pages/docs/prd-cross-validation.html")
+    assert exc_info.value.code == 1
+
+
+def test_check_prd_cross_validated_fails_on_version_mismatch(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    _write_cross_validation_fixture(tmp_path, prd_version="v1.3", report_version="v1.2")
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_cross_validated("issue-52/pages/docs/prd-cross-validation.html")
+    assert exc_info.value.code == 1
+
+
+def test_check_prd_cross_validated_fails_when_prd_polluted_after_pass(validator_mod, tmp_path, monkeypatch):
+    monkeypatch.setattr(validator_mod, "PROJECT_ROOT", tmp_path)
+    _write_cross_validation_fixture(tmp_path, prd_version="v1.2", report_version="v1.2")
+    prd = tmp_path / "issue-52" / "pages" / "docs" / "prd.html"
+    prd.write_text(
+        _html_prd("# PRD\n\n" + PRD_13_SECTIONS + "\n> 待补充：字段口径\n", version="v1.2"),
+        encoding="utf-8",
+    )
+    with pytest.raises(SystemExit) as exc_info:
+        validator_mod.check_prd_cross_validated("issue-52/pages/docs/prd-cross-validation.html")
     assert exc_info.value.code == 1
 
 
