@@ -25,7 +25,12 @@ const COPY_SUBDIRS = [
   'stages',
   'schemas',
   'templates',
-  'harnesses'
+  'harnesses',
+  // Policies are data files consumed by hooks at runtime (e.g.
+  // .claude/policies/less-is-more.md read by on-session-start.sh,
+  // security.yaml read by pre-tool-use.sh). Without syncing them into the
+  // project, vendored installs silently skip those guardrails (#126).
+  'policies'
 ]
 
 function sha256(filePath: string): string {

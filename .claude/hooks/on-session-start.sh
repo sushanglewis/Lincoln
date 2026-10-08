@@ -350,6 +350,21 @@ PY
         echo "=== End Workflow Template ==="
         echo ""
     fi
+
+    # Inject the artifact-writing discipline (issue #126). This is the single
+    # deterministic load point: it fires once per session, only when an issue
+    # package is active, so research/exploration outside issue work and the
+    # individual skill prompts stay free of it.
+    POLICY_FILE="$FRAMEWORK_ROOT/.claude/policies/less-is-more.md"
+    if [[ -f "$POLICY_FILE" ]]; then
+        echo "=== 制品生成纪律（少即是多） ==="
+        echo "Source: .claude/policies/less-is-more.md"
+        echo ""
+        cat "$POLICY_FILE"
+        echo ""
+        echo "=== End 制品生成纪律 ==="
+        echo ""
+    fi
 else
     NEEDS_OPENING_GUIDANCE="true"
 fi

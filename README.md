@@ -154,6 +154,12 @@ Lincoln 为需求、页面、字段、文档等产物分配 `feature/*`、`page/
 
 完整模板说明见 [`.claude/workflows/README.md`](.claude/workflows/README.md)。
 
+### 少即是多的制品生成纪律
+
+AI 生成的交接产物容易内容堆积、重点淹没。Lincoln 把「少即是多」固化为一条只在**制品生成**时生效的纪律（[`.claude/policies/less-is-more.md`](.claude/policies/less-is-more.md)）：生成前先明确读者、用途与读者要做的决定；写作遵循结论先行、一件制品回答一个问题、删除测试、结构优于段落、链接优于复制、三分钟可读六条原则。调研与深度研究阶段不受其约束，鼓励充分展开。
+
+该纪律由 session hook 在检测到活跃 issue 工作包时自动注入，无需任何手动操作。
+
 ### Markdown-first Issue 工作包
 
 每个需求对应一个 GitHub issue 和一个 Lincoln feature 分支。工作包目录 `issue-<N>/` 包含：
@@ -232,6 +238,7 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 
 | 版本 | 日期 | 关键能力 |
 |---|---|---|
+| v1.8.3 | 2026-10-08 | 少即是多制品生成纪律（hook 注入）；非 npm CLI 平台化安装提示；`lincoln update` 同步刷新外部技能库 |
 | v1.7.0 | 2026-09-05 | SecurityAnalyzer 安全门控；Trace 2.0 事件日志；摩擦学习/知识召回/Trace 浓缩/MR 挖掘；并行专家子代理委托；相关者分析模型 |
 | v1.6.3 | 2026-08-15 | Markdown-first issue-package 文档；`--render-stage` 批量渲染；Mermaid 图表本地渲染 |
 | v1.6.2 | 2026-08-12 | `lc-init-branch` 改读全局 Lincoln 模板 |

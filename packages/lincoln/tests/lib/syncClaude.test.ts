@@ -40,6 +40,22 @@ describe('syncClaudeCode', () => {
     expect(fs.existsSync(path.join(targetDir, 'agents', 'default.md'))).toBe(true)
   })
 
+  it('copies policies directory so hooks can read policy files (#126)', () => {
+    fs.mkdirSync(path.join(payloadRoot, '.claude', 'policies'), { recursive: true })
+    fs.writeFileSync(
+      path.join(payloadRoot, '.claude', 'policies', 'less-is-more.md'),
+      '# policy\n'
+    )
+    const report = syncClaudeCode({
+      payloadRoot,
+      targetDir,
+      version: '1.8.3',
+      dryRun: false
+    })
+    expect(report.written).toContain('.claude/policies/less-is-more.md')
+    expect(fs.existsSync(path.join(targetDir, 'policies', 'less-is-more.md'))).toBe(true)
+  })
+
   it('merges CLAUDE.md managed block', () => {
     syncClaudeCode({ payloadRoot, targetDir, version: '1.6.0', dryRun: false })
     const claudeMd = fs.readFileSync(path.join(tmpDir, 'CLAUDE.md'), 'utf8')
