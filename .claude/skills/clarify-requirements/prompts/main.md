@@ -121,7 +121,6 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
 
 - Every document page opens with `## 页面意图` (目标读者 + 本页回答什么问题) and `## 边界` (本页不覆盖什么 + 单一事实来源链接).
 - Content follows standard Markdown: a single H1, H2 chapters, and tables/Mermaid over long prose. Never duplicate content across pages — link to the single source of truth instead.
-- 写任何文档页之前，必须先 Read `.claude/policies/less-is-more.md` 并按其执行：先明确读者/用途/目的，结论先行，交付前执行一轮纯删减评审（删除测试），主路径文档三分钟可读。访谈中的丰富细节放入 traceability 引用，不要把逐字稿内容复述进正文。
 - These pages are business-facing: 需求背景、用户角色、旅程、业务状态、业务流程、验收标准. Technical research or solution comparisons performed while clarifying are only background for the PM's decision — do not register them into any page; they may be summarized later into the archived `feasibility.html` by the design stage.
 
 ## 认知象限确认（Johari）

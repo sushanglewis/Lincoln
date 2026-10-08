@@ -87,7 +87,7 @@ Create `{process_slug}/pages/docs/` HTML design documents with enough product, d
 ## Rules
 
 - Use Chinese for PM-facing content unless the requirements are in English.
-- Keep documents short and reviewable; prefer tables and Mermaid diagrams over long prose. 写任何文档页之前，必须先 Read `.claude/policies/less-is-more.md` 并按其执行；交付前完成一轮纯删减评审（删除测试）：删掉不改变读者决策的内容；handoff 门户页只列核心决策、范围、开放问题与上下文包链接，过程性细节链接而非复述。
+- Keep documents short and reviewable; prefer tables and Mermaid diagrams over long prose.
 - Every document page must open with `## 页面意图` and `## 边界`; content must follow standard Markdown (a single H1, H2 chapters, tables/Mermaid over long prose). Never copy content across pages — link to the single source of truth instead.
 - Technical research and solution comparisons (frameworks, open-source options, trade-off analysis) belong **only** in `feasibility.html` (archived) or the PM→UX handoff contract. They must not appear in `prd.html`, `requirements.html`, `design-review.html`, `scenarios.html`, `feature-catalog.html`, or any other main-path page. PM-stage pages focus on business clarity: background, user roles, journeys, business states, flows, page routes/elements/interactions.
 - For technical frameworks and open-source projects, check current official docs or primary repositories before recommending.

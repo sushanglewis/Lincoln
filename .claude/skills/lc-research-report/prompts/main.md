@@ -20,8 +20,6 @@ Produce `{process_slug}/research/{session_id}/report.md` that integrates the res
    - Recommended decision
    - Key risks
 3. Include sections for each research domain (scope, first principles, stakeholders, market, product, competitive, frameworks, intelligence, narrative).
-   - 每个研究领域只保留支撑推荐决策所需的发现；过程性分析留在源产物中并链接，不并入报告正文。
-   - 动笔写报告前必须先 Read `.claude/policies/less-is-more.md` 并按其执行：结论（Core Thesis / Recommendation / Risks）先行，交付前完成一轮删除测试，主路径三分钟可读。
 4. Link every claim to evidence in the prior artifacts.
 5. Add an appendix with all sources.
 6. Write `report.md` using the template below.

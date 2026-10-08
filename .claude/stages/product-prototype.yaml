@@ -46,9 +46,7 @@ references:
 context:
   goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格 HTML 文档与高保真 HTML 交互原型。HTML 原型是本阶段的主要评审产物；`prototype.pen` 由 UI 在 UX 节点之后按需产出，在本阶段视为 optional。所有产物通过 {process_slug}/index.html 门户访问。
   execution: 调用 build-product-prototype skill 基于已确认的设计文档生成 fields.html、ui-spec.html 以及 pages/prototype/ 下的高保真 HTML 交互原型；Pencil 原型（prototype.pen）为 optional，仅在 PM 明确要求时由 UI 在 UX 节点之后产出。
-  constraints: '- `{process_slug}/pages/prototype/**/*.html` 为 required 高保真 HTML 交互原型；`prototype.pen` 为 optional UI 阶段产物。
-
-    - 制品生成纪律：本阶段所有面向读者的制品，写作前必须先 Read `.claude/policies/less-is-more.md`（读者/用途/目的 → 结论先行 → 删除测试），交付前完成纯删减评审。'
+  constraints: '- `{process_slug}/pages/prototype/**/*.html` 为 required 高保真 HTML 交互原型；`prototype.pen` 为 optional UI 阶段产物。'
 gates:
   entry:
   - check: previous_stage_completed

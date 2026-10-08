@@ -31,5 +31,3 @@ Using [clarify-requirements] to 基于访谈内容与人类 PM 多轮澄清需�
 基于访谈 transcript 和 summary 与人类 PM 多轮澄清，输出统一需求文档。
 
 运行入口： prompts/main.md
-
-**制品生成纪律**：在执行 prompts/main.md 中的任何写作步骤前，必须先 Read `.claude/policies/less-is-more.md`，并在交付前完成其中的删除测试。
