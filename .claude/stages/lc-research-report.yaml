@@ -30,7 +30,7 @@ references:
 context:
   goal: 整合全流程产物，输出可交付、可沉淀的最终研究报告。
   execution: "调用 lc-research-report skill 整合研究全流程产物（scope/first-principles/stakeholders/market/product-research/competitive/analysis-frameworks/collected-intelligence/narrative），输出可交付、可沉淀的 report.md。"
-  constraints: "- 本阶段产物写入 {process_slug}/research/{session_id}/。"
+  constraints: "- 本阶段产物写入 {process_slug}/research/{session_id}/。\n\n- 制品生成纪律：本阶段所有面向读者的制品，写作前必须先 Read `.claude/policies/less-is-more.md`（读者/用途/目的 → 结论先行 → 删除测试），交付前完成纯删减评审。"
 gates:
   entry:
   - check: previous_stage_completed

@@ -26,7 +26,7 @@ extends:
 - 门户纪律：所有文档与原型页面必须经门户 `index.html` 注册后才视为完成；门户模板来自 `.claude/templates/issue-package/index.html.tpl`。
 - 路径变更同步：PM 与 designer 引用同一套 stage artifacts；任何一方变更产物路径，必须同步另一方角色文件与 stage YAML。
 - PM→UX 交接遵循 default.md 的交接契约，契约文件位于 `handoffs/pm-to-ux/` 目录。
-- 删减评审：PM 在交付任何面向人类的交接产物（门户 `index.html`、PRD、设计文档、handoff 文档）前，必须执行 `.claude/policies/less-is-more.md` 中的删除测试——删掉不改变读者决策的内容；门户导航只保留主阅读路径，辅助与过程性内容一律归入「归档」分组。
+- 删减评审：PM 在写任何面向人类的交接产物（门户 `index.html`、PRD、设计文档、handoff 文档）前，必须先 Read `.claude/policies/less-is-more.md` 并执行其中的删除测试——删掉不改变读者决策的内容；门户导航只保留主阅读路径，辅助与过程性内容一律归入「归档」分组。
 
 ## 事实来源
 

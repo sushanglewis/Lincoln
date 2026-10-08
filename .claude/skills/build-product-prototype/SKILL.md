@@ -33,3 +33,5 @@ Using [build-product-prototype] to 基于已确认设计文档生成字段、界
 基于已确认设计文档生成字段规格、UI 规格和 Pencil 原型。
 
 运行入口： prompts/main.md
+
+**制品生成纪律**：在执行 prompts/main.md 中的任何写作步骤前，必须先 Read `.claude/policies/less-is-more.md`，并在交付前完成其中的删除测试。

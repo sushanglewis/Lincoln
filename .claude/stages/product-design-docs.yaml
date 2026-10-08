@@ -65,7 +65,9 @@ context:
   execution: 调用 draft-product-design skill 基于已确认的需求生成设计文档包（HTML 页面），并产出 PM→UX handoff 契约（pm-to-ux.handoff.yaml + master-handoff-pm-to-ux-v*.md），作为 UX 阶段接收方的入口。UI 规范、字段规范与可交互原型由下一阶段的 product-prototype 负责，不在本阶段产出。
   constraints: '- 本阶段 exit gate 要求 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 存在。
 
-    - handoff_to 为 lc-designer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再按 `context_pack` 顺序读取 Tier-2 文档。'
+    - handoff_to 为 lc-designer；接收方 Agent 必须从 `handoffs/pm-to-ux/pm-to-ux.handoff.yaml` 开始读取，再按 `context_pack` 顺序读取 Tier-2 文档。
+
+    - 制品生成纪律：本阶段所有面向读者的制品，写作前必须先 Read `.claude/policies/less-is-more.md`（读者/用途/目的 → 结论先行 → 删除测试），交付前完成纯删减评审。'
 gates:
   entry:
   - check: previous_stage_completed

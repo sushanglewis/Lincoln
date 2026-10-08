@@ -14,13 +14,29 @@ POLICY_PATH = ROOT / ".claude" / "policies" / "less-is-more.md"
 POLICY_REF = ".claude/policies/less-is-more.md"
 
 # Surfaces that generate human-facing artifacts and must reference the policy.
+# SKILL.md is the first file loaded when a skill triggers; prompts/main.md is
+# the execution entry. Both must point at the policy so a mere skill trigger
+# (e.g. "生成产品原型") recalls it.
 ARTIFACT_GENERATING_FILES = [
     ROOT / ".claude" / "agents" / "pm.md",
+    ROOT / ".claude" / "skills" / "clarify-requirements" / "SKILL.md",
     ROOT / ".claude" / "skills" / "clarify-requirements" / "prompts" / "main.md",
+    ROOT / ".claude" / "skills" / "draft-product-design" / "SKILL.md",
     ROOT / ".claude" / "skills" / "draft-product-design" / "prompts" / "main.md",
+    ROOT / ".claude" / "skills" / "build-product-prototype" / "SKILL.md",
     ROOT / ".claude" / "skills" / "build-product-prototype" / "prompts" / "main.md",
     ROOT / ".claude" / "skills" / "lc-handoff" / "SKILL.md",
+    ROOT / ".claude" / "skills" / "lc-research-report" / "SKILL.md",
     ROOT / ".claude" / "skills" / "lc-research-report" / "prompts" / "main.md",
+]
+
+# Artifact-generating stages must declare the policy in context.constraints,
+# the schema-supported stage guardrail surface.
+ARTIFACT_GENERATING_STAGES = [
+    "clarify",
+    "product-design-docs",
+    "product-prototype",
+    "lc-research-report",
 ]
 
 
@@ -50,4 +66,27 @@ def test_artifact_generating_surfaces_reference_policy():
         assert POLICY_REF in text, (
             f"{path.relative_to(ROOT)}: artifact-generating surface must "
             f"reference {POLICY_REF}"
+        )
+
+
+def test_prompts_require_reading_policy_before_writing():
+    """A bare path mention is not recall: prompts must order a Read before writing."""
+    for skill in ("clarify-requirements", "draft-product-design",
+                  "build-product-prototype", "lc-research-report"):
+        prompt = (ROOT / ".claude" / "skills" / skill / "prompts" / "main.md").read_text(encoding="utf-8")
+        assert "必须先 Read `.claude/policies/less-is-more.md`" in prompt, (
+            f"{skill}/prompts/main.md: must mandate reading the policy before writing"
+        )
+
+
+def test_artifact_stages_declare_policy_in_constraints():
+    import yaml
+
+    for stage in ARTIFACT_GENERATING_STAGES:
+        data = yaml.safe_load(
+            (ROOT / ".claude" / "stages" / f"{stage}.yaml").read_text(encoding="utf-8")
+        )
+        constraints = data.get("context", {}).get("constraints", "")
+        assert POLICY_REF in constraints, (
+            f"stage '{stage}': context.constraints must declare {POLICY_REF}"
         )

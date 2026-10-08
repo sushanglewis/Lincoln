@@ -41,3 +41,5 @@ Using [lc-research-report] to 整合 PM 研究全流程产物，输出可交付�
 - 严格基于已有研究产物，避免引入未经验证的假设。
 - 所有外部事实必须标注来源。
 - human_gate 阶段必须获得人类 PM 显式确认。
+
+**制品生成纪律**：在执行 prompts/main.md 中的任何写作步骤前，必须先 Read `.claude/policies/less-is-more.md`，并在交付前完成其中的删除测试。
