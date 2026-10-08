@@ -18,7 +18,13 @@ fi
 AGENTS_DIR="$ROOT/.claude/agents/external"
 mkdir -p "$AGENTS_DIR"
 
-"$ROOT/.venv/bin/python3" - "$AGENTS_DIR" "$DRY_RUN" <<'PY'
+if [[ -x "$ROOT/.venv/bin/python3" ]]; then
+  PYTHON="$ROOT/.venv/bin/python3"
+else
+  PYTHON="python3"
+fi
+
+"$PYTHON" - "$AGENTS_DIR" "$DRY_RUN" <<'PY'
 from __future__ import annotations
 
 import sys
