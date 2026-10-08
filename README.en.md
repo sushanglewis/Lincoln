@@ -152,6 +152,12 @@ Lincoln assigns stable IDs such as `feature/*`, `page/*`, `field/*`, and `doc/*`
 
 See [`.claude/workflows/README.md`](.claude/workflows/README.md) for the full template catalog.
 
+### Less-is-More Artifact Discipline
+
+AI-generated handoff artifacts tend to bury key information under bulk. Lincoln enforces a "less is more" discipline that applies **only when generating deliverables** ([`.claude/policies/less-is-more.md`](.claude/policies/less-is-more.md)): before writing, identify the reader, the purpose, and the decision the reader must make; then write conclusion-first, one artifact per question, pass a deletion test, prefer tables/diagrams over prose, link instead of duplicating, and keep the main reading path under three minutes. Research and deep-exploration stages are exempt and encouraged to expand fully.
+
+The discipline is injected automatically by the session hook whenever an active issue package is detected — no manual step required.
+
 ### Markdown-First Issue Work Packages
 
 Every requirement maps to one GitHub issue and one Lincoln feature branch. The `issue-<N>/` work package contains:
@@ -230,6 +236,7 @@ Before submitting a PR, please read:
 
 | Version | Date | Key capabilities |
 |---|---|---|
+| v1.8.3 | 2026-10-08 | Less-is-more artifact discipline (hook-injected); platform-aware install hints for non-npm CLIs; `lincoln update` refreshes external skill libraries |
 | v1.7.0 | 2026-09-05 | SecurityAnalyzer gating; Trace 2.0 event log; friction scoring/knowledge recall/trace condensation/MR mining; parallel specialist delegation; stakeholder analysis model |
 | v1.6.3 | 2026-08-15 | Markdown-first issue-package documents; `--render-stage` batch rendering; local `mermaid.min.js` runtime |
 | v1.6.2 | 2026-08-12 | `lc-init-branch` reads global Lincoln templates |

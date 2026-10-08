@@ -39,6 +39,10 @@ commands:
     description: 研究员角色，用于开源调研、可行性研究与 PM 主导的市场/产品/竞品/用户研究阶段
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role researcher
     args_hint: $ARGUMENTS
+  lc-agent-security-reviewer:
+    description: Lincoln 安全审查员角色，专注于框架策略、hook 门控与实现中的安全风险识别。
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role security-reviewer
+    args_hint: $ARGUMENTS
   lc-approve:
     description: 人类 PM 确认当前阶段 gate 通过(仅 human_gate 阶段)
     action: python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/stage_loader.py"
@@ -245,7 +249,7 @@ commands:
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"
     args_hint: start --workflow existing-project-iteration
   lc-wf-framework-self-improvement:
-    description: Lincoln 框架自身持续改进工作流（安全门控、harness 分发、摩擦学习、事件追踪、子代理委托）
+    description: 持续改进 Lincoln 框架本身的工作流（安全门控、harness 分发、摩擦学习、事件追踪、子代理委托）
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"
     args_hint: start --workflow framework-self-improvement --issue-number <N>
   lc-wf-interview-to-knowledge:

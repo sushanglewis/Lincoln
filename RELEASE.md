@@ -1,3 +1,19 @@
+# Lincoln v1.8.3 Release Notes
+
+**Release date:** 2026-10-08
+
+## Highlights
+
+- **少即是多制品生成纪律 (#126 / #128)** — 新增 `.claude/policies/less-is-more.md`，把「少即是多」固化为一条只在生成制品时生效的写作纪律：生成前先明确读者、用途与读者要做的决定；写作遵循结论先行、一件制品回答一个问题、删除测试、结构优于段落、链接优于复制、三分钟可读六条原则。调研与深度研究阶段不受其约束。该纪律由 session hook 在检测到活跃 issue 工作包（`current_stage != not_started`）时自动注入全文——单一注入点，skill prompt、stage YAML 与通用 Agent 契约均不重复携带，零额外上下文压力。
+- **修复 policies 目录未同步进项目的问题** — `syncClaudeCode` 的 `COPY_SUBDIRS` 新增 `policies`：此前 vendored 项目中 `.claude/policies/` 缺失，导致 `pre-tool-use.sh` 的 security.yaml 安全门控与本次新增的 less-is-more.md 在项目内静默跳过。修复后两类政策文件都会随 `lincoln install` / `lincoln update` 同步进项目。
+
+## Migration Notes
+
+- 无破坏性变更。升级到本版本后，下一次 issue 会话启动即自动获得少即是多纪律注入，无需手动操作。
+- 注意：npm 上 1.8.1 与 1.8.2 因发布令牌问题未曾发布（见 v1.8.2 说明），从 1.8.0 直接升级到 1.8.3 会一并获得这两个版本的能力（外部技能库自动刷新、非 npm CLI 平台化安装提示），升级后建议执行一次 `lincoln update`。
+
+---
+
 # Lincoln v1.8.2 Release Notes
 
 **Release date:** 2026-10-07
