@@ -14,7 +14,7 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 [![Release](https://img.shields.io/badge/release-v1.8.3-blue)](RELEASE.md)
 
-**v1.8.3** 已发布：新增 SecurityAnalyzer 安全门控、Trace 2.0 事件日志与会话摩擦学习/知识召回能力，clarify 阶段支持多维度相关者分析。
+**v1.8.3** 已发布：新增少即是多制品生成纪律（hook 注入），修复 policies 目录未同步进 vendored 项目的问题。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
@@ -99,6 +99,12 @@ lincoln init-project
 ```bash
 lincoln update            # 升级本体 + 同步框架 + 刷新外部技能库到最新 pin
 lincoln update --check    # 只检查是否有新版本，不安装
+```
+
+也可以直接用 npm 把本体升到最新再同步框架：
+
+```bash
+npm install -g @sushanglewis/lincoln@latest && lincoln update
 ```
 
 技能库同步遵循 dependencies.yaml 的 pin 策略：本地有未提交修改的仓库会被跳过并警告（不会被强制覆盖），非 npm 管理的 CLI（如 gh）缺失时只提示安装命令。同步失败降级为警告，不会阻断升级。
@@ -238,6 +244,7 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 
 | 版本 | 日期 | 关键能力 |
 |---|---|---|
+| v1.8.4 | 2026-10-08 | PM 阶段 PRD 质量门控：需求六问自检、13 章递进骨架、PRD 内容卫生与交叉验证校验、原型最终样貌纪律（#129） |
 | v1.8.3 | 2026-10-08 | 少即是多制品生成纪律（hook 注入）；非 npm CLI 平台化安装提示；`lincoln update` 同步刷新外部技能库 |
 | v1.7.0 | 2026-09-05 | SecurityAnalyzer 安全门控；Trace 2.0 事件日志；摩擦学习/知识召回/Trace 浓缩/MR 挖掘；并行专家子代理委托；相关者分析模型 |
 | v1.6.3 | 2026-08-15 | Markdown-first issue-package 文档；`--render-stage` 批量渲染；Mermaid 图表本地渲染 |

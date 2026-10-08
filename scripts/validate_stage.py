@@ -324,18 +324,51 @@ def check_portal_index_fresh() -> None:
 # ---------------------------------------------------------------------------
 
 
+# 递进骨架（issue-129）：版本说明 → 修订记录 → 功能列表 → 需求展开。
+# 章节编号不参与匹配，PM 可按需求类型在骨架内增插业务章节。
 REQUIRED_PRD_SECTIONS = [
-    "## 1. 需求背景",
-    "## 2. 用户故事",
-    "## 3. 功能拆解",
-    "## 4. 业务流程图",
-    "## 5. 验收标准",
-    "## 6. 业务规则",
-    "## 7. 非功能需求",
-    "## 8. 关联系统/接口",
-    "## 9. 相关产物链接",
-    "## 10. 风险与开放问题",
+    "版本说明",
+    "修订记录",
+    "功能列表",
+    "需求背景",
+    "用户故事",
+    "功能拆解",
+    "业务流程图",
+    "验收标准",
+    "业务规则",
+    "非功能需求",
+    "关联系统/接口",
+    "相关产物链接",
+    "风险与开放问题",
 ]
+
+PRD_SECTION_PATTERNS = [
+    (name, re.compile(rf"^##\s*(?:\d+\s*[.、．]?\s*)?{re.escape(name)}\s*$", re.MULTILINE))
+    for name in REQUIRED_PRD_SECTIONS
+]
+
+# PRD 正文禁则：过程性疑问在对话中解决，技术内容归归档页（issue-129 第 4/6 条）。
+PRD_FORBIDDEN_PROCESS_RE = re.compile(r"待确认|待人类|待补充|待\s*PM|TODO|FIXME", re.IGNORECASE)
+PRD_FORBIDDEN_TECH_HEADING_RE = re.compile(
+    r"^##+\s*.*(技术调研|技术方案|可行性研究|架构设计|接口设计|数据库设计)",
+    re.MULTILINE,
+)
+
+CROSS_VALIDATION_PASS_RE = re.compile(
+    r"<!--\s*cross-validation:\s*pass\s+prd-version:\s*(v\d+\.\d+)\s*-->"
+)
+
+
+def _read_prd_text(target: Path) -> str:
+    if target.suffix == ".html":
+        return extract_html_markdown(target)
+    return target.read_text(encoding="utf-8")
+
+
+def _prd_hygiene_violations(text: str) -> list[str]:
+    violations = sorted(set(PRD_FORBIDDEN_PROCESS_RE.findall(text)))
+    violations.extend(sorted(set(PRD_FORBIDDEN_TECH_HEADING_RE.findall(text))))
+    return violations
 
 
 def check_prd_has_required_sections(path: str) -> None:
@@ -343,16 +376,28 @@ def check_prd_has_required_sections(path: str) -> None:
     if not target.exists():
         fail(f"PRD missing: {target}")
 
-    if target.suffix == ".html":
-        text = extract_html_markdown(target)
-    else:
-        text = target.read_text(encoding="utf-8")
+    text = _read_prd_text(target)
 
-    missing = [section for section in REQUIRED_PRD_SECTIONS if section not in text]
+    missing = [name for name, pattern in PRD_SECTION_PATTERNS if not pattern.search(text)]
     if missing:
         fail(f"PRD missing required sections: {', '.join(missing)}")
 
     pass_check("PRD has all required sections")
+
+
+def check_prd_content_hygiene(path: str) -> None:
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"PRD missing: {target}")
+
+    violations = _prd_hygiene_violations(_read_prd_text(target))
+    if violations:
+        fail(
+            "PRD contains content that belongs in conversation or archived pages, "
+            f"not the PRD: {', '.join(violations)}"
+        )
+
+    pass_check("PRD content hygiene OK")
 
 
 def check_prd_snapshot_present(path: str) -> None:
@@ -372,6 +417,40 @@ def check_prd_snapshot_present(path: str) -> None:
         fail(f"PRD snapshot missing: {snapshot_path}. Run 'python scripts/lincoln_prd.py freeze' after approval.")
 
     pass_check(f"PRD snapshot present: {snapshot_path}")
+
+
+def check_prd_cross_validated(path: str) -> None:
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"Cross-validation report missing: {target}")
+
+    match = CROSS_VALIDATION_PASS_RE.search(_read_prd_text(target))
+    if not match:
+        fail(
+            "Cross-validation report has no pass marker. Every gap must be closed by a "
+            "human-PM decision (PRD fix with re-freeze, or accepted with recorded "
+            "rationale) before adding '<!-- cross-validation: pass prd-version: vX.Y -->'."
+        )
+
+    prd_path = target.parent / "prd.html"
+    if not prd_path.exists():
+        fail(f"PRD missing next to cross-validation report: {prd_path}")
+
+    prd_version = _extract_document_version(prd_path)
+    if prd_version != match.group(1):
+        fail(
+            f"Cross-validation pass marker is for PRD {match.group(1)}, but the PRD is now "
+            f"{prd_version or 'unversioned'}. Re-run cross-validation against the current PRD."
+        )
+
+    violations = _prd_hygiene_violations(_read_prd_text(prd_path))
+    if violations:
+        fail(
+            f"PRD regressed after cross-validation pass: {', '.join(violations)}. "
+            "Fix the PRD, bump its version, re-freeze, and re-run cross-validation."
+        )
+
+    pass_check(f"PRD cross-validation pass marker matches PRD {prd_version}")
 
 
 # ---------------------------------------------------------------------------
@@ -397,6 +476,8 @@ EXIT_CHECKS = {
     "handoff_versions_match": check_handoff_versions_match,
     "prd_has_required_sections": check_prd_has_required_sections,
     "prd_snapshot_present": check_prd_snapshot_present,
+    "prd_content_hygiene": check_prd_content_hygiene,
+    "prd_cross_validated": check_prd_cross_validated,
     "portal_index_exists": check_portal_index_exists,
     "artifact_meta_complete": check_artifact_meta_complete,
     "ids_valid": check_ids_valid,

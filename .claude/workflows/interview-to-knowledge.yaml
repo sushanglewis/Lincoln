@@ -54,6 +54,8 @@ workflow:
       exit_checks:
         - check: prd_has_required_sections
           args: ["{process_slug}/pages/docs/prd.html"]
+        - check: prd_content_hygiene
+          args: ["{process_slug}/pages/docs/prd.html"]
         - check: human_approved
           args: ["{session_id}"]
         - check: prd_snapshot_present
@@ -114,9 +116,12 @@ workflow:
       action: plan-tdd-development
       artifacts:
         - "{process_slug}/pages/docs/tdd-plan.html"
+        - "{process_slug}/pages/docs/prd-cross-validation.html"
       exit_checks:
         - check: tdd_plan_complete
           args: ["{design_id}"]
+        - check: prd_cross_validated
+          args: ["{process_slug}/pages/docs/prd-cross-validation.html"]
 
     - id: propose
       name: OpenSpec 提案

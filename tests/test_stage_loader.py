@@ -189,10 +189,11 @@ def test_validate_exit_clarify_artifacts_present_at_root_prd(minimal_state_file)
             "<!-- version: v1.0 -->\n"
             '<script type="text/markdown" id="docSource">\n'
             "# PRD\n\n"
-            "## 1. 需求背景\n## 2. 用户故事\n## 3. 功能拆解\n"
-            "## 4. 业务流程图\n## 5. 验收标准\n## 6. 业务规则\n"
-            "## 7. 非功能需求\n## 8. 关联系统/接口\n"
-            "## 9. 相关产物链接\n## 10. 风险与开放问题\n"
+            "## 1. 版本说明\n## 2. 修订记录\n## 3. 功能列表\n"
+            "## 4. 需求背景\n## 5. 用户故事\n## 6. 功能拆解\n"
+            "## 7. 业务流程图\n## 8. 验收标准\n## 9. 业务规则\n"
+            "## 10. 非功能需求\n## 11. 关联系统/接口\n"
+            "## 12. 相关产物链接\n## 13. 风险与开放问题\n"
             "</script>\n",
             encoding="utf-8",
         )

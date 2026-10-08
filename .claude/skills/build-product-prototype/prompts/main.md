@@ -115,12 +115,14 @@ You may still read the categorized example templates under `.claude/templates/is
    - Include `<meta name="page-uid" content="...">`, `<meta name="nav-group" content="...">`, and `<meta name="nav-label" content="...">` (injected by the renderer from CLI args; annotations come from the YAML `annotations` block).
    - Provide the full annotation meta tags so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows.
    - State the applicable role(s), scenario, page state (default / empty / loading / error / success), and which functions are visible and usable in that state via the `doc-purpose`, `doc-rules`, and `doc-boundaries` annotations, so each sub-page precisely depicts what a given role sees and can do in that case.
+   - Depict only the final system as it will ship: no demo-only buttons, explanatory text rows, or walkthrough-only jumps. Explanations belong in the `doc-*` annotation metas rendered in the portal right panel, never as on-screen prose.
+   - Declare the user story and business-flow step the page implements via `doc-stories` / `doc-refs`, so the prototype aligns bidirectionally with the PRD: every flow step has at least one page, and every page belongs to a flow step or story.
    - Use `LincolnPrototype.ui` builders and `prototype.css` tokens for every visual element so both light and dark themes render correctly; verify both themes by toggling the portal theme switch.
    - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
 
 7. Optionally create or update `{process_slug}/designs/<design_id>/prototype.pen` with Pencil tools if the PM explicitly asks for a Pencil prototype. If you use Pencil tools, call `get_editor_state(include_schema: true)` first and use `snapshot_layout` to check for clipping/overlap.
-8. Update the root `{process_slug}/pages/docs/prd.html` section 9 "相关产物链接" with the `ui-spec.html`, `fields.html`, and HTML prototype links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
+8. Update the「相关产物链接」section of the root `{process_slug}/pages/docs/prd.html` (PRD sections are matched by name — numbering is cosmetic) with the `ui-spec.html`, `fields.html`, and HTML prototype links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
 9. Ask the PM to open `{process_slug}/index.html` in a browser, toggle the theme switch in the macOS menubar, and review both light and dark renderings of each prototype page inside the portal.
 10. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.html`.
 11. Run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
@@ -143,4 +145,5 @@ You may still read the categorized example templates under `.claude/templates/is
 - Prototype links use relative paths so they work both inside the portal iframe and when opened standalone.
 - Do not add collapse toggles or custom panel chrome to the portal; the right annotation panel is always visible.
 - The system tray is portal-level chrome. Never redraw the tray inside an app prototype page with `.menubar`, `.tray-icon`, `.tray-panel`, `bindTray`, or `trayMenu`. Tray scenario pages must be thin controllers that post `lincoln-tray-state` messages to the portal.
+- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `doc-*` 注释由门户右侧面板呈现；每个原型页面经 `doc-stories` / `doc-refs` 标注所属用户故事与业务流程步骤，与 PRD 文字双向对齐。
 - After approval, tell the user to run: `claude plan-tdd-development <session_id> <design_id>`.

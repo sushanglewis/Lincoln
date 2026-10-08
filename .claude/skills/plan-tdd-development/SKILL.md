@@ -13,6 +13,7 @@ inputs:
     required: true
 outputs:
   - "{process_slug}/pages/docs/tdd-plan.html"
+  - "{process_slug}/pages/docs/prd-cross-validation.html"
 required_tools:
   - Read
   - Bash

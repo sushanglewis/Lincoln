@@ -283,6 +283,8 @@
             "handoff_versions_match",
             "prd_has_required_sections",
             "prd_snapshot_present",
+            "prd_content_hygiene",
+            "prd_cross_validated",
             "artifact_meta_complete",
             "ids_valid",
             "portal_index_fresh"
