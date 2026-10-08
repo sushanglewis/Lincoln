@@ -135,7 +135,7 @@ You may still read the categorized example templates under `.claude/templates/is
 ## Rules
 
 - `fields.html` and `ui-spec.html` are doc pages: each opens with `## 页面意图` and `## 边界`, follows standard Markdown structure (single H1, H2 chapters, tables over prose), and links instead of duplicating content from `flows.html` / `page-map.html` / `scenarios.html`.
-- 这两个文档页与原型注释同样遵守 `.claude/agents/default.md`「少即是多」：交付前执行删除测试；每条注释（`doc-purpose`、`doc-rules`、`doc-boundaries` 等）一句话写完，只保留读者理解该页面状态与可用功能所必需的信息。
+- 这两个文档页与原型注释同样遵守 `.claude/policies/less-is-more.md`：交付前执行删除测试；每条注释（`doc-purpose`、`doc-rules`、`doc-boundaries` 等）一句话写完，只保留读者理解该页面状态与可用功能所必需的信息。
 - The prototype sub-pages are the interactive GUI evidence for the PM stage: each one must precisely depict the page state and available functions of a specific role in a specific scenario (see the 角色×场景矩阵 in `ui-spec.html`). Do not merge multiple roles/scenarios into one page when their visible states differ.
 - The HTML prototype is the primary review artifact; Pencil is optional.
 - Always reuse the shared `prototype.css` and `prototype.js` assets. Do not inline all styles or rebuild the component library from scratch.
