@@ -46,6 +46,14 @@ def test_default_contract_contains_announce_skill_use():
     assert "技能使用规则" in body
 
 
+def test_default_contract_contains_less_is_more():
+    body = _load_after_frontmatter(DEFAULT_PATH)
+    assert "少即是多" in body
+    assert "结论先行" in body
+    assert "删除测试" in body
+    assert "三分钟可读" in body
+
+
 def test_default_contract_contains_handoff_contract():
     body = _load_after_frontmatter(DEFAULT_PATH)
     assert "交接契约（Handoff Contract）" in body
