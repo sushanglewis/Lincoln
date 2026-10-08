@@ -12,9 +12,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.8.3-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.8.4-blue)](RELEASE.md)
 
-**v1.8.3** is released: hook-injected less-is-more artifact discipline, plus a fix syncing the `policies` directory into vendored projects.
+**v1.8.4** is released: hook-injected less-is-more artifact discipline, plus a fix syncing the `policies` directory into vendored projects.
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
