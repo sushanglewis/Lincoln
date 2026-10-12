@@ -9,15 +9,9 @@
 <meta name="doc-version" content="{VERSION}">
 <meta name="doc-uid" content="{UID}">
 <!--
-  Optional portal annotations (right panel):
-  <meta name="doc-purpose" content="一句话功能说明">
-  <meta name="doc-layout" content="顶部导航 | 左侧边栏 | 主内容区">
-  <meta name="doc-fields" content="字段A — 类型 — 必填 — 说明 | 字段B — 说明">
-  <meta name="doc-stories" content="作为...我想要...以便... | ...">
-  <meta name="doc-rules" content="点击提交后校验输入 | 未登录跳转登录页">
-  <meta name="doc-boundaries" content="空列表展示占位图 | 搜索无结果">
-  <meta name="doc-exceptions" content="网络断开显示重试 | 无权限提示">
-  <meta name="doc-refs" content="PRD #3 | flows.html">
+  Machine-readable metas consumed by the portal index (lincoln_index.py).
+  Page explanations live in the Markdown body or, for prototypes, in
+  numbered on-page hotspots — not in meta tags.
 -->
 <title>{TITLE}</title>
 <!-- Asset paths assume this page lives at pages/docs/*.html (depth 2). Adjust if placed elsewhere. -->
@@ -44,6 +38,7 @@
 </script>
 
 <script src="../../assets/app.js"></script>
+<script src="../../assets/marked.min.js"></script>
 <script src="../../assets/mermaid.min.js"></script>
 <script>
 (function () {
@@ -57,19 +52,11 @@
     }
 
     function getStoredTheme() {
-        try {
-            return localStorage.getItem(THEME_KEY);
-        } catch (err) {
-            return null;
-        }
+        try { return localStorage.getItem(THEME_KEY); } catch (err) { return null; }
     }
 
     function setStoredTheme(theme) {
-        try {
-            localStorage.setItem(THEME_KEY, theme);
-        } catch (err) {
-            // ignore
-        }
+        try { localStorage.setItem(THEME_KEY, theme); } catch (err) {}
     }
 
     function applyTheme(theme) {
@@ -103,161 +90,15 @@
             .replace(/>/g, '&gt;');
     }
 
-    function inlineRender(str) {
-        return escapeHtml(str)
-            .replace(/`([^`]+)`/g, '<code>$1</code>')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-            .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*([^*]+)\*/g, '<em>$1</em>');
-    }
-
-    function renderMarkdown(src) {
-        var lines = src.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-        var html = '';
-        var inCode = false;
-        var codeLang = '';
-        var codeBuffer = [];
-        var inTable = false;
-        var tableBuffer = [];
-
-        function flushCode() {
-            if (!inCode) return;
-            var body = escapeHtml(codeBuffer.join('\n'));
-            if (codeLang === 'mermaid') {
-                html += '<pre class="lincoln-mermaid">' + body + '</pre>\n';
-            } else {
-                html += '<pre><code class="language-' + (codeLang || 'text') + '">' + body + '</code></pre>\n';
-            }
-            inCode = false;
-            codeLang = '';
-            codeBuffer = [];
-        }
-
-        function flushTable() {
-            if (!inTable || tableBuffer.length < 2) {
-                inTable = false;
-                tableBuffer = [];
-                return;
-            }
-            html += '<table class="lincoln-data-table">\n<thead><tr>';
-            var headers = tableBuffer[0].split('|').map(function (s) { return s.trim(); }).filter(Boolean);
-            headers.forEach(function (h) { html += '<th>' + inlineRender(h) + '</th>'; });
-            html += '</tr></thead>\n<tbody>\n';
-            for (var i = 2; i < tableBuffer.length; i++) {
-                html += '<tr>';
-                var cells = tableBuffer[i].split('|').map(function (s) { return s.trim(); }).filter(Boolean);
-                cells.forEach(function (c) { html += '<td>' + inlineRender(c) + '</td>'; });
-                html += '</tr>\n';
-            }
-            html += '</tbody>\n</table>\n';
-            inTable = false;
-            tableBuffer = [];
-        }
-
-        function blockRender(line) {
-            if (/^#{1,6}\s+/.test(line)) {
-                var level = line.match(/^(#{1,6})\s+/)[1].length;
-                var text = line.replace(/^#{1,6}\s+/, '');
-                return '<h' + level + '>' + inlineRender(text) + '</h' + level + '>';
-            }
-            if (/^\s*>\s*(.*)/.test(line)) {
-                return '<blockquote><p>' + inlineRender(line.replace(/^\s*>\s*/, '')) + '</p></blockquote>';
-            }
-            return '<p>' + inlineRender(line) + '</p>';
-        }
-
-        function listMarker(line) {
-            var unordered = line.match(/^(\s*)[-*+]\s+(.*)$/);
-            if (unordered) {
-                return { indent: unordered[1].length, type: 'ul', content: unordered[2] };
-            }
-            var ordered = line.match(/^(\s*)\d+\.\s+(.*)$/);
-            if (ordered) {
-                return { indent: ordered[1].length, type: 'ol', content: ordered[2] };
-            }
-            return null;
-        }
-
-        var listStack = [];
-
-        function closeLists(targetDepth) {
-            targetDepth = targetDepth || 0;
-            while (listStack.length > targetDepth) {
-                var last = listStack.pop();
-                html += '</li></' + last.type + '>\n';
-            }
-        }
-
-        function openList(type, depth) {
-            closeLists(depth);
-            html += '<' + type + '>\n';
-            listStack.push({ type: type, depth: depth });
-        }
-
-        function renderListItem(marker) {
-            var depth = marker.indent;
-            var type = marker.type;
-            var i = listStack.length - 1;
-            while (i >= 0 && listStack[i].depth > depth) {
-                i--;
-            }
-            if (i < 0 || listStack[i].type !== type || listStack[i].depth !== depth) {
-                openList(type, depth);
-            } else {
-                closeLists(i + 1);
-            }
-            html += '<li>' + inlineRender(marker.content);
-        }
-
-        for (var i = 0; i < lines.length; i++) {
-            var line = lines[i];
-
-            if (/^```/.test(line)) {
-                if (inCode) {
-                    flushCode();
-                } else {
-                    flushTable();
-                    closeLists();
-                    inCode = true;
-                    codeLang = line.replace(/^```\s*/, '').trim();
-                }
-                continue;
-            }
-
-            if (inCode) {
-                codeBuffer.push(line);
-                continue;
-            }
-
-            if (/^\|/.test(line)) {
-                closeLists();
-                inTable = true;
-                tableBuffer.push(line);
-                continue;
-            } else {
-                flushTable();
-            }
-
-            if (/^\s*$/.test(line)) {
-                closeLists();
-                continue;
-            }
-
-            var marker = listMarker(line);
-            if (marker) {
-                renderListItem(marker);
-                continue;
-            }
-
-            closeLists();
-            html += blockRender(line) + '\n';
-        }
-
-        flushCode();
-        flushTable();
-        closeLists();
-
-        return html;
+    function convertMermaidBlocks(root) {
+        var blocks = root.querySelectorAll('pre code.language-mermaid');
+        blocks.forEach(function (code) {
+            var pre = code.parentNode;
+            var container = document.createElement('pre');
+            container.className = 'lincoln-mermaid';
+            container.textContent = code.textContent;
+            pre.parentNode.replaceChild(container, pre);
+        });
     }
 
     function initMermaid() {
@@ -291,7 +132,17 @@
     var contentEl = document.getElementById('docContent');
     if (sourceEl && contentEl) {
         var src = sourceEl.textContent;
-        contentEl.innerHTML = renderMarkdown(src);
+        var html = '';
+        if (window.marked) {
+            try {
+                window.marked.setOptions({ gfm: true, breaks: false });
+                html = window.marked.parse(src);
+            } catch (err) {
+                html = '';
+            }
+        }
+        contentEl.innerHTML = html || ('<pre>' + escapeHtml(src) + '</pre>');
+        convertMermaidBlocks(contentEl);
         initMermaid();
     }
 })();

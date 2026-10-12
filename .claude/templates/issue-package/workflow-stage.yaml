@@ -63,11 +63,14 @@ artifact_guidance: |
     `human_confirmed: true` via `approve-gate` to indicate PM review.
 
   Portal annotation contract:
-  - Every HTML page should set `<meta name="nav-label">` for the left nav and the
-    annotation tags `doc-purpose`, `doc-layout`, `doc-fields`, `doc-stories`,
-    `doc-rules`, `doc-boundaries`, `doc-exceptions`, `doc-refs` so the right panel
-    can render functionality, layout, fields, boundary cases, and exception flows.
-  - The right panel is always visible; do not add collapse toggles.
+  - Every HTML page should set `<meta name="nav-label">`, `<meta name="nav-group">`,
+    and `<meta name="doc-uid">` / `<meta name="page-uid">` so the portal index can
+    build the collapsible, filterable sidebar.
+  - Prototype pages declare explanations as `hotspots` in the page YAML
+    (`[{target, title, text}]`), rendered as numbered on-page badges (driver.js)
+    with hover popovers — never as `doc-*` meta tags or on-screen prose.
+  - The portal sidebar is collapsible and filterable, and prototype pages open in
+    focus mode automatically; do not add custom portal chrome.
   - Prototype pages must use the shared `prototype.css` tokens so light/dark
     theme switching is visible end-to-end.
 nodes: []

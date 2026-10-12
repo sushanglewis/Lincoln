@@ -9,12 +9,9 @@
 <meta name="page-uid" content="{UID}">
 <meta name="prototype-base" content="../../../../">
 <!--
-  Required portal annotations checklist:
-  <meta name="doc-purpose" content="展示 macOS 系统托盘在 XXX 状态下的交互效果">
-  <meta name="doc-layout" content="门户层 macOS 菜单栏 | 右上角托盘图标 | （展开的）托盘菜单">
-  <meta name="doc-fields" content="未读 badge — 数字角标 | 消息列表 — 发送者/摘要/时间 | 打开/退出入口">
-  <meta name="doc-boundaries" content="无未读时菜单显示空态 | 消息超过5条截断">
-  <meta name="doc-exceptions" content="点击菜单外部收起 | 点击退出关闭菜单">
+  Explanations are numbered on-page hotspots (driver.js, MIT) via
+  LincolnPrototype.proto.initHotspots([{target, title, text}, ...]) —
+  never doc-* meta tags. Tray scenario pages must NOT render a tray chrome.
 
   IMPORTANT: This page must NOT render a tray inside the app prototype.
   The system tray is portal-level chrome. Send postMessage to drive it:

@@ -40,39 +40,45 @@ def test_extract_html_meta_falls_back_to_title(tmp_path: Path):
     assert meta["title"] == "Doc Title"
 
 
-def test_extract_html_meta_annotation_tags(tmp_path: Path):
+def test_extract_html_meta_machine_tags(tmp_path: Path):
     page = write_html(
         tmp_path,
         "pages/docs/c.html",
-        '<meta name="doc-purpose" content="说明">'
-        '<meta name="doc-layout" content="顶部 | 左侧 | 主内容">'
-        '<meta name="doc-fields" content="A — 文本 | B — 数字">'
-        '<meta name="doc-stories" content="用户故事一 | 用户故事二">'
-        '<meta name="doc-rules" content="规则一 | 规则二">'
-        '<meta name="doc-boundaries" content="空态 | 最大长度">'
-        '<meta name="doc-exceptions" content="网络失败 | 无权限">'
-        '<meta name="doc-refs" content="PRD #1 | flows.html">',
+        '<meta name="doc-title" content="说明">'
+        '<meta name="nav-label" content="短名">'
+        '<meta name="nav-group" content="Docs">'
+        '<meta name="doc-uid" content="c">'
+        '<meta name="doc-version" content="v2.0">',
     )
     meta = extract_html_meta(page)
-    assert meta["purpose"] == "说明"
-    assert meta["layout"] == "顶部 | 左侧 | 主内容"
-    assert meta["fields"] == ["A — 文本", "B — 数字"]
-    assert meta["stories"] == ["用户故事一", "用户故事二"]
-    assert meta["rules"] == ["规则一", "规则二"]
-    assert meta["boundaries"] == ["空态", "最大长度"]
-    assert meta["exceptions"] == ["网络失败", "无权限"]
-    assert meta["refs"] == ["PRD #1", "flows.html"]
+    assert meta["title"] == "说明"
+    assert meta["nav_label"] == "短名"
+    assert meta["nav_group"] == "Docs"
+    assert meta["uid"] == "c"
+    assert meta["version"] == "v2.0"
+    assert meta["markdown"] == ""
 
 
-def test_extract_html_meta_missing_lists_are_empty(tmp_path: Path):
-    page = write_html(tmp_path, "pages/docs/d.html", "")
+def test_extract_html_meta_embeds_markdown_for_doc_pages(tmp_path: Path):
+    page = write_html(
+        tmp_path,
+        "pages/docs/prd.html",
+        '<meta name="doc-title" content="PRD">'
+        '<script type="text/markdown" id="docSource">\n# PRD\n\n## 背景\n\n内容\n</script>',
+    )
     meta = extract_html_meta(page)
-    assert meta["fields"] == []
-    assert meta["stories"] == []
-    assert meta["rules"] == []
-    assert meta["boundaries"] == []
-    assert meta["exceptions"] == []
-    assert meta["refs"] == []
+    assert "## 背景" in meta["markdown"]
+    assert "内容" in meta["markdown"]
+
+
+def test_extract_html_meta_skips_markdown_for_prototype_pages(tmp_path: Path):
+    page = write_html(
+        tmp_path,
+        "pages/prototype/web/main/page.html",
+        '<meta name="doc-title" content="主界面"><div class="window"></div>',
+    )
+    meta = extract_html_meta(page)
+    assert meta["markdown"] == ""
 
 
 def test_build_package_data_uses_nav_label_for_label(tmp_path: Path):
@@ -99,15 +105,17 @@ def test_build_package_data_uses_nav_label_for_label(tmp_path: Path):
     assert items["pages/docs/fallback.html"]["label"] == "Fallback Title"
 
 
-def test_build_package_data_passes_through_annotations(tmp_path: Path):
+def test_build_package_data_embeds_markdown_in_nav_payload(tmp_path: Path):
     write_html(
         tmp_path,
-        "issue-99/pages/prototype/app/main.html",
-        '<meta name="doc-purpose" content="主界面">'
-        '<meta name="doc-layout" content="顶部 | 左侧 | 主内容">'
-        '<meta name="doc-fields" content="A | B">'
-        '<meta name="doc-boundaries" content="空态">'
-        '<meta name="doc-exceptions" content="网络失败">',
+        "issue-99/pages/docs/prd.html",
+        '<meta name="nav-label" content="PRD">'
+        '<script type="text/markdown" id="docSource">\n<!-- version: v1.0 -->\n\n# PRD\n\n## 目标\n\n做一件事\n</script>',
+    )
+    write_html(
+        tmp_path,
+        "issue-99/pages/prototype/web/dashboard/page.html",
+        '<meta name="nav-label" content="仪表盘">',
     )
     state = {
         "schema_version": "2.0.0",
@@ -116,12 +124,10 @@ def test_build_package_data_passes_through_annotations(tmp_path: Path):
     }
     data = build_package_data(state, "issue-99", project_root=tmp_path)
     items = {item["path"]: item for group in data["nav"] for item in group["items"]}
-    item = items["pages/prototype/app/main.html"]
-    assert item["purpose"] == "主界面"
-    assert item["layout"] == "顶部 | 左侧 | 主内容"
-    assert item["fields"] == ["A", "B"]
-    assert item["boundaries"] == ["空态"]
-    assert item["exceptions"] == ["网络失败"]
+    doc_item = items["pages/docs/prd.html"]
+    assert "## 目标" in doc_item["markdown"]
+    proto_item = items["pages/prototype/web/dashboard/page.html"]
+    assert proto_item["markdown"] == ""
 
 
 def test_build_package_data_label_falls_back_to_stem(tmp_path: Path):

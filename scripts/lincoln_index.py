@@ -29,8 +29,6 @@ PACKAGE_DATA_FILENAME = "assets/js/package-data.js"
 ARCHIVE_NAV_GROUP = "归档"
 VERSION_COMMENT_RE = re.compile(r"<!--\s*version:\s*(v\d+\.\d+)\s*-->", re.IGNORECASE)
 STATUS_COMMENT_RE = re.compile(r"<!--\s*status:\s*(\w+)\s*-->", re.IGNORECASE)
-LIST_META_KEYS = ("doc-fields", "doc-stories", "doc-rules", "doc-boundaries", "doc-exceptions", "doc-refs")
-LIST_SEPARATOR = "|"
 
 
 class MetaParser(HTMLParser):
@@ -71,13 +69,6 @@ def package_relative(path: str, process_slug: str) -> str:
     return path[len(prefix) :] if path.startswith(prefix) else path
 
 
-def split_list_meta(value: str) -> list[str]:
-    """Split a pipe-separated meta value into a list of trimmed non-empty items."""
-    if not value:
-        return []
-    return [item.strip() for item in value.split(LIST_SEPARATOR) if item.strip()]
-
-
 def extract_html_meta(full_path: Path) -> dict[str, Any]:
     """Parse meta tags and version/status comments from an HTML page."""
     if not full_path.exists():
@@ -91,20 +82,15 @@ def extract_html_meta(full_path: Path) -> dict[str, Any]:
 
     version_match = VERSION_COMMENT_RE.search(text)
     status_match = STATUS_COMMENT_RE.search(text)
-    meta = {
+    return {
         "title": parser.meta.get("doc-title") or parser.title or full_path.stem,
         "nav_label": parser.meta.get("nav-label", ""),
         "nav_group": parser.meta.get("nav-group", "Docs"),
         "version": parser.meta.get("doc-version") or (version_match.group(1) if version_match else None),
         "status": status_match.group(1) if status_match else "",
         "uid": parser.meta.get("doc-uid") or parser.meta.get("page-uid", ""),
-        "purpose": parser.meta.get("doc-purpose", ""),
-        "layout": parser.meta.get("doc-layout", ""),
+        "markdown": extract_html_markdown(full_path) if 'id="docSource"' in text else "",
     }
-    for key in LIST_META_KEYS:
-        field = key.replace("doc-", "")
-        meta[field] = split_list_meta(parser.meta.get(key, ""))
-    return meta
 
 
 def extract_html_markdown(full_path: Path) -> str:
@@ -196,15 +182,8 @@ def build_package_data(
                 "stage": entry.get("stage", ""),
                 "gate_passed": entry.get("gate_passed", False),
                 "human_confirmed": entry.get("human_confirmed", False),
-                "purpose": entry.get("purpose", ""),
-                "layout": entry.get("layout", ""),
-                "stories": entry.get("stories", []),
-                "fields": entry.get("fields", []),
-                "rules": entry.get("rules", []),
-                "boundaries": entry.get("boundaries", []),
-                "exceptions": entry.get("exceptions", []),
-                "refs": entry.get("refs", []),
                 "uid": entry.get("uid", ""),
+                "markdown": entry.get("markdown", ""),
             }
         )
 

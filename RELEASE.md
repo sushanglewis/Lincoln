@@ -1,3 +1,26 @@
+# Lincoln v1.9.0 Release Notes
+
+**Release date:** 2026-10-12
+
+## Highlights
+
+- **docsify 式 issue-package 门户 + 数字角标注解 (#131 / LEW-76)** — issue-package 的 `index.html` 人读门户整体升级为 docsify 风格的文档承载框架，生成时烘焙、运行时零请求，继续支持 file:// 双击打开与静态托管零部署：
+  - **docsify 式门户风格** — 白色侧边栏顶部药丸搜索框、加粗分组标题带 ▸/▾ 折叠箭头、激活页浅绿底 + 绿色左边条；文档内容区去掉窗口卡片，860px 居中大号排版（h1 34px、1.75 行距）、蓝色竖条引用样式；顶部精简为 40px 白色工具条（聚焦/主题/托盘/日期）。
+  - **可折叠、可定位的目录** — 目录分组独立折叠（状态存 localStorage）+ 一键全部收起/展开；过滤框按标题/路径匹配并自动展开命中组、高亮定位；文档与原型分组一目了然。右侧说明面板与「必要产物清单」从目录栏移除。
+  - **Focus 模式** — 菜单栏按钮或打开原型页自动进入：目录整体隐藏、内容 100% 宽，原型获得最大展示空间，Esc 退出。
+  - **完整 Markdown 渲染（marked）** — vendor `marked` v18（MIT，docsify 同款渲染器）替换手写解析器：图片、表格、任务列表等原生元素全支持；mermaid 代码块自动渲染并随门户明暗主题切换；`<script id="docSource">` 内嵌契约不变，全部 PRD 门控校验零回归。
+  - **数字角标注解（driver.js）** — vendor `driver.js` v1.9（MIT）；原型 YAML 新增 `hotspots: [{target, title, text}]`，在搜索框、字段、卡片等元素上渲染数字角标，hover 弹出说明、点击固定、可整体隐藏，解释不再依赖门户右侧面板，也不再以屏内文字出现。
+  - **hash 深链路由** — `#/pages/docs/prd.html` 形式的地址可直接定位到任意文档或原型页，Agent share 链接给人类验收更友好。
+  - 顺带修复：结构化原型模板资源引用深度（depth-3 → depth-4）与技能规范不一致导致 `prototype.js` 404 的问题。
+
+## Migration Notes
+
+- 无破坏性变更：新门户由 `lincoln_index.py` 重新生成 `package-data.js` 后自动生效；进行中的 issue 工作包在包目录内重跑 `scripts/lincoln_index.py`（或任一 `stage_loader.py` 产物记录动作）即完成升级。
+- 原型页的 `doc-*` 注解 meta 已被 `hotspots` 取代：`prototype_artifact_complete` 校验器现要求页面数据含 `hotspots`；存量原型页在下一次 `build-product-prototype` 重渲染时自动迁移。
+- 升级方式：`npm install -g @sushanglewis/lincoln@latest` 后执行 `lincoln update`，即把新门户模板、marked/driver.js 运行时与校验器同步进各 harness 与项目。
+
+---
+
 # Lincoln v1.8.4 Release Notes
 
 **Release date:** 2026-10-08

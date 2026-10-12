@@ -21,6 +21,14 @@ REQUIRED_PORTAL_TEMPLATES = [
 REQUIRED_ASSETS = [
     "assets/style.css",
     "assets/app.js",
+    "assets/marked.min.js",
+    "assets/driver.js",
+    "assets/driver.css",
+]
+
+VENDORED_LICENSES = [
+    "assets/licenses/marked-LICENSE",
+    "assets/licenses/driver.js-LICENSE",
 ]
 
 REQUIRED_PROTOTYPE_ASSETS = [
@@ -84,6 +92,17 @@ def test_issue_package_template_has_prototype_assets():
         assert (TEMPLATE_ROOT / asset).exists(), f"Missing prototype asset: {asset}"
 
 
+def test_issue_package_vendored_assets_have_licenses():
+    for asset in REQUIRED_ASSETS:
+        path = TEMPLATE_ROOT / asset
+        assert path.exists(), f"Missing shared asset: {asset}"
+        assert path.stat().st_size > 1000, f"Vendored asset looks truncated: {asset}"
+    for rel in VENDORED_LICENSES:
+        path = TEMPLATE_ROOT / rel
+        assert path.exists(), f"Missing OSS license: {rel}"
+        assert "MIT" in path.read_text(encoding="utf-8"), f"License file missing MIT text: {rel}"
+
+
 def test_issue_package_template_has_prototype_example_templates():
     for tpl in REQUIRED_PROTOTYPE_EXAMPLES:
         assert (TEMPLATE_ROOT / tpl).exists(), f"Missing prototype example template: {tpl}"
@@ -118,12 +137,6 @@ def test_prototype_css_has_dark_mode_override():
     assert '[data-theme="dark"]' in text, "prototype.css should define dark theme override"
 
 
-def test_portal_checklist_drops_research_item():
-    text = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
-    assert 'data-key="research"' not in text, "index.html.tpl should not list 调研笔记 as a headline deliverable"
-    assert 'data-key="decisions"' in text
-
-
 def test_portal_app_renders_archive_group_collapsed():
     text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "pnav-archive" in text
@@ -135,7 +148,17 @@ def test_app_js_has_theme_helpers():
     text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "lincoln-theme" in text
     assert "toggleTheme" in text
-    assert "artifactChecklist" in text
+    # 必要产物清单 removed from the sidebar (LEW-76).
+    assert "artifactChecklist" not in text
+    assert "必要产物清单" not in text
+
+
+def test_portal_has_no_artifact_checklist():
+    index = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
+    style = (TEMPLATE_ROOT / "assets" / "style.css").read_text(encoding="utf-8")
+    assert "artifactChecklist" not in index
+    assert "必要产物清单" not in index
+    assert "pnav-checklist" not in style
 
 
 def test_prototype_js_has_frame_helpers():
@@ -174,23 +197,38 @@ def test_schema_allows_issue_number_in_current_run():
     assert "issue_number" in variables_props
 
 
-def test_portal_template_has_no_collapse_toggle():
+def test_portal_template_has_nav_collapse_and_filter():
     index = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
     style = (TEMPLATE_ROOT / "assets" / "style.css").read_text(encoding="utf-8")
     app = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
-    assert "pannToggle" not in index
-    assert "pann-toggle" not in style
-    assert ".pann.collapsed" not in style
-    assert "initPanelToggle" not in app
+    # Right annotation panel removed entirely.
+    assert 'class="pann"' not in index
+    assert ".pann" not in style
+    assert "renderPanel" not in app
+    # Collapsible groups, filter input, collapse-all, focus mode.
+    assert "navCollapseAll" in app
+    assert "navFilter" in app
+    assert "pnav-group-details" in app
+    assert "focusToggle" in index
+    assert ".portal-wrap.focus" in style
 
 
-def test_app_js_renders_annotation_sections():
+def test_app_js_renders_docs_in_place_with_marked():
     text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
-    assert "boundaries" in text
-    assert "exceptions" in text
-    assert "布局" in text
-    assert "边界" in text
-    assert "异常流" in text
+    assert "docView" in text
+    assert "window.marked" in text
+    assert "renderMarkdownDoc" in text
+    assert "lincoln-mermaid" in text
+    assert "hashchange" in text
+
+
+def test_app_js_syntax_valid():
+    js_path = TEMPLATE_ROOT / "assets" / "app.js"
+    node = subprocess.run(["which", "node"], capture_output=True, text=True)
+    if node.returncode != 0:
+        pytest.skip("node not available")
+    check = subprocess.run(["node", "--check", str(js_path)], capture_output=True, text=True)
+    assert check.returncode == 0, f"app.js syntax error: {check.stderr}"
 
 
 def test_app_js_supports_portal_tray_state():
@@ -210,7 +248,25 @@ def test_page_templates_document_annotation_meta():
     for tpl in ["page-doc.html.tpl", "page-prototype.html.tpl"]:
         text = (TEMPLATE_ROOT / tpl).read_text(encoding="utf-8")
         assert 'name="nav-label"' in text, f"{tpl} should set nav-label"
-        assert 'name="doc-purpose"' in text, f"{tpl} should reference doc-purpose"
+        # Explanations are on-page hotspots now, not doc-* annotation metas.
+        assert 'name="doc-purpose"' not in text, f"{tpl} should not reference doc-purpose"
+
+
+def test_doc_template_renders_markdown_with_marked():
+    text = (TEMPLATE_ROOT / "page-doc.html.tpl").read_text(encoding="utf-8")
+    assert "marked.min.js" in text
+    assert 'id="docSource"' in text, "embedded markdown block must stay for extract_html_markdown"
+    assert "renderMarkdown" not in text, "hand-rolled markdown renderer should be gone"
+    assert "mermaid.min.js" in text
+
+
+def test_structured_prototype_template_supports_hotspots():
+    text = (TEMPLATE_ROOT / "page-prototype-structured.html.tpl").read_text(encoding="utf-8")
+    assert "driver.js" in text
+    assert "driver.css" in text
+    assert "initHotspots" in text
+    assert "data.hotspots" in text
+    assert "injectAnnotationMetas" not in text
 
 
 def test_tray_template_is_portal_controller():

@@ -9,19 +9,17 @@
 <meta name="page-uid" content="{UID}">
 <meta name="prototype-base" content="../../../">
 <!--
-  Optional portal annotations (right panel):
-  <meta name="doc-purpose" content="一句话功能说明">
-  <meta name="doc-layout" content="顶部导航 | 左侧边栏 | 主内容区">
-  <meta name="doc-fields" content="字段A — 类型 — 必填 — 说明 | 字段B — 说明">
-  <meta name="doc-stories" content="作为...我想要...以便... | ...">
-  <meta name="doc-rules" content="点击提交后校验输入 | 未登录跳转登录页">
-  <meta name="doc-boundaries" content="空列表展示占位图 | 搜索无结果">
-  <meta name="doc-exceptions" content="网络断开显示重试 | 无权限提示">
-  <meta name="doc-refs" content="PRD #3 | flows.html">
+  Explanations are numbered on-page hotspots (driver.js, MIT), not meta tags.
+  Call LincolnPrototype.proto.initHotspots([...]) after mounting content:
+    [{target: "search-box", title: "全局搜索", text: "支持拼音首字母，回车跳转首个结果"}]
+  `target` is a CSS selector, a data-uid, or an element id. Hover shows the
+  popover; click pins it. Keep nav metas (doc-title / nav-label / nav-group /
+  page-uid) accurate for the portal index.
 -->
 <title>{TITLE}</title>
 <!-- Asset paths assume this page lives at pages/prototype/{group}/*.html (depth 3). -->
 <link rel="stylesheet" href="../../../assets/prototype.css">
+<link rel="stylesheet" href="../../../assets/driver.css">
 </head>
 <body class="proto-page" data-page-uid="{UID}">
 
@@ -33,9 +31,9 @@
   3. Replace {TITLE}, {NAV_GROUP}, {UID} when copying this template.
   4. Choose the right shell from LincolnPrototype.ui (frameApp / frameWeb / frameMobile)
      based on the product form-factor.
-  5. Set doc-purpose / doc-layout / doc-fields / doc-boundaries / doc-exceptions
-     (and doc-stories / doc-rules / doc-refs when useful) so the portal right panel
-     explains functionality, layout, fields, boundary cases, and exception flows.
+  5. Explain functionality, layout, fields, boundary cases, and exception flows
+     via LincolnPrototype.initHotspots (numbered badges + hover popovers) —
+     never as on-screen prose, and never as doc-* meta tags.
   6. See .claude/templates/issue-package/prototypes/ for categorized examples:
      app/{main,onboarding,settings,overlays,tray,org}, web/{dashboard,list,form,detail},
      mobile/{home,chat,settings,profile}.
@@ -43,6 +41,7 @@
 
 <div class="window full" id="win"></div>
 
+<script src="../../../assets/driver.js"></script>
 <script src="../../../assets/prototype.js"></script>
 <script>
 (function () {

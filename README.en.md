@@ -12,9 +12,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.8.4-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.9.0-blue)](RELEASE.md)
 
-**v1.8.4** is released: hook-injected less-is-more artifact discipline, plus a fix syncing the `policies` directory into vendored projects.
+**v1.9.0** is released: the issue-package portal is rebuilt as a docsify-style documentation framework — collapsible/filterable sidebar, focus mode, full Markdown rendering via marked, and driver.js numbered hotspot annotations, all openable via file:// with zero services (#131).
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
@@ -175,6 +175,17 @@ Every requirement maps to one GitHub issue and one Lincoln feature branch. The `
 - `pages/prototype/` — interactive HTML prototypes
 - `handoffs/` — stage handoff documents
 
+### Docsify-Style Portal & Numbered Hotspot Annotations
+
+The `index.html` portal adopts a docsify-style documentation framework: content is baked at generation time with zero runtime requests, so packages open directly via **file://** and can also be pushed to static hosting for shareable links (`#/pages/docs/prd.html` deep links included):
+
+- **Sidebar**: collapsible groups with remembered state, a filter box for instant page location, collapse/expand-all
+- **Focus mode**: hides the sidebar while reading docs or reviewing prototypes, giving prototypes full-width space (Esc to exit)
+- **Documents**: marked (MIT) renders full Markdown — images, tables, task lists, and mermaid diagrams, all synced with the portal's light/dark theme
+- **Prototype annotations**: declare `hotspots` in the page YAML to render numbered badges on elements; hover for the explanation without on-screen prose
+
+Run `lincoln update` after upgrading to sync the latest portal templates and runtimes into every harness and project.
+
 ## Natural-Language Interaction
 
 Lincoln is AI-Native — **you don't need to type terminal commands**. Describe your intent in plain language and the Agent translates and executes the right scripts for you.
@@ -242,6 +253,7 @@ Before submitting a PR, please read:
 
 | Version | Date | Key capabilities |
 |---|---|---|
+| v1.9.0 | 2026-10-12 | Docsify-style issue-package portal: collapsible/filterable sidebar, focus mode, full Markdown rendering via marked, driver.js numbered hotspot annotations, hash deep links (#131) |
 | v1.8.4 | 2026-10-08 | PM-stage PRD quality gates: six-question clarity check, 13-section progressive PRD skeleton, content-hygiene and cross-validation checks, final-system-only prototype discipline (#129) |
 | v1.8.3 | 2026-10-08 | Less-is-more artifact discipline (hook-injected); platform-aware install hints for non-npm CLIs; `lincoln update` refreshes external skill libraries |
 | v1.7.0 | 2026-09-05 | SecurityAnalyzer gating; Trace 2.0 event log; friction scoring/knowledge recall/trace condensation/MR mining; parallel specialist delegation; stakeholder analysis model |

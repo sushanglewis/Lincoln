@@ -526,22 +526,15 @@ def validate_prototype_artifact_complete(design_id: str):
     if missing_nav_label:
         fail(f"Prototype pages missing nav-label meta: {', '.join(missing_nav_label)}")
 
-    required_annotation_metas = [
-        ("doc-purpose", 'doc-purpose'),
-        ("doc-layout", 'doc-layout'),
-        ("doc-fields", 'doc-fields'),
-        ("doc-boundaries", 'doc-boundaries'),
-        ("doc-exceptions", 'doc-exceptions'),
-    ]
-    annotation_gaps: dict[str, list[str]] = {}
+    # Explanations are numbered on-page hotspots (driver.js), not doc-* metas.
+    hotspot_gaps: dict[str, str] = {}
     for p in html_files:
         text = p.read_text(encoding="utf-8")
-        missing = [name for label, name in required_annotation_metas if f'<meta name="{name}"' not in text]
-        if missing:
-            annotation_gaps[str(p.relative_to(process_root()))] = missing
-    if annotation_gaps:
-        messages = [f"{path}: missing {', '.join(metas)}" for path, metas in annotation_gaps.items()]
-        fail(f"Prototype pages missing required annotation meta tags:\n" + "\n".join(messages))
+        if '"hotspots"' not in text:
+            hotspot_gaps[str(p.relative_to(process_root()))] = '"hotspots"'
+    if hotspot_gaps:
+        messages = [f"{path}: missing {key} in pageData" for path, key in hotspot_gaps.items()]
+        fail(f"Prototype pages missing required hotspot annotations:\n" + "\n".join(messages))
 
     # Anti-pattern: in-app tray redraw. The system tray is portal-level chrome.
     in_app_tray_markers = [

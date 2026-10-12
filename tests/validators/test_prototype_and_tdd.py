@@ -14,11 +14,7 @@ def write_prototype_package(root: Path, design_id: str, prototype_approved: bool
     prototype_dir.mkdir(parents=True, exist_ok=True)
     (prototype_dir / "index.html").write_text(
         '<meta name="nav-label" content="Index">'
-        '<meta name="doc-purpose" content="Index page.">'
-        '<meta name="doc-layout" content="Portal index.">'
-        '<meta name="doc-fields" content="id — identifier">'
-        '<meta name="doc-boundaries" content="Empty package-data fallback">'
-        '<meta name="doc-exceptions" content="Missing package data">'
+        '<script type="application/json" id="pageData">{"hotspots": [{"target": "demo", "title": "说明", "text": "用途"}]}</script>'
         "prototype",
         encoding="utf-8",
     )
@@ -79,11 +75,7 @@ class TestPrototypeNavLabel:
         (proto_dir / "with-nav.html").write_text(
             '<html><head>'
             '<meta name="nav-label" content="Page">'
-            '<meta name="doc-purpose" content="Purpose.">'
-            '<meta name="doc-layout" content="Layout.">'
-            '<meta name="doc-fields" content="field — desc">'
-            '<meta name="doc-boundaries" content="Boundary.">'
-            '<meta name="doc-exceptions" content="Exception.">'
+            '<script type="application/json" id="pageData">{"hotspots": [{"target": "demo", "title": "说明", "text": "用途"}]}</script>'
             '</head><body></body></html>',
             encoding="utf-8",
         )
@@ -108,11 +100,7 @@ class TestPrototypeTrayCoverage:
         (tray_dir / "default.html").write_text(
             '<html><head>'
             '<meta name="nav-label" content="Tray">'
-            '<meta name="doc-purpose" content="Tray state.">'
-            '<meta name="doc-layout" content="Menu bar.">'
-            '<meta name="doc-fields" content="badge — count">'
-            '<meta name="doc-boundaries" content="No unread.">'
-            '<meta name="doc-exceptions" content="Dismiss.">'
+            '<script type="application/json" id="pageData">{"hotspots": [{"target": "demo", "title": "说明", "text": "用途"}]}</script>'
             '</head>'
             '<body><script>window.parent.postMessage({type:"lincoln-tray-state"}, "*");</script></body></html>',
             encoding="utf-8",
@@ -131,7 +119,7 @@ class TestPrototypeTrayCoverage:
 
 
 class TestPrototypeAnnotationCompleteness:
-    def test_fails_when_annotation_meta_missing(self, tmp_project, design_id):
+    def test_fails_when_hotspots_missing(self, tmp_project, design_id):
         write_prototype_package(tmp_project, design_id)
         proto_dir = tmp_project / "lc-test" / "pages" / "prototype"
         (proto_dir / "incomplete.html").write_text(
@@ -140,17 +128,13 @@ class TestPrototypeAnnotationCompleteness:
         )
         assert run_validator(tmp_project, "prototype_artifact_complete", design_id) == 1
 
-    def test_passes_when_annotation_meta_complete(self, tmp_project, design_id):
+    def test_passes_when_hotspots_present(self, tmp_project, design_id):
         write_prototype_package(tmp_project, design_id)
         proto_dir = tmp_project / "lc-test" / "pages" / "prototype"
         (proto_dir / "complete.html").write_text(
             '<html><head>'
             '<meta name="nav-label" content="Page">'
-            '<meta name="doc-purpose" content="Purpose.">'
-            '<meta name="doc-layout" content="Layout.">'
-            '<meta name="doc-fields" content="field — desc">'
-            '<meta name="doc-boundaries" content="Boundary.">'
-            '<meta name="doc-exceptions" content="Exception.">'
+            '<script type="application/json" id="pageData">{"hotspots": [{"target": "demo", "title": "说明", "text": "用途"}]}</script>'
             '</head><body></body></html>',
             encoding="utf-8",
         )
