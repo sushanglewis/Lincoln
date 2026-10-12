@@ -12,9 +12,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.8.4-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.9.0-blue)](RELEASE.md)
 
-**v1.8.4** 已发布：新增少即是多制品生成纪律（hook 注入），修复 policies 目录未同步进 vendored 项目的问题。
+**v1.9.0** 已发布：issue-package 门户升级为 docsify 风格文档框架——可折叠可过滤目录、focus 模式、marked 完整 Markdown 渲染、driver.js 数字角标注解，零服务 file:// 直接打开（#131）。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
@@ -177,6 +177,17 @@ AI 生成的交接产物容易内容堆积、重点淹没。Lincoln 把「少即
 - `pages/prototype/` — 可交互原型 HTML 页面
 - `handoffs/` — 阶段交接文档
 
+### docsify 式门户与数字角标注解
+
+`index.html` 门户采用 docsify 风格的文档框架，生成时烘焙、运行时零外部请求，**file:// 双击即可浏览**，也可由流水线推到静态托管后直接分享链接（`#/pages/docs/prd.html` 支持深链定位）：
+
+- **目录**：分组折叠（状态记忆）、过滤框实时定位、一键收起/展开；文档与原型分组清晰
+- **Focus 模式**：阅读文档或验收原型时隐藏目录，原型获得全屏空间（Esc 退出）
+- **文档**：marked（MIT）完整渲染 Markdown——图片、表格、任务列表、mermaid 流程图，随门户明暗主题切换
+- **原型注解**：页面 YAML 声明 `hotspots` 后在元素上生成数字角标，hover 查看说明，解释不再占用屏内空间
+
+升级到本版本后执行 `lincoln update` 即同步最新门户模板与运行时。
+
 ## 自然语言交互
 
 Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**。直接用自然语言描述意图，Agent 会自动翻译成对应脚本并代为执行。
@@ -244,6 +255,7 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 
 | 版本 | 日期 | 关键能力 |
 |---|---|---|
+| v1.9.0 | 2026-10-12 | docsify 式 issue-package 门户：可折叠过滤目录、focus 模式、marked 完整 Markdown 渲染、driver.js 数字角标注解、hash 深链（#131） |
 | v1.8.4 | 2026-10-08 | PM 阶段 PRD 质量门控：需求六问自检、13 章递进骨架、PRD 内容卫生与交叉验证校验、原型最终样貌纪律（#129） |
 | v1.8.3 | 2026-10-08 | 少即是多制品生成纪律（hook 注入）；非 npm CLI 平台化安装提示；`lincoln update` 同步刷新外部技能库 |
 | v1.7.0 | 2026-09-05 | SecurityAnalyzer 安全门控；Trace 2.0 事件日志；摩擦学习/知识召回/Trace 浓缩/MR 挖掘；并行专家子代理委托；相关者分析模型 |

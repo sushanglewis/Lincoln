@@ -519,7 +519,7 @@ def _inject_meta(html: str, name: str, content: str) -> str:
 
 
 def _inject_annotation_metas(html: str, page_data: dict[str, Any]) -> str:
-    """Inject portal annotation meta tags from page_data.annotations into <head>."""
+    """Inject doc annotation meta tags from page_data.annotations into <head>."""
     annotations = page_data.get("annotations") if isinstance(page_data, dict) else None
     if not isinstance(annotations, dict):
         return html
@@ -716,9 +716,11 @@ def render_page(
     uid_kind = _resolve_meta_uid_kind(template, target)
     html = _inject_meta(html, uid_kind, uid)
 
-    # Inject portal annotation metas from structured page data so the portal
-    # index and right-panel annotations are present in the static HTML source.
-    html = _inject_annotation_metas(html, page_data or {})
+    # Inject doc annotation metas for doc pages only. Prototype pages carry
+    # their explanations as on-page hotspots (window.LincolnHotspots) instead.
+    is_prototype = "/prototype/" in target or PAGE_UID_META_RE.search(template)
+    if not is_prototype:
+        html = _inject_annotation_metas(html, page_data or {})
 
     html = _ensure_version_comment(html, version)
 

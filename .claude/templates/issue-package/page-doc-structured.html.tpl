@@ -9,8 +9,7 @@
 <meta name="doc-version" content="{VERSION}">
 <meta name="doc-uid" content="{UID}">
 <!--
-  Optional portal annotations (right panel):
-  这些 meta 可通过 pageData.annotations 自动注入；也可手工在此维护。
+  Optional machine-readable context, auto-injected from pageData.annotations:
   <meta name="doc-purpose" content="一句话功能说明">
   <meta name="doc-layout" content="顶部导航 | 左侧边栏 | 主内容区">
   <meta name="doc-fields" content="字段A — 类型 — 必填 — 说明 | 字段B — 说明">
@@ -19,6 +18,8 @@
   <meta name="doc-boundaries" content="空列表展示占位图 | 搜索无结果">
   <meta name="doc-exceptions" content="网络断开显示重试 | 无权限提示">
   <meta name="doc-refs" content="PRD #3 | flows.html">
+  These are indexed for search/traceability; user-facing explanations belong in
+  the Markdown body (doc pages) or on-page hotspots (prototype pages).
 -->
 <title>{TITLE}</title>
 <!-- Asset paths assume this page lives at pages/docs/*.html (depth 2). Adjust if placed elsewhere. -->

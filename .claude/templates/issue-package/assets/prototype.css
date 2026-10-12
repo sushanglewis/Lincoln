@@ -587,6 +587,48 @@ body {
 .mobile-bottom a.active { color: var(--brand); background: var(--brand-light); }
 .mobile-bottom .tab-icon { font-size: 18px; line-height: 1; }
 
+/* ---------- Hotspot annotations (driver.js) ---------- */
+.lc-hotspot {
+    position: absolute;
+    top: -8px; right: -8px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--surface);
+    background: var(--brand);
+    color: var(--surface);
+    font-size: 11px; font-weight: 700; line-height: 1;
+    cursor: pointer; z-index: 60;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+.lc-hotspot:hover { background: var(--brand-dark); }
+body.lc-hotspots-off .lc-hotspot { display: none; }
+
+/* driver.js popover themed with prototype tokens */
+.driver-popover {
+    background: var(--surface) !important;
+    color: var(--text-1);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+    max-width: 320px;
+}
+.driver-popover .driver-popover-title {
+    color: var(--text-1);
+    font-size: 13px;
+}
+.driver-popover .driver-popover-description {
+    color: var(--text-2);
+    font-size: 12px;
+    line-height: 1.6;
+}
+.driver-popover .driver-popover-close-btn { display: none; }
+.driver-popover .driver-popover-arrow {
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+
 /* ---------- Utilities ---------- */
 .hidden { display: none !important; }
 .sr-only {

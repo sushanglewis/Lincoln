@@ -128,8 +128,9 @@ def test_render_prototype_glob_match() -> None:
     assert "仪表盘" in html
     assert '<meta name="page-uid" content="page-dashboard">' in html
     assert 'data-page-uid="page-dashboard"' in html
-    # page-prototype.html.tpl assumes depth-3 layout (pages/prototype/{group}/page.html).
-    assert '<link rel="stylesheet" href="../../../assets/prototype.css">' in html
+    # page-prototype-structured.html.tpl assumes depth-4 layout
+    # (pages/prototype/{group}/{shell}/page.html).
+    assert '<link rel="stylesheet" href="../../../../assets/prototype.css">' in html
 
 
 def test_render_injects_missing_meta_tags() -> None:
@@ -454,8 +455,10 @@ def test_render_prototype_with_structured_data() -> None:
   active: dashboard
   navItems:
     - {id: dashboard, label: 概览, href: ./dashboard/page.html}
-annotations:
-  doc-purpose: "展示核心指标"
+hotspots:
+  - target: "dashboard-metrics"
+    title: "指标卡"
+    text: "展示核心指标，点击进入详情。"
 components:
   - type: html
     uid: dashboard-metrics
@@ -487,7 +490,10 @@ components:
     assert "仪表盘" in html
     assert '"type": "web"' in html
     assert "dashboard-metrics" in html
-    assert '<meta name="doc-purpose" content="展示核心指标">' in html
+    # Prototype explanations are hotspots (window config via pageData), not doc-* metas.
+    assert '"hotspots"' in html
+    assert "initHotspots" in html
+    assert '<meta name="doc-purpose"' not in html
 
 
 def test_render_sections_html_placeholder() -> None:
@@ -571,7 +577,7 @@ def test_render_markdown_first_with_defaults() -> None:
 
 
 def test_render_mermaid_block() -> None:
-    """Mermaid code fences are emitted as .lincoln-mermaid blocks and the Mermaid runtime is loaded."""
+    """Mermaid fences survive into the embedded markdown; marked + runtime convert them client-side."""
     state_path = write_state()
     md_path = TEST_ROOT / "requirements.md"
     md_path.write_text(
@@ -592,11 +598,13 @@ def test_render_mermaid_block() -> None:
     )
     assert rc == 0, stderr
     html = target.read_text(encoding="utf-8")
+    assert '<script src="../../assets/marked.min.js"></script>' in html
     assert '<script src="../../assets/mermaid.min.js"></script>' in html
-    assert '<pre class="lincoln-mermaid">' in html
     assert "flowchart TD" in html
-    # Ensure the mermaid source is not wrapped in a normal code block.
-    assert '<code class="language-mermaid">' not in html
+    # The template converts marked's language-mermaid code blocks at runtime.
+    assert "convertMermaidBlocks" in html
+    assert "language-mermaid" in html
+    assert "lincoln-mermaid" in html
 
 
 def test_render_batch_stage_only_missing() -> None:

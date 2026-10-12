@@ -7,22 +7,20 @@
 <meta name="nav-label" content="{NAV_LABEL}">
 <meta name="nav-group" content="{NAV_GROUP}">
 <meta name="page-uid" content="{UID}">
-<meta name="prototype-base" content="../../../">
+<meta name="prototype-base" content="../../../../">
 <!--
-  Optional portal annotations (right panel):
-  这些 meta 可通过 pageData.annotations 自动注入。
-  <meta name="doc-purpose" content="一句话功能说明">
-  <meta name="doc-layout" content="顶部导航 | 左侧边栏 | 主内容区">
-  <meta name="doc-fields" content="字段A — 类型 — 必填 — 说明">
-  <meta name="doc-stories" content="作为...我想要...以便...">
-  <meta name="doc-rules" content="点击提交后校验输入">
-  <meta name="doc-boundaries" content="空列表展示占位图">
-  <meta name="doc-exceptions" content="网络断开显示重试">
-  <meta name="doc-refs" content="PRD #3 | flows.html">
+  Explanations are rendered as numbered on-page hotspots (driver.js, MIT),
+  declared in pageData.hotspots:
+    hotspots:
+      - {target: "search-box", title: "全局搜索", text: "支持拼音首字母，回车跳转首个结果"}
+  `target` is a CSS selector, a component uid, or an element id. Hovering a
+  badge shows the popover; clicking pins it. The prototype toolbar can hide
+  all badges. Machine-readable nav metas stay in <meta> tags above.
 -->
 <title>{TITLE}</title>
-<!-- Asset paths assume this page lives at pages/prototype/{group}/*.html (depth 3). -->
-<link rel="stylesheet" href="../../../assets/prototype.css">
+<!-- Asset paths assume this page lives at pages/prototype/{group}/{shell}/page.html (depth 4). -->
+<link rel="stylesheet" href="../../../../assets/prototype.css">
+<link rel="stylesheet" href="../../../../assets/driver.css">
 </head>
 <body class="proto-page" data-page-uid="{UID}">
 
@@ -32,7 +30,8 @@
 {PAGE_DATA}
 </script>
 
-<script src="../../../assets/prototype.js"></script>
+<script src="../../../../assets/driver.js"></script>
+<script src="../../../../assets/prototype.js"></script>
 <script>
 (function () {
     'use strict';
@@ -80,26 +79,7 @@
         try { return JSON.parse(el.textContent) || {}; } catch (e) { return {}; }
     }
 
-    function injectAnnotationMetas(data) {
-        var annotations = data.annotations || {};
-        var head = document.head;
-        Object.keys(annotations).forEach(function (key) {
-            var name = key.indexOf('doc-') === 0 ? key : 'doc-' + key;
-            var value = annotations[key];
-            var existing = document.querySelector('meta[name="' + name + '"]');
-            if (existing) {
-                existing.setAttribute('content', value);
-            } else {
-                var meta = document.createElement('meta');
-                meta.setAttribute('name', name);
-                meta.setAttribute('content', value);
-                head.appendChild(meta);
-            }
-        });
-    }
-
     var data = loadData();
-    injectAnnotationMetas(data);
 
     var ui = window.LincolnPrototype && window.LincolnPrototype.ui;
     if (!ui) {
@@ -188,12 +168,19 @@
         }, '*');
     }
 
-    // Attach interactions for analytics / portal annotations.
+    // Attach interactions for analytics.
     if (Array.isArray(data.interactions) && data.interactions.length) {
         var ann = document.createElement('div');
         ann.style.display = 'none';
         ann.setAttribute('data-interactions', JSON.stringify(data.interactions));
         document.body.appendChild(ann);
+    }
+
+    // Numbered hotspot annotations (driver.js). Badges are hoverable/clickable
+    // and can be toggled from the prototype toolbar.
+    var proto = window.LincolnPrototype.proto || {};
+    if (Array.isArray(data.hotspots) && data.hotspots.length && proto.initHotspots) {
+        proto.initHotspots(data.hotspots);
     }
 })();
 </script>

@@ -1,13 +1,16 @@
 /**
  * Lincoln issue-package portal runtime.
  * Reads window.LINC_PACKAGE from assets/js/package-data.js and renders the
- * left navigation, iframe canvas, and right annotation panel.
- * Also manages light/dark theme synchronization between portal and child pages.
+ * left navigation (collapsible groups + filter), the content area (Markdown
+ * doc pages rendered in place via marked, prototype pages via iframe), and
+ * focus mode. Also manages light/dark theme synchronization with child pages.
  */
 (function () {
     'use strict';
 
     var THEME_KEY = 'lincoln-theme';
+    var NAV_STATE_KEY = 'lincoln-nav-groups';
+    var FOCUS_KEY = 'lincoln-focus';
 
     function generateUUID(prefix) {
         var hex = '';
@@ -51,7 +54,7 @@
     function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
         var btn = document.getElementById('themeToggle');
-        if (btn) btn.textContent = theme === 'dark' ? '☾' : '☀';
+        if (btn) btn.textContent = theme === 'dark' ? '\u263E' : '\u2600';
     }
 
     function notifyFrame(theme) {
@@ -60,6 +63,419 @@
             frame.contentWindow.postMessage({ type: 'lincoln-theme', theme: theme }, '*');
         }
     }
+
+    function setTheme(theme) {
+        if (theme !== 'light' && theme !== 'dark') return;
+        setStoredTheme(theme);
+        applyTheme(theme);
+        notifyFrame(theme);
+    }
+
+    function toggleTheme() {
+        var current = document.documentElement.getAttribute('data-theme') || 'light';
+        setTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    function initTheme() {
+        var theme = getPreferredTheme();
+        applyTheme(theme);
+        var btn = document.getElementById('themeToggle');
+        if (btn) btn.addEventListener('click', toggleTheme);
+
+        window.addEventListener('message', function (e) {
+            var data = e.data || {};
+            if (data.type === 'lincoln-theme-ready') {
+                notifyFrame(getPreferredTheme());
+            }
+        });
+    }
+
+    /* ---------- Sidebar: groups, collapse state, filter ---------- */
+
+    function loadNavState() {
+        try {
+            return JSON.parse(localStorage.getItem(NAV_STATE_KEY) || '{}') || {};
+        } catch (err) {
+            return {};
+        }
+    }
+
+    function saveNavState(state) {
+        try {
+            localStorage.setItem(NAV_STATE_KEY, JSON.stringify(state));
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    function renderNav(container, packageData) {
+        var html = '';
+        html += '<div class="pnav-header">';
+        html += '<div class="pnav-logo">L</div>';
+        html += '<div>';
+        html += '<div class="pnav-title">Issue #' + escapeHtml(packageData.issue_number || '') + '</div>';
+        html += '<div class="pnav-subtitle">' + escapeHtml(packageData.process_slug || '') + '</div>';
+        html += '</div></div>';
+
+        html += '<div class="pnav-toolbar">';
+        html += '<input type="search" class="pnav-filter" id="navFilter" placeholder="过滤页面…" aria-label="过滤页面">';
+        html += '<button type="button" class="pnav-tool-btn" id="navCollapseAll" title="收起/展开全部目录" aria-label="收起或展开全部目录">&#8678;</button>';
+        html += '</div>';
+
+        html += '<div class="pnav-groups" id="pnavGroups">';
+        (packageData.nav || []).forEach(function (group) {
+            var items = group.items || [];
+            if (!items.length) return;
+            var archived = group.group === '归档' || items.every(function (item) { return item.archived; });
+            html += '<details class="pnav-group-details'
+                + (archived ? ' pnav-archive' : '')
+                + '" data-group="' + escapeHtml(group.group) + '">';
+            html += '<summary class="pnav-group">' + escapeHtml(archived ? '归档' : group.group)
+                + '<span class="pnav-count">' + items.length + '</span></summary>';
+            items.forEach(function (item) {
+                html += '<a class="pnav-link" data-path="' + escapeHtml(item.path) + '" href="#/"'
+                    + escapeHtml(item.path) + '"'
+                    + (item.markdown ? ' data-doc="1"' : '') + '>'
+                    + '<span class="pnav-link-label">' + escapeHtml(item.label) + '</span>';
+                if (item.version) {
+                    html += '<span class="pnav-link-version">' + escapeHtml(item.version) + '</span>';
+                }
+                html += '</a>';
+            });
+            html += '</details>';
+        });
+        html += '<div class="pnav-empty hidden" id="navEmpty">无匹配页面</div>';
+        html += '</div>';
+
+        if (packageData.current_stage) {
+            html += '<div class="pnav-status">阶段: <span class="stage">' + escapeHtml(packageData.current_stage) + '</span></div>';
+        }
+
+        container.innerHTML = html;
+        initNavGroups(container);
+        initNavFilter(container);
+    }
+
+    function initNavGroups(nav) {
+        var state = loadNavState();
+        var groups = nav.querySelectorAll('details.pnav-group-details');
+        groups.forEach(function (details) {
+            var name = details.getAttribute('data-group');
+            var archived = details.classList.contains('pnav-archive');
+            var open = Object.prototype.hasOwnProperty.call(state, name) ? !!state[name] : !archived;
+            if (open) details.setAttribute('open', '');
+            else details.removeAttribute('open');
+            details.addEventListener('toggle', function () {
+                var current = loadNavState();
+                current[name] = details.open;
+                saveNavState(current);
+            });
+        });
+
+        var btn = document.getElementById('navCollapseAll');
+        if (!btn) return;
+        function refreshIcon() {
+            var anyOpen = false;
+            groups.forEach(function (details) { if (details.open) anyOpen = true; });
+            btn.innerHTML = anyOpen ? '&#8678;' : '&#8680;';
+            btn.title = anyOpen ? '收起全部目录' : '展开全部目录';
+        }
+        refreshIcon();
+        btn.addEventListener('click', function () {
+            var anyOpen = false;
+            groups.forEach(function (details) { if (details.open) anyOpen = true; });
+            var next = {};
+            groups.forEach(function (details) {
+                if (anyOpen) details.removeAttribute('open');
+                else details.setAttribute('open', '');
+                next[details.getAttribute('data-group')] = !anyOpen;
+            });
+            saveNavState(next);
+            refreshIcon();
+        });
+        groups.forEach(function (details) {
+            details.addEventListener('toggle', refreshIcon);
+        });
+    }
+
+    function initNavFilter(nav) {
+        var input = document.getElementById('navFilter');
+        var empty = document.getElementById('navEmpty');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            var query = input.value.trim().toLowerCase();
+            var anyVisible = false;
+            nav.querySelectorAll('details.pnav-group-details').forEach(function (details) {
+                var groupVisible = false;
+                details.querySelectorAll('.pnav-link').forEach(function (link) {
+                    var haystack = (link.getAttribute('data-path') + ' '
+                        + link.textContent).toLowerCase();
+                    var match = !query || haystack.indexOf(query) !== -1;
+                    link.classList.toggle('hidden', !match);
+                    link.classList.toggle('match', !!query && match);
+                    if (match) groupVisible = true;
+                });
+                details.classList.toggle('hidden', !groupVisible);
+                if (groupVisible) {
+                    anyVisible = true;
+                    if (query) details.setAttribute('open', '');
+                }
+                if (!query) {
+                    var name = details.getAttribute('data-group');
+                    var state = loadNavState();
+                    var archived = details.classList.contains('pnav-archive');
+                    var open = Object.prototype.hasOwnProperty.call(state, name) ? !!state[name] : !archived;
+                    if (open) details.setAttribute('open', '');
+                    else details.removeAttribute('open');
+                }
+            });
+            if (empty) empty.classList.toggle('hidden', anyVisible || !query);
+        });
+    }
+
+    /* ---------- Focus mode ---------- */
+
+    var currentPage = null;
+
+    function isPrototypePage(page) {
+        if (!page) return false;
+        if (page.nav_group === 'Prototype' || page.group === 'Prototype') return true;
+        return (page.path || '').indexOf('pages/prototype/') === 0;
+    }
+
+    function getFocusManual() {
+        try {
+            return localStorage.getItem(FOCUS_KEY) === '1';
+        } catch (err) {
+            return false;
+        }
+    }
+
+    function setFocusManual(value) {
+        try {
+            localStorage.setItem(FOCUS_KEY, value ? '1' : '0');
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    function applyFocusMode() {
+        var wrap = document.getElementById('portalWrap');
+        var btn = document.getElementById('focusToggle');
+        if (!wrap) return;
+        var active = getFocusManual() || isPrototypePage(currentPage);
+        wrap.classList.toggle('focus', active);
+        if (btn) btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    }
+
+    function initFocusMode() {
+        var btn = document.getElementById('focusToggle');
+        if (btn) {
+            btn.addEventListener('click', function () {
+                var wrap = document.getElementById('portalWrap');
+                var active = wrap && wrap.classList.contains('focus');
+                setFocusManual(!active);
+                applyFocusMode();
+            });
+        }
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && getFocusManual()) {
+                setFocusManual(false);
+                applyFocusMode();
+            }
+        });
+    }
+
+    /* ---------- Content area: in-place docs + iframe prototypes ---------- */
+
+    function convertMermaidBlocks(root) {
+        var blocks = root.querySelectorAll('pre code.language-mermaid');
+        blocks.forEach(function (code) {
+            var pre = code.parentNode;
+            var container = document.createElement('pre');
+            container.className = 'lincoln-mermaid';
+            container.textContent = code.textContent;
+            pre.parentNode.replaceChild(container, pre);
+        });
+    }
+
+    function runMermaid(root) {
+        if (typeof window.mermaid === 'undefined') return;
+        var theme = document.documentElement.getAttribute('data-theme') || 'light';
+        try {
+            window.mermaid.initialize({
+                startOnLoad: false,
+                theme: theme === 'dark' ? 'dark' : 'default'
+            });
+        } catch (err) {
+            // ignore init errors
+        }
+        var nodes = [];
+        root.querySelectorAll('.lincoln-mermaid').forEach(function (node) {
+            if (!node.getAttribute('data-mermaid-done')) nodes.push(node);
+        });
+        if (!nodes.length) return;
+        nodes.forEach(function (node) { node.setAttribute('data-mermaid-done', '1'); });
+        try {
+            window.mermaid.run({ nodes: nodes });
+        } catch (err) {
+            // Fallback for older Mermaid versions
+            try {
+                window.mermaid.init(undefined, nodes);
+            } catch (e2) {
+                // ignore
+            }
+        }
+    }
+
+    function renderMarkdownDoc(view, page) {
+        var body = '';
+        if (window.marked) {
+            try {
+                window.marked.setOptions({ gfm: true, breaks: false });
+                body = window.marked.parse(page.markdown || '');
+            } catch (err) {
+                body = '';
+            }
+        }
+        if (!body) {
+            body = '<pre>' + escapeHtml(page.markdown || '(无内容)') + '</pre>';
+        }
+        var meta = '';
+        if (page.version) meta += '<span class="doc-version">' + escapeHtml(page.version) + '</span>';
+        if (page.stage) meta += '<span class="doc-stage">阶段: ' + escapeHtml(page.stage) + '</span>';
+        view.innerHTML = '<div class="doc-page"><div class="doc-header"><h1>'
+            + escapeHtml(page.title || page.label || '')
+            + '</h1><div class="doc-meta">' + meta + '</div></div>'
+            + '<div class="doc-content">' + body + '</div></div>';
+        convertMermaidBlocks(view);
+        runMermaid(view);
+    }
+
+    function showDocPage(page) {
+        var view = document.getElementById('docView');
+        var win = document.getElementById('macWindow');
+        if (!view) return;
+        renderMarkdownDoc(view, page);
+        view.classList.remove('hidden');
+        if (win) win.classList.add('hidden');
+        view.scrollTop = 0;
+        view.focus({ preventScroll: true });
+    }
+
+    function showFramePage(path) {
+        var view = document.getElementById('docView');
+        var win = document.getElementById('macWindow');
+        var frame = document.getElementById('frame');
+        if (view) view.classList.add('hidden');
+        if (win) win.classList.remove('hidden');
+        if (frame && frame.getAttribute('src') !== path) frame.src = path;
+    }
+
+    function findPage(path, pages) {
+        for (var i = 0; i < pages.length; i++) {
+            var items = pages[i].items || [];
+            for (var j = 0; j < items.length; j++) {
+                if (items[j].path === path) return items[j];
+            }
+        }
+        return null;
+    }
+
+    var suppressHash = false;
+
+    function setHash(path) {
+        suppressHash = true;
+        if (window.location.hash !== '#/' + path) {
+            window.location.hash = '#/' + path;
+        }
+        suppressHash = false;
+    }
+
+    function selectPage(path, nav, frame, packageData) {
+        var pages = packageData.nav || [];
+        var page = findPage(path, pages);
+        currentPage = page || { path: path };
+        nav.querySelectorAll('.pnav-link').forEach(function (l) {
+            l.classList.toggle('active', l.getAttribute('data-path') === path);
+        });
+        var winTitle = document.getElementById('winTitle');
+        if (winTitle) winTitle.textContent = (page && (page.title || page.label)) || path;
+        if (page && page.markdown) {
+            showDocPage(page);
+        } else {
+            showFramePage(path);
+        }
+        setHash(path);
+        applyFocusMode();
+        if (window.LincolnPortal && window.LincolnPortal.resetTray) {
+            window.LincolnPortal.resetTray();
+        }
+    }
+
+    function selectByPath(path, nav, frame, packageData) {
+        var link = null;
+        var links = nav.querySelectorAll('.pnav-link');
+        for (var i = 0; i < links.length; i++) {
+            if (links[i].getAttribute('data-path') === path) link = links[i];
+        }
+        if (link) {
+            selectPage(path, nav, frame, packageData);
+            return;
+        }
+        // Path not in registry: load iframe directly.
+        currentPage = { path: path };
+        showFramePage(path);
+        setHash(path);
+        applyFocusMode();
+    }
+
+    function bindPortal(nav, frame, packageData) {
+        nav.addEventListener('click', function (e) {
+            var link = e.target.closest('.pnav-link');
+            if (!link) return;
+            e.preventDefault();
+            var path = link.getAttribute('data-path');
+            selectPage(path, nav, frame, packageData);
+        });
+
+        frame.addEventListener('load', function () {
+            try {
+                var doc = frame.contentDocument;
+                if (doc && doc.body) {
+                    var title = doc.querySelector('meta[name="doc-title"]');
+                    if (title) {
+                        var winTitle = document.getElementById('winTitle');
+                        if (winTitle) winTitle.textContent = title.getAttribute('content');
+                    }
+                }
+            } catch (err) {
+                // cross-origin iframe; ignore
+            }
+            notifyFrame(getPreferredTheme());
+        });
+
+        window.addEventListener('hashchange', function () {
+            if (suppressHash) return;
+            var path = decodeURIComponent(window.location.hash.replace(/^#\//, ''));
+            if (path) selectByPath(path, nav, frame, packageData);
+        });
+    }
+
+    function bindPrototypeLinks(nav, frame, packageData) {
+        window.addEventListener('message', function (e) {
+            if (e.source !== frame.contentWindow) return;
+            var data = e.data || {};
+            if (data.type === 'lincoln-navigate' && data.path) {
+                selectByPath(data.path, nav, frame, packageData);
+            }
+            if (data.type === 'lincoln-theme-ready') {
+                notifyFrame(getPreferredTheme());
+            }
+        });
+    }
+
+    /* ---------- macOS tray (kept for app-shell prototypes) ---------- */
 
     var DEFAULT_UNREAD = 0;
 
@@ -134,216 +550,20 @@
                 hideTrayMenu();
             }
         });
-
-        window.LincolnPortal = window.LincolnPortal || {};
-        window.LincolnPortal.resetTray = function () {
-            if (!window.LincolnPortalData) window.LincolnPortalData = {};
-            window.LincolnPortalData.unreadTotal = DEFAULT_UNREAD;
-            renderTrayIcon();
-            hideTrayMenu();
-        };
-    }
-
-    function setTheme(theme) {
-        if (theme !== 'light' && theme !== 'dark') return;
-        setStoredTheme(theme);
-        applyTheme(theme);
-        notifyFrame(theme);
-    }
-
-    function toggleTheme() {
-        var current = document.documentElement.getAttribute('data-theme') || 'light';
-        setTheme(current === 'dark' ? 'light' : 'dark');
-    }
-
-    function initTheme() {
-        var theme = getPreferredTheme();
-        applyTheme(theme);
-        var btn = document.getElementById('themeToggle');
-        if (btn) btn.addEventListener('click', toggleTheme);
-
-        window.addEventListener('message', function (e) {
-            var data = e.data || {};
-            if (data.type === 'lincoln-theme-ready') {
-                notifyFrame(getPreferredTheme());
-            }
-        });
-    }
-
-    function findPage(path, pages) {
-        for (var i = 0; i < pages.length; i++) {
-            var items = pages[i].items || [];
-            for (var j = 0; j < items.length; j++) {
-                if (items[j].path === path) return items[j];
-            }
-        }
-        return null;
-    }
-
-    function renderNav(container, packageData) {
-        var html = '';
-        html += '<div class="pnav-header">';
-        html += '<div class="pnav-logo">L</div>';
-        html += '<div>';
-        html += '<div class="pnav-title">Issue #' + escapeHtml(packageData.issue_number || '') + '</div>';
-        html += '<div class="pnav-subtitle">' + escapeHtml(packageData.process_slug || '') + '</div>';
-        html += '</div></div>';
-
-        if (packageData.current_stage) {
-            html += '<div class="pnav-status">阶段: <span class="stage">' + escapeHtml(packageData.current_stage) + '</span></div>';
-        }
-
-        html += '<div class="pnav-checklist" id="artifactChecklist">';
-        html += '<h4>必要产物清单</h4>';
-        html += '<ul>';
-        var checklist = packageData.checklist || [
-            { key: 'prd', label: 'PRD' },
-            { key: 'ui-spec', label: 'UI 规范' },
-            { key: 'fields', label: '字段说明' },
-            { key: 'decisions', label: '决策记录' },
-            { key: 'prototype-web', label: '原型 · Web 端' },
-            { key: 'prototype-mobile', label: '原型 · 手机端' },
-            { key: 'prototype-app', label: '原型 · 应用端' },
-            { key: 'handoff', label: 'Handoff 交接' },
-            { key: 'openspec', label: 'OpenSpec 提案' }
-        ];
-        var done = packageData.checklist_done || {};
-        checklist.forEach(function (item) {
-            var cls = done[item.key] ? ' class="done"' : '';
-            html += '<li' + cls + ' data-key="' + escapeHtml(item.key) + '">' + escapeHtml(item.label) + '</li>';
-        });
-        html += '</ul></div>';
-
-        (packageData.nav || []).forEach(function (group) {
-            var archived = group.group === '归档' || (group.items || []).every(function (item) { return item.archived; });
-            if (archived) {
-                html += '<details class="pnav-archive"><summary class="pnav-group">归档</summary>';
-                (group.items || []).forEach(function (item) {
-                    html += '<a class="pnav-link" data-path="' + escapeHtml(item.path) + '" href="#">' + escapeHtml(item.label) + '</a>';
-                });
-                html += '</details>';
-            } else {
-                html += '<div class="pnav-group">' + escapeHtml(group.group) + '</div>';
-                (group.items || []).forEach(function (item) {
-                    html += '<a class="pnav-link" data-path="' + escapeHtml(item.path) + '" href="#">' + escapeHtml(item.label) + '</a>';
-                });
-            }
-        });
-        container.innerHTML = html;
-    }
-
-    function renderPanel(panel, page) {
-        if (!page) {
-            panel.innerHTML = '<p>点击左侧页面索引加载文档或原型。</p>';
-            return;
-        }
-        var html = '';
-        html += '<div class="ann-kicker">' + escapeHtml(page.group || 'Document') + '</div>';
-        html += '<h2>' + escapeHtml(page.title || page.label || '') + '</h2>';
-        html += '<div class="p-path">' + escapeHtml(page.path) + '</div>';
-        if (page.version) {
-            html += '<p><strong>版本:</strong> ' + escapeHtml(page.version) + '</p>';
-        }
-        if (page.status) {
-            html += '<p><strong>状态:</strong> ' + escapeHtml(page.status) + '</p>';
-        }
-        if (page.stage) {
-            html += '<p><strong>阶段:</strong> ' + escapeHtml(page.stage) + '</p>';
-        }
-        if (page.human_confirmed) {
-            html += '<p><strong>人工确认:</strong> 已确认</p>';
-        }
-        if (page.purpose) {
-            html += '<h3>用途</h3><p>' + escapeHtml(page.purpose) + '</p>';
-        }
-        if (page.layout) {
-            html += '<h3>布局</h3><p>' + escapeHtml(page.layout) + '</p>';
-        }
-        ['stories', 'fields', 'rules', 'boundaries', 'exceptions', 'refs'].forEach(function (key) {
-            if (page[key] && page[key].length) {
-                html += '<h3>' + ({ stories: '用户故事', fields: '字段', rules: '规则', boundaries: '边界', exceptions: '异常流', refs: '引用' }[key]) + '</h3>';
-                html += '<ul>' + page[key].map(function (v) { return '<li>' + escapeHtml(v) + '</li>'; }).join('') + '</ul>';
-            }
-        });
-        panel.innerHTML = html;
-    }
-
-    function bindPortal(nav, frame, panel, packageData) {
-        var pages = packageData.nav || [];
-
-        nav.addEventListener('click', function (e) {
-            var link = e.target.closest('.pnav-link');
-            if (!link) return;
-            e.preventDefault();
-            var path = link.getAttribute('data-path');
-            frame.src = path;
-            nav.querySelectorAll('.pnav-link').forEach(function (l) { l.classList.remove('active'); });
-            link.classList.add('active');
-            var page = findPage(path, pages);
-            renderPanel(panel, page);
-            if (page && page.title) {
-                var winTitle = document.getElementById('winTitle');
-                if (winTitle) winTitle.textContent = page.title;
-            }
-            if (window.LincolnPortal && window.LincolnPortal.resetTray) {
-                window.LincolnPortal.resetTray();
-            }
-        });
-
-        frame.addEventListener('load', function () {
-            try {
-                var doc = frame.contentDocument;
-                if (doc && doc.body) {
-                    var title = doc.querySelector('meta[name="doc-title"]');
-                    if (title) {
-                        var winTitle = document.getElementById('winTitle');
-                        if (winTitle) winTitle.textContent = title.getAttribute('content');
-                    }
-                }
-            } catch (err) {
-                // cross-origin iframe; ignore
-            }
-            notifyFrame(getPreferredTheme());
-        });
-    }
-
-    function selectByPath(path, nav, frame, panel, pages) {
-        var link = null;
-        var links = nav.querySelectorAll('.pnav-link');
-        for (var i = 0; i < links.length; i++) {
-            if (links[i].getAttribute('data-path') === path) link = links[i];
-        }
-        if (link) {
-            link.click();
-            return;
-        }
-        // Path not in registry: load iframe directly without updating the panel.
-        if (frame) frame.src = path;
-    }
-
-    function bindPrototypeLinks(nav, frame, panel, pages) {
-        window.addEventListener('message', function (e) {
-            if (e.source !== frame.contentWindow) return;
-            var data = e.data || {};
-            if (data.type === 'lincoln-navigate' && data.path) {
-                selectByPath(data.path, nav, frame, panel, pages);
-            }
-            if (data.type === 'lincoln-theme-ready') {
-                notifyFrame(getPreferredTheme());
-            }
-        });
     }
 
     function init() {
         var packageData = window.LINC_PACKAGE || {};
         var nav = document.getElementById('pnav');
         var frame = document.getElementById('frame');
-        var panel = document.getElementById('pannInner');
         if (nav) renderNav(nav, packageData);
-        if (frame && panel) bindPortal(nav, frame, panel, packageData);
-        if (nav && frame) bindPrototypeLinks(nav, frame, panel, packageData.nav || []);
+        if (nav && frame) bindPortal(nav, frame, packageData);
+        if (nav && frame) bindPrototypeLinks(nav, frame, packageData);
         initTheme();
         initTray();
+        initFocusMode();
+        var initial = decodeURIComponent(window.location.hash.replace(/^#\//, ''));
+        if (initial) selectByPath(initial, nav, frame, packageData);
     }
 
     if (document.readyState === 'loading') {

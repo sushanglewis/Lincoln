@@ -60,7 +60,7 @@ You may still read the categorized example templates under `.claude/templates/is
 
    Use the structured renderer with `--data` containing `sections`, `pages`, and `interactions` as appropriate.
 
-5. **Plan prototype generation granularity.** Before writing prototype pages, derive a **角色×场景矩阵** from `scenarios.html` and `page-map.html`: rows are the user roles/personas, columns are the key scenarios (including boundary cases such as empty, loading, error, success). Every cell that a real user can reach must map to exactly one prototype sub-page; the matrix itself is written into `ui-spec.html` (章节 `## 角色×场景矩阵`) and serves as the splitting contract. Then group the sub-pages into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page has complete annotation meta tags before starting the next cluster.
+5. **Plan prototype generation granularity.** Before writing prototype pages, derive a **角色×场景矩阵** from `scenarios.html` and `page-map.html`: rows are the user roles/personas, columns are the key scenarios (including boundary cases such as empty, loading, error, success). Every cell that a real user can reach must map to exactly one prototype sub-page; the matrix itself is written into `ui-spec.html` (章节 `## 角色×场景矩阵`) and serves as the splitting contract. Then group the sub-pages into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page has complete hotspot annotations (numbered badges covering functionality, fields, boundary cases, and exception flows) before starting the next cluster.
 
    Each cluster is organized by one main shell page (e.g. `pages/prototype/{app,web,mobile}/main/page.html`) whose `navItems` link to all sub-pages of that cluster, so the portal viewer can walk every role/scenario state from a single entry page.
 
@@ -85,15 +85,13 @@ You may still read the categorized example templates under `.claude/templates/is
      navItems:
        - {id: dashboard, label: 概览, href: ./dashboard/page.html}
        - {id: list, label: 列表, href: ./list/page.html}
-   annotations:
-     doc-purpose: "展示核心指标与快捷入口"
-     doc-layout: "顶部导航 | 指标卡片网格 | 列表区"
-     doc-fields: "..."
-     doc-stories: "..."
-     doc-rules: "..."
-     doc-boundaries: "..."
-     doc-exceptions: "..."
-     doc-refs: "flows.html | page-map.html"
+   hotspots:
+     - target: "metric-revenue"      # CSS selector, data-uid, or element id
+       title: "营收指标卡"
+       text: "展示本月营收与环比；点击进入详情页。"
+     - target: "#global-search"
+       title: "全局搜索"
+       text: "支持名称/拼音/首字母搜索，回车跳转首个结果。"
    components:
      - type: html
        uid: dashboard-metrics
@@ -112,11 +110,11 @@ You may still read the categorized example templates under `.claude/templates/is
    - Link to `../../../assets/prototype.css` and `../../../assets/prototype.js` (depth 3) or `../../../../assets/...` (depth 4) depending on its path.
    - Include theme sync support (built into the structured template).
    - Include `<meta name="prototype-base" content="../../../">` (or `../../../../` for depth 4).
-   - Include `<meta name="page-uid" content="...">`, `<meta name="nav-group" content="...">`, and `<meta name="nav-label" content="...">` (injected by the renderer from CLI args; annotations come from the YAML `annotations` block).
-   - Provide the full annotation meta tags so the portal right panel explains functionality, layout, fields, boundary cases, and exception flows.
-   - State the applicable role(s), scenario, page state (default / empty / loading / error / success), and which functions are visible and usable in that state via the `doc-purpose`, `doc-rules`, and `doc-boundaries` annotations, so each sub-page precisely depicts what a given role sees and can do in that case.
-   - Depict only the final system as it will ship: no demo-only buttons, explanatory text rows, or walkthrough-only jumps. Explanations belong in the `doc-*` annotation metas rendered in the portal right panel, never as on-screen prose.
-   - Declare the user story and business-flow step the page implements via `doc-stories` / `doc-refs`, so the prototype aligns bidirectionally with the PRD: every flow step has at least one page, and every page belongs to a flow step or story.
+   - Include `<meta name="page-uid" content="...">`, `<meta name="nav-group" content="...">`, and `<meta name="nav-label" content="...">` (injected by the renderer from CLI args; hotspots come from the YAML `hotspots` block and are rendered as numbered badges via driver.js).
+   - Provide a `hotspots` array so numbered on-page badges explain functionality, layout, fields, boundary cases, and exception flows (hover for the popover, click to pin; the prototype toolbar can hide badges).
+   - State the applicable role(s), scenario, page state (default / empty / loading / error / success), and which functions are visible and usable in that state via the hotspot `title`/`text` entries, so each sub-page precisely depicts what a given role sees and can do in that case.
+   - Depict only the final system as it will ship: no demo-only buttons, explanatory text rows, or walkthrough-only jumps. Explanations belong in the `hotspots` badges rendered on the page, never as on-screen prose.
+   - Declare the user story and business-flow step the page implements in the hotspot `text` entries, so the prototype aligns bidirectionally with the PRD: every flow step has at least one page, and every page belongs to a flow step or story.
    - Use `LincolnPrototype.ui` builders and `prototype.css` tokens for every visual element so both light and dark themes render correctly; verify both themes by toggling the portal theme switch.
    - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
@@ -143,7 +141,7 @@ You may still read the categorized example templates under `.claude/templates/is
 - Keep controls and states complete enough for implementation: default, hover/focus where relevant, disabled, empty, loading, error, and success.
 - Every interactive element must carry a stable `data-uid`. Do not generate random UIDs that change on every render.
 - Prototype links use relative paths so they work both inside the portal iframe and when opened standalone.
-- Do not add collapse toggles or custom panel chrome to the portal; the right annotation panel is always visible.
+- Do not add custom chrome to the portal. The portal sidebar is collapsible and supports focus mode out of the box; prototype pages open in focus mode automatically.
 - The system tray is portal-level chrome. Never redraw the tray inside an app prototype page with `.menubar`, `.tray-icon`, `.tray-panel`, `bindTray`, or `trayMenu`. Tray scenario pages must be thin controllers that post `lincoln-tray-state` messages to the portal.
-- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `doc-*` 注释由门户右侧面板呈现；每个原型页面经 `doc-stories` / `doc-refs` 标注所属用户故事与业务流程步骤，与 PRD 文字双向对齐。
+- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `hotspots` 数字角标（driver.js，hover 弹出说明）呈现；每个原型页面经角标 `text` 标注所属用户故事与业务流程步骤，与 PRD 文字双向对齐。
 - After approval, tell the user to run: `claude plan-tdd-development <session_id> <design_id>`.

@@ -479,11 +479,133 @@ LincolnPrototype.proto = (function () {
         if (backdrop) backdrop.addEventListener('click', close);
     }
 
+
+    /* ---------- Numbered hotspot annotations (driver.js, MIT) ---------- */
+
+    var hotspotDriver = null;
+    var hotspotPinned = -1;
+    var hotspotHideTimer = null;
+
+    function hotspotResolveTarget(h) {
+        var sel = (h && h.target) || '';
+        if (!sel) return null;
+        var el = null;
+        try { el = document.querySelector(sel); } catch (err) { el = null; }
+        if (!el && !/[#.[\]:\s]/.test(sel)) {
+            el = document.querySelector('[data-uid="' + sel + '"]');
+            if (!el && document.getElementById(sel)) el = document.getElementById(sel);
+        }
+        return el;
+    }
+
+    function hotspotDestroyPopover() {
+        if (hotspotDriver) {
+            try { hotspotDriver.destroy(); } catch (err) { /* ignore */ }
+            hotspotDriver = null;
+        }
+    }
+
+    function hotspotShow(index, el, h) {
+        if (!window.driver || !window.driver.js || !window.driver.js.driver) return;
+        hotspotDestroyPopover();
+        hotspotDriver = window.driver.js.driver({
+            showButtons: [],
+            showProgress: false,
+            allowClose: false,
+            overlayOpacity: 0,
+            stagePadding: 6,
+            popoverClass: 'lc-driver-popover',
+            onDestroyed: function () { hotspotDriver = null; }
+        });
+        hotspotDriver.highlight({
+            element: el,
+            popover: {
+                title: (index + 1) + '. ' + (h.title || ''),
+                description: h.text || '',
+                side: 'bottom',
+                align: 'start'
+            }
+        });
+    }
+
+    function hotspotScheduleHide() {
+        if (hotspotHideTimer) clearTimeout(hotspotHideTimer);
+        hotspotHideTimer = setTimeout(function () {
+            if (hotspotPinned < 0) hotspotDestroyPopover();
+        }, 180);
+    }
+
+    function hotspotCancelHide() {
+        if (hotspotHideTimer) {
+            clearTimeout(hotspotHideTimer);
+            hotspotHideTimer = null;
+        }
+    }
+
+    function initHotspots(hotspots) {
+        if (!Array.isArray(hotspots) || !hotspots.length) return;
+        if (!document.body.classList.contains('lc-hotspots-ready')) {
+            document.body.classList.add('lc-hotspots-ready');
+        }
+        hotspots.forEach(function (h, index) {
+            var el = hotspotResolveTarget(h);
+            if (!el) return;
+            var position = window.getComputedStyle(el).position;
+            if (position === 'static') {
+                el.style.position = 'relative';
+            }
+            var badge = document.createElement('button');
+            badge.type = 'button';
+            badge.className = 'lc-hotspot';
+            badge.textContent = String(index + 1);
+            badge.setAttribute('data-hotspot-index', String(index));
+            badge.setAttribute('aria-label', (h.title || '说明') + '：' + (h.text || ''));
+
+            badge.addEventListener('mouseenter', function () {
+                hotspotCancelHide();
+                if (hotspotPinned < 0) hotspotShow(index, el, h);
+            });
+            badge.addEventListener('mouseleave', hotspotScheduleHide);
+            badge.addEventListener('click', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (hotspotPinned === index) {
+                    hotspotPinned = -1;
+                    hotspotDestroyPopover();
+                } else {
+                    hotspotPinned = index;
+                    hotspotShow(index, el, h);
+                }
+            });
+            el.appendChild(badge);
+        });
+
+        // Clicking anywhere else unpins the popover.
+        document.addEventListener('click', function (e) {
+            if (hotspotPinned < 0) return;
+            if (e.target.closest && e.target.closest('.lc-hotspot')) return;
+            if (e.target.closest && e.target.closest('.driver-popover')) return;
+            hotspotPinned = -1;
+            hotspotDestroyPopover();
+        });
+    }
+
+    function toggleHotspots() {
+        var off = document.body.classList.toggle('lc-hotspots-off');
+        if (off) {
+            hotspotPinned = -1;
+            hotspotDestroyPopover();
+        }
+        return !off;
+    }
+
     return {
         mount: mount,
         bindPortalLinks: bindPortalLinks,
         bindTray: bindTray,
         getPrototypeBase: getPrototypeBase,
-        portalPathFromHref: portalPathFromHref
+        portalPathFromHref: portalPathFromHref,
+        initHotspots: initHotspots,
+        toggleHotspots: toggleHotspots
     };
 })();
