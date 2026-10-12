@@ -265,6 +265,7 @@
         if (!wrap) return;
         var active = getFocusManual() || isPrototypePage(currentPage);
         wrap.classList.toggle('focus', active);
+        if (!active && window.LincolnNavDrawer) window.LincolnNavDrawer.close();
         if (btn) btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     }
 
@@ -284,6 +285,53 @@
                 applyFocusMode();
             }
         });
+    }
+
+    /* ---------- Nav drawer: overlay sidebar for focus/prototype pages ---------- */
+
+    function initNavDrawer() {
+        var wrap = document.getElementById('portalWrap');
+        var btn = document.getElementById('navDrawerBtn');
+        var backdrop = document.getElementById('navDrawerBackdrop');
+        if (!wrap || !btn || !backdrop) return;
+
+        function isOpen() {
+            return wrap.classList.contains('nav-open');
+        }
+
+        function open() {
+            wrap.classList.add('nav-open');
+            btn.setAttribute('aria-expanded', 'true');
+            backdrop.hidden = false;
+        }
+
+        function close() {
+            wrap.classList.remove('nav-open');
+            btn.setAttribute('aria-expanded', 'false');
+            backdrop.hidden = true;
+        }
+
+        btn.addEventListener('click', function () {
+            if (isOpen()) close();
+            else open();
+        });
+        backdrop.addEventListener('click', close);
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && isOpen()) {
+                close();
+                e.stopPropagation();
+            }
+        });
+
+        // Close the drawer once a page is picked so the prototype regains full space.
+        var nav = document.getElementById('pnav');
+        if (nav) {
+            nav.addEventListener('click', function (e) {
+                if (e.target.closest('.pnav-link') && isOpen()) close();
+            });
+        }
+
+        window.LincolnNavDrawer = { open: open, close: close };
     }
 
     /* ---------- Content area: in-place docs + iframe prototypes ---------- */
@@ -562,6 +610,7 @@
         initTheme();
         initTray();
         initFocusMode();
+        initNavDrawer();
         var initial = decodeURIComponent(window.location.hash.replace(/^#\//, ''));
         if (initial) selectByPath(initial, nav, frame, packageData);
     }

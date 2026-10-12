@@ -213,6 +213,24 @@ def test_portal_template_has_nav_collapse_and_filter():
     assert ".portal-wrap.focus" in style
 
 
+def test_portal_prototype_pages_have_overlay_nav_drawer():
+    index = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
+    style = (TEMPLATE_ROOT / "assets" / "style.css").read_text(encoding="utf-8")
+    app = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    # Floating drawer button + backdrop exist in the shell.
+    assert "navDrawerBtn" in index
+    assert "navDrawerBackdrop" in index
+    # In focus mode the sidebar hides by default but overlays content when open.
+    assert ".portal-wrap.focus .pnav { display: none; }" in style
+    assert ".portal-wrap.focus.nav-open .pnav" in style
+    assert ".nav-drawer-btn" in style
+    assert ".nav-drawer-backdrop" in style
+    # Drawer logic: toggle, backdrop click, Esc, auto-close on navigation.
+    assert "initNavDrawer" in app
+    assert "LincolnNavDrawer" in app
+    assert "nav-open" in app
+
+
 def test_app_js_renders_docs_in_place_with_marked():
     text = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
     assert "docView" in text
