@@ -35,6 +35,9 @@
 
         <div class="mac-tray-menu" id="macTrayMenu"></div>
 
+        <button class="nav-drawer-btn" id="navDrawerBtn" title="展开目录（Esc 收起）" aria-label="展开目录" aria-expanded="false">&#9776;</button>
+        <div class="nav-drawer-backdrop" id="navDrawerBackdrop" hidden></div>
+
         <div class="pstage-body" id="pstageBody">
             <div class="doc-view hidden" id="docView" tabindex="-1"></div>
             <div class="mac-window" id="macWindow">

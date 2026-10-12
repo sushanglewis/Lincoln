@@ -213,7 +213,41 @@ details.pnav-group-details > summary.pnav-group .pnav-count {
 .doc-view .doc-content img { max-width: 100%; height: auto; }
 
 /* Focus mode: sidebar hidden, content takes full width */
+.portal-wrap { position: relative; }
 .portal-wrap.focus .pnav { display: none; }
+.portal-wrap.focus.nav-open .pnav {
+    display: block;
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    z-index: 70;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
+}
+.nav-drawer-btn {
+    display: none;
+    position: absolute;
+    top: calc(var(--menubar-height) + 10px);
+    left: 12px;
+    z-index: 50;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 15px; line-height: 1;
+    cursor: pointer;
+    align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
+}
+.nav-drawer-btn:hover { border-color: var(--brand); color: var(--brand); }
+.portal-wrap.focus .nav-drawer-btn { display: inline-flex; }
+.portal-wrap.focus.nav-open .nav-drawer-btn { display: none; }
+.nav-drawer-backdrop {
+    position: absolute;
+    top: var(--menubar-height); left: 0; right: 0; bottom: 0;
+    z-index: 60;
+    background: rgba(0, 0, 0, 0.22);
+}
+.nav-drawer-backdrop[hidden] { display: none; }
 .portal-wrap.focus .pstage-body { padding: 4px 8px 8px; }
 .portal-wrap.focus .mac-window,
 .portal-wrap.focus .doc-view {
