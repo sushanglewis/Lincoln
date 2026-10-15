@@ -205,30 +205,43 @@ def test_portal_template_has_nav_collapse_and_filter():
     assert 'class="pann"' not in index
     assert ".pann" not in style
     assert "renderPanel" not in app
-    # Collapsible groups, filter input, collapse-all, focus mode.
+    # Collapsible groups, filter input, collapse-all, in-panel collapse button.
     assert "navCollapseAll" in app
     assert "navFilter" in app
     assert "pnav-group-details" in app
-    assert "focusToggle" in index
+    assert "navCollapseBtn" in app
+    assert "navExpandBtn" in index
     assert ".portal-wrap.focus" in style
 
 
-def test_portal_prototype_pages_have_overlay_nav_drawer():
+def test_portal_sidebar_collapse_is_unified_and_manual():
     index = (TEMPLATE_ROOT / "index.html.tpl").read_text(encoding="utf-8")
     style = (TEMPLATE_ROOT / "assets" / "style.css").read_text(encoding="utf-8")
     app = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
-    # Floating drawer button + backdrop exist in the shell.
-    assert "navDrawerBtn" in index
-    assert "navDrawerBackdrop" in index
-    # In focus mode the sidebar hides by default but overlays content when open.
-    assert ".portal-wrap.focus .pnav { display: none; }" in style
-    assert ".portal-wrap.focus.nav-open .pnav" in style
-    assert ".nav-drawer-btn" in style
-    assert ".nav-drawer-backdrop" in style
-    # Drawer logic: toggle, backdrop click, Esc, auto-close on navigation.
-    assert "initNavDrawer" in app
-    assert "LincolnNavDrawer" in app
-    assert "nav-open" in app
+    # Collapse button lives inside the sidebar panel; when collapsed a slim
+    # left rail re-expands it. No menubar toggle, no drawer.
+    assert "navCollapseBtn" in app
+    assert "navExpandBtn" in index
+    assert ".nav-rail" in style
+    assert ".portal-wrap.focus .nav-rail" in style
+    assert ".nav-toggle-btn" in style
+    assert "navDrawerBtn" not in index
+    assert "navDrawerBackdrop" not in index
+    assert "navToggle" not in index
+    assert "nav-drawer" not in style
+    assert "nav-open" not in style
+    # Collapse is manual only — prototype pages must not auto-hide the sidebar.
+    assert "isPrototypePage" not in app
+    assert "initNavDrawer" not in app
+    assert "LincolnNavDrawer" not in app
+    assert "var active = getFocusManual();" in app
+
+
+def test_portal_landing_page_defaults_to_first_doc():
+    app = (TEMPLATE_ROOT / "assets" / "app.js").read_text(encoding="utf-8")
+    # No-hash visits must land on a real page, preferring the Markdown PRD.
+    assert "findLandingPage" in app
+    assert "if (items[j].markdown) return items[j];" in app
 
 
 def test_app_js_renders_docs_in_place_with_marked():
