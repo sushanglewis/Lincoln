@@ -11,6 +11,9 @@ permissions:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    # Trusted Publishing (OIDC): npm verifies the workflow identity against
+    # the trusted publisher configured on npmjs.com (repo + this workflow
+    # file). No NPM_TOKEN needed; bypass-2FA tokens are deprecated by npm.
     if: startsWith(github.ref_name, 'lincoln-installer-v')
     defaults:
       run:
@@ -22,8 +25,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@1e60f620b9541d16bece96c5465dc8ee9832be0b # v4
         with:
-          node-version: 20
+          node-version: 24
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing requires npm >= 11.5; the Node-bundled npm may be older.
+      - name: Upgrade npm
+        run: npm install --global npm@latest
 
       - name: Verify version matches release tag
         run: |
@@ -48,5 +55,3 @@ jobs:
 
       - name: Publish to npm
         run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
