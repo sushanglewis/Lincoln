@@ -111,6 +111,7 @@
     function renderNav(container, packageData) {
         var html = '';
         html += '<div class="pnav-header">';
+        html += '<button type="button" class="nav-toggle-btn pnav-collapse-btn" id="navCollapseBtn" title="收起目录（左侧栏展开）" aria-label="收起目录"><span class="nav-toggle-icon">&#9776;</span><span class="nav-toggle-text">收起目录</span></button>';
         html += '<div class="pnav-logo">L</div>';
         html += '<div>';
         html += '<div class="pnav-title">Issue #' + escapeHtml(packageData.issue_number || '') + '</div>';
@@ -233,15 +234,9 @@
         });
     }
 
-    /* ---------- Focus mode ---------- */
+    /* ---------- Sidebar collapse (unified for docs and prototypes) ---------- */
 
     var currentPage = null;
-
-    function isPrototypePage(page) {
-        if (!page) return false;
-        if (page.nav_group === 'Prototype' || page.group === 'Prototype') return true;
-        return (page.path || '').indexOf('pages/prototype/') === 0;
-    }
 
     function getFocusManual() {
         try {
@@ -261,24 +256,20 @@
 
     function applyFocusMode() {
         var wrap = document.getElementById('portalWrap');
-        var btn = document.getElementById('focusToggle');
+        var btn = document.getElementById('navExpandBtn');
         if (!wrap) return;
-        var active = getFocusManual() || isPrototypePage(currentPage);
+        var active = getFocusManual();
         wrap.classList.toggle('focus', active);
-        if (!active && window.LincolnNavDrawer) window.LincolnNavDrawer.close();
-        if (btn) btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        if (btn) btn.setAttribute('aria-expanded', active ? 'true' : 'false');
     }
 
     function initFocusMode() {
-        var btn = document.getElementById('focusToggle');
-        if (btn) {
-            btn.addEventListener('click', function () {
-                var wrap = document.getElementById('portalWrap');
-                var active = wrap && wrap.classList.contains('focus');
-                setFocusManual(!active);
-                applyFocusMode();
-            });
+        function toggle() {
+            setFocusManual(!getFocusManual());
+            applyFocusMode();
         }
+        var expandBtn = document.getElementById('navExpandBtn');
+        if (expandBtn) expandBtn.addEventListener('click', toggle);
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && getFocusManual()) {
                 setFocusManual(false);
@@ -287,51 +278,13 @@
         });
     }
 
-    /* ---------- Nav drawer: overlay sidebar for focus/prototype pages ---------- */
-
-    function initNavDrawer() {
-        var wrap = document.getElementById('portalWrap');
-        var btn = document.getElementById('navDrawerBtn');
-        var backdrop = document.getElementById('navDrawerBackdrop');
-        if (!wrap || !btn || !backdrop) return;
-
-        function isOpen() {
-            return wrap.classList.contains('nav-open');
-        }
-
-        function open() {
-            wrap.classList.add('nav-open');
-            btn.setAttribute('aria-expanded', 'true');
-            backdrop.hidden = false;
-        }
-
-        function close() {
-            wrap.classList.remove('nav-open');
-            btn.setAttribute('aria-expanded', 'false');
-            backdrop.hidden = true;
-        }
-
+    function bindNavCollapseButton(nav) {
+        var btn = document.getElementById('navCollapseBtn');
+        if (!btn || !nav) return;
         btn.addEventListener('click', function () {
-            if (isOpen()) close();
-            else open();
+            setFocusManual(true);
+            applyFocusMode();
         });
-        backdrop.addEventListener('click', close);
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape' && isOpen()) {
-                close();
-                e.stopPropagation();
-            }
-        });
-
-        // Close the drawer once a page is picked so the prototype regains full space.
-        var nav = document.getElementById('pnav');
-        if (nav) {
-            nav.addEventListener('click', function (e) {
-                if (e.target.closest('.pnav-link') && isOpen()) close();
-            });
-        }
-
-        window.LincolnNavDrawer = { open: open, close: close };
     }
 
     /* ---------- Content area: in-place docs + iframe prototypes ---------- */
@@ -428,6 +381,18 @@
             }
         }
         return null;
+    }
+
+    function findLandingPage(pages) {
+        var fallback = null;
+        for (var i = 0; i < pages.length; i++) {
+            var items = pages[i].items || [];
+            for (var j = 0; j < items.length; j++) {
+                if (!fallback) fallback = items[j];
+                if (items[j].markdown) return items[j];
+            }
+        }
+        return fallback;
     }
 
     var suppressHash = false;
@@ -605,14 +570,21 @@
         var nav = document.getElementById('pnav');
         var frame = document.getElementById('frame');
         if (nav) renderNav(nav, packageData);
+        if (nav) bindNavCollapseButton(nav);
         if (nav && frame) bindPortal(nav, frame, packageData);
         if (nav && frame) bindPrototypeLinks(nav, frame, packageData);
         initTheme();
         initTray();
         initFocusMode();
-        initNavDrawer();
         var initial = decodeURIComponent(window.location.hash.replace(/^#\//, ''));
-        if (initial) selectByPath(initial, nav, frame, packageData);
+        if (initial) {
+            selectByPath(initial, nav, frame, packageData);
+        } else {
+            // Landing: never show a blank page — open the first page, preferring
+            // a Markdown doc (the PRD) over a prototype frame.
+            var landing = findLandingPage(packageData.nav || []);
+            if (landing) selectByPath(landing.path, nav, frame, packageData);
+        }
     }
 
     if (document.readyState === 'loading') {

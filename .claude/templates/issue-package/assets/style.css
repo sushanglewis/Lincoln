@@ -98,9 +98,12 @@ body {
     border-right: 1px solid var(--border);
 }
 .pnav-header {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
+    display: flex; align-items: center; justify-content: flex-start; gap: 10px;
     padding: 16px; border-bottom: 1px solid var(--border);
 }
+.pnav-header .pnav-collapse-btn { flex-shrink: 0; }
+.pnav-header .pnav-logo { flex-shrink: 0; }
+.pnav-header > div:last-child { min-width: 0; }
 .pnav-header .pnav-title { font-size: 15px; }
 .pnav-header .pnav-subtitle { text-align: center; }
 .pnav-logo {
@@ -212,51 +215,45 @@ details.pnav-group-details > summary.pnav-group .pnav-count {
 }
 .doc-view .doc-content img { max-width: 100%; height: auto; }
 
-/* Focus mode: sidebar hidden, content takes full width */
+/* Collapsed sidebar: same interaction for docs and prototypes */
 .portal-wrap { position: relative; }
 .portal-wrap.focus .pnav { display: none; }
-.portal-wrap.focus.nav-open .pnav {
-    display: block;
-    position: absolute;
-    top: 0; left: 0; bottom: 0;
-    z-index: 70;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.28);
-}
-.nav-drawer-btn {
-    display: none;
-    position: absolute;
-    top: calc(var(--menubar-height) + 10px);
-    left: 12px;
-    z-index: 50;
-    width: 34px; height: 34px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-2);
-    font-size: 15px; line-height: 1;
-    cursor: pointer;
-    align-items: center; justify-content: center;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.14);
-}
-.nav-drawer-btn:hover { border-color: var(--brand); color: var(--brand); }
-.portal-wrap.focus .nav-drawer-btn { display: inline-flex; }
-.portal-wrap.focus.nav-open .nav-drawer-btn { display: none; }
-.nav-drawer-backdrop {
-    position: absolute;
-    top: var(--menubar-height); left: 0; right: 0; bottom: 0;
-    z-index: 60;
-    background: rgba(0, 0, 0, 0.22);
-}
-.nav-drawer-backdrop[hidden] { display: none; }
 .portal-wrap.focus .pstage-body { padding: 4px 8px 8px; }
 .portal-wrap.focus .mac-window,
 .portal-wrap.focus .doc-view {
     width: 100%;
     border-radius: 6px;
 }
-#focusToggle[aria-pressed="true"] {
-    border-color: var(--brand); color: var(--brand);
+.nav-toggle-btn {
+    height: 30px;
+    padding: 0 10px;
+    gap: 6px;
+    width: auto;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text-2);
+    font-size: 14px; line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
+.nav-toggle-btn:hover { border-color: var(--brand); color: var(--brand); }
+.nav-toggle-btn .nav-toggle-text { font-size: 12px; }
+.pnav-collapse-btn { background: transparent; }
+.nav-expand-icon-only { padding: 0; width: 30px; }
+
+/* Collapsed rail: slim left panel holding the expand toggle, aligned with
+   the collapse button in the expanded sidebar header. */
+.nav-rail {
+    display: none;
+    width: auto; flex-shrink: 0;
+    flex-direction: column; align-items: flex-start;
+    padding: 38px 12px 8px;
+}
+.portal-wrap.focus .nav-rail { display: flex; }
 
 .pstage {
     flex: 1; display: flex; flex-direction: column;
