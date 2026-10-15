@@ -12,9 +12,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.9.2-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.9.3-blue)](RELEASE.md)
 
-**v1.9.2** is released: the issue-package portal is rebuilt as a docsify-style documentation framework — collapsible/filterable sidebar, focus mode, full Markdown rendering via marked, and driver.js numbered hotspot annotations, all openable via file:// with zero services (#131).
+**v1.9.3** is released: the issue-package portal is rebuilt as a docsify-style documentation framework — collapsible/filterable sidebar, focus mode, full Markdown rendering via marked, and driver.js numbered hotspot annotations, all openable via file:// with zero services (#131).
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
