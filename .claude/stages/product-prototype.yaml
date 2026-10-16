@@ -7,7 +7,7 @@ workflows:
 - existing-project-iteration
 - interview-to-knowledge
 - oss-first-design
-prerequisite_stage: product-design-docs
+prerequisite_stage: challenge
 next_stage: tdd-development-plan
 human_gate: true
 execution_mode: both
@@ -51,7 +51,7 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - product-design-docs
+    - challenge
   exit:
   - check: artifacts_present
   - check: human_approved

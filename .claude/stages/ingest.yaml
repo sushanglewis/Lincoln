@@ -7,7 +7,7 @@ description: 'Ingests raw interview recordings and produces transcripts,
 workflows:
 - interview-to-knowledge
 prerequisite_stage: workflow-router
-next_stage: clarify
+next_stage: requirement-intake
 human_gate: false
 execution_mode: team
 primary_action: process-interview
