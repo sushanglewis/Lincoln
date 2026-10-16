@@ -1,0 +1,26 @@
+process_slug: issue-139
+issue_number: '139'
+current_stage: clarify
+last_updated: '2026-10-16T02:07:30Z'
+documents:
+- path: designs/ingest-skipped-note.md
+  stage: ingest
+  status: completed
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
+- path: intake/requirements.md
+  stage: requirement-intake
+  status: completed
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
+- path: intake/sources.md
+  stage: requirement-intake
+  status: completed
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null

@@ -36,6 +36,21 @@ workflow:
         - check: summary_has_key_topics
           args: ["{session_id}"]
 
+    - id: requirement-intake
+      name: 需求采集
+      description: 从多渠道并行采集需求线索，归并为带来源与置信度的统一需求清单
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["ingest"]
+      action: collect-requirements
+      human_gate: true
+      artifacts:
+        - "{process_slug}/intake/requirements.md"
+        - "{process_slug}/intake/sources.md"
+      exit_checks:
+        - check: artifacts_present
+        - check: human_approved
+
     - id: clarify
       name: 需求澄清
       description: 基于访谈内容与人类 PM 多轮澄清，形成统一需求文档与根级 PRD 主线
@@ -88,6 +103,20 @@ workflow:
           args: ["{design_id}"]
         - check: design_docs_human_approved
           args: ["{design_id}"]
+
+    - id: challenge
+      name: 方案挑战
+      description: 红队模式挑战设计方案，每条挑战由人类 PM 决策闭环后方可进入原型
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["product-design-docs"]
+      action: challenge-design
+      human_gate: true
+      artifacts:
+        - "{process_slug}/designs/challenge-report.md"
+      exit_checks:
+        - check: artifacts_present
+        - check: human_approved
 
     - id: product-prototype
       name: 产品原型

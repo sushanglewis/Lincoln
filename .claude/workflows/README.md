@@ -35,7 +35,8 @@
 ### `interview-to-knowledge`（默认，team）
 
 - **适用场景**：从访谈录音到 GitHub Issues 再到 Obsidian 知识库沉淀的完整链路，含跨成员的 implement/PR 节点。
-- **阶段**：ingest → clarify → product-design-docs → product-prototype → tdd-development-plan → propose → split → implement → sync-knowledge
+- **阶段**：ingest → requirement-intake → clarify → product-design-docs → challenge → product-prototype → tdd-development-plan → propose → split → implement → sync-knowledge
+- **多 Agent 体系**：`requirement-intake` 由 lc-requirement-scout 主管、按来源渠道并行派发采集 sub-agent；`clarify` 由 lc-pm 主管、lc-researcher/lc-architect 作为并行专家做四路可行性分析；`challenge` 由 lc-challenger 主管、按用户/边界/异常/兜底/安全/历史数据/用户迁移维度派发挑战 sub-agent，每条挑战由人类 PM 决策闭环。设计文档见 issue #139。
 
 ### `existing-project-iteration`（solo）
 

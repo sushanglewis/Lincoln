@@ -9,7 +9,7 @@ workflows:
 - interview-to-knowledge
 - oss-first-design
 prerequisite_stage: clarify
-next_stage: product-prototype
+next_stage: challenge
 human_gate: true
 execution_mode: both
 primary_action: draft-product-design
