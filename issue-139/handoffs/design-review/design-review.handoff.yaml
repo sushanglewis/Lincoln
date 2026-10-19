@@ -7,7 +7,7 @@ pr: "https://github.com/sushanglewis/Lincoln/pull/140"
 branch: issue-139
 based_on:
   - path: issue-139/designs/pm-multi-agent-design.md
-    version: v0.4
+    version: v0.4.1
     role: 设计文档（唯一权威方案）
   - path: issue-139/research/2026-10-19-pm-multi-agent-research/findings.md
     version: v1.0

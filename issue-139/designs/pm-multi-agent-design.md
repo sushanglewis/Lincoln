@@ -1,5 +1,5 @@
 <!-- status: draft -->
-<!-- version: v0.4 -->
+<!-- version: v0.4.1 -->
 # Lincoln PM 阶段多 Agent 体系设计
 
 - Issue: #139 · 分支: issue-139 · 状态: draft（待人类 PM 评审）
