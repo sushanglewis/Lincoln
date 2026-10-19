@@ -7,7 +7,9 @@
 
 ## 0. 研究依据
 
-调研见 `issue-139/research/2026-10-19-pm-multi-agent-research/findings.md`（MetaGPT / ChatDev / AG2 / OpenAI Agents SDK / CrewAI / PyRIT）。取向：Flows 确定性流水线 + 层级委派；结构化红队（challenge-feedback.json）；显式 human-in-the-loop；避免端到端全自动、GroupChat 定序、无契约派发、单点上下文爆炸。
+> 本文档是持久框架文档（随 main 分发）；其 issue 过程包（调研档案、handoff、工作包状态）留在 PR #140 / 分支历史中。
+
+调研基于 MetaGPT / ChatDev / AG2 / OpenAI Agents SDK / CrewAI / PyRIT 六个框架的公开文档，另含 Kimi Agent Swarm 官方帮助中心（§10）；完整调研档案（findings + 原始材料）随 PR #140 归档，不随 main 分发。取向：Flows 确定性流水线 + 层级委派；结构化红队（challenge-feedback.json）；显式 human-in-the-loop；避免端到端全自动、GroupChat 定序、无契约派发、单点上下文爆炸。
 
 ## 1. 设计原则
 
@@ -138,7 +140,7 @@
 
 ## 10. v0.5+ 演进方向（外部参照：Kimi Agent Swarm）
 
-来源：Kimi 官方帮助中心 Agent Swarm 文档（2026-10 抓取，原文存 research raw/）。Swarm 与 Lincoln 的三层组织 + 排遣模板 + 有界结构化返回同构（协调器 + 冻结队员 + 上下文分片）；以下五项为其官方机制在 Lincoln prompt 层的可落地映射，**不阻塞 v0.4**，建议合并后按真实运行反馈排期：
+来源：Kimi 官方帮助中心 Agent Swarm 文档（2026-10 抓取，原文随 PR #140 归档（research raw/））。Swarm 与 Lincoln 的三层组织 + 排遣模板 + 有界结构化返回同构（协调器 + 冻结队员 + 上下文分片）；以下五项为其官方机制在 Lincoln prompt 层的可落地映射，**不阻塞 v0.4**，建议合并后按真实运行反馈排期：
 
 1. **防串行塌缩自检**：lc-pm 审批阶段计划时检查 fan-out 必要性——任务间无可并行独立单元却排遣多个 agent = 虚假并行；主管排遣后发现多个简报实为同一任务链 = 串行崩溃，应合并简报。可在 lc-pm.md 审批 SOP 增加两条检查项。
 2. **关键步骤度量**：挑战/采集阶段的排遣计划记录预估耗时，阶段 handoff 时对比预估与实际，作为排遣规范表触发条件的校准信号（沉淀进决策日志复盘）。

@@ -54,4 +54,4 @@ extends:
 
 ## 事实来源
 
-本角色参与的各阶段 agent/skills/artifacts/gates 以 `.claude/stages/*.yaml` 为唯一事实来源；行为契约以 `.claude/agents/default.md` 为唯一事实来源；三层 PM 协作规范以 `issue-139/designs/pm-multi-agent-design.md` 为设计依据。
+本角色参与的各阶段 agent/skills/artifacts/gates 以 `.claude/stages/*.yaml` 为唯一事实来源；行为契约以 `.claude/agents/default.md` 为唯一事实来源；三层 PM 协作规范以 `docs/designs/pm-multi-agent-design.md` 为设计依据。
