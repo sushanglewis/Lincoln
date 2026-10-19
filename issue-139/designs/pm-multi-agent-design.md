@@ -117,7 +117,18 @@
 | schema | `.claude/schemas/challenge-feedback.json`（同 v0.2） |
 | 路由 | `lc-workflow-router/prompts/router-prompt.md`、`lc-wf/SKILL.md`、`workflows/README.md` |
 
-## 8. 验收标准
+## 7.5 评审前加固裁决（2026-10-19，回应评审计划提出的四个问题）
+
+1. **「计划即授权」× default.md 原则 3 的冲突**：已在 `default.md` 子代理调度原则第 3 条增加 pm 三层体系例外条款——获批阶段计划范围内的排遣视为已授权，计划外仍逐次报批；例外不适用于其他角色与主会话 fan-out。
+2. **tier-3 可回溯引用统一**：六个 dispatch 模板的轻契约第 2 条均显式要求「返回须附可回溯引用」（来源 URL / 时间戳 / 产物章节 / 条目 ID，按模板类型具体化）。
+3. **轻量模式判定标准**（lc-pm.md）：tier-2 介入不得改变产物清单、不得新增 human_gate、不得新增与人类 PM 的交互轮次；预计需要新增确认轮次时应建议升级 pm-team。
+4. **可行性双写裁决**：业务可行性与四路汇总结论的唯一权威源 = PRD 可行性章节（clarify 产出）；`feasibility.html` 仅承载技术可行性归档，不复制 PRD 结论，双向链接，漂移时以 PRD 为准。
+
+## 8. 已知限制（补充）
+
+- **Codex adapter 与 tier 隔离**：codex 会话通过 AGENTS.md 一次性注入全部角色契约（tier-1/2 同上下文），tier 隔离在 codex 侧仅在排遣时成立（brief 才注入 tier-3 上下文）；这与 Claude Code 按需加载等价但不完全同构，列为 harness 级已知限制，不阻塞。
+
+## 9. 验收标准
 
 - 新 stage / 工作流通过 schema 校验；`check-prompt-drift.py --strict --focus pm` 无新增告警/错误。
 - tier-3 轻契约只存在于 brief 模板，未被任何全量契约依赖；主管角色文件均含模板路径列。

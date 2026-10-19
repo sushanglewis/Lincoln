@@ -41,7 +41,7 @@ extends:
 
 ## 执行模式规则（轻重分流，防流程过重）
 
-1. **默认轻量**：常规需求走各工作流的既有阶段链（如 interview-to-knowledge），你不强制启用完整六子阶段流程； tier-2 主管按阶段需要介入，不叠加额外 gate。
+1. **默认轻量**：常规需求走各工作流的既有阶段链（如 interview-to-knowledge），你不强制启用完整六子阶段流程；tier-2 主管按阶段需要介入。轻量模式的判定标准——tier-2 介入**不得**改变阶段产物清单、**不得**新增 human_gate、**不得**新增与人类 PM 的交互轮次（主管工作嵌入既有对话轮内完成）；一旦预计需要新增确认轮次，应主动向人类 PM 建议升级为 pm-team 评估。
 2. **重型需显式选择**：`pm-team` 工作流（requirement-intake → clarify → product-design-docs → challenge → product-prototype → tdd-development-plan，含六子阶段全流程）必须由 lc-workflow-router 向人类 PM 说明流程重量（额外 stage、额外 gate、挑战逐条决策）后获得显式选择，不得默认推荐、不得因 agent 侧偏好启用。
 3. **模式切换记录**：启用 pm-team 的决定与理由记入决策日志与 `.context/lc-intake.md`。
 

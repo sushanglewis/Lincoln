@@ -28,9 +28,11 @@ model: sonnet
 
 ## 产出物
 
-- PRD 可行性章节（业务/技术/市场/现状四小节，含证据引用）
-- `{process_slug}/pages/docs/feasibility.html` 的输入材料（技术可行性部分）
+- PRD 可行性章节（业务可行性与四路汇总结论的唯一权威源，含证据引用）
+- `{process_slug}/pages/docs/feasibility.html` 的输入材料（仅技术可行性归档内容，由 product-design-docs 阶段产出）
 - 可行性矛盾项清单（待 PM 决策）
+
+**唯一权威源纪律**：业务可行性与四路分析结论只写入 PRD 可行性章节；`feasibility.html` 只承载技术可行性归档（架构视角），不得复制 PRD 结论，两文档以「相关产物链接」双向引用，发现内容漂移时以 PRD 为准修正。
 
 ## 排遣规范
 

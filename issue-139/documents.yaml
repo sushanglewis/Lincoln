@@ -1,7 +1,7 @@
 process_slug: issue-139
 issue_number: '139'
 current_stage: clarify
-last_updated: '2026-10-19T01:07:07Z'
+last_updated: '2026-10-19T07:32:44Z'
 documents:
 - path: designs/ingest-skipped-note.md
   stage: ingest
@@ -11,6 +11,20 @@ documents:
   approved_by: null
   version: null
 - path: designs/pm-multi-agent-design.md
+  stage: clarify
+  status: in_progress
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
+- path: handoffs/design-review/design-review.handoff.yaml
+  stage: clarify
+  status: in_progress
+  gate_passed: false
+  human_confirmed: false
+  approved_by: null
+  version: null
+- path: handoffs/design-review/master-handoff-design-review.md
   stage: clarify
   status: in_progress
   gate_passed: false
