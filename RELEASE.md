@@ -1,3 +1,26 @@
+# Lincoln v1.10.0 Release Notes
+
+**Release date:** 2026-10-19
+
+## Highlights
+
+- **PM 阶段多 Agent 体系（#139）** — 把「需求 → PRD」的六个子阶段（需求采集 / 可行性分析 / MVP 方案 / 方案挑战 / PRD 生成 / 交叉验证）从 lc-pm 单角色全包重构为三层组织，子阶段质量有了明确责任人：
+  - **三层组织** — `lc-pm` 总协调者（唯一面向人类 PM 的接口）→ 六个 `lc-pm-*` 阶段主管（pm-intake / pm-analyst / pm-mvp / pm-challenge / pm-author / pm-validator）→ `lc-pm-*-*` 执行 agent。主管对 lc-pm 负责，不直接打扰人类 PM；升级沿 主管 → lc-pm → 人类 PM 链路。
+  - **分层上下文契约** — tier-3 执行 agent 不再继承 `default.md` 全量契约：轻契约（4 条）内嵌 `.claude/templates/dispatch/` 六个排遣 brief 模板，执行 agent 的上下文 = 简报本身；lc-pm 只见整合后的 gate 材料，不见原始 fan-out 产物。
+  - **排遣模板机械填槽** — 主管不临场撰写提示词，从模板取件填槽后经 Task 派发，只掌握「任务→人→输出」三元组；`default.md` 子代理调度原则增加 pm 三层体系例外（获批阶段计划内排遣视为已授权，计划外仍逐次报批）。
+  - **结构化红队挑战** — 新增 `challenge` stage（`lc-pm-challenge` 主管）：按用户/边界/异常/兜底/安全/历史数据/用户迁移七维度并行挖掘设计缺陷，条目遵循新增 `.claude/schemas/challenge-feedback.json`，每条经 lc-pm 由人类 PM 逐条决策闭环（fix/accept 落同一结构）。
+  - **轻重分流** — 新增 `pm-team` 重型工作流（workflow-router → requirement-intake → clarify → product-design-docs → challenge → product-prototype → tdd-development-plan）；`interview-to-knowledge` 等既有工作流恢复原序、保持轻量默认，lc-workflow-router 推荐 pm-team 必须说明流程重量（+2 stage、+2 human_gate、逐条决策）并获人类 PM 显式选择，不得默认启用。
+  - **新增 stage `requirement-intake`**（`lc-pm-intake` 主管）：按渠道（GitHub issue / 客诉 / 社区 / 市场调研 / 访谈）并行采集，产出带来源与置信度的统一需求清单与来源台账。
+  - **可行性唯一权威源纪律** — 业务可行性与四路分析结论只写入 PRD 可行性章节；`feasibility.html` 仅承载技术可行性归档，双向链接、漂移以 PRD 为准。
+  - 设计文档（`docs/designs/pm-multi-agent-design.md` v0.4.1）含研究依据（MetaGPT / ChatDev / AG2 / OpenAI Agents SDK / CrewAI / PyRIT / Kimi Agent Swarm 桌面调研）与 v0.5+ 演进方向（防串行塌缩自检、关键步骤度量等）。
+
+## Migration Notes
+
+- 无破坏性变更：既有工作流阶段顺序与 human_gate 全部保持不变；`pm-team` 仅在新 issue 经 lc-workflow-router 显式选择时启用。
+- 升级方式：`npm install -g @sushanglewis/lincoln@latest` 后执行 `lincoln update`，即把新角色契约、排遣模板、stage 与 pm-team 工作流同步进各 harness。
+
+---
+
 # Lincoln v1.9.0 Release Notes
 
 **Release date:** 2026-10-12

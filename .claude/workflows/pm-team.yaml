@@ -1,0 +1,147 @@
+workflow:
+  name: pm-team
+  version: 1.0.0
+  description: PM 阶段多 agent 全流程（team）：需求采集 → 可行性/MVP 澄清 → 设计文档 → 红队挑战 → 原型确认 → PRD 定稿 → 交叉验证。
+    三层 PM 组织（lc-pm 总协调 → lc-pm-* 阶段主管 → lc-pm-*-* 执行 agent）在本工作流中完整启用。
+    本流程较重：启动前必须由 lc-workflow-router 向人类 PM 说明流程重量并获得显式选择，不得默认启用。
+  execution_mode: team
+  loop:
+    engine: everything-claude-code
+    state_file: "{process_slug}/workflow-stage.yaml"
+    on_failure: pause_for_human
+    max_retries: 1
+
+  conventions:
+    language: zh-CN
+    artifact_encoding: utf-8
+    timestamp_format: "%Y-%m-%dT%H:%M:%SZ"
+    session_id_pattern: "YYYY-MM-DD-descriptive-name"
+
+  steps:
+    - id: workflow-router
+      name: 工作流路由
+      description: 会话开场引导后，确认启动 pm-team 全流程（须人类 PM 显式选择，不得默认启用）
+      action: lc-workflow-router
+      human_gate: true
+      exit_checks:
+        - check: human_approved
+
+    - id: requirement-intake
+      name: 需求采集
+      description: lc-pm-intake 按来源渠道并行采集需求线索，归并为带来源与置信度的统一需求清单
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["workflow-router"]
+      action: collect-requirements
+      human_gate: true
+      artifacts:
+        - "{process_slug}/intake/requirements.md"
+        - "{process_slug}/intake/sources.md"
+      exit_checks:
+        - check: artifacts_present
+        - check: human_approved
+
+    - id: clarify
+      name: 需求澄清
+      description: lc-pm-author 主导澄清与 PRD 主线；lc-pm-analyst / lc-pm-mvp 以并行专家身份做可行性分析与 MVP 梳理
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["requirement-intake"]
+      action: clarify-requirements
+      human_gate: true
+      artifacts:
+        - "{process_slug}/pages/docs/requirements.html"
+        - "{process_slug}/pages/docs/stakeholders.html"
+        - "{process_slug}/pages/docs/user-stories.html"
+        - "{process_slug}/pages/docs/prd.html"
+      optional_artifacts:
+        - "{process_slug}/pages/docs/snapshots/prd-v*.html"
+      exit_checks:
+        - check: prd_has_required_sections
+          args: ["{process_slug}/pages/docs/prd.html"]
+        - check: prd_content_hygiene
+          args: ["{process_slug}/pages/docs/prd.html"]
+        - check: human_approved
+        - check: prd_snapshot_present
+          args: ["{process_slug}/pages/docs/prd.html"]
+
+    - id: product-design-docs
+      name: 产品设计文档
+      description: lc-pm-author 基于已确认需求生成设计文档包，并产出 PM→UX 交接产物
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["clarify"]
+      action: draft-product-design
+      human_gate: true
+      artifacts:
+        - "{process_slug}/pages/docs/design-review.html"
+        - "{process_slug}/pages/docs/decisions.html"
+        - "{process_slug}/pages/docs/scenarios.html"
+        - "{process_slug}/pages/docs/feature-catalog.html"
+        - "{process_slug}/pages/docs/data-model.html"
+        - "{process_slug}/pages/docs/flows.html"
+        - "{process_slug}/pages/docs/feasibility.html"
+        - "{process_slug}/pages/docs/page-map.html"
+        - "{process_slug}/pages/docs/version-log.html"
+        - "{process_slug}/pages/docs/api-list.html"
+        - "{process_slug}/pages/docs/handoff-pm-to-ux-v*.html"
+        - "{process_slug}/handoffs/pm-to-ux/pm-to-ux.handoff.yaml"
+        - "{process_slug}/handoffs/pm-to-ux/master-handoff-pm-to-ux-v*.md"
+      exit_checks:
+        - check: design_docs_complete
+          args: ["{design_id}"]
+        - check: design_docs_human_approved
+          args: ["{design_id}"]
+
+    - id: challenge
+      name: 方案挑战
+      description: lc-pm-challenge 红队模式按七维度派发挑战 agent，每条挑战经 lc-pm 由人类 PM 决策闭环
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["product-design-docs"]
+      action: challenge-design
+      human_gate: true
+      artifacts:
+        - "{process_slug}/designs/challenge-report.md"
+      exit_checks:
+        - check: artifacts_present
+        - check: human_approved
+
+    - id: product-prototype
+      name: 产品原型
+      description: lc-designer 基于已挑战并修复的方案生成原型；lc-pm-author 任 PM 侧 reviewer；人类 PM 确认原型后 PRD 方可 freeze
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["challenge"]
+      action: build-product-prototype
+      human_gate: true
+      artifacts:
+        - "{process_slug}/pages/docs/ui-spec.html"
+        - "{process_slug}/pages/docs/fields.html"
+        - "{process_slug}/pages/prototype/**/*.html"
+      optional_artifacts:
+        - "{process_slug}/designs/{design_id}/prototype.pen"
+      exit_checks:
+        - check: prototype_artifact_complete
+          args: ["{design_id}"]
+
+    - id: tdd-development-plan
+      name: TDD 研发计划与交叉验证
+      description: lc-engineer 生成 TDD 计划；lc-pm-validator 按文档对并行交叉验证，缺口经 lc-pm 由人类 PM 闭环
+      entry_checks:
+        - check: previous_stage_completed
+          args: ["product-prototype"]
+      action: plan-tdd-development
+      artifacts:
+        - "{process_slug}/pages/docs/tdd-plan.html"
+        - "{process_slug}/pages/docs/prd-cross-validation.html"
+      exit_checks:
+        - check: tdd_plan_complete
+          args: ["{design_id}"]
+        - check: prd_cross_validated
+          args: ["{process_slug}/pages/docs/prd-cross-validation.html"]
+
+  gates:
+    human_confirmation_prompt: "请确认当前步骤已完成并可以继续？输入 confirm 继续，或说明需要修改的地方。"
+    on_validation_failure: pause_and_report
+    on_human_rejection: update_artifact_and_revalidate

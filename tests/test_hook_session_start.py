@@ -93,7 +93,7 @@ def test_active_stage_does_not_cat_agent_contract(tmp_path):
 
     # Assert
     assert code == 0, stderr
-    assert "Agent file: .claude/agents/pm.md" in stdout
+    assert "Agent file: .claude/agents/pm-author.md" in stdout  # clarify primary is lc-pm-author (issue #139 three-tier PM org)
     assert "Default contract: .claude/agents/default.md" in stdout
     # The full agent contract text should not be dumped
     assert "## Lincoln Agent Contract" not in stdout

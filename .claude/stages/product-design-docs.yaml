@@ -3,6 +3,7 @@ id: product-design-docs
 name: Product Design Docs
 description: 基于已确认需求生成产品设计评审文档包（design-review、scenarios、feature-catalog、data-model、flows、feasibility、page-map、version-log、api-list 等 HTML），并完成 PM→UX 交接产物。
 workflows:
+- pm-team
 - bug-fix
 - design-spike
 - existing-project-iteration
@@ -28,7 +29,7 @@ artifact_templates:
   '{process_slug}/pages/docs/api-list.html': .claude/templates/issue-package/page-doc-structured.html.tpl
   '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html': .claude/templates/issue-package/page-doc.html.tpl
 agent:
-  primary: lc-pm
+  primary: lc-pm-author
   reviewers:
   - lc-designer
   - lc-researcher

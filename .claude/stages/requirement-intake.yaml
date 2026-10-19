@@ -1,0 +1,48 @@
+schema_version: 3.0.0
+id: requirement-intake
+name: 需求采集
+description: '从多渠道（GitHub issue、客诉频道、社区帖子、市场调研、访谈产物）并行采集需求线索，
+  归并为带来源与置信度的统一需求清单，经人类 PM 确认后进入澄清阶段。
+  '
+workflows:
+- pm-team
+prerequisite_stage: workflow-router
+next_stage: clarify
+human_gate: true
+execution_mode: team
+primary_action: collect-requirements
+variables:
+- process_slug
+- session_id
+agent:
+  primary: lc-pm-intake
+  reviewers:
+  - lc-researcher
+  handoff_to: lc-pm
+  parallel_specialists:
+  - lc-researcher
+  merge_strategy: priority
+skills:
+  required: []
+  optional:
+  - lincoln:lc-collect-intelligence
+  - lincoln:lc-market-research
+artifacts:
+  required:
+  - '{process_slug}/intake/requirements.md'
+  - '{process_slug}/intake/sources.md'
+references:
+  agent_guide: .claude/agents/pm-intake.md
+context:
+  goal: 将分散在各渠道的需求线索采集、去重、归并为一份统一、带来源、可追溯的需求清单，由人类 PM 确认后作为 clarify 阶段的输入。
+  execution: 主管 lc-pm-intake 与 lc-pm 确认采集渠道范围后，来源数 > 1 时按渠道经 Task 工具派发采集 sub-agent 并行采集；每个子 agent 输出结构化需求条目 {title, source_url, quote, confidence, date, segments}；主管按主题聚类去重，冲突条目并列呈现，经 lc-pm 提交人类 PM 在 human_gate 裁决取舍。
+  constraints: "- 每条需求必须可回溯到来源 URL 或录音时间戳，无来源的条目不得进入清单。\n\n    - 采集证据优先一手来源，转述类来源降置信度标注。\n\n    - 子 agent 只做采集与结构化，需求取舍决策一律在 human_gate 由人类 PM 确认，不得跳过。"
+  exit: requirements.md 与 sources.md 齐备，每条需求带来源与置信度，且 human_approved 通过。
+gates:
+  entry:
+  - check: previous_stage_completed
+    args:
+    - workflow-router
+  exit:
+  - check: artifacts_present
+  - check: human_approved

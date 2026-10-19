@@ -3,6 +3,7 @@ id: product-prototype
 name: Product Prototype
 description: 基于已确认设计文档生成字段规格、UI 规格和可交互 HTML 原型（pages/prototype/**/*.html）。Pencil 原型（prototype.pen）为可选，由 UI 在 UX 节点之后按需产出。
 workflows:
+- pm-team
 - design-spike
 - existing-project-iteration
 - interview-to-knowledge
@@ -22,7 +23,7 @@ artifact_templates:
 agent:
   primary: lc-designer
   reviewers:
-  - lc-pm
+  - lc-pm-author
   - lc-frontend-engineer
   handoff_to: lc-engineer
 skills:

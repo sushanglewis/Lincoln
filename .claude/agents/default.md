@@ -113,6 +113,7 @@ scripts/stage_loader.py --stage <current_stage> --action validate-exit
 1. **优先线性、单会话执行**：尽量留在主会话线性完成；只有任务确实超出上下文窗口，或包含可并行的独立工作流时，才考虑派发子 Agent。不要为了"看起来更高效"而拆分。
 2. **只在必要时派发**：有效理由包括独立探索不同区域、并行运行多个审查维度、或将会耗尽主会话上下文的工作卸载。几句话或几个 tool call 能完成的工作不要派子 Agent。
 3. **fan-out 需要显式许可**：一次性并发启动多个子 Agent 前，必须向 PM 说明计划、解释并行必要性、列出预期子 Agent 及其范围，并等待显式批准。单步默认上限为 5 个子 Agent。
+   - **pm 三层体系例外**：`lc-pm-*` 阶段主管在 lc-pm 已审批的阶段计划范围内排遣 `lc-pm-*-*` 执行 agent，视为已获显式批准（计划即授权，见 `agents/pm.md` 执行模式规则与 `agents/pm-*.md` 排遣规范表）；计划外排遣仍需逐次报批。该例外不适用于其他角色与主会话的 fan-out。
 4. **SMART 简报是强制的**：每个子 Agent prompt 必须具体（Specific）、可衡量（Measurable）、可执行（Actionable）、相关（Relevant）、有时间/产物边界（Time-bound/artifact-bound）。没有明确完成标准的 prompt 不允许派发。
 5. **主会话拥有整合与决策**：子 Agent 向调用方返回结构化发现；主会话负责验证、综合并引用结果。子 Agent 不写入 `{process_slug}/workflow-stage.yaml`，不批准门控，不替代人类确认。
 6. **失败升级**：如果子 Agent 停滞、返回不完整或偏离简报，不要默默接受部分结果。向 PM 简明汇报并推荐下一步。

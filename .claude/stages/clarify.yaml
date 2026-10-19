@@ -5,6 +5,7 @@ description: 'Explores requirements, resolves ambiguity, and produces
 
   confirmed requirements before design work begins.'
 workflows:
+- pm-team
 - bug-fix
 - design-spike
 - existing-project-iteration
@@ -24,10 +25,17 @@ artifact_templates:
   '{process_slug}/pages/docs/prd.html': .claude/templates/issue-package/page-doc.html.tpl
   '{process_slug}/pages/docs/snapshots/prd-v*.html': .claude/templates/issue-package/page-doc.html.tpl
 agent:
-  primary: lc-pm
+  primary: lc-pm-author
   reviewers:
   - lc-qa
-  handoff_to: lc-pm
+  - lc-pm
+  handoff_to: lc-pm-author
+  parallel_specialists:
+  - lc-pm-analyst
+  - lc-pm-mvp
+  - lc-researcher
+  - lc-architect
+  merge_strategy: priority
 skills:
   required:
   - lincoln:clarify-requirements
