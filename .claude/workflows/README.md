@@ -29,6 +29,7 @@
 | 仅做方案预研，不进入研发实现 | `design-spike` | solo | [`design-spike.yaml`](design-spike.yaml) |
 | 强依赖开源方案，需要先调研再设计 | `oss-first-design` | solo | [`oss-first-design.yaml`](oss-first-design.yaml) |
 | 需要做竞品/市场/用户/相关者研究，辅助产品决策 | `pm-research` | solo | [`pm-research.yaml`](pm-research.yaml) |
+| 需求来源多、要求完整 PRD 全流程与红队挑战（重型） | `pm-team` | team | [`pm-team.yaml`](pm-team.yaml) |
 
 ## 工作流详解
 
@@ -36,7 +37,7 @@
 
 - **适用场景**：从访谈录音到 GitHub Issues 再到 Obsidian 知识库沉淀的完整链路，含跨成员的 implement/PR 节点。
 - **阶段**：ingest → requirement-intake → clarify → product-design-docs → challenge → product-prototype → tdd-development-plan → propose → split → implement → sync-knowledge
-- **多 Agent 体系**：三层 PM 组织（lc-pm 总协调 → lc-pm-* 阶段主管 → lc-pm-*-* 执行 agent，设计文档见 issue #139）：`requirement-intake` 由 lc-pm-intake 主管、按来源渠道并行派发采集 agent；`clarify` 由 lc-pm-author 主管、lc-pm-analyst/lc-pm-mvp 以并行专家身份做四路可行性分析与 MVP 梳理；`challenge` 由 lc-pm-challenge 主管、按七维度派发挑战 agent，每条挑战经 lc-pm 由人类 PM 决策闭环；`tdd-development-plan` 由 lc-pm-validator 负责交叉验证。设计文档见 issue #139。
+- **多 Agent 体系**（tier-2 主管常驻各阶段；完整六子阶段见 `pm-team`）：`requirement-intake` 由 lc-pm-intake 主管、按来源渠道并行派发采集 agent；`clarify` 由 lc-pm-author 主管、lc-pm-analyst/lc-pm-mvp 以并行专家身份做四路可行性分析与 MVP 梳理；`challenge` 由 lc-pm-challenge 主管、按七维度派发挑战 agent，每条挑战经 lc-pm 由人类 PM 决策闭环；`tdd-development-plan` 由 lc-pm-validator 负责交叉验证。设计文档见 issue #139。
 
 ### `existing-project-iteration`（solo）
 
@@ -57,6 +58,12 @@
 
 - **适用场景**：设计方案强依赖开源项目或技术框架，需要先调研可选方案。
 - **特点**：在 `clarify` 和 `product-design-docs` 之间插入 `explore-opensource` 阶段。
+
+### `pm-team`（重型，team）
+
+- **适用场景**：需求来自多渠道（issue/客诉/社区/调研），或人类 PM 明确要求走完整「需求 → PRD」六子阶段流程（含需求采集与红队挑战）。
+- **阶段**：workflow-router → requirement-intake → clarify → product-design-docs → challenge → product-prototype → tdd-development-plan
+- **特点**：三层 PM 组织完整启用（lc-pm 总协调 → lc-pm-* 阶段主管 → lc-pm-*-* 执行 agent，排遣用 `.claude/templates/dispatch/` 模板机械填槽）；比标准流程多 2 个 stage 与 2 个 human_gate，**必须由 PM 显式选择，不得默认启用**。
 
 ### `pm-research`（solo）
 

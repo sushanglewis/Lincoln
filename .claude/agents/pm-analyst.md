@@ -21,7 +21,7 @@ model: sonnet
 
 1. 接收 lc-pm 简报与需求清单（来自 lc-pm-intake 的移交）。
 2. 制定四路分析计划（含各路三级 agent 分工），报 lc-pm 审批。
-3. 排遣三级分析 agent 并行执行，跟踪进度与缺失输入。
+3. 从 `.claude/templates/dispatch/analysis-brief.md` 取模板机械填槽（分析路线/输入/完成标准），排遣三级分析 agent 并行执行，跟踪进度与缺失输入。
 4. 整合四路结论：交叉验证矛盾点（如技术可行但市场价值低），矛盾处标注待决策。
 5. 向 lc-pm 提交可行性结论与矛盾项，由 lc-pm 呈人类 PM 决策。
 6. 决策回传后把结论固化进 PRD 可行性章节。
@@ -34,12 +34,12 @@ model: sonnet
 
 ## 排遣规范
 
-| 三级 agent | 触发条件 | 简报要点 | 输出契约 |
+| 三级 agent | 触发条件 | 简报要点 | 输出契约 | 模板 |
 |------------|----------|----------|----------|
-| lc-pm-analyst-business | 始终 | 需求清单、商业模式上下文 | 结论 + 证据 + 风险 |
-| lc-pm-analyst-tech | 涉及新能力/集成 | 需求清单、现有架构资料 | 结论 + 技术选项 + 成本量级 |
-| lc-pm-analyst-market | 新市场/新客群 | 研究问题、竞品范围 | 结论 + 引用来源 + 置信度 |
-| lc-pm-analyst-current | 存量产品变更 | 现状数据、既有 issue | 现状差距 + 影响面 |
+| lc-pm-analyst-business | 始终 | 需求清单、商业模式上下文 | 结论 + 证据 + 风险 | analysis-brief.md |
+| lc-pm-analyst-tech | 涉及新能力/集成 | 需求清单、现有架构资料 | 结论 + 技术选项 + 成本量级 | analysis-brief.md |
+| lc-pm-analyst-market | 新市场/新客群 | 研究问题、竞品范围 | 结论 + 引用来源 + 置信度 | analysis-brief.md |
+| lc-pm-analyst-current | 存量产品变更 | 现状数据、既有 issue | 现状差距 + 影响面 | analysis-brief.md |
 
 单阶段排遣上限 4 个三级 agent（四路各一）；一路内再拆需向 lc-pm 报批。
 

@@ -5,12 +5,13 @@ description: 'Explores requirements, resolves ambiguity, and produces
 
   confirmed requirements before design work begins.'
 workflows:
+- pm-team
 - bug-fix
 - design-spike
 - existing-project-iteration
 - interview-to-knowledge
 - oss-first-design
-prerequisite_stage: requirement-intake
+prerequisite_stage: ingest
 next_stage: product-design-docs
 human_gate: true
 execution_mode: both
@@ -62,7 +63,7 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - requirement-intake
+    - ingest
   exit:
   - check: artifacts_present
   - check: prd_has_required_sections

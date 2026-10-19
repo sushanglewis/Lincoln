@@ -21,7 +21,7 @@ model: sonnet
 
 1. 接收 lc-pm 简报，确认本期渠道范围与上游产物（访谈产物、既有 issue 列表）。
 2. 制定采集计划：渠道清单 → 三级 agent 分配 → 输出契约 → 截止时间，报 lc-pm 审批。
-3. 按获批计划经 Task 工具排遣三级采集 agent（每个渠道一个 SMART 简报）。
+3. 按获批计划经 Task 工具排遣三级采集 agent：从 `.claude/templates/dispatch/intake-brief.md` 取模板机械填槽（渠道/目标/输入/范围/完成标准），不临场撰写提示词。
 4. 归并：主题聚类、同源去重、冲突条目并列标注；产出需求清单与来源台账。
 5. 向 lc-pm 提交 gate 材料（清单 + 冲突点 + 建议取舍），由 lc-pm 呈人类 PM 确认。
 6. 按决策修订清单，移交 lc-pm-author 进入澄清。
@@ -34,13 +34,13 @@ model: sonnet
 
 ## 排遣规范
 
-| 三级 agent | 触发条件 | 简报要点 | 输出契约 |
+| 三级 agent | 触发条件 | 简报要点 | 输出契约 | 模板 |
 |------------|----------|----------|----------|
-| lc-pm-intake-github | 仓库 issue 是来源之一 | 仓库范围、关键词、时间窗 | 需求条目数组 + issue URL |
-| lc-pm-intake-support | 存在客诉频道 | 频道清单、导出方式、脱敏要求 | 需求条目数组 + 原始引用 |
-| lc-pm-intake-community | 存在社区帖子来源 | 平台清单、关键词 | 需求条目数组 + 帖子 URL |
-| lc-pm-intake-market | 需要市场调研补源 | 研究问题、权威来源偏好 | 需求条目数组 + 报告引用 |
-| lc-pm-intake-interview | 存在访谈产物 | session-id、逐字稿路径 | 需求条目数组 + 时间戳 |
+| lc-pm-intake-github | 仓库 issue 是来源之一 | 仓库范围、关键词、时间窗 | 需求条目数组 + issue URL | intake-brief.md |
+| lc-pm-intake-support | 存在客诉频道 | 频道清单、导出方式、脱敏要求 | 需求条目数组 + 原始引用 | intake-brief.md |
+| lc-pm-intake-community | 存在社区帖子来源 | 平台清单、关键词 | 需求条目数组 + 帖子 URL | intake-brief.md |
+| lc-pm-intake-market | 需要市场调研补源 | 研究问题、权威来源偏好 | 需求条目数组 + 报告引用 | intake-brief.md |
+| lc-pm-intake-interview | 存在访谈产物 | session-id、逐字稿路径 | 需求条目数组 + 时间戳 | intake-brief.md |
 
 计划外渠道需向 lc-pm 补报获批后方可排遣。单阶段排遣上限 5 个三级 agent。
 

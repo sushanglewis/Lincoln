@@ -24,8 +24,36 @@ commands:
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role knowledge-curator
     args_hint: $ARGUMENTS
   lc-agent-pm:
-    description: 产品经理角色模板，用于需求澄清、产品设计等 human_gate 阶段
+    description: Lincoln 产品经理总协调者（tier-1），需求→PRD 生命周期的唯一人类接口；编排 lc-pm-* 阶段主管，所有 human_gate
+      与跨阶段决策的统一呈现者
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm
+    args_hint: $ARGUMENTS
+  lc-agent-pm-analyst:
+    description: 可行性分析主管（tier-2），lc-pm 下属；在 clarify 阶段以并行专家身份排遣 lc-pm-analyst-* 四路可行性分析
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm-analyst
+    args_hint: $ARGUMENTS
+  lc-agent-pm-author:
+    description: PRD 生成主管（tier-2），lc-pm 下属；主导 clarify 与 product-design-docs 阶段，排遣
+      lc-pm-author-* 产出 PRD 与设计文档包
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm-author
+    args_hint: $ARGUMENTS
+  lc-agent-pm-challenge:
+    description: 方案挑战主管（tier-2，红队模式），lc-pm 下属；challenge 阶段排遣 lc-pm-challenge-* 按七维度挖掘设计缺陷并上报决策清单
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm-challenge
+    args_hint: $ARGUMENTS
+  lc-agent-pm-intake:
+    description: 需求采集主管（tier-2），lc-pm 下属；负责 requirement-intake 阶段，按来源渠道排遣 lc-pm-intake-*
+      采集 agent 并归并需求清单
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm-intake
+    args_hint: $ARGUMENTS
+  lc-agent-pm-mvp:
+    description: MVP 方案主管（tier-2），lc-pm 下属；梳理最小成功可行路径，排遣 lc-pm-mvp-* 梳理用户场景与最短闭环
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm-mvp
+    args_hint: $ARGUMENTS
+  lc-agent-pm-validator:
+    description: 交叉验证主管（tier-2），lc-pm 下属；tdd-development-plan 阶段排遣 lc-pm-validator-*
+      按文档对做一致性校验并上报缺口清单
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_role.py" --role pm-validator
     args_hint: $ARGUMENTS
   lc-agent-qa:
     description: QA 与验收专家角色，用于可测试性评审、实现证据验证与发布就绪检查
@@ -268,3 +296,9 @@ commands:
     description: PM 市场/产品/竞品/用户/相关者研究与决策支持工作流（solo）
     action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"
     args_hint: start --workflow pm-research
+  lc-wf-pm-team:
+    description: PM 阶段多 agent 全流程（team）：需求采集 → 可行性/MVP 澄清 → 设计文档 → 红队挑战 → 原型确认 → PRD
+      定稿 → 交叉验证。 三层 PM 组织（lc-pm 总协调 → lc-pm-* 阶段主管 → lc-pm-*-* 执行 agent）在本工作流中完整启用。
+      本流程较重：启动前必须由 lc-workflow-router 向人类 PM 说明流程重量并获得显式选择，不得默认启用。
+    action: python3 "$LINCOLN_ROOT/scripts/lincoln_workflow.py"
+    args_hint: start --workflow pm-team --issue-number <N>

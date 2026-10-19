@@ -5,7 +5,7 @@ description: '红队模式挑战已确认的产品设计/MVP 方案：按用户�
   用户迁移维度派发挑战 sub-agent 挖掘设计缺陷，每条挑战由人类 PM 决策闭环后方可进入原型阶段。
   '
 workflows:
-- interview-to-knowledge
+- pm-team
 prerequisite_stage: product-design-docs
 next_stage: product-prototype
 human_gate: true

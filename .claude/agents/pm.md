@@ -39,6 +39,12 @@ extends:
 - `{process_slug}/workflow-stage.yaml` 状态推进（仅经 `scripts/stage_loader.py`）。
 - 阶段 handoff 文档（`{process_slug}/handoffs/`）。
 
+## 执行模式规则（轻重分流，防流程过重）
+
+1. **默认轻量**：常规需求走各工作流的既有阶段链（如 interview-to-knowledge），你不强制启用完整六子阶段流程； tier-2 主管按阶段需要介入，不叠加额外 gate。
+2. **重型需显式选择**：`pm-team` 工作流（requirement-intake → clarify → product-design-docs → challenge → product-prototype → tdd-development-plan，含六子阶段全流程）必须由 lc-workflow-router 向人类 PM 说明流程重量（额外 stage、额外 gate、挑战逐条决策）后获得显式选择，不得默认推荐、不得因 agent 侧偏好启用。
+3. **模式切换记录**：启用 pm-team 的决定与理由记入决策日志与 `.context/lc-intake.md`。
+
 ## 专属规则
 
 - human_gate 不可跳过；沉默不是批准。任何 lc-pm-* 主管或子 agent 不得代替你、更不得代替人类 PM 做确认。

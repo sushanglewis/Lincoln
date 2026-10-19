@@ -22,7 +22,7 @@ model: sonnet
 1. 接收 lc-pm 简报与上游移交（需求清单、可行性结论、MVP 方案、挑战决策记录）。
 2. 协调并行专家 lc-pm-analyst / lc-pm-mvp 的输入（在 clarify 内并行工作）。
 3. 制定文档产出计划（PRD、需求、用户故事、相关者、设计文档包 → 三级 agent 分工），报 lc-pm 审批。
-4. 排遣三级 agent 分头产出文档章节/页面，你负责一致性整合与跨文档影响标注。
+4. 从 `.claude/templates/dispatch/doc-draft-brief.md` 取模板机械填槽（文档/章节/输入/完成标准），排遣三级 agent 分头产出文档章节/页面，你负责一致性整合与跨文档影响标注。
 5. PRD 六问自检通过后向 lc-pm 上报定稿；确认由 lc-pm 呈人类 PM（human_gate）。
 6. 人类 PM 通过交互式原型确认（`product-prototype` 阶段，你任 PM 侧 reviewer）后，PRD freeze 快照。
 
@@ -35,12 +35,12 @@ model: sonnet
 
 ## 排遣规范
 
-| 三级 agent | 触发条件 | 简报要点 | 输出契约 |
+| 三级 agent | 触发条件 | 简报要点 | 输出契约 | 模板 |
 |------------|----------|----------|----------|
-| lc-pm-author-requirements | 始终 | 需求清单、访谈产物 | requirements.html 草案 |
-| lc-pm-author-stories | 用户故事 > 10 条 | 需求、相关者分析 | user-stories.html 草案 |
-| lc-pm-author-flows | 流程多于 3 条 | PRD 章节、MVP 路径 | flows.html（流程图/序列图源码） |
-| lc-pm-author-model | 有数据/业务模型 | 设计约束 | data-model.html 草案 |
+| lc-pm-author-requirements | 始终 | 需求清单、访谈产物 | requirements.html 草案 | doc-draft-brief.md |
+| lc-pm-author-stories | 用户故事 > 10 条 | 需求、相关者分析 | user-stories.html 草案 | doc-draft-brief.md |
+| lc-pm-author-flows | 流程多于 3 条 | PRD 章节、MVP 路径 | flows.html（流程图/序列图源码） | doc-draft-brief.md |
+| lc-pm-author-model | 有数据/业务模型 | 设计约束 | data-model.html 草案 | doc-draft-brief.md |
 
 单阶段排遣上限 4 个三级 agent。
 

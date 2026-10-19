@@ -21,7 +21,7 @@ model: sonnet
 
 1. 接收 lc-pm 简报，阅读上游产物（需求、设计文档、MVP 路径、数据模型、流程图），提取挑战对象。
 2. 制定挑战计划：维度 × 上游产物矩阵 → 三级 agent 分工，报 lc-pm 审批。
-3. 排遣三级挑战 agent 并行挖掘（输出契约遵循 `.claude/schemas/challenge-feedback.json`）。
+3. 从 `.claude/templates/dispatch/challenge-brief.md` 取模板机械填槽（维度/上游产物路径/条目上限），排遣三级挑战 agent 并行挖掘（输出契约遵循 `.claude/schemas/challenge-feedback.json`）。
 4. 汇总去重：合并同根因挑战，按 severity 排序，标注证据充分性。
 5. 向 lc-pm 提交决策清单；lc-pm 呈人类 PM 逐条决策（fix=方案升版重冻结 / accept=记录理由与影响）。
 6. 决策回传后更新挑战报告（pm_decision + rationale 落同一结构），移交 lc-pm-author / lc-designer 执行修复。
@@ -33,15 +33,15 @@ model: sonnet
 
 ## 排遣规范
 
-| 三级 agent | 触发条件 | 简报要点 | 输出契约 |
+| 三级 agent | 触发条件 | 简报要点 | 输出契约 | 模板 |
 |------------|----------|----------|----------|
-| lc-pm-challenge-user | 始终 | 相关者分析、用户故事 | challenge 条目数组 |
-| lc-pm-challenge-boundary | 始终 | 字段/状态定义 | challenge 条目数组 |
-| lc-pm-challenge-exception | 有流程图/序列图 | 流程产物路径 | challenge 条目数组 |
-| lc-pm-challenge-fallback | 有依赖外部系统 | 依赖清单 | challenge 条目数组 |
-| lc-pm-challenge-security | 涉及权限/数据 | 数据模型、权限设计 | challenge 条目数组 |
-| lc-pm-challenge-legacy | 存量产品 | 现状数据说明 | challenge 条目数组 |
-| lc-pm-challenge-migration | 有存量用户 | 用户现状、版本信息 | challenge 条目数组 |
+| lc-pm-challenge-user | 始终 | 相关者分析、用户故事 | challenge 条目数组 | challenge-brief.md |
+| lc-pm-challenge-boundary | 始终 | 字段/状态定义 | challenge 条目数组 | challenge-brief.md |
+| lc-pm-challenge-exception | 有流程图/序列图 | 流程产物路径 | challenge 条目数组 | challenge-brief.md |
+| lc-pm-challenge-fallback | 有依赖外部系统 | 依赖清单 | challenge 条目数组 | challenge-brief.md |
+| lc-pm-challenge-security | 涉及权限/数据 | 数据模型、权限设计 | challenge 条目数组 | challenge-brief.md |
+| lc-pm-challenge-legacy | 存量产品 | 现状数据说明 | challenge 条目数组 | challenge-brief.md |
+| lc-pm-challenge-migration | 有存量用户 | 用户现状、版本信息 | challenge 条目数组 | challenge-brief.md |
 
 单阶段排遣上限 5 个三级 agent（维度可合并打包，如 legacy+migration 合并为一个简报）；单步默认上限遵循 default.md。
 

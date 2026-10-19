@@ -3,11 +3,12 @@ id: product-prototype
 name: Product Prototype
 description: 基于已确认设计文档生成字段规格、UI 规格和可交互 HTML 原型（pages/prototype/**/*.html）。Pencil 原型（prototype.pen）为可选，由 UI 在 UX 节点之后按需产出。
 workflows:
+- pm-team
 - design-spike
 - existing-project-iteration
 - interview-to-knowledge
 - oss-first-design
-prerequisite_stage: challenge
+prerequisite_stage: product-design-docs
 next_stage: tdd-development-plan
 human_gate: true
 execution_mode: both
@@ -51,7 +52,7 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - challenge
+    - product-design-docs
   exit:
   - check: artifacts_present
   - check: human_approved

@@ -5,8 +5,8 @@ description: '从多渠道（GitHub issue、客诉频道、社区帖子、市场
   归并为带来源与置信度的统一需求清单，经人类 PM 确认后进入澄清阶段。
   '
 workflows:
-- interview-to-knowledge
-prerequisite_stage: ingest
+- pm-team
+prerequisite_stage: workflow-router
 next_stage: clarify
 human_gate: true
 execution_mode: team
@@ -42,7 +42,7 @@ gates:
   entry:
   - check: previous_stage_completed
     args:
-    - ingest
+    - workflow-router
   exit:
   - check: artifacts_present
   - check: human_approved

@@ -9,6 +9,7 @@ triggers:
   - "lc-wf-existing-project-iteration"
   - "lc-wf-oss-first-design"
   - "lc-wf-pm-research"
+  - "lc-wf-pm-team"
   - "启动 Lincoln 工作流"
 inputs:
   - name: workflow
@@ -40,6 +41,7 @@ Using [lc-wf] to Lincoln workflow bundle 入口，按 lc-wf-<workflow-name> 启�
 | `lc-wf-design-spike` | `... start --workflow design-spike` | solo |
 | `lc-wf-existing-project-iteration` | `... start --workflow existing-project-iteration` | solo |
 | `lc-wf-oss-first-design` | `... start --workflow oss-first-design` | solo |
+| `lc-wf-pm-team` | `... start --workflow pm-team --issue-number <N>` | team（重型 PM 全流程，须 PM 显式选择） |
 | `lc-wf-pm-research` | `... start --workflow pm-research` | solo |
 
 ## 执行模式

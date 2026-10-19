@@ -5,6 +5,7 @@ description: 'Produces tdd-plan.html with red/green/refactor sequences,
 
   test scenarios, and task slices ready for OpenSpec proposal.'
 workflows:
+- pm-team
 - bug-fix
 - existing-project-iteration
 - interview-to-knowledge
