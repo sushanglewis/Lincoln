@@ -24,6 +24,7 @@ agent:
   reviewers:
   - lc-qa
   - lc-architect
+  - lc-pm-validator
   handoff_to: lc-engineer
 skills:
   required:

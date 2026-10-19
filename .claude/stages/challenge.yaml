@@ -15,7 +15,7 @@ variables:
 - process_slug
 - design_id
 agent:
-  primary: lc-challenger
+  primary: lc-pm-challenge
   reviewers:
   - lc-pm
   - lc-architect
@@ -37,10 +37,10 @@ artifacts:
   required:
   - '{process_slug}/designs/challenge-report.md'
 references:
-  agent_guide: .claude/agents/challenger.md
+  agent_guide: .claude/agents/pm-challenge.md
 context:
   goal: 对 product-design-docs 产物（设计方案、MVP 路径、数据模型、流程图）进行系统性红队挑战，产出挑战报告与 PM 决策记录，确保进入原型阶段的方案无已知设计缺陷。
-  execution: 主管 lc-challenger 提取挑战对象后，按挑战维度（用户/边界/异常/兜底/安全/历史数据/用户迁移）经 Task 工具派发挑战 sub-agent 并行挖掘；每个子 agent 输出 {id, dimension, question, severity, evidence, suggestion}；主管汇总去重、按 severity 排序，逐条提交人类 PM 决策——修复（方案升版重冻结）或接受（记录理由与影响）。
+  execution: 主管 lc-pm-challenge 提取挑战对象后，按挑战维度（用户/边界/异常/兜底/安全/历史数据/用户迁移）经 Task 工具派发挑战 sub-agent 并行挖掘；每个子 agent 输出 {id, dimension, question, severity, evidence, suggestion}；主管汇总去重、按 severity 排序，汇总后经 lc-pm 逐条提交人类 PM 决策——修复（方案升版重冻结）或接受（记录理由与影响）。
   constraints: "- 挑战必须附带证据（引用上游产物具体章节/字段/流程），不接受无证据质疑。\n\n    - 本阶段不修改上游方案；修复动作由 lc-pm/lc-designer 在确认后执行。\n\n    - 每条挑战必须 PM 逐条决策闭环，未决策不得 exit；human_gate 不可跳过。"
   exit: challenge-report.md 包含全部挑战及对应 PM 决策记录，且 human_approved 通过。
 gates:

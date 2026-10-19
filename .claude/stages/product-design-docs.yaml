@@ -28,7 +28,7 @@ artifact_templates:
   '{process_slug}/pages/docs/api-list.html': .claude/templates/issue-package/page-doc-structured.html.tpl
   '{process_slug}/pages/docs/handoff-pm-to-ux-v*.html': .claude/templates/issue-package/page-doc.html.tpl
 agent:
-  primary: lc-pm
+  primary: lc-pm-author
   reviewers:
   - lc-designer
   - lc-researcher

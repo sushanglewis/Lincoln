@@ -22,7 +22,7 @@ artifact_templates:
 agent:
   primary: lc-designer
   reviewers:
-  - lc-pm
+  - lc-pm-author
   - lc-frontend-engineer
   handoff_to: lc-engineer
 skills:
