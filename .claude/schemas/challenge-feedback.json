@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Challenge Feedback",
+  "description": "Structured output contract for challenge-stage sub-agents: one entry per design defect found, each requiring evidence and a human PM decision.",
+  "type": "object",
+  "required": ["challenges"],
+  "properties": {
+    "challenges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "dimension", "question", "severity", "evidence"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^CH-[0-9]{3}$"
+          },
+          "dimension": {
+            "type": "string",
+            "enum": ["user", "boundary", "exception", "fallback", "security", "legacy-data", "user-migration"]
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "high", "medium", "low"]
+          },
+          "evidence": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "suggestion": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "pm_decision": {
+            "type": "string",
+            "enum": ["fix", "accept"],
+            "description": "Filled by the human PM during decision closure; absent means undecided."
+          },
+          "decision_rationale": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,8 +1,18 @@
 <!-- status: draft -->
+<!-- version: v0.2 -->
 # Lincoln PM 阶段多 Agent 体系设计
 
 - Issue: #139 · 分支: issue-139 · 状态: draft（待人类 PM 评审）
 - 目标：将「需求 → PRD」的 PM 工作拆解为 6 个专业子阶段，为每个子阶段定义主管 Agent、审阅角色、sub-agent 并行派发协议与 human gate，并落地到 Lincoln 框架（`.claude/agents/`、`.claude/stages/`、`.claude/workflows/`）。
+
+## 0. 研究依据（v0.2 新增）
+
+调研方法与结论见 `issue-139/research/2026-10-19-pm-multi-agent-research/findings.md`（桌面调研 MetaGPT / ChatDev / AG2 / OpenAI Agents SDK / CrewAI / PyRIT）。核心取向：
+
+1. **Flows 确定性流水线 + 阶段内层级委派**（CrewAI crews vs flows、AG2 nested chat）：PM 六阶段顺序是业务约束，由 workflow 模板固定；阶段内由主管角色层级委派 sub-agent 并整合裁决。
+2. **结构化红队**（PyRIT、ChatDev 双角色互审）：挑战条目必须 `{id, dimension, question, severity, evidence, suggestion}`，且 challenge stage 声明 `output_schema: .claude/schemas/challenge-feedback.json`（v0.2 新增），挑战机器可校验、PM 决策（fix/accept）落同一结构。
+3. **显式 human-in-the-loop**（全部框架的生产级标配）：human_gate 位置与 ChatDev human-reviewer 模式等价，保持不可跳过。
+4. **避免项**：端到端全自动（无 gate）、自由 GroupChat 决定阶段顺序、无契约派发子 agent、单点上下文爆炸。
 
 ## 1. 设计原则
 
@@ -91,6 +101,7 @@ PRD 生成的前置条件：人类 PM 已在 `product-prototype` 阶段通过交
 | 新增 stage | `.claude/stages/requirement-intake.yaml`、`.claude/stages/challenge.yaml` |
 | 修改 stage | `ingest.yaml`（next_stage）、`clarify.yaml`（prerequisite + parallel_specialists）、`product-design-docs.yaml`（next_stage）、`product-prototype.yaml`（prerequisite_stage） |
 | 修改 workflow | `.claude/workflows/interview-to-knowledge.yaml`（插入两个 step）、`.claude/workflows/README.md`（索引） |
+| 新增 schema | `.claude/schemas/challenge-feedback.json`（挑战条目结构化输出契约，challenge stage 引用） |
 | 适配产物 | `lincoln-setup.py generate-harness` 重新派生 codex/opencode |
 
 ## 7. 验收标准
@@ -99,3 +110,4 @@ PRD 生成的前置条件：人类 PM 已在 `product-prototype` 阶段通过交
 - `check-prompt-drift.py --strict --focus pm` 无新增告警/错误。
 - 本 issue 工作包内 `stage_loader.py validate-entry/validate-exit` 通过。
 - 人类 PM 在设计文档与框架变更上均显式确认（human_gate）。
+- challenge stage 通过 `output_schema` 声明且 `challenge-feedback.json` 为合法 JSON Schema（static-check 覆盖）。

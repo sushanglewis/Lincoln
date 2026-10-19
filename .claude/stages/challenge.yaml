@@ -28,6 +28,7 @@ agent:
   - lc-qa
   - lc-security-reviewer
   merge_strategy: priority
+  output_schema: .claude/schemas/challenge-feedback.json
 skills:
   required: []
   optional:
