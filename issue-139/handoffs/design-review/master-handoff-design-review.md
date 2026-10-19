@@ -1,4 +1,4 @@
-<!-- status: draft -->
+<!-- status: approved -->
 # 评审交接：PM 多 Agent 体系方案与实现（issue-139 / PR #140）
 
 ## 1. 交接背景

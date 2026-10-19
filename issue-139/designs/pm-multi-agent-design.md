@@ -1,4 +1,4 @@
-<!-- status: draft -->
+<!-- status: approved -->
 <!-- version: v0.4.1 -->
 # Lincoln PM 阶段多 Agent 体系设计
 

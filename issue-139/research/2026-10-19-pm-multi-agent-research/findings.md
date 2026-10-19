@@ -1,4 +1,4 @@
-<!-- status: draft -->
+<!-- status: approved -->
 # PM 多 Agent 体系调研（2026-10-19）
 
 - Session: 2026-10-19-pm-multi-agent-research · 关联 issue: #139 · 设计文档: `issue-139/designs/pm-multi-agent-design.md`
