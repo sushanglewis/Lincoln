@@ -3,6 +3,6 @@ window.LINC_PACKAGE = {
   "issue_number": "139",
   "current_stage": "clarify",
   "status": "in_progress",
-  "generated_at": "2026-10-19T07:32:44Z",
+  "generated_at": "2026-10-19T10:22:05Z",
   "nav": []
 };
