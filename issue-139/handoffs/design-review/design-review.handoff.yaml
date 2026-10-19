@@ -1,0 +1,50 @@
+handoff: design-review
+version: v1.0
+from: lc-pm（issue-139 工作代理）
+to: 审阅 agent（方案与实现评审）
+issue: "139"
+pr: "https://github.com/sushanglewis/Lincoln/pull/140"
+branch: issue-139
+based_on:
+  - path: issue-139/designs/pm-multi-agent-design.md
+    version: v0.4
+    role: 设计文档（唯一权威方案）
+  - path: issue-139/research/2026-10-19-pm-multi-agent-research/findings.md
+    version: v1.0
+    role: 调研结论（MetaGPT/ChatDev/AG2/OpenAI Agents SDK/CrewAI/PyRIT）
+review_scope:
+  design: [issue-139/designs/pm-multi-agent-design.md]
+  roles_tier1: [.claude/agents/pm.md]
+  roles_tier2:
+    - .claude/agents/pm-intake.md
+    - .claude/agents/pm-analyst.md
+    - .claude/agents/pm-mvp.md
+    - .claude/agents/pm-challenge.md
+    - .claude/agents/pm-author.md
+    - .claude/agents/pm-validator.md
+  dispatch_templates: .claude/templates/dispatch/
+  workflows: [.claude/workflows/pm-team.yaml, .claude/workflows/interview-to-knowledge.yaml]
+  stages:
+    - .claude/stages/requirement-intake.yaml
+    - .claude/stages/challenge.yaml
+    - .claude/stages/clarify.yaml
+    - .claude/stages/product-design-docs.yaml
+    - .claude/stages/product-prototype.yaml
+    - .claude/stages/tdd-development-plan.yaml
+  schemas: [.claude/schemas/challenge-feedback.json]
+  routing:
+    - .claude/skills/lc-workflow-router/prompts/router-prompt.md
+    - .claude/skills/lc-wf/SKILL.md
+    - .claude/workflows/README.md
+verification_commands:
+  - python3 -m pytest tests/test_yaml_schemas.py -q
+  - ./scripts/check-prompt-drift.py --strict --focus pm
+  - python3 scripts/run-infrastructure-tests.py
+  - ./scripts/check-harness-drift.sh
+status:
+  validation: "schema 37 passed / infra 162 passed / drift 0 error（79 条既有告警，均为 oss-first-design 与未 vendor 外部 agent，与本方案无关）"
+  human_gate: pending（设计文档 v0.4 待人类 PM confirm，未 approve-gate）
+open_questions:
+  - 轻量模式下 tier-2 主管介入深度是否合适（v0.4 §4）
+  - stage agent.primary 为 per-stage 单值，轻量模式下 clarify 驻场主管语义由 lc-pm 委派规则（prompt 层）承载——是否可接受，或需要 schema 扩展 agent 覆盖机制
+  - dispatch brief 模板未经真实排遣运行验证
