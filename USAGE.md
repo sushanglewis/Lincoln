@@ -223,6 +223,18 @@ python scripts/lincoln_traceability.py --package issue-<N> --stage tdd
 
 PRD 升版后使用 `lincoln_prd_review.py reset-for-version` 重置四方评审，再重新记录真实评审、freeze 和交叉验证。旧 13 章 PRD 与轻量工作流无需回填新 sidecar。
 
+### 高保真原型评审标注
+
+core-v2 原型在每页 `annotations` 中交付页面结构、交互、状态、异常和数据说明。数字角标用于定位元素，说明抽屉用于分类阅读，“演示”用于 PM 上一条/下一条逐项讲解。
+
+每页族必须枚举 default/loading/empty/success/error；用户可达的禁用、无权限、离线、部分数据等状态也必须补充。异常必须包含用户反馈与恢复路径，说明使用业务语言。完整标准见 [`docs/prototype-annotation-standard.md`](docs/prototype-annotation-standard.md)。
+
+```bash
+python scripts/lincoln_prototype_annotations.py issue-<N>
+```
+
+旧版只有 hotspots 的原型继续按 legacy 使用；新 core-v2 原型不能只用一句 hotspot 说明代替完整标注。
+
 每个阶段都有：
 
 - **入口校验**：当前阶段上下文、前置产物是否就绪

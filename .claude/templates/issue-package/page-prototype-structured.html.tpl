@@ -9,13 +9,13 @@
 <meta name="page-uid" content="{UID}">
 <meta name="prototype-base" content="../../../../">
 <!--
-  Explanations are rendered as numbered on-page hotspots (driver.js, MIT),
-  declared in pageData.hotspots:
+  Legacy explanations may be declared in pageData.hotspots:
     hotspots:
       - {target: "search-box", title: "全局搜索", text: "支持拼音首字母，回车跳转首个结果"}
   `target` is a CSS selector, a component uid, or an element id. Hovering a
-  badge shows the popover; clicking pins it. The prototype toolbar can hide
-  all badges. Machine-readable nav metas stay in <meta> tags above.
+  badge shows the popover; clicking pins it. New pages use pageData.annotations
+  for structured page, interaction, state, exception and data notes. The
+  annotation drawer supports categorical reading and step-by-step presentation.
 -->
 <title>{TITLE}</title>
 <!-- Asset paths assume this page lives at pages/prototype/{group}/{shell}/page.html (depth 4). -->
@@ -176,10 +176,12 @@
         document.body.appendChild(ann);
     }
 
-    // Numbered hotspot annotations (driver.js). Badges are hoverable/clickable
-    // and can be toggled from the prototype toolbar.
+    // Structured annotations with numbered badges, a review drawer and a
+    // step-by-step presentation mode. Legacy hotspot-only pages remain valid.
     var proto = window.LincolnPrototype.proto || {};
-    if (Array.isArray(data.hotspots) && data.hotspots.length && proto.initHotspots) {
+    if (data.annotations && proto.initAnnotations) {
+        proto.initAnnotations(data.annotations, data.hotspots || []);
+    } else if (Array.isArray(data.hotspots) && data.hotspots.length && proto.initHotspots) {
         proto.initHotspots(data.hotspots);
     }
 })();

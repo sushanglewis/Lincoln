@@ -450,6 +450,17 @@ def check_prototype_traceability() -> None:
     pass_check("Prototype traceability OK")
 
 
+def check_prototype_annotations_complete() -> None:
+    if _core_v2_prd() is None:
+        pass_check("Structured prototype annotations not required for legacy/lightweight package")
+    from scripts.lincoln_prototype_annotations import validate_annotations
+
+    errors = validate_annotations(process_root())
+    if errors:
+        fail("Prototype review annotations failed:\n" + "\n".join(f"- {error}" for error in errors))
+    pass_check("Structured prototype annotations OK")
+
+
 def check_prd_content_hygiene(path: str) -> None:
     target = PROJECT_ROOT / path
     if not target.exists():
@@ -544,6 +555,7 @@ EXIT_CHECKS = {
     "prd_traceability": check_prd_traceability,
     "prd_review_complete": check_prd_review_complete,
     "prototype_traceability": check_prototype_traceability,
+    "prototype_annotations_complete": check_prototype_annotations_complete,
     "prd_snapshot_present": check_prd_snapshot_present,
     "prd_content_hygiene": check_prd_content_hygiene,
     "prd_cross_validated": check_prd_cross_validated,

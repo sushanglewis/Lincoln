@@ -1,3 +1,25 @@
+# Lincoln v1.12.0 Release Notes
+
+**Release date:** 2026-11-02
+
+## Highlights
+
+- **Axure 式高保真原型标注（#155）** — 把原型从“默认页面 + 一句 hotspot”升级为可供 PM 评审演示的完整说明系统：
+  - **数字角标 + 页面说明抽屉** — 角标定位真实页面元素，点击后展示区域作用、操作方式、业务规则、异常恢复等详细内容；输入框等不能嵌套按钮的元素自动锚定到父容器。
+  - **四分类阅读** — 页面结构、交互、状态与异常、数据分别呈现，覆盖角色、场景、目标、入口、完成结果、页面区域、系统反馈、数据含义与校验。
+  - **分步演示** — PM 可上一条/下一条逐项讲解，显示进度并同步高亮目标元素；支持 Escape 和左右方向键。
+  - **完整状态契约** — default/loading/empty/success/error 必须逐项枚举；不适用需要业务理由，用户可达的禁用、无权限、离线、部分数据等状态也必须补充。每个异常都有触发、用户反馈和恢复路径。
+  - **业务语言门控** — 缺失目标、空说明、状态缺项、恢复缺失、失效状态链接和 API/HTTP/JSON/状态码等技术化叙述无法通过 core-v2 校验。
+  - **兼容旧原型** — legacy hotspots 与 popover 保留；新 core-v2 页面使用结构化 `annotations`，不再以单个 hotspot 数组代表评审完整性。
+
+## Migration Notes
+
+- 旧工作包无需回填，继续按 legacy 模式打开和评审。
+- 新生成的 core-v2 原型按照 `docs/prototype-annotation-standard.md` 编写每页 `annotations`，并运行 `python scripts/lincoln_prototype_annotations.py issue-<N>`。
+- 升级方式：`npm install -g @sushanglewis/lincoln@latest` 后执行 `lincoln update`，同步新模板、运行时、prompt 和门控。
+
+---
+
 # Lincoln v1.11.0 Release Notes
 
 **Release date:** 2026-11-01

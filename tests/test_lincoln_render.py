@@ -496,6 +496,28 @@ components:
     assert '<meta name="doc-purpose"' not in html
 
 
+def test_render_prototype_with_structured_annotations() -> None:
+    """Structured annotations render as data for badges, drawer and presentation mode."""
+    state_path = write_state(design_id="d1")
+    target = TEST_ROOT / "pages" / "prototype" / "web" / "search" / "page.html"
+    rc, stdout, stderr = run_render(
+        "--stage", "product-prototype",
+        "--target", repo_relative(target),
+        "--title", "知识搜索",
+        "--nav-label", "知识搜索",
+        "--nav-group", "Prototype",
+        "--uid", "page-search",
+        "--data", str(ROOT / "tests" / "fixtures" / "prototype-annotations" / "complete" / "page.yaml"),
+        state_path=state_path,
+    )
+    assert rc == 0, stderr
+    html = target.read_text(encoding="utf-8")
+    assert '"annotations"' in html
+    assert '"states"' in html
+    assert "initAnnotations" in html
+    assert "lc-annotation-panel" in (ROOT / ".claude" / "templates" / "issue-package" / "assets" / "prototype.js").read_text(encoding="utf-8")
+
+
 def test_render_sections_html_placeholder() -> None:
     """{SECTIONS_HTML} is pre-rendered from pageData.sections."""
     state_path = write_state()

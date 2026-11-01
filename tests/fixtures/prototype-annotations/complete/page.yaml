@@ -1,0 +1,85 @@
+layout:
+  type: web
+  shell: dashboard
+  title: "知识搜索"
+  active: search
+  navItems:
+    - {id: search, label: 知识搜索, href: ./page.html}
+requirement_ids: [REQ-001]
+story_ids: [US-001]
+flow_step_ids: [FLOW-001]
+annotations:
+  overview:
+    role: "一线客服"
+    scenario: "在工单中查找内部知识"
+    goal: "不切换系统即可找到可信答案"
+    entry: "打开工单详情并进入知识搜索"
+    completion: "打开一条有效原文引用"
+    current_state: "default"
+    flow: "FLOW-001 搜索并打开引用"
+  sections:
+    - target: "search-panel"
+      title: "搜索区"
+      purpose: "集中完成关键词输入和搜索"
+      content: "关键词输入框、搜索按钮和最近搜索"
+  interactions:
+    - target: "search-input"
+      name: "输入关键词"
+      trigger: "点击输入框并输入关键词"
+      response: "显示输入内容；有效关键词使搜索按钮可用"
+      rule: "关键词去除首尾空格，长度为 1–100 个字符"
+      next: "点击搜索后进入搜索中状态"
+  states:
+    - kind: "default"
+      name: "可搜索"
+      when: "页面加载完成且用户有搜索权限"
+      data: "显示最近搜索关键词"
+      feedback: "输入框和搜索按钮可用"
+      recovery: "无需额外恢复"
+      page: "pages/prototype/web/search/page.html"
+    - kind: "loading"
+      name: "搜索中"
+      when: "提交有效关键词"
+      data: "保留当前关键词，结果区显示搜索中"
+      feedback: "搜索按钮显示处理中且不可重复提交"
+      recovery: "等待结果；长时间无结果时可取消"
+      page: "pages/prototype/web/search/page.html"
+    - kind: "empty"
+      name: "无匹配结果"
+      when: "没有符合权限和关键词的文档"
+      data: "结果数为 0"
+      feedback: "显示空结果说明和修改关键词入口"
+      recovery: "修改关键词或清除筛选"
+      page: "pages/prototype/web/search/page.html"
+    - kind: "success"
+      name: "搜索成功"
+      when: "返回可读取的有效文档"
+      data: "显示文档摘要与引用"
+      feedback: "用户可打开原文引用"
+      recovery: "无需额外恢复"
+      page: "pages/prototype/web/search/page.html"
+    - kind: "error"
+      name: "搜索失败"
+      when: "权限校验或搜索服务暂时不可用"
+      data: "不展示未鉴权内容"
+      feedback: "显示失败原因和重试入口"
+      recovery: "点击重试；连续失败时联系知识管理员"
+      page: "pages/prototype/web/search/page.html"
+  exceptions:
+    - name: "暂时无法验证权限"
+      trigger: "点击搜索时权限服务暂时不可用"
+      feedback: "显示“暂时无法验证权限，请稍后重试”"
+      recovery: "点击重试；连续失败时联系知识管理员"
+      target: "search-retry"
+  data:
+    - name: "关键词"
+      meaning: "用户希望查找的内容"
+      values: "1–100 个字符"
+      empty: "为空时搜索按钮不可用"
+      validation: "自动去除首尾空格"
+      source: "用户输入"
+components:
+  - type: html
+    uid: search-panel
+    props:
+      html: '<section class="content" data-uid="search-panel" style="padding:32px"><h2>知识搜索</h2><p>在工单中查找可信赖的内部答案</p><div class="field"><label>关键词</label><input type="text" data-uid="search-input" value="退款流程"></div><button class="btn primary" data-uid="search-retry">搜索</button><div style="margin-top:24px"><h3>最近搜索</h3><p>退款流程　发票申请　工单升级</p></div></section>'
