@@ -100,21 +100,34 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
      --markdown {process_slug}/pages/docs/prd.md
    ```
 
-   Write `{process_slug}/pages/docs/prd.md` following this progressive skeleton. Keep all thirteen chapters in this order as the default narrative; you may insert additional business chapters inside the skeleton when this requirement's shape calls for it. Section headings are matched by name — numbering is cosmetic, not part of the contract:
+   New PRDs default to the **core-v2 content contract**. Put both markers near the top of `{process_slug}/pages/docs/prd.md`:
 
-   - `## 1. 版本说明` — 当前版本、文档状态、决策人（最终谁拍板）。
-   - `## 2. 修订记录` — 版本/日期/作者/变更摘要 表格。
-   - `## 3. 功能列表` — 功能/优先级/状态/对应用户故事 表格。
-   - `## 4. 需求背景`
-   - `## 5. 用户故事`
-   - `## 6. 功能拆解`
-   - `## 7. 业务流程图` (use ` ```mermaid ` diagrams)
-   - `## 8. 验收标准`
-   - `## 9. 业务规则`（边界与异常处理）
-   - `## 10. 非功能需求`（含体验要求）
-   - `## 11. 关联系统/接口`
-   - `## 12. 相关产物链接`
-   - `## 13. 风险与开放问题`
+   ```markdown
+   <!-- prd-contract: core-v2 -->
+   <!-- version: v1.0 -->
+   ```
+
+   Keep all fifteen chapters below in this order. Answer the business question in every chapter with reviewed evidence and decisions; a heading, empty table or placeholder is not content. Section headings are matched by name — numbering is cosmetic. Additional appendices may follow the core chapters, and `docs/prd-quality-standard.md` defines evidence-based tailoring without removing required business answers.
+
+   - `## 1. 版本说明` — 当前版本、文档状态、决策人、目标发布时间与读者。
+   - `## 2. 修订记录` — 版本/日期/作者/变更摘要表格，能解释基线为何变化。
+   - `## 3. 执行摘要` — 为谁解决什么问题、首版方案、业务价值和发布时间。
+   - `## 4. 问题与证据` — 问题发生频率、影响、现状基线，以及可追溯的访谈/日志/数据证据；区分事实与假设。
+   - `## 5. 用户与相关者` — 用户任务、收益方、运营方、守门人、决策人及其冲突。
+   - `## 6. 目标与成功指标` — 至少一张指标表，固定包含 `指标 | 基线 | 目标值 | 时间窗 | 口径/来源`；每项都写具体值，不能只写“提升”“优化”。
+   - `## 7. 范围与非目标` — 分别用 `### 范围` 和 `### 非目标` 写明首版边界；非目标说明明确不做什么，避免研发和设计自行扩张。
+   - `## 8. 用户故事` — 分角色描述触发场景、任务与收益，并能关联到需求 ID。
+   - `## 9. 功能需求` — 每条核心需求拥有稳定且唯一的 `REQ-001` 格式 ID，描述用户可观察行为、优先级和业务结果，而非实现方案。
+   - `## 10. 业务流程与规则` — 主流程、分支、异常、权限和状态变化；必要时使用 Mermaid，但文字必须能独立回答规则。
+   - `## 11. 验收标准` — 使用包含 `验收 ID | 需求 ID | Given | When | Then` 的表格；每条验收拥有稳定且唯一的 `AC-001` 格式 ID，同行引用已定义的 `REQ-NNN`，且每条核心需求至少有一条验收。
+   - `## 12. 非功能需求` — 性能、安全、可用性、兼容性和可观测性的可验证阈值及口径。
+   - `## 13. 依赖与发布` — 内外部依赖、灰度/全量条件、迁移、回滚和运营准备。
+   - `## 14. 风险与开放问题` — 风险责任人、缓解动作和已决问题；关键开放问题必须在 Human Gate 前由有权者裁决，不留占位符。
+   - `## 15. 相关产物链接` — 证据、原型和测试入口；结构化追溯固定链接到 `{process_slug}/pages/docs/prd-traceability.yaml`，分角色评审固定链接到 `{process_slug}/pages/docs/prd-review.yaml`。本步骤只引用这些路径，不在 PRD 内复制 sidecar 内容。
+
+   ID 与追溯纪律：`REQ-NNN` 和 `AC-NNN` 在修订中保持稳定，不复用已删除 ID；验收对需求的引用与 `{process_slug}/pages/docs/prd-traceability.yaml` 使用同一组 ID，四方评审对 `{process_slug}/pages/docs/prd-review.yaml` 中同一 PRD 版本生效。结构化文件由对应集成切片生成，本 prompt 不手工伪造批准或追溯关系。
+
+   Legacy compatibility: only pre-existing documents without the core-v2 marker continue to use the legacy 13-chapter structural contract. Do not remove a core-v2 marker or downgrade a new PRD to bypass semantic checks.
 
    PRD 正文禁则（读者是研发团队，文档只讲业务场景）：
    - 不写技术调研、技术方案、架构设计、接口设计、数据库设计等内容——这类内容只进 design 阶段维护的归档页 `feasibility.html`。
@@ -124,9 +137,16 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
    It must also carry:
    - `<!-- version: v1.0 -->` marker (added automatically by the renderer from the Markdown file or `--version`).
    - Meta tags: `doc-title`, `nav-group="Docs"`, `doc-version="v1.0"`, and a stable `doc-uid` (all injected by the renderer).
-11. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
-12. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
-13. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
+11. Run the deterministic content-quality check and fix every reported chapter, metric or ID error before asking for approval:
+
+   ```bash
+   python scripts/lincoln_prd_quality.py {process_slug}/pages/docs/prd.md --mode core-v2
+   ```
+
+   This check is necessary but not sufficient: walk the evidence, scope, rules and acceptance examples with the human PM rather than treating a passing CLI result as team approval.
+12. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
+13. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
+14. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
 
 ## Human Interaction Rules
 
