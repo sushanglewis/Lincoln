@@ -3,6 +3,7 @@ workflow:
   version: 1.0.0
   description: 已有源码项目的 Lincoln 迭代工作流
   execution_mode: solo
+  artifact_profile: lightweight
   engine: everything-claude-code
 
   steps:
@@ -51,10 +52,14 @@ workflow:
 
     - id: product-prototype
       name: 产品原型
-      description: 产出 Pencil 原型与 UI 规格
+      description: 产出 HTML 原型与 UI 规格（Pencil 源文件可选）
       human_gate: true
       action: build-product-prototype
       artifacts:
+        - "{process_slug}/pages/docs/ui-spec.html"
+        - "{process_slug}/pages/docs/fields.html"
+        - "{process_slug}/pages/prototype/**/*.html"
+      optional_artifacts:
         - "{process_slug}/designs/{design_id}/prototype.pen"
       exit_checks:
         - check: prototype_artifact_complete

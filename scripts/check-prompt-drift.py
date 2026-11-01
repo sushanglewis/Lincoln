@@ -247,18 +247,13 @@ def check_r2_action_in_stage_skills(
     return findings
 
 
-PM_CANONICAL_WORKFLOW = "interview-to-knowledge"
-
-
 def check_r3_workflow_artifacts_match_stage(
     workflows: dict[str, dict[str, Any]],
     stages: dict[str, dict[str, Any]],
 ) -> list[dict[str, Any]]:
     findings = []
     for wf_name, wf_info in workflows.items():
-        # For PM stages, only the canonical workflow is held to strict artifact equality.
-        # Other workflows may intentionally use a subset of PM stage artifacts.
-        is_pm_canonical = wf_name == PM_CANONICAL_WORKFLOW
+        artifact_profile = wf_info["data"].get("artifact_profile")
         for step in wf_info["data"].get("steps", []) or []:
             stage_id = step.get("id")
             if not stage_id:
@@ -273,9 +268,12 @@ def check_r3_workflow_artifacts_match_stage(
             wf_required = {normalize_path(p) for p in step.get("artifacts", []) or []}
             wf_optional = {normalize_path(p) for p in step.get("optional_artifacts", []) or []}
 
-            severity = "error" if (is_pm_stage and is_pm_canonical) else "warning"
+            is_full_prd = is_pm_stage and artifact_profile == "full-prd"
+            is_lightweight = is_pm_stage and artifact_profile == "lightweight"
+            severity = "error" if is_full_prd else "warning"
 
-            # Compare required sets modulo glob matching.
+            # Compare required sets modulo glob matching. Lightweight workflows
+            # intentionally omit full PRD artifacts, but may not invent artifacts.
             for p in wf_required:
                 if not path_in_set(p, stage_required):
                     findings.append({
@@ -286,6 +284,8 @@ def check_r3_workflow_artifacts_match_stage(
                         "message": f"step '{stage_id}' required artifact '{p}' missing from stage '{stage_id}' required artifacts",
                     })
             for p in stage_required:
+                if is_lightweight:
+                    continue
                 if not path_in_set(p, wf_required):
                     findings.append({
                         "rule": "R3",
@@ -305,6 +305,8 @@ def check_r3_workflow_artifacts_match_stage(
                         "message": f"step '{stage_id}' optional artifact '{p}' not declared in stage '{stage_id}' artifacts",
                     })
             for p in stage_optional:
+                if is_lightweight:
+                    continue
                 if not path_in_set(p, wf_optional):
                     findings.append({
                         "rule": "R3",

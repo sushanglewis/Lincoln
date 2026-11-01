@@ -3,6 +3,7 @@ workflow:
   version: 1.0.0
   description: 基于明确 issue/bug 的快速修复工作流
   execution_mode: solo
+  artifact_profile: lightweight
   engine: everything-claude-code
 
   steps:
