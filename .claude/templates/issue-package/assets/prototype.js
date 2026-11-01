@@ -498,6 +498,16 @@ LincolnPrototype.proto = (function () {
         return el;
     }
 
+    function hotspotBadgeContainer(el) {
+        // Void and form elements cannot contain a badge button. Anchor the
+        // badge to their field/container while retaining the real target for
+        // popovers, notes and presentation highlighting.
+        if (/^(INPUT|TEXTAREA|SELECT|IMG|BR|HR)$/.test(el.tagName)) {
+            return el.parentElement || el;
+        }
+        return el;
+    }
+
     function hotspotDestroyPopover() {
         if (hotspotDriver) {
             try { hotspotDriver.destroy(); } catch (err) { /* ignore */ }
@@ -550,9 +560,10 @@ LincolnPrototype.proto = (function () {
         hotspots.forEach(function (h, index) {
             var el = hotspotResolveTarget(h);
             if (!el) return;
-            var position = window.getComputedStyle(el).position;
+            var container = hotspotBadgeContainer(el);
+            var position = window.getComputedStyle(container).position;
             if (position === 'static') {
-                el.style.position = 'relative';
+                container.style.position = 'relative';
             }
             var badge = document.createElement('button');
             badge.type = 'button';
@@ -577,7 +588,7 @@ LincolnPrototype.proto = (function () {
                     hotspotShow(index, el, h);
                 }
             });
-            el.appendChild(badge);
+            container.appendChild(badge);
         });
 
         // Clicking anywhere else unpins the popover.
@@ -590,11 +601,287 @@ LincolnPrototype.proto = (function () {
         });
     }
 
+
+    /* ---------- Structured Axure-style review annotations ---------- */
+
+    var annotationData = null;
+    var annotationNotes = [];
+    var annotationIndex = -1;
+    var annotationTab = 'overview';
+    var annotationPanel = null;
+    var annotationControls = null;
+    var annotationActiveElement = null;
+
+    function annotationEscape(value) {
+        return LincolnPrototype.ui.escapeHtml(String(value));
+    }
+
+    function annotationField(label, value) {
+        if (value === undefined || value === null || value === '') return '';
+        return '<div class="lc-annotation-field"><dt>' + annotationEscape(label) + '</dt><dd>' + annotationEscape(String(value)) + '</dd></div>';
+    }
+
+    function annotationFields(fields) {
+        return '<dl class="lc-annotation-fields">' + fields.map(function (field) {
+            return annotationField(field[0], field[1]);
+        }).join('') + '</dl>';
+    }
+
+    function annotationNote(target, category, title, summary, fields) {
+        return { target: target, category: category, title: title, summary: summary, fields: fields };
+    }
+
+    function annotationBuildNotes(data) {
+        var notes = [];
+        (data.sections || []).forEach(function (section) {
+            notes.push(annotationNote(section.target, 'overview', section.title || '页面区域', section.purpose, [
+                ['区域作用', section.purpose],
+                ['包含内容', section.content]
+            ]));
+        });
+        (data.interactions || []).forEach(function (interaction) {
+            notes.push(annotationNote(interaction.target, 'interactions', interaction.name || '交互', interaction.response, [
+                ['如何操作', interaction.trigger],
+                ['系统反馈', interaction.response],
+                ['业务规则', interaction.rule],
+                ['后续去向', interaction.next]
+            ]));
+        });
+        (data.exceptions || []).forEach(function (exception) {
+            notes.push(annotationNote(exception.target, 'states', exception.name || '异常', exception.feedback, [
+                ['何时发生', exception.trigger],
+                ['用户看到什么', exception.feedback],
+                ['如何恢复', exception.recovery]
+            ]));
+        });
+        return notes;
+    }
+
+    function annotationClearHighlight() {
+        if (annotationActiveElement) {
+            annotationActiveElement.classList.remove('lc-annotation-active');
+            annotationActiveElement = null;
+        }
+    }
+
+    function annotationClose() {
+        if (annotationPanel) annotationPanel.classList.remove('visible');
+        annotationIndex = -1;
+        annotationClearHighlight();
+    }
+
+    function annotationStateCard(state) {
+        if (state.not_applicable) {
+            return '<section class="lc-annotation-card na"><h4>' + annotationEscape(state.kind) + '（不适用）</h4>'
+                + '<p>' + annotationEscape(state.reason || '') + '</p></section>';
+        }
+        return '<section class="lc-annotation-card"><h4>' + annotationEscape(state.name || state.kind)
+            + ' <span class="lc-annotation-kind">' + annotationEscape(state.kind) + '</span></h4>'
+            + annotationFields([
+                ['何时发生', state.when],
+                ['数据状态', state.data],
+                ['可见与可用行为', state.feedback],
+                ['恢复路径', state.recovery]
+            ])
+            + (state.page ? '<button type="button" class="lc-annotation-link" data-page="' + annotationEscape(state.page) + '">查看此状态页面</button>' : '')
+            + '</section>';
+    }
+
+    function annotationDataTable(items) {
+        return '<div class="lc-annotation-table-wrap"><table class="lc-annotation-table"><thead><tr>'
+            + '<th>数据</th><th>业务含义</th><th>允许值/状态</th><th>为空时</th><th>校验规则</th><th>来源</th>'
+            + '</tr></thead><tbody>' + (items || []).map(function (item) {
+                return '<tr>' + [item.name, item.meaning, item.values, item.empty, item.validation, item.source].map(function (value) {
+                    return '<td>' + annotationEscape(value || '') + '</td>';
+                }).join('') + '</tr>';
+            }).join('') + '</tbody></table></div>';
+    }
+
+    function annotationMainHtml() {
+        var data = annotationData || {};
+        if (annotationIndex >= 0 && annotationNotes[annotationIndex]) {
+            var note = annotationNotes[annotationIndex];
+            return '<section class="lc-annotation-note"><div class="lc-annotation-eyebrow">逐项演示</div><h3>'
+                + annotationEscape(note.title) + '</h3><p class="lc-annotation-summary">' + annotationEscape(note.summary || '')
+                + '</p>' + annotationFields(note.fields) + '</section>';
+        }
+        if (annotationTab === 'overview') {
+            var overview = data.overview || {};
+            return '<section class="lc-annotation-card"><h3>页面目标</h3>' + annotationFields([
+                ['使用角色', overview.role],
+                ['使用场景', overview.scenario],
+                ['用户目标', overview.goal],
+                ['从哪里进入', overview.entry],
+                ['怎样算完成', overview.completion],
+                ['当前页面状态', overview.current_state],
+                ['所属业务流程', overview.flow]
+            ]) + '</section>'
+                + '<h3 class="lc-annotation-section-title">页面结构</h3>'
+                + (data.sections || []).map(function (section) {
+                    return '<section class="lc-annotation-card"><h4>' + annotationEscape(section.title || '') + '</h4>'
+                        + annotationFields([['区域作用', section.purpose], ['包含内容', section.content]]) + '</section>';
+                }).join('');
+        }
+        if (annotationTab === 'interactions') {
+            return (data.interactions || []).map(function (interaction) {
+                return '<section class="lc-annotation-card"><h4>' + annotationEscape(interaction.name || '') + '</h4>'
+                    + annotationFields([
+                        ['如何操作', interaction.trigger],
+                        ['系统反馈', interaction.response],
+                        ['业务规则', interaction.rule],
+                        ['后续去向', interaction.next]
+                    ]) + '</section>';
+            }).join('');
+        }
+        if (annotationTab === 'states') {
+            return '<h3 class="lc-annotation-section-title">完整状态目录</h3>'
+                + (data.states || []).map(annotationStateCard).join('')
+                + '<h3 class="lc-annotation-section-title">异常与恢复</h3>'
+                + (data.exceptions || []).map(function (exception) {
+                    return '<section class="lc-annotation-card exception"><h4>' + annotationEscape(exception.name || '') + '</h4>'
+                        + annotationFields([
+                            ['何时发生', exception.trigger],
+                            ['用户看到什么', exception.feedback],
+                            ['如何恢复', exception.recovery]
+                        ]) + '</section>';
+                }).join('');
+        }
+        return annotationDataTable(data.data || []);
+    }
+
+    function annotationRender() {
+        if (!annotationPanel) return;
+        var tabs = [
+            ['overview', '页面结构'],
+            ['interactions', '交互'],
+            ['states', '状态与异常'],
+            ['data', '数据']
+        ];
+        annotationPanel.innerHTML = '<div class="lc-annotation-head"><div><span class="lc-annotation-kicker">评审标注</span><strong>'
+            + annotationEscape((annotationData.overview || {}).goal || '页面说明') + '</strong></div>'
+            + '<button type="button" class="lc-annotation-close" aria-label="关闭标注">×</button></div>'
+            + '<div class="lc-annotation-tabs" role="tablist">' + tabs.map(function (tab) {
+                return '<button type="button" role="tab" data-tab="' + tab[0] + '" aria-selected="' + (annotationTab === tab[0] && annotationIndex < 0 ? 'true' : 'false') + '" class="' + (annotationTab === tab[0] && annotationIndex < 0 ? 'active' : '') + '">' + tab[1] + '</button>';
+            }).join('') + '</div>'
+            + '<div class="lc-annotation-body">' + annotationMainHtml() + '</div>'
+            + (annotationIndex >= 0 ? '<div class="lc-annotation-foot"><button type="button" class="lc-annotation-prev"' + (annotationIndex === 0 ? ' disabled' : '') + '>上一条</button><span>' + (annotationIndex + 1) + ' / ' + annotationNotes.length + '</span><button type="button" class="lc-annotation-next"' + (annotationIndex >= annotationNotes.length - 1 ? ' disabled' : '') + '>下一条</button></div>' : '');
+
+        annotationPanel.querySelector('.lc-annotation-close').addEventListener('click', annotationClose);
+        annotationPanel.querySelectorAll('[data-tab]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                annotationTab = button.getAttribute('data-tab');
+                annotationIndex = -1;
+                annotationClearHighlight();
+                annotationRender();
+            });
+        });
+        annotationPanel.querySelectorAll('[data-page]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var path = button.getAttribute('data-page');
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'lincoln-navigate', path: path }, '*');
+                } else {
+                    window.location.href = getPrototypeBase() + path;
+                }
+            });
+        });
+        var prev = annotationPanel.querySelector('.lc-annotation-prev');
+        var next = annotationPanel.querySelector('.lc-annotation-next');
+        if (prev) prev.addEventListener('click', function () { annotationNext(-1); });
+        if (next) next.addEventListener('click', function () { annotationNext(1); });
+    }
+
+    function annotationOpen(tab) {
+        annotationTab = tab || annotationTab;
+        annotationIndex = -1;
+        annotationClearHighlight();
+        annotationPanel.classList.add('visible');
+        annotationRender();
+    }
+
+    function annotationShow(index) {
+        if (!annotationNotes[index]) return;
+        annotationIndex = index;
+        annotationTab = annotationNotes[index].category;
+        annotationClearHighlight();
+        var el = hotspotResolveTarget(annotationNotes[index]);
+        if (el) {
+            annotationActiveElement = el;
+            el.classList.add('lc-annotation-active');
+        }
+        annotationPanel.classList.add('visible');
+        annotationRender();
+    }
+
+    function annotationNext(direction) {
+        var next = annotationIndex + direction;
+        if (next < 0 || next >= annotationNotes.length) return;
+        annotationShow(next);
+    }
+
+    function annotationCreateShell() {
+        annotationControls = document.createElement('div');
+        annotationControls.className = 'lc-annotation-controls';
+        annotationControls.innerHTML = '<button type="button" class="lc-annotation-toggle">标注 <span>' + annotationNotes.length + '</span></button><button type="button" class="lc-annotation-demo">演示</button>';
+        document.body.appendChild(annotationControls);
+        annotationControls.querySelector('.lc-annotation-toggle').addEventListener('click', function () {
+            if (annotationPanel.classList.contains('visible')) annotationClose();
+            else annotationOpen('overview');
+        });
+        annotationControls.querySelector('.lc-annotation-demo').addEventListener('click', function () {
+            if (annotationNotes.length) annotationShow(0);
+        });
+
+        annotationPanel = document.createElement('aside');
+        annotationPanel.className = 'lc-annotation-panel';
+        annotationPanel.setAttribute('aria-label', '原型评审标注');
+        document.body.appendChild(annotationPanel);
+
+        document.addEventListener('keydown', function (event) {
+            if (!annotationPanel.classList.contains('visible')) return;
+            if (event.key === 'Escape') annotationClose();
+            if (annotationIndex >= 0 && event.key === 'ArrowRight') annotationNext(1);
+            if (annotationIndex >= 0 && event.key === 'ArrowLeft') annotationNext(-1);
+        });
+    }
+
+    function initAnnotations(data, legacyHotspots) {
+        if (!data || typeof data !== 'object') {
+            initHotspots(legacyHotspots || []);
+            return;
+        }
+        annotationData = data;
+        annotationNotes = annotationBuildNotes(data);
+        (legacyHotspots || []).forEach(function (hotspot) {
+            annotationNotes.push(annotationNote(hotspot.target, 'interactions', hotspot.title || '说明', hotspot.text, [['说明', hotspot.text]]));
+        });
+        annotationCreateShell();
+        annotationNotes.forEach(function (note, index) {
+            var el = hotspotResolveTarget(note);
+            if (!el) return;
+            var container = hotspotBadgeContainer(el);
+            if (window.getComputedStyle(container).position === 'static') container.style.position = 'relative';
+            var badge = document.createElement('button');
+            badge.type = 'button';
+            badge.className = 'lc-hotspot lc-annotation-badge';
+            badge.textContent = String(index + 1);
+            badge.setAttribute('aria-label', '查看标注：' + note.title);
+            badge.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                annotationShow(index);
+            });
+            container.appendChild(badge);
+        });
+        document.body.classList.add('lc-hotspots-ready');
+    }
+
     function toggleHotspots() {
         var off = document.body.classList.toggle('lc-hotspots-off');
         if (off) {
             hotspotPinned = -1;
             hotspotDestroyPopover();
+            annotationClose();
         }
         return !off;
     }
@@ -605,6 +892,7 @@ LincolnPrototype.proto = (function () {
         bindTray: bindTray,
         getPrototypeBase: getPrototypeBase,
         portalPathFromHref: portalPathFromHref,
+        initAnnotations: initAnnotations,
         initHotspots: initHotspots,
         toggleHotspots: toggleHotspots
     };

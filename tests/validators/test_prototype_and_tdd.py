@@ -140,6 +140,17 @@ class TestPrototypeAnnotationCompleteness:
         )
         assert run_validator(tmp_project, "prototype_artifact_complete", design_id) == 0
 
+    def test_passes_when_structured_annotations_present(self, tmp_project, design_id):
+        write_prototype_package(tmp_project, design_id)
+        proto_dir = tmp_project / "lc-test" / "pages" / "prototype"
+        (proto_dir / "annotated.html").write_text(
+            '<html><head><meta name="nav-label" content="Page">'
+            '<script type="application/json" id="pageData">{"annotations": {}}</script>'
+            '</head><body></body></html>',
+            encoding="utf-8",
+        )
+        assert run_validator(tmp_project, "prototype_artifact_complete", design_id) == 0
+
 
 class TestPrototypeTrayAntiPattern:
     def test_fails_when_app_page_redraws_tray(self, tmp_project, design_id):

@@ -28,6 +28,7 @@ PRD_EXIT_CHECKS = {
     "prd_traceability",
     "prd_review_complete",
     "prototype_traceability",
+    "prototype_annotations_complete",
     "prd_snapshot_present",
     "prd_content_hygiene",
     "prd_cross_validated",

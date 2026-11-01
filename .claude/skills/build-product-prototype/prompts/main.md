@@ -60,7 +60,9 @@ You may still read the categorized example templates under `.claude/templates/is
 
    Use the structured renderer with `--data` containing `sections`, `pages`, and `interactions` as appropriate.
 
-5. **Plan prototype generation granularity.** Before writing prototype pages, derive a **角色×场景矩阵** from `scenarios.html` and `page-map.html`: rows are the user roles/personas, columns are the key scenarios (including boundary cases such as empty, loading, error, success). Every cell that a real user can reach must map to exactly one prototype sub-page; the matrix itself is written into `ui-spec.html` (章节 `## 角色×场景矩阵`) and serves as the splitting contract. Then group the sub-pages into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page has complete hotspot annotations (numbered badges covering functionality, fields, boundary cases, and exception flows) before starting the next cluster.
+5. **Plan prototype generation granularity.** Before writing prototype pages, derive a **角色×场景矩阵** from `scenarios.html` and `page-map.html`: rows are the user roles/personas, columns are the key scenarios (including boundary cases such as empty, loading, error, success). Every cell that a real user can reach must map to exactly one prototype sub-page; the matrix itself is written into `ui-spec.html` (章节 `## 角色×场景矩阵`) and serves as the splitting contract. Then group the sub-pages into cohesive clusters (e.g. onboarding, main shell, settings, overlays, tray). Generate one cluster at a time. After each cluster, verify that every page has complete structured annotations covering page structure, interactions, all states, exceptions, data and recovery paths before starting the next cluster.
+
+   After each cluster, run `python scripts/lincoln_prototype_annotations.py {process_slug}` and fix every missing target, incomplete state, missing recovery path, or technical narrative before starting the next cluster.
 
    Each cluster is organized by one main shell page (e.g. `pages/prototype/{app,web,mobile}/main/page.html`) whose `navItems` link to all sub-pages of that cluster, so the portal viewer can walk every role/scenario state from a single entry page.
 
@@ -91,13 +93,77 @@ You may still read the categorized example templates under `.claude/templates/is
      - US-001
    flow_step_ids:         # required, at least one business-flow step
      - FLOW-001
-   hotspots:              # keep annotation badges separate from traceability metadata
-     - target: "metric-revenue"      # CSS selector, data-uid, or element id
-       title: "营收指标卡"
-       text: "展示本月营收与环比；点击进入详情页。"
-     - target: "#global-search"
-       title: "全局搜索"
-       text: "支持名称/拼音/首字母搜索，回车跳转首个结果。"
+   annotations:           # required for core-v2; business-facing review notes
+     overview:
+       role: "一线客服"
+       scenario: "在工单中查找内部知识"
+       goal: "不切换系统即可找到可信答案"
+       entry: "打开工单详情并进入知识搜索"
+       completion: "打开一条有效原文引用"
+       current_state: "default"
+       flow: "FLOW-001 搜索并打开引用"
+     sections:
+       - target: "search-panel"
+         title: "搜索区"
+         purpose: "集中完成关键词输入和搜索"
+         content: "关键词输入框、搜索按钮和最近搜索"
+     interactions:
+       - target: "search-input"
+         name: "输入关键词"
+         trigger: "点击输入框并输入关键词"
+         response: "显示输入内容；有效关键词使搜索按钮可用"
+         rule: "关键词去除首尾空格，长度为 1–100 个字符"
+         next: "点击搜索后进入搜索中状态"
+     states:                # default/loading/empty/success/error all required
+       - kind: "default"
+         name: "可搜索"
+         when: "页面加载完成且用户有搜索权限"
+         data: "显示最近搜索关键词"
+         feedback: "输入框和搜索按钮可用"
+         recovery: "无需额外恢复"
+         page: "pages/prototype/web/search/page.html"
+       - kind: "loading"
+         name: "搜索中"
+         when: "提交有效关键词"
+         data: "保留当前关键词，结果区显示搜索中"
+         feedback: "搜索按钮显示处理中且不可重复提交"
+         recovery: "等待结果；长时间无结果时可取消"
+         page: "pages/prototype/web/search-loading/page.html"
+       - kind: "empty"
+         name: "无匹配结果"
+         when: "没有符合权限和关键词的文档"
+         data: "结果数为 0"
+         feedback: "显示空结果说明和修改关键词入口"
+         recovery: "修改关键词或清除筛选"
+         page: "pages/prototype/web/search-empty/page.html"
+       - kind: "success"
+         name: "搜索成功"
+         when: "返回可读取的有效文档"
+         data: "显示文档摘要与引用"
+         feedback: "用户可打开原文引用"
+         recovery: "无需额外恢复"
+         page: "pages/prototype/web/search-success/page.html"
+       - kind: "error"
+         name: "搜索失败"
+         when: "权限校验或搜索服务暂时不可用"
+         data: "不展示未鉴权内容"
+         feedback: "显示失败原因和重试入口"
+         recovery: "点击重试；连续失败时联系知识管理员"
+         page: "pages/prototype/web/search-error/page.html"
+     exceptions:
+       - name: "暂时无法验证权限"
+         trigger: "点击搜索时权限服务暂时不可用"
+         feedback: "显示“暂时无法验证权限，请稍后重试”"
+         recovery: "点击重试；连续失败时联系知识管理员"
+         target: "search-retry"
+     data:
+       - name: "关键词"
+         meaning: "用户希望查找的内容"
+         values: "1–100 个字符"
+         empty: "为空时搜索按钮不可用"
+         validation: "自动去除首尾空格"
+         source: "用户输入"
+   hotspots: []             # optional legacy notes only; do not duplicate annotations
    components:
      - type: html
        uid: dashboard-metrics
@@ -117,10 +183,14 @@ You may still read the categorized example templates under `.claude/templates/is
    - Include theme sync support (built into the structured template).
    - Include `<meta name="prototype-base" content="../../../">` (or `../../../../` for depth 4).
    - Include `<meta name="page-uid" content="...">`, `<meta name="nav-group" content="...">`, and `<meta name="nav-label" content="...">` (injected by the renderer from CLI args; hotspots come from the YAML `hotspots` block and are rendered as numbered badges via driver.js).
-   - Provide a `hotspots` array so numbered on-page badges explain functionality, layout, fields, boundary cases, and exception flows (hover for the popover, click to pin; the prototype toolbar can hide badges).
-   - State the applicable role(s), scenario, page state (default / empty / loading / error / success), and which functions are visible and usable in that state via the hotspot `title`/`text` entries, so each sub-page precisely depicts what a given role sees and can do in that case.
+   - For core-v2, provide the complete `annotations` object shown above. Legacy `hotspots` remain supported only for old packages or supplementary notes; a single hotspot or a generic sentence is not a substitute.
+   - Enumerate `default`, `loading`, `empty`, `success`, and `error` for every page family. If one is genuinely not applicable, use `{kind: empty, not_applicable: true, reason: "用户业务原因"}`; never silently omit it. Add disabled, permission, offline, partial, stale, or other states whenever users can reach them.
+   - Every state explains when it occurs, what data exists, what users can see/do, and how to recover. Every exception explains trigger, user-facing feedback, and a concrete recovery path. Enumerate actual data values and empty/partial/error behavior rather than saying only "正常/异常".
+   - Every section, interaction and exception annotation targets an existing stable `data-uid`; missing targets block validation. The panel must remain readable even when a state links to another prototype page.
+   - Write annotations in business language: what the user does, sees, and can do next. Do not use API, HTTP, JSON, CSS, database, status-code, or implementation-component jargon in narrative fields. Keep REQ/US/FLOW IDs in trace metadata, not in presentation copy.
+   - The structured template renders numbered badges, a 页面结构/交互/状态与异常/数据 drawer, and 上一条/下一条 presentation controls. Verify these interactions instead of merely checking that YAML exists.
    - Depict only the final system as it will ship: no demo-only buttons, explanatory text rows, or walkthrough-only jumps. Explanations belong in the `hotspots` badges rendered on the page, never as on-screen prose.
-   - Declare `requirement_ids`, `story_ids`, and `flow_step_ids` as top-level arrays in the prototype YAML; the renderer places them at the top level of `script#pageData` JSON. `requirement_ids` and `flow_step_ids` must each contain at least one stable ID. Keep `hotspots` for annotations, not as a substitute for this machine-checkable metadata.
+   - Declare `requirement_ids`, `story_ids`, and `flow_step_ids` as top-level arrays in the prototype YAML; the renderer places them at the top level of `script#pageData` JSON. `requirement_ids` and `flow_step_ids` must each contain at least one stable ID. Keep structured `annotations` for review presentation and the top-level ID arrays for machine-checkable traceability; legacy `hotspots` are supplementary only.
    - Register every generated HTML file in the applicable `requirements[].prototype_pages` arrays in `{process_slug}/pages/docs/prd-traceability.yaml`. Paths are relative to the process root (for example `pages/prototype/web/list/page.html`). Each `core: true` requirement's every `flow_step_ids` entry must have at least one registered page declaring both the requirement ID and that flow ID.
    - Run `python scripts/lincoln_prototype_traceability.py --package {process_slug}` and fix missing pages, unregistered/orphan HTML, missing metadata, and broken requirement/flow links before review.
    - Use `LincolnPrototype.ui` builders and `prototype.css` tokens for every visual element so both light and dark themes render correctly; verify both themes by toggling the portal theme switch.
@@ -135,10 +205,11 @@ You may still read the categorized example templates under `.claude/templates/is
    python scripts/lincoln_prototype_traceability.py {process_slug}
    ```
 
-9. Update the「相关产物链接」section of the root PRD with `ui-spec.html`, `fields.html`, and HTML prototype links. Any content change requires a version bump, `prd-review.yaml` reset and re-review.
-10. For core-v2, use `scripts/lincoln_prd_review.py record` to collect pm/design/engineering/qa decisions for the same current PRD version in `{process_slug}/pages/docs/prd-review.yaml`. Do not invent approvals: each reviewer must actually inspect their quality responsibility. Validate the delivery baseline with `scripts/lincoln_prd_review.py validate`.
-11. Ask the PM to open `{process_slug}/index.html` and review both light and dark renderings. When the PM confirms, add `<!-- prototype-status: approved -->` to `ui-spec.html`; legacy packages retain this existing approval path.
-12. For core-v2, freeze the reviewed delivery baseline via `python scripts/lincoln_prd.py freeze`; then run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
+9. Run `python scripts/lincoln_prototype_annotations.py {process_slug}` again, then open the prototype and verify: clicking each badge opens the correct note; all four drawer tabs are readable; 演示 moves 上一条/下一条 and highlights the target; state links navigate to real pages; light/dark themes remain legible.
+10. Update the「相关产物链接」section of the root PRD with `ui-spec.html`, `fields.html`, and HTML prototype links. Any content change requires a version bump, `prd-review.yaml` reset and re-review.
+11. For core-v2, use `scripts/lincoln_prd_review.py record` to collect pm/design/engineering/qa decisions for the same current PRD version in `{process_slug}/pages/docs/prd-review.yaml`. Do not invent approvals: each reviewer must actually inspect their quality responsibility. Validate the delivery baseline with `scripts/lincoln_prd_review.py validate`.
+12. Ask the PM to open `{process_slug}/index.html` and review both light and dark renderings. When the PM confirms, add `<!-- prototype-status: approved -->` to `ui-spec.html`; legacy packages retain this existing approval path.
+13. For core-v2, freeze the reviewed delivery baseline via `python scripts/lincoln_prd.py freeze`; then run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
 
 ## Output Artifacts
 
@@ -160,5 +231,5 @@ You may still read the categorized example templates under `.claude/templates/is
 - Prototype links use relative paths so they work both inside the portal iframe and when opened standalone.
 - Do not add custom chrome to the portal. The portal sidebar is collapsible and supports focus mode out of the box; prototype pages open in focus mode automatically.
 - The system tray is portal-level chrome. Never redraw the tray inside an app prototype page with `.menubar`, `.tray-icon`, `.tray-panel`, `bindTray`, or `trayMenu`. Tray scenario pages must be thin controllers that post `lincoln-tray-state` messages to the portal.
-- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `hotspots` 数字角标（driver.js，hover 弹出说明）呈现。所属需求、用户故事与业务流程步骤必须通过 `script#pageData` 顶层的 `requirement_ids` / `story_ids` / `flow_step_ids` 数组声明，并在追溯 sidecar 中登记页面路径，不能只写在角标自由文本中。
+- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `hotspots` 数字角标（driver.js，hover 弹出说明）呈现。所属需求、用户故事与业务流程步骤必须通过 `script#pageData` 顶层的 `requirement_ids` / `story_ids` / `flow_step_ids` 数组声明，并在追溯 sidecar 中登记页面路径；评审说明统一放入结构化 `annotations`，不能只写在角标自由文本中。
 - After approval, tell the user to run: `claude plan-tdd-development <session_id> <design_id>`.

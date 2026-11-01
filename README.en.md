@@ -14,7 +14,7 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 [![Release](https://img.shields.io/badge/release-v1.11.0-blue)](RELEASE.md)
 
-**v1.11.0** is released: PRD Quality System upgrades PRDs from heading/marker checks to the core-v2 content contract, end-to-end requirement traceability, pm/design/engineering/qa review baselines, and bidirectional prototype/test validation (#142).
+**v1.11.0** is released: high-fidelity prototypes now provide Axure-style numbered annotations, a categorized review drawer and step-by-step presentation, with complete interaction, state, exception-recovery and data contracts enforced for core-v2 (#155).
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
@@ -253,6 +253,7 @@ Before submitting a PR, please read:
 
 | Version | Date | Key capabilities |
 |---|---|---|
+| v1.12.0 | 2026-11-02 | Axure-style prototype annotations, review drawer, guided presentation, complete state/exception/data contracts (#155) |
 | v1.11.0 | 2026-11-01 | PRD core-v2 content quality, requirement traceability, four-role reviews, prototype/test validation, and workflow artifact profiles (#142) |
 | v1.9.0 | 2026-10-12 | Docsify-style issue-package portal: collapsible/filterable sidebar, focus mode, full Markdown rendering via marked, driver.js numbered hotspot annotations, hash deep links (#131) |
 | v1.8.4 | 2026-10-08 | PM-stage PRD quality gates: six-question clarity check, 13-section progressive PRD skeleton, content-hygiene and cross-validation checks, final-system-only prototype discipline (#129) |

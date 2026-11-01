@@ -117,6 +117,7 @@ workflow:
         - check: prd_traceability
           args: ["prototype"]
         - check: prototype_traceability
+        - check: prototype_annotations_complete
         - check: prd_review_complete
           args: ["{process_slug}/pages/docs/prd-review.yaml"]
         - check: prd_snapshot_present

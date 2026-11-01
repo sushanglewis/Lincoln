@@ -34,6 +34,7 @@ def test_legacy_package_skips_new_trace_and_review_gates(tmp_project):
 
     assert run_validator(tmp_project, "prd_traceability", "tdd") == 0
     assert run_validator(tmp_project, "prototype_traceability") == 0
+    assert run_validator(tmp_project, "prototype_annotations_complete") == 0
     assert run_validator(tmp_project, "prd_review_complete", "lc-test/pages/docs/prd-review.yaml") == 0
 
 
@@ -58,6 +59,11 @@ def test_core_v2_marker_detection_cannot_be_bypassed_by_case(tmp_project):
     (docs / "prd.html").write_text("<!-- PRD-CONTRACT: CORE-V2 -->\n<!-- version: v1.0 -->", encoding="utf-8")
 
     assert run_validator(tmp_project, "prd_traceability", "clarify") == 1
+
+
+def test_core_v2_requires_structured_prototype_annotations(tmp_project):
+    package = _copy_trace_package(tmp_project)
+    assert run_validator(tmp_project, "prototype_annotations_complete") == 1
 
 
 def test_review_gate_requires_four_roles_on_current_prd_version(tmp_project):

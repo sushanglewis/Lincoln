@@ -530,8 +530,8 @@ def validate_prototype_artifact_complete(design_id: str):
     hotspot_gaps: dict[str, str] = {}
     for p in html_files:
         text = p.read_text(encoding="utf-8")
-        if '"hotspots"' not in text:
-            hotspot_gaps[str(p.relative_to(process_root()))] = '"hotspots"'
+        if '"hotspots"' not in text and '"annotations"' not in text:
+            hotspot_gaps[str(p.relative_to(process_root()))] = '"hotspots" or "annotations"'
     if hotspot_gaps:
         messages = [f"{path}: missing {key} in pageData" for path, key in hotspot_gaps.items()]
         fail(f"Prototype pages missing required hotspot annotations:\n" + "\n".join(messages))
@@ -751,6 +751,17 @@ def check_prototype_traceability():
     pass_check("Prototype traceability OK")
 
 
+def check_prototype_annotations_complete():
+    if _core_v2_prd() is None:
+        pass_check("Structured prototype annotations not required for legacy/lightweight package")
+    from scripts.lincoln_prototype_annotations import validate_annotations
+
+    errors = validate_annotations(process_root())
+    if errors:
+        fail("Prototype review annotations failed:\n" + "\n".join(f"- {error}" for error in errors))
+    pass_check("Structured prototype annotations OK")
+
+
 def check_prd_content_hygiene(path: str):
     target = PROJECT_ROOT / path
     if not target.exists():
@@ -868,6 +879,7 @@ EXIT_CHECKS = {
     "prd_traceability": check_prd_traceability,
     "prd_review_complete": check_prd_review_complete,
     "prototype_traceability": check_prototype_traceability,
+    "prototype_annotations_complete": check_prototype_annotations_complete,
     "prd_snapshot_present": check_prd_snapshot_present,
     "prd_content_hygiene": check_prd_content_hygiene,
     "prd_cross_validated": check_prd_cross_validated,
