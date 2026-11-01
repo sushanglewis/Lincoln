@@ -21,7 +21,7 @@ CORE_V2 = "core-v2"
 LEGACY = "legacy"
 AUTO = "auto"
 CONTRACT_MARKER_RE = re.compile(r"<!--\s*prd-contract:\s*core-v2\s*-->", re.IGNORECASE)
-VERSION_MARKER_RE = re.compile(r"<!--\s*version:\s*v\d+\.\d+\s*-->")
+VERSION_MARKER_RE = re.compile(r"<!--\s*version:\s*v\d+\.\d+\s*-->", re.IGNORECASE)
 DOC_SOURCE_RE = re.compile(
     r"<script(?=\s)([^>]*?\s(?:id=\"docSource\"|type=\"text/markdown\")[^>]*?)>(.*?)</script>",
     re.DOTALL | re.IGNORECASE,
@@ -344,45 +344,48 @@ def _validate_metrics(body: str) -> list[QualityIssue]:
             )
         ]
 
-    header, rows = metric_tables[0]
-    columns = {
-        "基线": _find_column(header, {"基线", "基线值"}),
-        "目标值": _find_column(header, {"目标", "目标值"}),
-        "时间窗": _find_column(header, {"时间窗", "时间窗口", "目标时间窗"}),
-    }
     issues: list[QualityIssue] = []
-    for label, column in columns.items():
-        if column is None:
-            issues.append(
-                QualityIssue(
-                    "METRIC_FIELDS",
-                    section,
-                    f"Success-metric table is missing '{label}'; add that column and record a concrete value for every metric.",
-                )
-            )
-    if issues:
-        return issues
-
-    data_rows = [row for row in rows if any(not _is_empty_value(cell) for cell in row)]
-    if not data_rows:
-        return [
-            QualityIssue(
-                "METRIC_VALUES",
-                section,
-                "Success-metric table has no usable data row; add baseline, target and time window values.",
-            )
-        ]
-    for row_number, row in enumerate(data_rows, start=1):
+    for table_number, (header, rows) in enumerate(metric_tables, start=1):
+        columns = {
+            "基线": _find_column(header, {"基线", "基线值"}),
+            "目标值": _find_column(header, {"目标", "目标值"}),
+            "时间窗": _find_column(header, {"时间窗", "时间窗口", "目标时间窗"}),
+        }
+        table_issues: list[QualityIssue] = []
         for label, column in columns.items():
-            assert column is not None
-            if _is_empty_value(_cell(row, column)):
-                issues.append(
+            if column is None:
+                table_issues.append(
                     QualityIssue(
-                        "METRIC_VALUES",
+                        "METRIC_FIELDS",
                         section,
-                        f"Metric row {row_number} has no concrete {label}; fill baseline, target and time window for every metric.",
+                        f"Success-metric table {table_number} is missing '{label}'; add that column and record a concrete value for every metric.",
                     )
                 )
+        issues.extend(table_issues)
+        if table_issues:
+            continue
+
+        data_rows = [row for row in rows if any(not _is_empty_value(cell) for cell in row)]
+        if not data_rows:
+            issues.append(
+                QualityIssue(
+                    "METRIC_VALUES",
+                    section,
+                    f"Success-metric table {table_number} has no usable data row; add baseline, target and time window values.",
+                )
+            )
+            continue
+        for row_number, row in enumerate(data_rows, start=1):
+            for label, column in columns.items():
+                assert column is not None
+                if _is_empty_value(_cell(row, column)):
+                    issues.append(
+                        QualityIssue(
+                            "METRIC_VALUES",
+                            section,
+                            f"Metric table {table_number} row {row_number} has no concrete {label}; fill baseline, target and time window for every metric.",
+                        )
+                    )
     return issues
 
 
@@ -407,6 +410,31 @@ def _valid_id(token: str, kind: str) -> bool:
     return bool(ID_FULL_RES[kind].fullmatch(token))
 
 
+def _id_definitions(body: str, kind: str) -> list[str]:
+    """Return IDs from definition columns, excluding references in prose cells."""
+    aliases = {
+        "REQ": {"需求 ID", "需求ID", "Requirement ID", "ID"},
+        "AC": {"验收 ID", "验收ID", "Acceptance ID", "ID"},
+    }
+    definitions: list[str] = []
+    found_definition_table = False
+    for header, rows in _tables(body):
+        column = _find_column(header, aliases[kind])
+        if column is None:
+            continue
+        found_definition_table = True
+        for row in rows:
+            definitions.extend(ID_CANDIDATE_RES[kind].findall(_cell(row, column)))
+    if found_definition_table:
+        return definitions
+
+    for line in body.splitlines():
+        match = ID_CANDIDATE_RES[kind].search(line)
+        if match:
+            definitions.append(match.group(0))
+    return definitions
+
+
 def _validate_ids(requirements_body: str, acceptance_body: str) -> list[QualityIssue]:
     issues: list[QualityIssue] = []
     requirement_tokens = ID_CANDIDATE_RES["REQ"].findall(requirements_body)
@@ -425,8 +453,8 @@ def _validate_ids(requirements_body: str, acceptance_body: str) -> list[QualityI
                 )
             )
 
-    valid_requirements = [token.upper() for token in requirement_tokens if _valid_id(token, "REQ")]
-    valid_acceptance = [token.upper() for token in acceptance_tokens if _valid_id(token, "AC")]
+    valid_requirements = [token.upper() for token in _id_definitions(requirements_body, "REQ") if _valid_id(token, "REQ")]
+    valid_acceptance = [token.upper() for token in _id_definitions(acceptance_body, "AC") if _valid_id(token, "AC")]
     if not valid_requirements:
         issues.append(
             QualityIssue(

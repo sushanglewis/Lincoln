@@ -14,6 +14,7 @@ outputs:
   - "{process_slug}/pages/docs/user-stories.html"
   - "{process_slug}/pages/docs/prd.html"
   - "{process_slug}/pages/docs/snapshots/prd-v*.html"
+  - "{process_slug}/pages/docs/prd-traceability.yaml"
 required_tools:
   - Read
   - Bash

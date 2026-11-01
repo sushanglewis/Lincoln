@@ -65,6 +65,14 @@ ID_PATTERNS = {
 ARTIFACT_SUFFIXES = {".html", ".json", ".md", ".txt", ".yaml", ".yml"}
 
 
+def _artifact_defines(artifact_corpus: str, identifier: str) -> bool:
+    """Match a complete identifier, never a prefix of a longer surviving ID."""
+    return re.search(
+        rf"(?<![A-Z0-9-]){re.escape(identifier)}(?![A-Z0-9-])",
+        artifact_corpus,
+    ) is not None
+
+
 def _json_path(parts: list[Any] | tuple[Any, ...]) -> str:
     if not parts:
         return "$"
@@ -216,7 +224,7 @@ def _validate_references(
                     f"{reference_path}: duplicate {description} ID {reference!r}; remove the repeated reference."
                 )
             seen.add(reference)
-            if ID_PATTERNS[prefix].fullmatch(reference) and reference not in artifact_corpus:
+            if ID_PATTERNS[prefix].fullmatch(reference) and not _artifact_defines(artifact_corpus, reference):
                 errors.append(
                     f"{reference_path}: {reference} is not defined in the PRD or package artifacts; "
                     f"define the {description} or remove the stale reference from {requirement_label}."
@@ -274,7 +282,7 @@ def _validate_semantics(
                     "assign a unique stable REQ-* ID."
                 )
             requirement_ids.add(requirement_id)
-            if ID_PATTERNS["REQ"].fullmatch(requirement_id) and requirement_id not in artifact_corpus:
+            if ID_PATTERNS["REQ"].fullmatch(requirement_id) and not _artifact_defines(artifact_corpus, requirement_id):
                 errors.append(
                     f"{requirement_path}.id: {requirement_id} is not defined in the PRD or package artifacts; "
                     "add the requirement to the narrative PRD or remove the stale sidecar entry."

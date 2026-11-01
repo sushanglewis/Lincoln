@@ -24,6 +24,10 @@ spec.loader.exec_module(validate_stage)
 
 PRD_EXIT_CHECKS = {
     "prd_has_required_sections",
+    "prd_quality_contract",
+    "prd_traceability",
+    "prd_review_complete",
+    "prototype_traceability",
     "prd_snapshot_present",
     "prd_content_hygiene",
     "prd_cross_validated",

@@ -687,6 +687,70 @@ def check_prd_has_required_sections(path: str):
     pass_check("PRD has all required sections")
 
 
+def check_prd_quality_contract(path: str):
+    from scripts.lincoln_prd_quality import validate_prd
+
+    target = PROJECT_ROOT / path
+    if not target.exists():
+        fail(f"PRD missing: {target}")
+    result = validate_prd(target)
+    if not result.ok:
+        details = "\n".join(f"- {issue.format()}" for issue in result.issues)
+        fail(f"PRD {result.mode} quality contract failed:\n{details}")
+    pass_check(f"PRD {result.mode} quality contract OK")
+
+
+def _core_v2_prd() -> Path | None:
+    from scripts.lincoln_prd_quality import CORE_V2, detect_mode
+
+    target = process_path("pages", "docs", "prd.html")
+    if not target.exists():
+        return None
+    if detect_mode(target.read_text(encoding="utf-8")) != CORE_V2:
+        return None
+    return target
+
+
+def check_prd_traceability(stage: str):
+    if _core_v2_prd() is None:
+        pass_check("PRD traceability not required for legacy/lightweight package")
+    from scripts.lincoln_traceability import validate_traceability
+
+    errors = validate_traceability(process_root(), stage)
+    if errors:
+        fail("PRD traceability failed:\n" + "\n".join(f"- {error}" for error in errors))
+    pass_check(f"PRD traceability OK: {stage}")
+
+
+def check_prd_review_complete(path: str):
+    prd_path = _core_v2_prd()
+    if prd_path is None:
+        pass_check("PRD cross-functional review not required for legacy/lightweight package")
+    if extract_markdown_version is None:
+        fail("markdown version extraction is not available")
+    from scripts.lincoln_prd_review import ReviewError, validate_review
+
+    version = extract_markdown_version(prd_path)
+    if not version:
+        fail(f"PRD missing version marker: {prd_path}")
+    try:
+        validate_review(PROJECT_ROOT / path, prd_version=version)
+    except ReviewError as exc:
+        fail(str(exc))
+    pass_check(f"Four-role PRD review approved: {version}")
+
+
+def check_prototype_traceability():
+    if _core_v2_prd() is None:
+        pass_check("Prototype traceability not required for legacy/lightweight package")
+    from scripts.lincoln_prototype_traceability import validate_prototype_traceability
+
+    errors = validate_prototype_traceability(process_root())
+    if errors:
+        fail("Prototype traceability failed:\n" + "\n".join(f"- {error}" for error in errors))
+    pass_check("Prototype traceability OK")
+
+
 def check_prd_content_hygiene(path: str):
     target = PROJECT_ROOT / path
     if not target.exists():
@@ -800,6 +864,10 @@ EXIT_CHECKS = {
     "prototype_artifact_complete": check_prototype_artifact_complete,
     "tdd_plan_complete": check_tdd_plan_complete,
     "prd_has_required_sections": check_prd_has_required_sections,
+    "prd_quality_contract": check_prd_quality_contract,
+    "prd_traceability": check_prd_traceability,
+    "prd_review_complete": check_prd_review_complete,
+    "prototype_traceability": check_prototype_traceability,
     "prd_snapshot_present": check_prd_snapshot_present,
     "prd_content_hygiene": check_prd_content_hygiene,
     "prd_cross_validated": check_prd_cross_validated,

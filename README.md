@@ -14,7 +14,7 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 [![Release](https://img.shields.io/badge/release-v1.10.0-blue)](RELEASE.md)
 
-**v1.10.0** 已发布：issue-package 门户升级为 docsify 风格文档框架——可折叠可过滤目录、focus 模式、marked 完整 Markdown 渲染、driver.js 数字角标注解，零服务 file:// 直接打开（#131）。
+**v1.10.0** 已发布：PRD Quality System 将 PRD 从标题/标记门控升级为 core-v2 内容契约、端到端需求追溯、pm/design/engineering/qa 四方评审，以及原型与测试双向闭环（#142）。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
@@ -255,6 +255,7 @@ Lincoln 的 `.claude/` 是开放的系统提示层，欢迎基于同一套元模
 
 | 版本 | 日期 | 关键能力 |
 |---|---|---|
+| v1.11.0 | 2026-11-01 | PRD core-v2 内容质量、需求追溯、四方评审、原型/测试闭环与工作流产物模式（#142） |
 | v1.9.0 | 2026-10-12 | docsify 式 issue-package 门户：可折叠过滤目录、focus 模式、marked 完整 Markdown 渲染、driver.js 数字角标注解、hash 深链（#131） |
 | v1.8.4 | 2026-10-08 | PM 阶段 PRD 质量门控：需求六问自检、13 章递进骨架、PRD 内容卫生与交叉验证校验、原型最终样貌纪律（#129） |
 | v1.8.3 | 2026-10-08 | 少即是多制品生成纪律（hook 注入）；非 npm CLI 平台化安装提示；`lincoln update` 同步刷新外部技能库 |

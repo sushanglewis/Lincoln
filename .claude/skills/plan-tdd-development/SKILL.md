@@ -14,6 +14,8 @@ inputs:
 outputs:
   - "{process_slug}/pages/docs/tdd-plan.html"
   - "{process_slug}/pages/docs/prd-cross-validation.html"
+  - "{process_slug}/pages/docs/prd-traceability.yaml"
+  - "{process_slug}/pages/docs/prd-review.yaml"
 required_tools:
   - Read
   - Bash

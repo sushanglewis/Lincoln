@@ -40,12 +40,15 @@ artifacts:
   required:
   - '{process_slug}/pages/docs/tdd-plan.html'
   - '{process_slug}/pages/docs/prd-cross-validation.html'
+  optional:
+  - '{process_slug}/pages/docs/prd-traceability.yaml'
+  - '{process_slug}/pages/docs/prd-review.yaml'
 references:
   skill_prompt: .claude/skills/plan-tdd-development/SKILL.md
   agent_guide: .claude/agents/engineer.md
 context:
-  goal: 基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成可执行的测试驱动研发计划（`tdd-plan.html`），作为从产品设计到 OpenSpec 变更提案的桥梁；随后执行 PRD 交叉验证——用测试场景反向挑战 PRD（业务规则、验收标准、流程与原型对齐），全部缺口经人类 PM 决策闭环后方可离开本阶段。所有产物通过 {process_slug}/index.html 门户访问。
-  execution: "调用 plan-tdd-development skill 基于已确认的产品设计文档、字段规格、UI 规格和 Pencil 原型，生成包含验收映射、测试场景与任务切片的 tdd-plan.html，作为 OpenSpec 提案的输入。"
+  goal: 基于已确认设计、字段规格、UI 规格和 HTML 原型生成 TDD 计划；core-v2 用 TEST 场景补齐追溯并反向挑战 PRD，缺口闭环后完成同版本四方重审、交叉验证和快照。Pencil 仅作可选源文件。
+  execution: "调用 plan-tdd-development skill 生成验收映射、TEST 场景与任务切片；core-v2 同步维护 prd-traceability.yaml，并在任何 PRD 升版后重置和完成 prd-review.yaml。"
 gates:
   entry:
   - check: previous_stage_completed
@@ -53,6 +56,15 @@ gates:
     - product-prototype
   exit:
   - check: artifacts_present
+  - check: prd_traceability
+    args:
+    - tdd
+  - check: prd_review_complete
+    args:
+    - '{process_slug}/pages/docs/prd-review.yaml'
   - check: prd_cross_validated
     args:
     - '{process_slug}/pages/docs/prd-cross-validation.html'
+  - check: prd_snapshot_present
+    args:
+    - '{process_slug}/pages/docs/prd.html'

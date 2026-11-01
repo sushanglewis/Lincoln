@@ -194,6 +194,35 @@ Lincoln 是 AI-Native 工作流——**你不需要在终端输入任何命令**
 
 ## 阶段与门控
 
+### PRD core-v2 质量契约
+
+新 PRD 在 Markdown 顶部声明 `<!-- prd-contract: core-v2 -->` 和 `<!-- version: vX.Y -->`，使用 15 章核心内容标准。完整说明、读者责任与裁剪原则见 [`docs/prd-quality-standard.md`](docs/prd-quality-standard.md)。
+
+核心结构化产物：
+
+- `pages/docs/prd-traceability.yaml` — 核心需求的来源、故事、验收、流程、原型和测试追溯。
+- `pages/docs/prd-review.yaml` — pm/design/engineering/qa 对同一 PRD 版本的评审记录。
+- `pages/docs/snapshots/prd-vX.Y.html` — 需求或交付基线的不可变快照。
+
+阶段校验命令：
+
+```bash
+# 内容质量与需求基线
+python scripts/lincoln_prd_quality.py issue-<N>/pages/docs/prd.html
+python scripts/lincoln_traceability.py --package issue-<N> --stage clarify
+
+# 原型覆盖与交付基线
+python scripts/lincoln_traceability.py --package issue-<N> --stage prototype
+python scripts/lincoln_prototype_traceability.py issue-<N>
+python scripts/lincoln_prd_review.py validate \
+  --file issue-<N>/pages/docs/prd-review.yaml --prd-version v1.1
+
+# 测试追溯
+python scripts/lincoln_traceability.py --package issue-<N> --stage tdd
+```
+
+PRD 升版后使用 `lincoln_prd_review.py reset-for-version` 重置四方评审，再重新记录真实评审、freeze 和交叉验证。旧 13 章 PRD 与轻量工作流无需回填新 sidecar。
+
 每个阶段都有：
 
 - **入口校验**：当前阶段上下文、前置产物是否就绪

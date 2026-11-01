@@ -88,7 +88,7 @@ You may still read the categorized example templates under `.claude/templates/is
    requirement_ids:       # required top-level pageData metadata
      - REQ-001
    story_ids:             # required array; may be empty only when no story applies
-     - STORY-001
+     - US-001
    flow_step_ids:         # required, at least one business-flow step
      - FLOW-001
    hotspots:              # keep annotation badges separate from traceability metadata
@@ -128,10 +128,17 @@ You may still read the categorized example templates under `.claude/templates/is
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
 
 7. Optionally create or update `{process_slug}/designs/<design_id>/prototype.pen` with Pencil tools if the PM explicitly asks for a Pencil prototype. If you use Pencil tools, call `get_editor_state(include_schema: true)` first and use `snapshot_layout` to check for clipping/overlap.
-8. Update the「相关产物链接」section of the root `{process_slug}/pages/docs/prd.html` (PRD sections are matched by name — numbering is cosmetic) with the `ui-spec.html`, `fields.html`, and HTML prototype links. If the PRD already has an approved snapshot, warn the PM that changes require a version bump and re-freeze via `python scripts/lincoln_prd.py freeze`.
-9. Ask the PM to open `{process_slug}/index.html` in a browser, toggle the theme switch in the macOS menubar, and review both light and dark renderings of each prototype page inside the portal.
-10. When the PM confirms the prototype, add `<!-- prototype-status: approved -->` to `ui-spec.html`.
-11. Run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
+8. For core-v2, update `{process_slug}/pages/docs/prd-traceability.yaml`: add each core requirement's `flow_step_ids` and package-relative `prototype_pages`, and bump `prd_version` whenever the narrative PRD changes. Run both validators and fix all missing pages, orphan pages and broken references:
+
+   ```bash
+   python scripts/lincoln_traceability.py --package {process_slug} --stage prototype
+   python scripts/lincoln_prototype_traceability.py {process_slug}
+   ```
+
+9. Update the「相关产物链接」section of the root PRD with `ui-spec.html`, `fields.html`, and HTML prototype links. Any content change requires a version bump, `prd-review.yaml` reset and re-review.
+10. For core-v2, use `scripts/lincoln_prd_review.py record` to collect pm/design/engineering/qa decisions for the same current PRD version in `{process_slug}/pages/docs/prd-review.yaml`. Do not invent approvals: each reviewer must actually inspect their quality responsibility. Validate the delivery baseline with `scripts/lincoln_prd_review.py validate`.
+11. Ask the PM to open `{process_slug}/index.html` and review both light and dark renderings. When the PM confirms, add `<!-- prototype-status: approved -->` to `ui-spec.html`; legacy packages retain this existing approval path.
+12. For core-v2, freeze the reviewed delivery baseline via `python scripts/lincoln_prd.py freeze`; then run `python scripts/stage_loader.py --stage product-prototype --action record-artifacts`.
 
 ## Output Artifacts
 
@@ -139,6 +146,8 @@ You may still read the categorized example templates under `.claude/templates/is
 - `{process_slug}/pages/docs/ui-spec.html`
 - `{process_slug}/pages/prototype/**/*.html` (required interactive HTML prototypes)
 - `{process_slug}/designs/<design_id>/prototype.pen` (optional Pencil prototype)
+- `{process_slug}/pages/docs/prd-traceability.yaml` (updated for core-v2)
+- `{process_slug}/pages/docs/prd-review.yaml` (four-role delivery baseline for core-v2)
 
 ## Rules
 

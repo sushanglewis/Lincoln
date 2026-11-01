@@ -216,3 +216,27 @@ def test_cli_json_is_stable_and_machine_readable():
     assert payload["ok"] is False
     assert payload["mode"] == "core-v2"
     assert payload["issues"][0]["code"] == "EMPTY_SECTION"
+
+
+def test_requirement_cross_reference_is_not_a_duplicate_definition():
+    text = _fixture("core-v2-golden.md").replace(
+        "用户输入关键词后，系统返回按相关度排序的有效文档摘要，并展示可定位到原文段落的引用",
+        "用户输入关键词后，系统返回按相关度排序的有效文档摘要，并展示可定位到原文段落的引用（权限参见 REQ-002）",
+    )
+
+    assert "DUPLICATE_REQ_ID" not in _codes(quality.validate_text(text))
+
+
+def test_version_marker_case_matches_other_prd_tools():
+    text = _fixture("core-v2-golden.md").replace("<!-- version: v1.0 -->", "<!-- Version: v1.0 -->")
+
+    assert quality.validate_text(text).ok
+
+
+def test_every_success_metric_table_is_validated():
+    text = _fixture("core-v2-golden.md").replace(
+        "## 7. 范围与非目标",
+        "| 指标 | 基线 | 时间窗 |\n|---|---|---|\n| 留存率 | 80% | 上线后 4 周 |\n\n## 7. 范围与非目标",
+    )
+
+    assert "METRIC_FIELDS" in _codes(quality.validate_text(text))

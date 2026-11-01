@@ -16,6 +16,8 @@ outputs:
   - "{process_slug}/pages/docs/ui-spec.html"
   - "{process_slug}/pages/prototype/**/*.html"
   - "{process_slug}/designs/{design_id}/prototype.pen"
+  - "{process_slug}/pages/docs/prd-traceability.yaml"
+  - "{process_slug}/pages/docs/prd-review.yaml"
 required_tools:
   - Read
   - Bash
