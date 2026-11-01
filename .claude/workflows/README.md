@@ -19,6 +19,15 @@
 - `lc-wf-list` — 列出所有工作流及其执行模式。
 - `lc-wf-<name>` — 启动对应工作流。solo 直接生成 session 实例；team 需 `--issue-number <N>`，转发 `scripts/init-lincoln-branch.sh` 创建分支与 issue 工作包。
 
+## 产物模式（artifact_profile）
+
+使用共享 PM Stage（`clarify` / `product-design-docs` / `product-prototype`）的工作流必须显式声明产物模式：
+
+- `full-prd`：交付 Stage 声明的完整 PRD 产物包；R3 对缺失产物执行严格校验。
+- `lightweight`：允许有意裁剪 Stage 产物，不为缺失的完整 PRD 产物重复告警；但工作流声明了 Stage 未声明的产物仍会报告漂移。
+
+`artifact_profile` 只声明完整度，不改变原型产物的必交性：HTML 原型、UI 规格和字段规格为必交，Pencil `.pen` 源文件始终可选。
+
 ## 快速路由
 
 | 场景 | 推荐工作流 | 模式 | 文件 |
@@ -99,13 +108,13 @@ Lincoln 有四层配置可能引用同一产物路径，修改时必须同步，
 ./scripts/check-prompt-drift.py --strict               # 全量校验（逐步推进）
 ```
 
-PM 三阶段（`clarify` / `product-design-docs` / `product-prototype`）的 drift 为阻塞项，其余阶段可在严格模式外先报告后治理。
+PM 三阶段（`clarify` / `product-design-docs` / `product-prototype`）的 drift 为阻塞项；`full-prd` 校验完整产物集合，`lightweight` 仅报告超出 Stage 契约的声明。其余阶段可在严格模式外先报告后治理。
 
 ## 如何新增工作流
 
-1. 在本目录创建 `<workflow-name>.yaml`，声明 `execution_mode: solo|team`。
+1. 在本目录创建 `<workflow-name>.yaml`，声明 `execution_mode: solo|team`；使用共享 PM Stage 时同时声明 `artifact_profile: full-prd|lightweight`。
 2. 遵循 [`workflow-template.schema.json`](../schemas/workflow-template.schema.json) 的字段约定（`execution_mode` 为必填）。
-3. 若工作流使用已有 stage，必须保持该 stage 的 `artifacts` 与 workflow step 的 `artifacts`/`optional_artifacts` 一致；新增 stage 时同步更新 `.claude/skills/dependencies.yaml` 中引用的 skill。
+3. `full-prd` 工作流必须保持 Stage 与 workflow step 的 `artifacts`/`optional_artifacts` 一致；`lightweight` 可裁剪，但不得声明 Stage 之外的产物。新增 stage 时同步更新 `.claude/skills/dependencies.yaml` 中引用的 skill。
 4. 运行 `./scripts/check-prompt-drift.py --strict --focus pm` 确认无漂移。
 5. 运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln_command_map.py" --refresh` 自动在 `.claude/harnesses/command-map.yaml` 登记 `lc-wf-<name>` 等命令，并同步 `.claude-plugin/plugin.json`，然后运行 `python3 "${CLAUDE_PLUGIN_ROOT:-${LINCOLN_HOME:-$HOME/.lincoln/current}}/scripts/lincoln-setup.py" generate-harness --harness codex --harness opencode` 重新生成适配产物。
 6. 在 `.claude/skills/lc-wf/SKILL.md` 的命令映射表中补充触发词。

@@ -24,10 +24,10 @@ Create `{process_slug}/pages/docs/tdd-plan.html` as the bridge from product desi
 ### Phase 1 — TDD 计划
 
 1. Verify that `{process_slug}/pages/docs/ui-spec.html` contains `<!-- prototype-status: approved -->` or `[x] PM 已确认原型`.
-2. Confirm `{process_slug}/designs/<design_id>/prototype.pen`, `{process_slug}/pages/docs/fields.html`, and the design review package exist.
-3. Read the confirmed design docs and inspect the `.pen` through Pencil tools if visual structure is needed.
+2. Confirm `{process_slug}/pages/prototype/**/*.html`, `{process_slug}/pages/docs/fields.html`, and the design review package exist. The `{process_slug}/designs/<design_id>/prototype.pen` source file is optional.
+3. Read the confirmed design docs and inspect the HTML prototype. If the optional `.pen` exists, inspect it through Pencil tools when visual source structure is needed.
 4. Write `{process_slug}/pages/docs/tdd-plan.html` using `.claude/templates/issue-package/page-doc.html.tpl`. It must embed Markdown in `<script type="text/markdown" id="docSource">` with a `<!-- version: v1.0 -->` marker and meta tags (`doc-title`, `nav-group`, `doc-version`, `doc-uid`). Content must include:
-   - Source links to `requirements.html`, `design-review.html`, `fields.html`, `ui-spec.html`, and `prototype.pen`
+   - Source links to `requirements.html`, `design-review.html`, `fields.html`, `ui-spec.html`, and the HTML prototype; link `prototype.pen` only when the optional source file exists
    - Acceptance criteria mapping
    - Test scenarios grouped by user workflow
    - Red/green/refactor implementation sequence

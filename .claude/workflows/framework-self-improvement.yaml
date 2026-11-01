@@ -3,6 +3,7 @@ workflow:
   version: 1.0.0
   description: 持续改进 Lincoln 框架本身的工作流（安全门控、harness 分发、摩擦学习、事件追踪、子代理委托）
   execution_mode: team
+  artifact_profile: lightweight
   engine: everything-claude-code
 
   steps:

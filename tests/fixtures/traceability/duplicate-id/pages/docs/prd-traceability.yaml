@@ -1,0 +1,25 @@
+schema_version: 1.0.0
+prd_version: v1.0
+requirements:
+  - id: REQ-001
+    title: Guest checkout
+    core: true
+    sources:
+      - id: SRC-INTERVIEW-001
+        uri: research/interview.md
+    story_ids: [US-001, US-001]
+    acceptance_criterion_ids: [AC-001]
+    flow_step_ids: [FLOW-001]
+    prototype_pages: [pages/prototype/checkout.html]
+    test_scenario_ids: [TEST-001]
+  - id: REQ-001
+    title: Duplicate requirement
+    core: false
+    sources:
+      - id: SRC-INTERVIEW-001
+        uri: research/interview.md
+    story_ids: []
+    acceptance_criterion_ids: []
+    flow_step_ids: []
+    prototype_pages: []
+    test_scenario_ids: []
