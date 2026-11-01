@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/sushanglewis/Lincoln/.claude/schemas/prd-review.schema.json",
+  "title": "Lincoln PRD Cross-functional Review",
+  "description": "Four role reviews for one immutable PRD version. Pending reviews have no actor or timestamp; decided reviews require both.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "prd_version", "reviews"],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "prd_version": {
+      "type": "string",
+      "pattern": "^v[0-9]+\\.[0-9]+$"
+    },
+    "reviews": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pm", "design", "engineering", "qa"],
+      "properties": {
+        "pm": { "$ref": "#/definitions/review" },
+        "design": { "$ref": "#/definitions/review" },
+        "engineering": { "$ref": "#/definitions/review" },
+        "qa": { "$ref": "#/definitions/review" }
+      }
+    }
+  },
+  "definitions": {
+    "utcTimestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+      "format": "date-time"
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "actor", "reviewed_at", "notes"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["pending", "approved", "changes_requested"]
+        },
+        "actor": {
+          "type": ["string", "null"]
+        },
+        "reviewed_at": {
+          "anyOf": [
+            { "$ref": "#/definitions/utcTimestamp" },
+            { "type": "null" }
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": { "const": "pending" }
+            }
+          },
+          "then": {
+            "properties": {
+              "actor": { "type": "null" },
+              "reviewed_at": { "type": "null" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": ["approved", "changes_requested"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "actor": {
+                "type": "string",
+                "minLength": 1
+              },
+              "reviewed_at": {
+                "$ref": "#/definitions/utcTimestamp"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
