@@ -1,0 +1,9 @@
+prd_version: v1.0.0
+requirements:
+  - id: REQ-001
+    core: true
+    story_ids: [STORY-001]
+    flow_step_ids: [FLOW-001, FLOW-002]
+    prototype_pages:
+      - pages/prototype/web/list/page.html
+      - pages/prototype/web/detail/page.html
