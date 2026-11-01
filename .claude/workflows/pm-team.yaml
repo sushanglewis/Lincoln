@@ -57,9 +57,14 @@ workflow:
         - "{process_slug}/pages/docs/prd.html"
       optional_artifacts:
         - "{process_slug}/pages/docs/snapshots/prd-v*.html"
+        - "{process_slug}/pages/docs/prd-traceability.yaml"
       exit_checks:
         - check: prd_has_required_sections
           args: ["{process_slug}/pages/docs/prd.html"]
+        - check: prd_quality_contract
+          args: ["{process_slug}/pages/docs/prd.html"]
+        - check: prd_traceability
+          args: ["clarify"]
         - check: prd_content_hygiene
           args: ["{process_slug}/pages/docs/prd.html"]
         - check: human_approved
@@ -122,9 +127,18 @@ workflow:
         - "{process_slug}/pages/prototype/**/*.html"
       optional_artifacts:
         - "{process_slug}/designs/{design_id}/prototype.pen"
+        - "{process_slug}/pages/docs/prd-traceability.yaml"
+        - "{process_slug}/pages/docs/prd-review.yaml"
       exit_checks:
         - check: prototype_artifact_complete
           args: ["{design_id}"]
+        - check: prd_traceability
+          args: ["prototype"]
+        - check: prototype_traceability
+        - check: prd_review_complete
+          args: ["{process_slug}/pages/docs/prd-review.yaml"]
+        - check: prd_snapshot_present
+          args: ["{process_slug}/pages/docs/prd.html"]
 
     - id: tdd-development-plan
       name: TDD 研发计划与交叉验证
@@ -136,11 +150,20 @@ workflow:
       artifacts:
         - "{process_slug}/pages/docs/tdd-plan.html"
         - "{process_slug}/pages/docs/prd-cross-validation.html"
+      optional_artifacts:
+        - "{process_slug}/pages/docs/prd-traceability.yaml"
+        - "{process_slug}/pages/docs/prd-review.yaml"
       exit_checks:
         - check: tdd_plan_complete
           args: ["{design_id}"]
+        - check: prd_traceability
+          args: ["tdd"]
+        - check: prd_review_complete
+          args: ["{process_slug}/pages/docs/prd-review.yaml"]
         - check: prd_cross_validated
           args: ["{process_slug}/pages/docs/prd-cross-validation.html"]
+        - check: prd_snapshot_present
+          args: ["{process_slug}/pages/docs/prd.html"]
 
   gates:
     human_confirmation_prompt: "请确认当前步骤已完成并可以继续？输入 confirm 继续，或说明需要修改的地方。"

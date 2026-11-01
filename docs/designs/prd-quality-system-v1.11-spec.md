@@ -46,7 +46,7 @@ PM 是唯一人类决策协调者；分角色评审不替代 human gate，而是
 
 ## 4. core-v2 内容契约
 
-新 PRD 带 `<!-- prd-profile: core-v2 -->`，默认包含：
+新 PRD 带 `<!-- prd-contract: core-v2 -->`，默认包含：
 
 1. 版本说明
 2. 修订记录
@@ -147,8 +147,8 @@ HTML `script#pageData` 顶层增加：
 
 ## 9. 工作流 profile
 
-- `full-prd`：interview-to-knowledge、pm-team、existing-project-iteration，执行完整 PM 产物契约。
-- `lightweight`：bug-fix、design-spike、framework-self-improvement、oss-first-design 等，允许有意的产物子集。
+- `full-prd`：interview-to-knowledge、pm-team，执行完整 PM 产物契约。
+- `lightweight`：bug-fix、design-spike、existing-project-iteration、framework-self-improvement、oss-first-design 等，允许有意的产物子集。
 
 prompt-drift 对 full-prd 严格检查；lightweight 不再反复报告有意裁剪，但声明超出 Stage 能力的产物仍需诊断。
 

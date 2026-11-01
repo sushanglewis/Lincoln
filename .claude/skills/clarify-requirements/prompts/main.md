@@ -125,7 +125,7 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
    - `## 14. 风险与开放问题` — 风险责任人、缓解动作和已决问题；关键开放问题必须在 Human Gate 前由有权者裁决，不留占位符。
    - `## 15. 相关产物链接` — 证据、原型和测试入口；结构化追溯固定链接到 `{process_slug}/pages/docs/prd-traceability.yaml`，分角色评审固定链接到 `{process_slug}/pages/docs/prd-review.yaml`。本步骤只引用这些路径，不在 PRD 内复制 sidecar 内容。
 
-   ID 与追溯纪律：`REQ-NNN` 和 `AC-NNN` 在修订中保持稳定，不复用已删除 ID；验收对需求的引用与 `{process_slug}/pages/docs/prd-traceability.yaml` 使用同一组 ID，四方评审对 `{process_slug}/pages/docs/prd-review.yaml` 中同一 PRD 版本生效。结构化文件由对应集成切片生成，本 prompt 不手工伪造批准或追溯关系。
+   ID 与追溯纪律：`REQ-NNN` 和 `AC-NNN` 在修订中保持稳定，不复用已删除 ID；验收对需求的引用与 `{process_slug}/pages/docs/prd-traceability.yaml` 使用同一组 ID，四方评审对 `{process_slug}/pages/docs/prd-review.yaml` 中同一 PRD 版本生效。只记录已经由证据或评审确认的关系，不编造批准或来源。
 
    Legacy compatibility: only pre-existing documents without the core-v2 marker continue to use the legacy 13-chapter structural contract. Do not remove a core-v2 marker or downgrade a new PRD to bypass semantic checks.
 
@@ -144,9 +144,16 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
    ```
 
    This check is necessary but not sufficient: walk the evidence, scope, rules and acceptance examples with the human PM rather than treating a passing CLI result as team approval.
-12. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
-13. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
-14. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
+12. For core-v2, create `{process_slug}/pages/docs/prd-traceability.yaml` using `.claude/schemas/prd-traceability.schema.json`. Each core requirement records its current `prd_version`, stable REQ ID, evidence `sources`, `story_ids` and `acceptance_criterion_ids`; leave flow/prototype/test arrays for their owning stages. Validate the requirements baseline:
+
+   ```bash
+   python scripts/lincoln_traceability.py --package {process_slug} --stage clarify
+   ```
+
+   Legacy packages do not need to backfill this sidecar; their existing structural and snapshot gates remain unchanged.
+13. When the PM confirms, add an approval marker inside `requirements.html`: `<!-- status: approved -->`.
+14. After human approval, run `python scripts/lincoln_prd.py freeze` to create the immutable requirements-baseline snapshot `{process_slug}/pages/docs/snapshots/prd-v1.0.html`.
+15. Run `python scripts/stage_loader.py --stage clarify --action record-artifacts` to persist the artifact paths and refresh `{process_slug}/assets/js/package-data.js`.
 
 ## Human Interaction Rules
 
@@ -186,6 +193,7 @@ Produce a clear, agreed-upon `{process_slug}/pages/docs/requirements.html` and t
 - `{process_slug}/pages/docs/user-stories.html`
 - `{process_slug}/pages/docs/prd.html` (root-level PRD, versioned)
 - `{process_slug}/pages/docs/snapshots/prd-v1.0.html` (immutable snapshot after approval)
+- `{process_slug}/pages/docs/prd-traceability.yaml` (required for core-v2, optional for legacy)
 
 ## Traceability
 

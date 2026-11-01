@@ -13,6 +13,7 @@ Feature process artifacts stay in `<process_slug>/` and are not merged to `main`
 ### 功能
 
 - [[p0-lc-overall-framework]] — P0 Lincoln 整体框架实现
+- [[prd-quality-system]] — PRD 内容、追溯、四方评审与原型/测试质量闭环
 
 ### 决策
 

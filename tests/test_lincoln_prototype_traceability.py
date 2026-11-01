@@ -108,3 +108,56 @@ def test_prompt_preserves_prototype_quality_and_declares_metadata_contract() -> 
         "lincoln_prototype_traceability.py --package {process_slug}",
     ):
         assert required in prompt
+
+
+def test_unknown_story_id_is_rejected(tmp_path: Path) -> None:
+    root = tmp_path / "package"
+    import shutil
+    shutil.copytree(fixture("complete"), root)
+    page = root / "pages" / "prototype" / "web" / "list" / "page.html"
+    page.write_text(page.read_text(encoding="utf-8").replace("STORY-001", "US-999"), encoding="utf-8")
+
+    errors = validate_prototype_traceability(root)
+
+    assert any("BROKEN_STORY_LINK" in error and "US-999" in error for error in errors)
+
+
+def test_page_cannot_declare_requirement_that_does_not_register_it(tmp_path: Path) -> None:
+    root = tmp_path / "package"
+    import shutil
+    import yaml
+    shutil.copytree(fixture("complete"), root)
+    sidecar = root / "pages" / "docs" / "prd-traceability.yaml"
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8"))
+    data["requirements"].append({
+        "id": "REQ-002",
+        "core": False,
+        "story_ids": ["STORY-002"],
+        "flow_step_ids": [],
+        "prototype_pages": [],
+    })
+    sidecar.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+    page = root / "pages" / "prototype" / "web" / "detail" / "page.html"
+    source = page.read_text(encoding="utf-8")
+    source = source.replace('"REQ-001"', '"REQ-001", "REQ-002"')
+    source = source.replace('"STORY-001"', '"STORY-001", "STORY-002"')
+    page.write_text(source, encoding="utf-8")
+
+    errors = validate_prototype_traceability(root)
+
+    assert any("REQ-002" in error and "does not register the page" in error for error in errors)
+
+
+def test_backslash_path_cannot_bypass_package_relative_checks(tmp_path: Path) -> None:
+    root = tmp_path / "package"
+    import shutil
+    import yaml
+    shutil.copytree(fixture("complete"), root)
+    sidecar = root / "pages" / "docs" / "prd-traceability.yaml"
+    data = yaml.safe_load(sidecar.read_text(encoding="utf-8"))
+    data["requirements"][0]["prototype_pages"][0] = "pages/prototype/x\\..\\list/page.html"
+    sidecar.write_text(yaml.safe_dump(data, sort_keys=False), encoding="utf-8")
+
+    errors = validate_prototype_traceability(root)
+
+    assert any("POSIX separators" in error for error in errors)

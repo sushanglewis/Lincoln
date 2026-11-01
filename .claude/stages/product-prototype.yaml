@@ -41,12 +41,14 @@ artifacts:
   - '{process_slug}/pages/prototype/**/*.html'
   optional:
   - '{process_slug}/designs/{design_id}/prototype.pen'
+  - '{process_slug}/pages/docs/prd-traceability.yaml'
+  - '{process_slug}/pages/docs/prd-review.yaml'
 references:
   skill_prompt: .claude/skills/build-product-prototype/SKILL.md
   agent_guide: .claude/agents/designer.md
 context:
   goal: 将已确认的产品设计文档转化为开发可用的 UI/字段规格 HTML 文档与高保真 HTML 交互原型。HTML 原型是本阶段的主要评审产物；`prototype.pen` 由 UI 在 UX 节点之后按需产出，在本阶段视为 optional。所有产物通过 {process_slug}/index.html 门户访问。
-  execution: 调用 build-product-prototype skill 基于已确认的设计文档生成 fields.html、ui-spec.html 以及 pages/prototype/ 下的高保真 HTML 交互原型；Pencil 原型（prototype.pen）为 optional，仅在 PM 明确要求时由 UI 在 UX 节点之后产出。
+  execution: 调用 build-product-prototype skill 生成 fields、ui-spec 和 HTML 原型；core-v2 同步校验需求/流程/页面追溯，完成 pm/design/engineering/qa 同版本评审后 freeze 交付基线。Pencil 原型始终 optional。
   constraints: '- `{process_slug}/pages/prototype/**/*.html` 为 required 高保真 HTML 交互原型；`prototype.pen` 为 optional UI 阶段产物。'
 gates:
   entry:
@@ -55,4 +57,14 @@ gates:
     - product-design-docs
   exit:
   - check: artifacts_present
+  - check: prd_traceability
+    args:
+    - prototype
+  - check: prototype_traceability
+  - check: prd_review_complete
+    args:
+    - '{process_slug}/pages/docs/prd-review.yaml'
   - check: human_approved
+  - check: prd_snapshot_present
+    args:
+    - '{process_slug}/pages/docs/prd.html'

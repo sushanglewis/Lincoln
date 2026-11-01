@@ -58,6 +58,8 @@ def _metadata_ids(data: dict[str, Any], field: str) -> list[str]:
 def _registered_path(value: Any) -> tuple[str | None, str | None]:
     if not isinstance(value, str) or not value.strip():
         return None, "prototype page paths must be non-empty strings"
+    if "\\" in value:
+        return None, "path must use POSIX separators and stay relative to the process root"
     path = PurePosixPath(value)
     if path.is_absolute() or ".." in path.parts:
         return None, "path must stay relative to the process root"
@@ -122,6 +124,7 @@ def validate_prototype_traceability(
     requirements: list[dict[str, Any]] = []
     requirement_ids: set[str] = set()
     all_flow_ids: set[str] = set()
+    all_story_ids: set[str] = set()
     registrations: dict[str, list[str]] = {}
 
     for index, raw_requirement in enumerate(document["requirements"]):
@@ -137,7 +140,11 @@ def validate_prototype_traceability(
         requirement_ids.add(requirement_id)
 
         flow_ids = raw_requirement.get("flow_step_ids", [])
+        story_ids = raw_requirement.get("story_ids", [])
         page_values = raw_requirement.get("prototype_pages", [])
+        if not _string_list(story_ids):
+            errors.append(f"SIDECAR_INVALID: {requirement_id}.story_ids must be a string array")
+            story_ids = []
         if not _string_list(flow_ids):
             errors.append(f"SIDECAR_INVALID: {requirement_id}.flow_step_ids must be a string array")
             flow_ids = []
@@ -145,6 +152,7 @@ def validate_prototype_traceability(
             errors.append(f"SIDECAR_INVALID: {requirement_id}.prototype_pages must be an array")
             page_values = []
         all_flow_ids.update(flow_ids)
+        all_story_ids.update(story_ids)
         is_core = raw_requirement.get("core") is True
 
         if is_core and not flow_ids:
@@ -171,6 +179,7 @@ def validate_prototype_traceability(
                 "id": requirement_id,
                 "core": is_core,
                 "flow_step_ids": flow_ids,
+                "story_ids": story_ids,
                 "prototype_pages": page_paths,
             }
         )
@@ -202,9 +211,24 @@ def validate_prototype_traceability(
                 errors.append(
                     f"BROKEN_REQUIREMENT_LINK: {page_path} references unknown requirement {requirement_id}"
                 )
+            elif page_path not in registrations or requirement_id not in registrations[page_path]:
+                errors.append(
+                    f"BROKEN_REQUIREMENT_LINK: {page_path} declares {requirement_id}, "
+                    "but that requirement does not register the page"
+                )
         for flow_id in _metadata_ids(data, "flow_step_ids"):
             if flow_id not in all_flow_ids:
                 errors.append(f"BROKEN_FLOW_LINK: {page_path} references unknown flow step {flow_id}")
+        declared_requirements = set(_metadata_ids(data, "requirement_ids"))
+        expected_story_ids = {
+            story_id
+            for requirement in requirements
+            if requirement["id"] in declared_requirements
+            for story_id in requirement["story_ids"]
+        }
+        for story_id in _metadata_ids(data, "story_ids"):
+            if story_id not in all_story_ids or story_id not in expected_story_ids:
+                errors.append(f"BROKEN_STORY_LINK: {page_path} references unrelated story {story_id}")
 
     for requirement in requirements:
         requirement_id = requirement["id"]

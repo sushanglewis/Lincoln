@@ -195,3 +195,13 @@ def test_cli_passes_and_returns_nonzero_with_actionable_errors(valid_package: Pa
     assert "FAIL:" in failing.stdout
     assert "flow_step_ids" in failing.stdout
     assert "add the missing relationship" in failing.stdout
+
+
+def test_reference_matching_does_not_accept_prefix_of_longer_id(valid_package: Path) -> None:
+    data = _load_sidecar(valid_package)
+    data["requirements"][0]["test_scenario_ids"] = ["TEST-00"]
+    _write_sidecar(valid_package, data)
+
+    errors = validate_traceability(valid_package, "tdd")
+
+    assert any("TEST-00" in error and "not defined" in error for error in errors)

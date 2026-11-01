@@ -1,3 +1,27 @@
+# Lincoln v1.11.0 Release Notes
+
+**Release date:** 2026-11-01
+
+## Highlights
+
+- **PRD Quality System（#142 / #143–#148）** — 将 PRD 从“章节与人工标记存在”升级为可验证的团队需求质量系统：
+  - **core-v2 内容契约** — 新 PRD 默认覆盖执行摘要、问题证据、用户与相关者、目标指标、范围与非目标、功能规则、验收、非功能、发布与治理共 15 章。空章节、纯占位、缺少指标基线/目标值/时间窗、REQ/AC 引用断裂均无法通过；旧 13 章 PRD 继续按 legacy 模式兼容。
+  - **端到端需求追溯** — 新增 `pages/docs/prd-traceability.yaml` 与 JSON Schema。核心需求通过稳定 ID 关联来源、用户故事、验收标准、流程步骤、原型页面和 TEST 场景；clarify、prototype、TDD 逐阶段提高完整性要求，并检查版本漂移、重复 ID、断链和缺失页面。
+  - **四方评审基线** — 新增 `pages/docs/prd-review.yaml` 与 `lincoln_prd_review.py`，pm/design/engineering/qa 必须对同一 PRD 版本批准。`changes_requested`、缺审或版本不一致均阻断交付；PRD 升版后必须重置并重审，旧批准不能沿用。
+  - **原型双向闭环** — HTML `script#pageData` 顶层声明 `requirement_ids`、`story_ids`、`flow_step_ids`，不再只依赖 hotspot 自由文本。校验可发现核心流程缺页、登记文件缺失、未登记孤儿页面和元数据断链。
+  - **生命周期统一** — clarify 冻结需求基线；prototype 完成四方评审并冻结交付基线；TDD 修复导致升版时同步更新追溯、重审、重冻结和重跑交叉验证。Pencil `.pen` 始终可选，HTML 原型为默认必需产物。
+  - **工作流产物模式** — full-prd 工作流执行完整契约；lightweight 工作流显式表达有意裁剪。prompt-drift 不再对轻量子集重复报警，但越界声明和 full-prd 缺失仍可诊断。
+  - **兼容与质量样例** — 新增 PRD 质量标准、金标准与反例、追溯/原型 fixtures 和共享 registry 集成测试；新门控仅对 core-v2 强制，legacy/轻量工作包自动跳过新增 sidecar 与四方评审要求。
+
+## Migration Notes
+
+- 新 PRD 保留 `<!-- prd-contract: core-v2 -->` 即启用全部新质量门控，不要通过移除标记降级到 legacy。
+- 旧 13 章 PRD 继续使用既有结构、卫生、快照和交叉验证规则，不要求回填追溯或评审 sidecar。
+- core-v2 工作包需要从 clarify 开始维护 `prd-traceability.yaml`，在 prototype 完成 `prd-review.yaml`；具体命令与阶段规则见 `USAGE.md` 和 `docs/prd-quality-standard.md`。
+- 升级方式：`npm install -g @sushanglewis/lincoln@latest` 后执行 `lincoln update`，同步新 prompt、schema、校验器、Stage 与 Workflow 契约。
+
+---
+
 # Lincoln v1.10.0 Release Notes
 
 **Release date:** 2026-10-19
