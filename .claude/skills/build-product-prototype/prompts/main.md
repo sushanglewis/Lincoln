@@ -85,7 +85,13 @@ You may still read the categorized example templates under `.claude/templates/is
      navItems:
        - {id: dashboard, label: 概览, href: ./dashboard/page.html}
        - {id: list, label: 列表, href: ./list/page.html}
-   hotspots:
+   requirement_ids:       # required top-level pageData metadata
+     - REQ-001
+   story_ids:             # required array; may be empty only when no story applies
+     - STORY-001
+   flow_step_ids:         # required, at least one business-flow step
+     - FLOW-001
+   hotspots:              # keep annotation badges separate from traceability metadata
      - target: "metric-revenue"      # CSS selector, data-uid, or element id
        title: "营收指标卡"
        text: "展示本月营收与环比；点击进入详情页。"
@@ -114,7 +120,9 @@ You may still read the categorized example templates under `.claude/templates/is
    - Provide a `hotspots` array so numbered on-page badges explain functionality, layout, fields, boundary cases, and exception flows (hover for the popover, click to pin; the prototype toolbar can hide badges).
    - State the applicable role(s), scenario, page state (default / empty / loading / error / success), and which functions are visible and usable in that state via the hotspot `title`/`text` entries, so each sub-page precisely depicts what a given role sees and can do in that case.
    - Depict only the final system as it will ship: no demo-only buttons, explanatory text rows, or walkthrough-only jumps. Explanations belong in the `hotspots` badges rendered on the page, never as on-screen prose.
-   - Declare the user story and business-flow step the page implements in the hotspot `text` entries, so the prototype aligns bidirectionally with the PRD: every flow step has at least one page, and every page belongs to a flow step or story.
+   - Declare `requirement_ids`, `story_ids`, and `flow_step_ids` as top-level arrays in the prototype YAML; the renderer places them at the top level of `script#pageData` JSON. `requirement_ids` and `flow_step_ids` must each contain at least one stable ID. Keep `hotspots` for annotations, not as a substitute for this machine-checkable metadata.
+   - Register every generated HTML file in the applicable `requirements[].prototype_pages` arrays in `{process_slug}/pages/docs/prd-traceability.yaml`. Paths are relative to the process root (for example `pages/prototype/web/list/page.html`). Each `core: true` requirement's every `flow_step_ids` entry must have at least one registered page declaring both the requirement ID and that flow ID.
+   - Run `python scripts/lincoln_prototype_traceability.py --package {process_slug}` and fix missing pages, unregistered/orphan HTML, missing metadata, and broken requirement/flow links before review.
    - Use `LincolnPrototype.ui` builders and `prototype.css` tokens for every visual element so both light and dark themes render correctly; verify both themes by toggling the portal theme switch.
    - Assign a stable `data-uid` attribute to every interactive element, screen region, and WebView placeholder.
    - Override `LincolnPrototype.data` in the page script for issue-specific mock data (user, org, webviews, settings, unread items).
@@ -143,5 +151,5 @@ You may still read the categorized example templates under `.claude/templates/is
 - Prototype links use relative paths so they work both inside the portal iframe and when opened standalone.
 - Do not add custom chrome to the portal. The portal sidebar is collapsible and supports focus mode out of the box; prototype pages open in focus mode automatically.
 - The system tray is portal-level chrome. Never redraw the tray inside an app prototype page with `.menubar`, `.tray-icon`, `.tray-panel`, `bindTray`, or `trayMenu`. Tray scenario pages must be thin controllers that post `lincoln-tray-state` messages to the portal.
-- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `hotspots` 数字角标（driver.js，hover 弹出说明）呈现；每个原型页面经角标 `text` 标注所属用户故事与业务流程步骤，与 PRD 文字双向对齐。
+- 原型即最终系统样貌：禁止仅用于演示的模拟按钮、屏内说明文字与演示跳转；解释一律走 `hotspots` 数字角标（driver.js，hover 弹出说明）呈现。所属需求、用户故事与业务流程步骤必须通过 `script#pageData` 顶层的 `requirement_ids` / `story_ids` / `flow_step_ids` 数组声明，并在追溯 sidecar 中登记页面路径，不能只写在角标自由文本中。
 - After approval, tell the user to run: `claude plan-tdd-development <session_id> <design_id>`.
