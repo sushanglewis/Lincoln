@@ -12,9 +12,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.11.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.12.0-blue)](RELEASE.md)
 
-**v1.11.0** 已发布：高保真原型新增 Axure 式数字角标、页面说明抽屉和分步演示，完整覆盖页面结构、交互、状态、异常恢复与数据规则，并以 core-v2 门控防止信息缺口（#155）。
+**v1.12.0** 已发布：高保真原型新增 Axure 式数字角标、页面说明抽屉和分步演示，完整覆盖页面结构、交互、状态、异常恢复与数据规则，并以 core-v2 门控防止信息缺口（#155）。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 

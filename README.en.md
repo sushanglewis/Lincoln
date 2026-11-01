@@ -12,9 +12,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.11.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.12.0-blue)](RELEASE.md)
 
-**v1.11.0** is released: high-fidelity prototypes now provide Axure-style numbered annotations, a categorized review drawer and step-by-step presentation, with complete interaction, state, exception-recovery and data contracts enforced for core-v2 (#155).
+**v1.12.0** is released: high-fidelity prototypes now provide Axure-style numbered annotations, a categorized review drawer and step-by-step presentation, with complete interaction, state, exception-recovery and data contracts enforced for core-v2 (#155).
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 
