@@ -5,6 +5,7 @@ workflow:
     三层 PM 组织（lc-pm 总协调 → lc-pm-* 阶段主管 → lc-pm-*-* 执行 agent）在本工作流中完整启用。
     本流程较重：启动前必须由 lc-workflow-router 向人类 PM 说明流程重量并获得显式选择，不得默认启用。
   execution_mode: team
+  artifact_profile: full-prd
   loop:
     engine: everything-claude-code
     state_file: "{process_slug}/workflow-stage.yaml"
