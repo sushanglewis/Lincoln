@@ -12,9 +12,9 @@ Lincoln is an AI-Native R&D workflow system spanning **IDEs, agent harnesses, co
 
 ## Latest Release
 
-[![Release](https://img.shields.io/badge/release-v1.10.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.11.0-blue)](RELEASE.md)
 
-**v1.10.0** is released: PRD Quality System upgrades PRDs from heading/marker checks to the core-v2 content contract, end-to-end requirement traceability, pm/design/engineering/qa review baselines, and bidirectional prototype/test validation (#142).
+**v1.11.0** is released: PRD Quality System upgrades PRDs from heading/marker checks to the core-v2 content contract, end-to-end requirement traceability, pm/design/engineering/qa review baselines, and bidirectional prototype/test validation (#142).
 
 See the full release notes in [RELEASE.md](RELEASE.md).
 

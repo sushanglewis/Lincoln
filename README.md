@@ -12,9 +12,9 @@ Lincoln 是一个贯穿 **IDE、Agent Harness、代码托管、知识管理、�
 
 ## 最新版本
 
-[![Release](https://img.shields.io/badge/release-v1.10.0-blue)](RELEASE.md)
+[![Release](https://img.shields.io/badge/release-v1.11.0-blue)](RELEASE.md)
 
-**v1.10.0** 已发布：PRD Quality System 将 PRD 从标题/标记门控升级为 core-v2 内容契约、端到端需求追溯、pm/design/engineering/qa 四方评审，以及原型与测试双向闭环（#142）。
+**v1.11.0** 已发布：PRD Quality System 将 PRD 从标题/标记门控升级为 core-v2 内容契约、端到端需求追溯、pm/design/engineering/qa 四方评审，以及原型与测试双向闭环（#142）。
 
 查看完整发布说明：[RELEASE.md](RELEASE.md)
 
